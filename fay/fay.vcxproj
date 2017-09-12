@@ -64,9 +64,13 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="fay.props" />
+    <Import Project="..\..\..\Library\lib_64d.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="fay.props" />
+    <Import Project="..\..\..\Library\lib_64.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
@@ -111,6 +115,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\Library\glfw\deps\glad.c" />
+    <ClCompile Include="..\src\gl\buffer.cpp" />
+    <ClCompile Include="..\src\gl\camera.cpp" />
+    <ClCompile Include="..\src\gl\model.cpp" />
+    <ClCompile Include="..\src\gl\shader.cpp" />
+    <ClCompile Include="..\src\gl\texture.cpp" />
+    <ClCompile Include="..\src\ray\raytracing.cpp" />
+    <ClCompile Include="..\src\tmp\Obj.cpp" />
+    <ClCompile Include="..\src\utility\fay.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\gl\buffer.h" />
+    <ClInclude Include="..\src\gl\camera.h" />
+    <ClInclude Include="..\src\gl\model.h" />
+    <ClInclude Include="..\src\gl\shader.h" />
+    <ClInclude Include="..\src\gl\texture.h" />
+    <ClInclude Include="..\src\ray\raytracing.h" />
+    <ClInclude Include="..\src\tmp\Obj.h" />
+    <ClInclude Include="..\src\utility\fay.h" />
+    <ClInclude Include="..\src\utility\platform.h" />
+    <ClInclude Include="..\src\utility\stencil.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
