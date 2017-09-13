@@ -39,11 +39,11 @@
     <ClCompile Include="..\src\utility\fay.cpp">
       <Filter>utility</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\ray\raytracing.cpp">
-      <Filter>ray</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\Library\glfw\deps\glad.c">
       <Filter>extern</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ray\raytracing.cpp">
+      <Filter>ray</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -76,6 +76,9 @@
     </ClInclude>
     <ClInclude Include="..\src\ray\raytracing.h">
       <Filter>ray</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\gl\gl_utility.h">
+      <Filter>gl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

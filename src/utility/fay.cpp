@@ -1,5 +1,6 @@
 #include"fay.h"
 #include"ray/raytracing.h"
+//#include "gl/gl.h"
 
 int main(int argc, char** argv)
 {

@@ -17,7 +17,7 @@
 namespace fay
 {
 
-struct Vertex
+struct modelVertex
 {
 	glm::vec3 position;
 	glm::vec3 normal;
@@ -27,33 +27,29 @@ struct Vertex
 	glm::vec3 bitangent;
 };
 
-// 一张 Texture 可以被所有的 mesh 共用，所以使用该 texture 的 mesh 记录其在 OpenGL 中的 id 即可
-struct Texture
+// 一张 modelTexture 可以被所有的 mesh 共用，所以使用该 texture 的 mesh 记录其在 OpenGL 中的 id 即可
+struct modelTexture
 {
-	Texture(GLuint id, std::string type, aiString path) : id(id), type(type), filepath(path) {}
+	modelTexture(GLuint id, std::string type, aiString path) : id(id), type(type), filepath(path) {}
 
 	GLuint	    id;
 	std::string type;	// enum class Type { diffuse, specular, normal, height } type;
 	aiString    filepath;
 };
 
-using namespace std;
-
-
-class Mesh // : public boost::noncopyable
+class modelMesh // : public boost::noncopyable
 {
 public:
-	Mesh(vector<Vertex>& vertices, vector<unsigned int>& indices, vector<Texture>& textures);
+	modelMesh(std::vector<modelVertex>& vertices, std::vector<unsigned int>& indices, std::vector<modelTexture>& textures);
 	
 	void draw(Shader shader);
 
 private:
-	vector<Texture> textures;
+	std::vector<modelTexture> textures;
 
 	GLuint VAO, VBO, EBO;
 	GLuint indices_size, textures_size;
 };
-
 
 class Model
 {
@@ -66,17 +62,17 @@ public:
 private:
 	void process_node(aiNode *node, const aiScene *scene);
 
-	Mesh process_mesh(aiMesh *mesh, const aiScene *scene);
+	modelMesh process_mesh(aiMesh *mesh, const aiScene *scene);
 
-	std::vector<Texture> load_textures(aiMaterial* mat, aiTextureType type, std::string typeName);
+	std::vector<modelTexture> load_textures(aiMaterial* mat, aiTextureType type, std::string typeName);
 
 	GLuint create_texture(const char* filename, bool gamma = false);
 
 private:
-	std::vector<Mesh> meshes;
+	std::vector<modelMesh> meshes;
 
 	//map<path, bool>
-	std::vector<Texture> textures_loaded;	// 保存已加载的纹理，避免重复加载
+	std::vector<modelTexture> textures_loaded;	// 保存已加载的纹理，避免重复加载
 	std::string resources_directory;
 	bool gamma_correction;
 };

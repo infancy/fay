@@ -2,15 +2,8 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-/*
-#include <learnopengl/shader_m.h>
-#include <learnopengl/camera.h>
-#include <learnopengl/model.h>
-*/
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "fay.h"
 
@@ -18,8 +11,6 @@
 #include "gl/texture.h"
 #include "gl/model.h"
 #include "gl/camera.h"
-
-#include "tmp/Obj.h"
 
 using namespace std;
 using namespace fay;
@@ -29,8 +20,6 @@ using namespace fay;
 bool create_window();
 void destroy_window();
 void update();
-
-void check_errors() { CHECK(glGetError() == GL_NO_ERROR); }
 
 // callback
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -52,10 +41,6 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-
-// other
-
-//glm::mat4 identity_matrix(1.f);
 
 // usage
 
@@ -154,10 +139,10 @@ void view_model()
 
 	glEnable(GL_DEPTH_TEST);
 
-	const char* blocks = "resources/objects/blocks/blocks.obj";
+	const char* blocks   = "resources/objects/blocks/blocks.obj";
 	const char* nanosuit = "resources/objects/nanosuit/nanosuit.obj";
-	const char* fairy = "resources/objects/fairy/fairy.obj";
-	const char* Rei = "resources/objects/Rei/Rei.obj";
+	const char* fairy    = "resources/objects/fairy/fairy.obj";
+	const char* Rei      = "resources/objects/Rei/Rei.obj";
 	Shader ourShader("shader/model_loading.vs", "shader/model_loading.fs");
 	Model ourModel(Rei);
 

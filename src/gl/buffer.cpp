@@ -18,8 +18,7 @@ Buffer::Buffer(std::vector<float>& positions, std::vector<uint32_t>& indices) : 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	// 要求传入的顶点总是三维的
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);	// 要求传入的顶点总是三维的
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);

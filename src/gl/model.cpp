@@ -4,9 +4,9 @@ using namespace std;
 namespace fay
 {
 
-// Mesh Method Definitions
+// modelMesh Method Definitions
 
-Mesh::Mesh(vector<Vertex>& vertices, vector<unsigned int>& indices, vector<Texture>& textures) 
+modelMesh::modelMesh(vector<modelVertex>& vertices, vector<unsigned int>& indices, vector<modelTexture>& textures) 
 	: indices_size(indices.size()), textures(textures)
 {
 	glGenVertexArrays(1, &VAO);
@@ -17,31 +17,31 @@ Mesh::Mesh(vector<Vertex>& vertices, vector<unsigned int>& indices, vector<Textu
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	// C++ 结构体中的数据是紧密排列的
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(modelVertex), &vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
 	// vertex Positions
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(modelVertex), (void*)0);
 	// vertex normals
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(modelVertex), (void*)offsetof(modelVertex, normal));
 	// vertex texture coords
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(modelVertex), (void*)offsetof(modelVertex, texCoords));
 	// vertex tangent
 	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(modelVertex), (void*)offsetof(modelVertex, tangent));
 	// vertex bitangent
 	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(modelVertex), (void*)offsetof(modelVertex, bitangent));
 
 	glBindVertexArray(0);
 }
 
-void Mesh::draw(Shader shader)
+void modelMesh::draw(Shader shader)
 {
 	// bind appropriate textures
 	unsigned int diffuseNr = 1;
@@ -65,9 +65,7 @@ void Mesh::draw(Shader shader)
 		else if (type == "texture_height")
 			number << heightNr++;
 
-		glActiveTexture(GL_TEXTURE0 + i);	// 激活纹理单元
-		shader.set_texture_unit(type + number.str(), i);	// 将第i号纹理单元连接到着色器中的sampler变量		
-		glBindTexture(GL_TEXTURE_2D, textures[i].id);	// 开启纹理对象，并将纹理对象绑定到当前激活的纹理单元上
+		shader.bind_texture(type + number.str(), i, textures[i].id);
 	}
 
 	glBindVertexArray(VAO);
@@ -78,7 +76,7 @@ void Mesh::draw(Shader shader)
 }
 
 /*
-~Mesh::Mesh()
+~modelMesh::modelMesh()
 {
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
@@ -86,7 +84,7 @@ void Mesh::draw(Shader shader)
 }
 */
 
-// Mesh Method Definitions
+// modelMesh Method Definitions
 
 Model::Model(const string& path, bool gamma) : gamma_correction(gamma)
 {
@@ -126,16 +124,16 @@ void Model::process_node(aiNode *node, const aiScene *scene)
 
 //static void copy(glm::vec3& vec, aiVector3D& rhs) { vec.x = rhs.x; vec.y = rhs.y; vec.z = rhs.z; }
 
-Mesh Model::process_mesh(aiMesh *mesh, const aiScene *scene)
+modelMesh Model::process_mesh(aiMesh *mesh, const aiScene *scene)
 {
-	std::vector<Vertex> vertices;
+	std::vector<modelVertex> vertices;
 	std::vector<uint32_t> indices;
-	std::vector<Texture> textures;
+	std::vector<modelTexture> textures;
 
 	// Walk through each of the mesh's vertices
 	for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
 	{
-		Vertex vertex;
+		modelVertex vertex;
 
 		auto copy = [](glm::vec3& vec, aiVector3D& rhs) { vec.x = rhs.x; vec.y = rhs.y; vec.z = rhs.z; };
 
@@ -171,7 +169,7 @@ Mesh Model::process_mesh(aiMesh *mesh, const aiScene *scene)
 
 	auto load_maps = [this, &textures, material](aiTextureType type, std::string typeName)
 	{
-		std::vector<Texture> maps = load_textures(material, type, typeName);
+		std::vector<modelTexture> maps = load_textures(material, type, typeName);
 		textures.insert(textures.end(), maps.begin(), maps.end());
 	};
 
@@ -180,12 +178,12 @@ Mesh Model::process_mesh(aiMesh *mesh, const aiScene *scene)
 	load_maps(aiTextureType_HEIGHT,   "texture_normal");
 	load_maps(aiTextureType_AMBIENT,  "texture_height");
 
-	return Mesh(vertices, indices, textures);
+	return modelMesh(vertices, indices, textures);
 }
 
-vector<Texture> Model::load_textures(aiMaterial* mat, aiTextureType type, string typeName)
+vector<modelTexture> Model::load_textures(aiMaterial* mat, aiTextureType type, string typeName)
 {
-	vector<Texture> textures;
+	vector<modelTexture> textures;
 
 	for (uint32_t i = 0; i < mat->GetTextureCount(type); ++i)
 	{
@@ -205,9 +203,9 @@ vector<Texture> Model::load_textures(aiMaterial* mat, aiTextureType type, string
 		}
 		if (!have_loaded)	// if texture hasn't been loaded already, load it
 		{
-			Texture texture(create_texture(str.C_Str()), typeName, str);
+			modelTexture texture(create_texture(str.C_Str()), typeName, str);
 			textures.push_back(texture);
-			textures_loaded.push_back(texture);  // Texture 只是一个 handle，这不会增加开销
+			textures_loaded.push_back(texture);  // modelTexture 只是一个 handle，这不会增加开销
 		}
 	}
 	return textures;
@@ -224,7 +222,7 @@ GLuint Model::create_texture(const char* filename, bool gamma)
 	unsigned char* data = stbi_load(filepath.c_str(), &width, &height, &nrComponents, 0);
 	if (data)
 	{
-		LOG(INFO) << "Texture successed to load at path: " << filename;
+		LOG(INFO) << "modelTexture successed to load at path: " << filename;
 		GLenum format {};
 
 		switch (nrComponents)
@@ -246,7 +244,7 @@ GLuint Model::create_texture(const char* filename, bool gamma)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 	else
-		LOG(ERROR) << "Texture failed to load at path: " << filename;
+		LOG(ERROR) << "modelTexture failed to load at path: " << filename;
 	
 	stbi_image_free(data);
 	return textureID;

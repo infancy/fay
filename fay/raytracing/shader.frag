@@ -3,10 +3,8 @@
 layout(location=0) out vec4 vFragColor; //fragment shader output
 
 //uniforms
+uniform sampler2D texture_diffuse1;
 uniform mat4 MV;					//modelview matrix
-uniform sampler2DArray textureMap;	//all textures in a single texture array
-uniform float useDefault;			//if we want to use a default colour
-uniform int textureIndex;			//index of the current mesh texture
 uniform vec3 light_position;		//light position in object space
 
 //inputs from the vertex shader
@@ -35,5 +33,5 @@ void main()
 	float attenuationAmount = 1.0/(k0 + (k1*d) + (k2*d*d));
 	diffuse *= attenuationAmount;
 	//return final output colour
-    vFragColor =  diffuse * mix(texture(textureMap, vec3(vUVout,textureIndex)), vec4(1), useDefault);
+    vFragColor =  diffuse * texture(texture_diffuse1, vUVout);
 }
