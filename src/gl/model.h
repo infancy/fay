@@ -40,11 +40,13 @@ struct modelTexture
 class modelMesh // : public boost::noncopyable
 {
 public:
-	modelMesh(std::vector<modelVertex>& vertices, std::vector<unsigned int>& indices, std::vector<modelTexture>& textures);
+	modelMesh(std::vector<modelVertex>& vertices, std::vector<uint32_t>& indices, std::vector<modelTexture>& textures);
 	
 	void draw(Shader shader);
 
-private:
+public:
+	std::vector<modelVertex> vertices;
+	std::vector<uint32_t> indices;
 	std::vector<modelTexture> textures;
 
 	GLuint VAO, VBO, EBO;
@@ -58,6 +60,51 @@ public:
 	~Model() {}
 
 	void draw(Shader shader);
+
+	void transform_to_TextureDataArray(
+		std::vector<std::vector<glm::vec4>>& positions,
+		std::vector<std::vector<glm::uvec4>>& indices,
+		std::vector<std::string>& texpaths)
+	{
+		/* 考虑到合并了重复的纹理，因此 texpaths 可能更小一点
+		positions[meshPosits1,  meshPosits2,  ...... meshPositsN ]
+		indices  [meshinds1,    meshinds2,    ...... meshindsN   ]
+		texpahts [meshtexpath1, meshtexpath2, ...... meshtexpathN] 
+		*/
+		//positions.reserve(meshes.size()); indices.reserve(meshes.size());
+		for (auto& mesh : meshes)
+		{
+			// 一个网格的位置和索引
+			std::vector<glm::vec4> posits;
+			std::vector<glm::uvec4> inds;
+
+			for (auto& mver : mesh.vertices)
+				posits.emplace_back(glm::vec4{ mver.position, 1.f });
+			
+			// 只使用第一张纹理
+			std::string tex_filepath = mesh.textures[0].filepath.C_Str();
+
+			if(std::find(texpaths.begin(), texpaths.end(), tex_filepath) == texpaths.end())
+				texpaths.push_back(tex_filepath);
+
+			uint32_t tex_index {};
+			for (; tex_index < texpaths.size(); ++tex_index)
+				if (texpaths[tex_index] == tex_filepath)
+					break;
+
+			// 在着色器中通过 tex_index，即纹理的下标，找到对应的纹理
+			auto& minds = mesh.indices;
+			for (size_t j{}; j < minds.size(); j += 3)
+				inds.emplace_back(glm::vec4{ minds[j], minds[j + 1], minds[j + 2], tex_index });
+
+			positions.push_back(posits);
+			indices.push_back(inds);
+		}
+		LOG(INFO) << " transform_to_TextureDataArray: "
+			<< " positions: " << positions.size()
+			<< " indices: "   << indices.size()
+			<< " texpaths: "  << texpaths.size();
+	}
 
 private:
 	void process_node(aiNode *node, const aiScene *scene);

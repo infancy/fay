@@ -97,48 +97,13 @@ void ray_cast()
 {
 	create_window();
 
-	//setup fullscreen quad geometry
+	// 加载用于光栅化的模型
+	Model model("resources/objects/blocks/blocks.obj");
+
+	// 加载覆盖整个视口的正方形
 	std::vector<float> quadVerts{ -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0};
 	std::vector<uint32_t> quadIndices{ 0,1,2,0,2,3 };
 	Buffer quad(quadVerts, quadIndices);
-	
-	//get the mesh path for loading of textures	
-	std::string mesh_path = mesh_filename.substr(0, mesh_filename.find_last_of("/") + 1);
-
-	//load the obj model
-	vector<unsigned short> indices2;
-	vector<glm::vec3> vertices2;
-	if (!tmp::Load(mesh_filename.c_str(), meshes, vertices, indices, materials, aabb, vertices2, indices2)) {
-		LOG(ERROR) << "Cannot load the 3ds mesh";
-		exit(EXIT_FAILURE);
-	}
-
-	gl_check_errors();
-
-	// 将所有纹理存储在一个纹理数组中
-	vector<string> material_names;
-	for (size_t k = 0; k<materials.size(); k++) 
-		if (materials[k]->map_Kd != "")
-			material_names.push_back(materials[k]->map_Kd);
-
-	TextureArray material_arrays(material_names, mesh_path);
-	
-	// 加载着色器
-	Shader flatShader("raytracing/flat.vert", "raytracing/flat.frag");
-
-	Shader rasterShader("raytracing/shader.vert", "raytracing/shader.frag");
-
-	Shader raytraceShader("raytracing/raycast.vert", "raytracing/raycast.frag");
-	raytraceShader.enable();
-	raytraceShader.set_float("VERTEX_TEXTURE_SIZE", (float)vertices2.size());
-	raytraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)indices2.size() / 4);
-	raytraceShader.set_vec3("aabb.min", aabb.min);
-	raytraceShader.set_vec3("aabb.max", aabb.max);
-	raytraceShader.set_vec4("backgroundColor", bg);
-	raytraceShader.disable();
-	
-	// 加载用于光栅化的模型
-	Model model("resources/objects/blocks/blocks.obj");
 
 	// 加载光之十字
 	glm::vec3 crossHairVertices[6];
@@ -164,6 +129,28 @@ void ray_cast()
 
 	gl_check_errors();
 
+
+	//get the mesh path for loading of textures	
+	std::string mesh_path = mesh_filename.substr(0, mesh_filename.find_last_of("/") + 1);
+
+	//load the obj model
+	vector<unsigned short> indices2;
+	vector<glm::vec3> vertices2;
+	if (!tmp::Load(mesh_filename.c_str(), meshes, vertices, indices, materials, aabb, vertices2, indices2)) {
+		LOG(ERROR) << "Cannot load the 3ds mesh";
+		exit(EXIT_FAILURE);
+	}
+
+	gl_check_errors();
+
+	// 将所有纹理存储在一个纹理数组中
+	vector<string> material_names;
+	for (size_t k = 0; k<materials.size(); k++)
+		if (materials[k]->map_Kd != "")
+			material_names.push_back(materials[k]->map_Kd);
+
+	TextureArray material_arrays(material_names, mesh_path);
+
 	// 将位置、索引打包成一维纹理传入片元着色器
 	vector<GLfloat> VerData(vertices2.size() * 4);
 	int count = 0;
@@ -185,6 +172,20 @@ void ray_cast()
 	}
 	TextureData<GLushort> texTriangles(GL_RGBA16I, indices2.size() / 4, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, indData);
 
+	// 加载着色器
+	Shader flatShader("raytracing/flat.vert", "raytracing/flat.frag");
+
+	Shader rasterShader("raytracing/shader.vert", "raytracing/shader.frag");
+
+	Shader raytraceShader("raytracing/raycast.vert", "raytracing/raycast.frag");
+	raytraceShader.enable();
+	raytraceShader.set_float("VERTEX_TEXTURE_SIZE", (float)vertices2.size());
+	raytraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)indices2.size() / 4);
+	raytraceShader.set_vec3("aabb.min", aabb.min);
+	raytraceShader.set_vec3("aabb.max", aabb.max);
+	raytraceShader.set_vec4("backgroundColor", bg);
+	raytraceShader.disable();
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glClearColor(bg.r, bg.g, bg.b, 1.0f);
@@ -195,7 +196,7 @@ void ray_cast()
 		update_lightPos();
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+		
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 modelMat(1.f);

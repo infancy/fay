@@ -6,8 +6,8 @@ namespace fay
 
 // modelMesh Method Definitions
 
-modelMesh::modelMesh(vector<modelVertex>& vertices, vector<unsigned int>& indices, vector<modelTexture>& textures) 
-	: indices_size(indices.size()), textures(textures)
+modelMesh::modelMesh(vector<modelVertex>& vertices, vector<uint32_t>& indices, vector<modelTexture>& textures) 
+	: vertices{vertices}, indices{indices}, indices_size(indices.size()), textures{textures}
 {
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -20,7 +20,7 @@ modelMesh::modelMesh(vector<modelVertex>& vertices, vector<unsigned int>& indice
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(modelVertex), &vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), &indices[0], GL_STATIC_DRAW);
 
 	// vertex Positions
 	glEnableVertexAttribArray(0);
@@ -44,12 +44,12 @@ modelMesh::modelMesh(vector<modelVertex>& vertices, vector<unsigned int>& indice
 void modelMesh::draw(Shader shader)
 {
 	// bind appropriate textures
-	unsigned int diffuseNr = 1;
-	unsigned int specularNr = 1;
-	unsigned int normalNr = 1;
-	unsigned int heightNr = 1;
+	uint32_t diffuseNr = 1;
+	uint32_t specularNr = 1;
+	uint32_t normalNr = 1;
+	uint32_t heightNr = 1;
 
-	for (unsigned int i = 0; i < textures.size(); i++)
+	for (uint32_t i = 0; i < textures.size(); i++)
 	{
 		// retrieve texture number (the N in diffuse_textureN)
 		std::string type = textures[i].type;
@@ -215,7 +215,7 @@ GLuint Model::create_texture(const char* filename, bool gamma)
 {
 	string filepath = resources_directory + filename;
 
-	unsigned int textureID;
+	uint32_t textureID;
 	glGenTextures(1, &textureID);
 
 	int width, height, nrComponents;

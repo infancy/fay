@@ -21,14 +21,12 @@ public:
 	GLuint id() const { return texture_id; }
 	/*
 	void enable(uint32_t tex_unit, Shader& shader, std::string sampler) {
-		glActiveTexture(GL_TEXTURE0 + tex_unit);	    // 激活第i号纹理单元
-		shader.set_texture_unit(sampler, tex_unit);		// 将第i号纹理单元连接到着色器中的sampler变量	
-		glBindTexture(GL_TEXTURE_2D, texture_id);
-	} 	// 将纹理对象绑定到当前激活的纹理单元上
+		glActiveTexture(GL_TEXTURE0 + tex_unit);	
+		shader.set_texture_unit(sampler, tex_unit);			
+		glBindTexture(GL_TEXTURE_2D, texture_id);}
 	void disable() {
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
+		glBindTexture(GL_TEXTURE_2D, 0);}
 	*/
 private:
 	GLuint texture_id;
@@ -59,17 +57,6 @@ private:
 	GLuint texture_id;
 };
 
-class TextureArray : public Texture
-{
-public:
-	TextureArray(std::vector<std::string> material_names, std::string filepath = {});
-
-	size_t size() const { return material_nums; }
-
-private:
-	size_t material_nums;
-};
-
 // Texture1D??
 template<typename T>
 class TextureData : public Texture
@@ -81,6 +68,38 @@ public:
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, 1, 0,
 			format, type, data.data());
+		gl_check_errors();
+	}
+};
+
+class TextureArray : public Texture
+{
+public:
+	TextureArray(std::vector<std::string> material_names, std::string filepath = {});
+
+	size_t size() const { return material_nums; }
+
+private:
+	size_t material_nums;
+};
+
+//glm::vec4、glm::uvec4、glm::ivec4
+template<typename T>
+class TextureDataArray : public Texture
+{
+public:
+	TextureDataArray(GLenum format, GLenum type, std::vector<std::vector<T>>& datas) :
+		Texture(GL_TEXTURE_2D_ARRAY, GL_NEAREST, GL_REPEAT)
+	{
+		// 先创建一个 2D 纹理数组
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, format,
+			datas[0].size(), 1, datas.size(),     0,
+			format, type, NULL);
+
+		for (auto& data : datas)
+			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, 
+				data.size(), 1, 1, format, type, data.data());
+
 		gl_check_errors();
 	}
 };
