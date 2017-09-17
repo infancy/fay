@@ -23,7 +23,7 @@ using namespace std;
 static void load_image(string& fullname, GLubyte* &data, int& width, int& height, GLenum& format)
 {
 	int channels{};
-	// stbi_set_flip_vertically_on_load(true);
+	stbi_set_flip_vertically_on_load(true);
 	data = stbi_load(fullname.c_str(), &width, &height, &channels, 0);
 	if (data == nullptr)
 	{

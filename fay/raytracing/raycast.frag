@@ -46,7 +46,7 @@ vec2 intersectCube(vec3 origin, vec3 ray, Box cube) {
 
 //gets the direction given a 2D position and a Camera
 vec3 get_direction(vec2 p, Camera c) {
-   return normalize(p.x * c.U + p.y * c.V + c.d * c.W);   
+   return normalize(p.x * c.U + p.y * c.V - c.d * c.W);   // 相机坐标也是右手系的
 }
 
 //Generates the eye ray for the given camera and a 2D position
@@ -59,9 +59,10 @@ void setup_camera(vec2 uv) {
   cam.W = (invMVP*vec4(0,0,1,0)).xyz; 
   cam.d = 1;    
   
+  //eyeRay.dir = (invMVP * vec4(uv, 0.0, 1.0)).xyz;
   eyeRay.dir = get_direction(uv , cam); 
-  eyeRay.dir += cam.U*uv.x;			//???
-  eyeRay.dir += cam.V*uv.y; 		//???
+  //eyeRay.dir += cam.U*uv.x;
+  //eyeRay.dir += cam.V*uv.y;  
 }
 
 //pseudorandom number generator
@@ -210,7 +211,7 @@ void main()
 			//check for shadows
 			float inShadow = shadow(hit+ N*0.0001, L) ;
 			//return final color
-			vFragColor = inShadow*diffuse*mix(texture(textureMaps, val.yzw), vec4(1), (val.w==255) );
+			vFragColor = inShadow*diffuse*mix(texture(textureMaps, val.yzw), vec4(1), (val.w==255) );	//???
         	return;
 		}    
 	} 

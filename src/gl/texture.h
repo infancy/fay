@@ -62,6 +62,7 @@ template<typename T>
 class TextureData : public Texture
 {
 public:
+	// 必须考虑 width 和 format 的关系，如 data<float> 和 GL_RGBA，则 width = data.size() / 4
 	TextureData(GLint internalFormat, GLsizei width, 
 		GLenum format, GLenum type, std::vector<T>& data) :
 		Texture(GL_TEXTURE_2D, GL_NEAREST, GL_REPEAT)
@@ -75,6 +76,7 @@ public:
 class TextureArray : public Texture
 {
 public:
+	// 必须保证 GL_UNSIGNED_BYTE 的 type，且尺寸相同
 	TextureArray(std::vector<std::string> material_names, std::string filepath = {});
 
 	size_t size() const { return material_nums; }
@@ -88,16 +90,17 @@ template<typename T>
 class TextureDataArray : public Texture
 {
 public:
-	TextureDataArray(GLenum format, GLenum type, std::vector<std::vector<T>>& datas) :
+	TextureDataArray(GLint internalFormat, GLenum format, GLenum type, std::vector<std::vector<T>>& datas) :
 		Texture(GL_TEXTURE_2D_ARRAY, GL_NEAREST, GL_REPEAT)
 	{
 		// 先创建一个 2D 纹理数组
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, format,
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat,
 			datas[0].size(), 1, datas.size(),     0,
 			format, type, NULL);
 
 		for (auto& data : datas)
-			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, 
+			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 
+				0, 0, i, 
 				data.size(), 1, 1, format, type, data.data());
 
 		gl_check_errors();

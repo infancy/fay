@@ -30,11 +30,13 @@ struct modelVertex
 // 一张 modelTexture 可以被所有的 mesh 共用，所以使用该 texture 的 mesh 记录其在 OpenGL 中的 id 即可
 struct modelTexture
 {
-	modelTexture(GLuint id, std::string type, aiString path) : id(id), type(type), filepath(path) {}
+	modelTexture(GLuint id, std::string type, aiString path, std::string _filepath) : 
+		id(id), type(type), filepath(path), _filepath(_filepath) {}
 
 	GLuint	    id;
 	std::string type;	// enum class Type { diffuse, specular, normal, height } type;
 	aiString    filepath;
+	std::string _filepath;	// 加载纹理的部分待修改
 };
 
 class modelMesh // : public boost::noncopyable
@@ -62,8 +64,8 @@ public:
 	void draw(Shader shader);
 
 	void transform_to_TextureDataArray(
-		std::vector<std::vector<glm::vec4>>& positions,
-		std::vector<std::vector<glm::uvec4>>& indices,
+		std::vector<glm::vec4>& positions,
+		std::vector<glm::uvec4>& indices,
 		std::vector<std::string>& texpaths)
 	{
 		/* 考虑到合并了重复的纹理，因此 texpaths 可能更小一点
@@ -74,31 +76,29 @@ public:
 		//positions.reserve(meshes.size()); indices.reserve(meshes.size());
 		for (auto& mesh : meshes)
 		{
-			// 一个网格的位置和索引
-			std::vector<glm::vec4> posits;
-			std::vector<glm::uvec4> inds;
-
 			for (auto& mver : mesh.vertices)
-				posits.emplace_back(glm::vec4{ mver.position, 1.f });
+				positions.emplace_back(glm::vec4{ mver.position, 0.f });
 			
-			// 只使用第一张纹理
-			std::string tex_filepath = mesh.textures[0].filepath.C_Str();
+			uint32_t tex_index{};
+			if (!mesh.textures.empty())
+			{
+				// 只使用第一张纹理
+				std::string tex_filepath = { mesh.textures[0]._filepath };
 
-			if(std::find(texpaths.begin(), texpaths.end(), tex_filepath) == texpaths.end())
-				texpaths.push_back(tex_filepath);
+				if (std::find(texpaths.begin(), texpaths.end(), tex_filepath) == texpaths.end())
+					texpaths.push_back(tex_filepath);
 
-			uint32_t tex_index {};
-			for (; tex_index < texpaths.size(); ++tex_index)
-				if (texpaths[tex_index] == tex_filepath)
-					break;
+				for (; tex_index < texpaths.size(); ++tex_index)
+					if (texpaths[tex_index] == tex_filepath)
+						break;
+			}
+			else
+				tex_index = 255;
 
 			// 在着色器中通过 tex_index，即纹理的下标，找到对应的纹理
 			auto& minds = mesh.indices;
 			for (size_t j{}; j < minds.size(); j += 3)
-				inds.emplace_back(glm::vec4{ minds[j], minds[j + 1], minds[j + 2], tex_index });
-
-			positions.push_back(posits);
-			indices.push_back(inds);
+				indices.emplace_back(glm::vec4{ minds[j], minds[j + 1], minds[j + 2], tex_index });
 		}
 		LOG(INFO) << " transform_to_TextureDataArray: "
 			<< " positions: " << positions.size()

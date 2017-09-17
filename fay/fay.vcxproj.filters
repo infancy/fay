@@ -10,9 +10,6 @@
     <Filter Include="utility">
       <UniqueIdentifier>{e0ba8c96-b65e-4aad-bfa9-69427bc94db7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="tmp">
-      <UniqueIdentifier>{0a1fa025-07e5-4634-941b-cb72079979ef}</UniqueIdentifier>
-    </Filter>
     <Filter Include="extern">
       <UniqueIdentifier>{2d65e069-ab02-4962-9de8-ca13b39465bd}</UniqueIdentifier>
     </Filter>
@@ -32,9 +29,6 @@
     </ClCompile>
     <ClCompile Include="..\src\gl\texture.cpp">
       <Filter>gl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\tmp\Obj.cpp">
-      <Filter>tmp</Filter>
     </ClCompile>
     <ClCompile Include="..\src\utility\fay.cpp">
       <Filter>utility</Filter>
@@ -61,9 +55,6 @@
     </ClInclude>
     <ClInclude Include="..\src\gl\texture.h">
       <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\tmp\Obj.h">
-      <Filter>tmp</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utility\fay.h">
       <Filter>utility</Filter>

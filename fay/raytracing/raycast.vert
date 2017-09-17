@@ -10,5 +10,5 @@ void main()
 	//set the current object space position as the output texture coordinates
 	//and the clip space position
 	vUV = vVertex.xy;	
-	gl_Position = vec4(vVertex.xyz,1);
+	gl_Position = vec4(vVertex.xyz, 1);
 }

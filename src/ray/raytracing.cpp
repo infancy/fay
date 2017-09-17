@@ -15,8 +15,6 @@
 #include "gl/camera.h"
 #include "gl/shader.h"
 
-#include "tmp/Obj.h"
-
 using namespace std;
 using namespace fay;
 
@@ -50,24 +48,18 @@ float lastFrame = 0.0f;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//Objloader instance
-vector<tmp::Mesh*> meshes;					//all meshes 
-vector<tmp::Material*> materials;			//all materials 
-vector<unsigned short> indices;			//all mesh indices 
-vector<tmp::Vertex> vertices;				//all mesh vertices  
-vector<GLuint> textures;				//all textures
-
 // 鼠标移动设置与渲染设置
 int move_state = 0;
 int render_state = 1;
 
-const std::string mesh_filename = "resources/objects/blocks/blocks.obj";
+const string blocks = "resources/objects/blocks/blocks.obj";
+const string mesh_filename = blocks;
 
 //background color
 glm::vec4 bg = glm::vec4(0.5, 0.5, 1, 1);
 
 //scene axially aligned bounding box
-tmp::BBox aabb;
+struct BBox { glm::vec3 min, max; } aabb{{-1000, -1000, -1000}, {1000, 1000, 1000}};
 
 //light crosshair gizmo vetex array and buffer object IDs
 GLuint lightVAOID;
@@ -86,6 +78,141 @@ float lastTime = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////
 
+void obj_to_TextureData(const string& obj_path,
+	vector<float>& positions, vector<uint32_t>& indices, vector<string>& texpaths)
+{
+	std::ifstream is(obj_path);
+	CHECK(!is.fail());
+
+	int total_positions{};
+	uint32_t tex_index{};		// 纹理在纹理数组 texpaths 中的下标
+	map<string, string> materila_texture;	// 材质与其对应的漫反射纹理
+
+	string line;
+	float x, y, z;
+	uint32_t i, j, k, l;
+	char dummy;
+
+	while (getline(is, line))
+	{
+		if (line.length() < 2) continue;
+
+		istringstream iss(line);
+		string token;
+		iss >> token;
+
+		if (token.compare("v") == 0)		// load postion. "v -0.983024 -0.156077 0.0964607"
+		{
+			iss >> x >> y >> z;
+			positions.push_back(x); positions.push_back(y); positions.push_back(z); positions.push_back(0.f);
+			++total_positions;
+		}
+		else if (token.compare("f") == 0)
+		{
+			if (line.find("//") != std::string::npos)	// pos//normal, no uv. "f 181//176 182//182 209//208"
+			{
+				iss >>
+					i >> dummy >> dummy >> l >>
+					j >> dummy >> dummy >> l >>
+					z >> dummy >> dummy >> l;
+			}
+			else	
+			{
+				size_t count = 0, pos = line.find('/');
+				while (pos != std::string::npos) { count++; pos = line.find('/', pos + 1); }
+				if ((count == 6) || (count == 8))		// "f 181/292/176 182/250/182 209/210/208"
+				{
+					iss >>
+						i >> dummy >> l >> dummy >> l >>
+						j >> dummy >> l >> dummy >> l >>
+						k >> dummy >> l >> dummy >> l;
+				}
+				else if ((count == 3) || (count == 4))	// pos/uv, no normal. "f 181/176 182/182 209/208"
+				{
+					iss >>
+						i >> dummy >> l >>
+						j >> dummy >> l >>
+						k >> dummy >> l;
+				}
+				else					// pos, no uv/normal. "f 181 182 209"
+					iss >> i >> j >> k;
+			}
+
+			// deal with negative index
+			if (i < 0) i = i + total_positions + 1;
+			if (j < 0) j = j + total_positions + 1;
+			if (k < 0) k = k + total_positions + 1;
+
+			indices.push_back(i - 1);	// obj 模型中索引下标从一开始，而 OpenGL 中则从零开始
+			indices.push_back(j - 1);
+			indices.push_back(k - 1);
+			indices.push_back(tex_index);
+
+			if (!iss.eof())	// 若还未到达这一行的结尾，则这是一个长方形的面，分拆成两个三角形
+			{
+				iss >> l;	
+				if (l < 0) l = l + total_positions + 1;
+				indices.push_back(i - 1);
+				indices.push_back(k - 1);
+				indices.push_back(l - 1);
+				indices.push_back(tex_index);
+			}
+		}
+		else if (token.compare("usemtl") == 0)
+		{
+			// 更新 tex_index
+			string material_name;
+			iss >> material_name;
+			material_name = line.substr(line.find(material_name));
+			if (materila_texture.find(material_name) == materila_texture.end())	// 如果该材质没有漫反射纹理
+				tex_index = 255;
+			else
+			{
+				auto tex_filepath = materila_texture[material_name];
+				for (tex_index = 0; tex_index < texpaths.size(); ++tex_index)
+					if (texpaths[tex_index] == tex_filepath)
+						break;
+			}
+		}
+		else if (token.compare("mtllib") == 0)
+		{
+			string mtl_path, mtl_line;
+			string material_name, texture_name;
+
+			iss >> mtl_path;
+			mtl_path = line.substr(line.find(mtl_path));	//deal with "mtllib Rei Ayanami School Clothes.mtl"
+			ifstream mtl_file(obj_path.substr(0, obj_path.find_last_of("/") + 1) + mtl_path);
+			CHECK(!mtl_file.fail());
+
+			while (getline(mtl_file, mtl_line))
+			{
+				if (line.length() < 2) continue;
+
+				istringstream mtl_iss(mtl_line);
+				string mtl_token;
+				mtl_iss >> mtl_token;
+
+				if (mtl_token.compare("newmtl") == 0)
+				{ 
+					mtl_iss >> material_name;
+					material_name = mtl_line.substr(mtl_line.find(material_name));
+				}
+				else if (mtl_token.compare("map_Kd") == 0)
+				{
+					mtl_iss >> texture_name;
+					texture_name = mtl_line.substr(mtl_line.find(texture_name));
+					materila_texture.insert({ material_name, texture_name });	// 添加新的“材质-纹理”对
+				}
+			}
+			// 不重复的向纹理数组中添加纹理
+			for(auto& mat_tex : materila_texture)
+				if (std::find(texpaths.begin(), texpaths.end(), mat_tex.second) == texpaths.end())
+					texpaths.push_back(mat_tex.second);
+		}
+		//else if (line[0] == 'g') ;	// do nothing
+	}
+}
+
 void update_lightPos()
 {
 	lightPosition.x = ligth_radius * cos(theta)*sin(phi);
@@ -98,7 +225,7 @@ void ray_cast()
 	create_window();
 
 	// 加载用于光栅化的模型
-	Model model("resources/objects/blocks/blocks.obj");
+	Model model(mesh_filename);
 
 	// 加载覆盖整个视口的正方形
 	std::vector<float> quadVerts{ -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0};
@@ -129,48 +256,17 @@ void ray_cast()
 
 	gl_check_errors();
 
+	// 加载光线跟踪中的数据
+	vector<float> positions; vector<uint32_t> indices; vector<string> texpaths;
+	obj_to_TextureData(mesh_filename, positions, indices, texpaths);
 
-	//get the mesh path for loading of textures	
 	std::string mesh_path = mesh_filename.substr(0, mesh_filename.find_last_of("/") + 1);
-
-	//load the obj model
-	vector<unsigned short> indices2;
-	vector<glm::vec3> vertices2;
-	if (!tmp::Load(mesh_filename.c_str(), meshes, vertices, indices, materials, aabb, vertices2, indices2)) {
-		LOG(ERROR) << "Cannot load the 3ds mesh";
-		exit(EXIT_FAILURE);
-	}
-
-	gl_check_errors();
-
-	// 将所有纹理存储在一个纹理数组中
-	vector<string> material_names;
-	for (size_t k = 0; k<materials.size(); k++)
-		if (materials[k]->map_Kd != "")
-			material_names.push_back(materials[k]->map_Kd);
-
-	TextureArray material_arrays(material_names, mesh_path);
+	TextureArray material_arrays(texpaths, mesh_path);
 
 	// 将位置、索引打包成一维纹理传入片元着色器
-	vector<GLfloat> VerData(vertices2.size() * 4);
-	int count = 0;
-	for (size_t i = 0; i<vertices2.size(); i++) {
-		VerData[count++] = vertices2[i].x;
-		VerData[count++] = vertices2[i].y;
-		VerData[count++] = vertices2[i].z;
-		VerData[count++] = 0;
-	}
-	TextureData<GLfloat> texVertices(GL_RGBA32F, vertices2.size(), GL_RGBA, GL_FLOAT, VerData);
+	TextureData<float> texVertices(GL_RGBA32F, positions.size() / 4, GL_RGBA, GL_FLOAT, positions);
 
-	vector<GLushort> indData(indices2.size());
-	count = 0;
-	for (size_t i = 0; i<indices2.size(); i += 4) {
-		indData[count++] = (indices2[i]);
-		indData[count++] = (indices2[i + 1]);
-		indData[count++] = (indices2[i + 2]);
-		indData[count++] = (indices2[i + 3]);
-	}
-	TextureData<GLushort> texTriangles(GL_RGBA16I, indices2.size() / 4, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, indData);
+	TextureData<uint32_t> texTriangles(GL_RGBA32UI, indices.size() / 4, GL_RGBA_INTEGER, GL_UNSIGNED_INT, indices);
 
 	// 加载着色器
 	Shader flatShader("raytracing/flat.vert", "raytracing/flat.frag");
@@ -179,8 +275,8 @@ void ray_cast()
 
 	Shader raytraceShader("raytracing/raycast.vert", "raytracing/raycast.frag");
 	raytraceShader.enable();
-	raytraceShader.set_float("VERTEX_TEXTURE_SIZE", (float)vertices2.size());
-	raytraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)indices2.size() / 4);
+	raytraceShader.set_float("VERTEX_TEXTURE_SIZE", (float)(positions.size() / 4));
+	raytraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)(indices.size() / 4));
 	raytraceShader.set_vec3("aabb.min", aabb.min);
 	raytraceShader.set_vec3("aabb.max", aabb.max);
 	raytraceShader.set_vec4("backgroundColor", bg);
@@ -197,27 +293,15 @@ void ray_cast()
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 1.f, 10000.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 modelMat(1.f);
-		glm::mat4 MV = view * modelMat;
-		glm::mat4 MVP = projection * MV;
-		glm::mat4 invMVP = glm::inverse(MVP);
-		//glm::vec3 eyePos = glm::vec3(invMV[3][0], invMV[3][1], invMV[3][2]);
-		/*
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
-		glm::mat4 view = camera.GetViewMatrix();
 
-		glm::mat4 model(1.f);
-		//model = glm::translate(model, glm::vec3(0.0f, -2.f, 10.0f));
-		glm::mat4 MV = view * model;
+		glm::mat4 MV = view * modelMat;
+		glm::mat4 invMV = glm::inverse(MV);
 		glm::mat4 MVP = projection * MV;
 		glm::mat4 invMVP = glm::inverse(MVP);
-		//glm::mat4 mvp = model * view;
-		//mvp = mvp * projection;
-		//glm::mat4 invMVP = glm::inverse(mvp);
-		//set the camera transformation
-		*/
+
 		if (render_state == 1)
 		{
 			rasterShader.enable();
@@ -238,7 +322,7 @@ void ray_cast()
 			raytraceShader.bind_texture("triangles_list", 2, texTriangles.id());
 
 			raytraceShader.set_vec3("eyePos", camera.Position);
-			raytraceShader.set_mat4("invMVP", invMVP);
+			raytraceShader.set_mat4("invMVP", invMV);
 			raytraceShader.set_vec3("light_position", lightPosition);
 
 			quad.draw();	// 渲染整个视口
@@ -249,18 +333,18 @@ void ray_cast()
 		glDisable(GL_DEPTH_TEST);
 
 		//draw the light gizmo, set the light vertexx array object
-		glBindVertexArray(lightVAOID); {
-			glm::mat4 MV = glm::mat4(1);
+		glBindVertexArray(lightVAOID);
+		{
 			//set the modelling transform for the light crosshair gizmo
 			glm::mat4 T = glm::translate(glm::mat4(1), lightPosition);
 			//bind the shader
 			flatShader.enable();
 			//set shader uniforms and draw lines
 			//P*MV*T
-			flatShader.set_mat4("MVP", MV*T);
+			flatShader.set_mat4("MVP", projection * view * T);
 			glDrawArrays(GL_LINES, 0, 6);
 
-			glPointSize(1000.0);
+			glPointSize(2.0);
 			glDrawArrays(GL_POINTS, 0, 6);
 
 			//unbind the shader

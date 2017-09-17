@@ -203,7 +203,7 @@ vector<modelTexture> Model::load_textures(aiMaterial* mat, aiTextureType type, s
 		}
 		if (!have_loaded)	// if texture hasn't been loaded already, load it
 		{
-			modelTexture texture(create_texture(str.C_Str()), typeName, str);
+			modelTexture texture(create_texture(str.C_Str()), typeName, str, string(str.C_Str()));
 			textures.push_back(texture);
 			textures_loaded.push_back(texture);  // modelTexture 只是一个 handle，这不会增加开销
 		}
@@ -219,6 +219,7 @@ GLuint Model::create_texture(const char* filename, bool gamma)
 	glGenTextures(1, &textureID);
 
 	int width, height, nrComponents;
+	//stbi_set_flip_vertically_on_load(true);
 	unsigned char* data = stbi_load(filepath.c_str(), &width, &height, &nrComponents, 0);
 	if (data)
 	{
