@@ -37,14 +37,15 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0, 20, 0));
+Camera camera(glm::vec3(-3, 3, 10));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
 // timing
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
+float currentFrame = 0.f;
+float deltaTime = 0.f;
+float lastFrame = 0.f;
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -53,7 +54,10 @@ int move_state = 0;
 int render_state = 1;
 
 const string blocks = "resources/objects/blocks/blocks.obj";
-const string mesh_filename = blocks;
+const string Rei = "resources/objects/Rei/Rei.obj";
+const string CornellBox = "resources/objects/CornellBox/CornellBox.obj";
+const string rock = "resources/objects/rock/rock.obj";
+const string mesh_filename = CornellBox;
 
 //background color
 glm::vec4 bg = glm::vec4(0.5, 0.5, 1, 1);
@@ -282,6 +286,15 @@ void ray_cast()
 	raytraceShader.set_vec4("backgroundColor", bg);
 	raytraceShader.disable();
 
+	Shader pathtraceShader("raytracing/pathtrace.vert", "raytracing/pathtrace.frag");
+	pathtraceShader.enable();
+	pathtraceShader.set_float("VERTEX_TEXTURE_SIZE", (float)(positions.size() / 4));
+	pathtraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)(indices.size() / 4));
+	pathtraceShader.set_vec3("aabb.min", aabb.min);
+	pathtraceShader.set_vec3("aabb.max", aabb.max);
+	pathtraceShader.set_vec4("backgroundColor", bg);
+	pathtraceShader.disable();
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glClearColor(bg.r, bg.g, bg.b, 1.0f);
@@ -295,6 +308,7 @@ void ray_cast()
 		
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 1.f, 10000.0f);
 		glm::mat4 view = camera.GetViewMatrix();
+		//glm::mat4 modelMat = glm::scale(glm::mat4(1.f), glm::vec3(10.f, 10.f, 10.f));
 		glm::mat4 modelMat(1.f);
 
 		glm::mat4 MV = view * modelMat;
@@ -321,9 +335,24 @@ void ray_cast()
 			raytraceShader.bind_texture("vertex_positions", 1, texVertices.id());
 			raytraceShader.bind_texture("triangles_list", 2, texTriangles.id());
 
+			pathtraceShader.set_float("time", currentFrame);
 			raytraceShader.set_vec3("eyePos", camera.Position);
 			raytraceShader.set_mat4("invMVP", invMV);
 			raytraceShader.set_vec3("light_position", lightPosition);
+
+			quad.draw();	// 渲染整个视口
+		}
+		else if (render_state == 3)
+		{
+			pathtraceShader.enable();
+
+			pathtraceShader.bind_texture("textureMaps", 0, material_arrays.id());
+			pathtraceShader.bind_texture("vertex_positions", 1, texVertices.id());
+			pathtraceShader.bind_texture("triangles_list", 2, texTriangles.id());
+
+			pathtraceShader.set_vec3("eyePos", camera.Position);
+			pathtraceShader.set_mat4("invMVP", invMV);
+			pathtraceShader.set_vec3("light_position", lightPosition);
 
 			quad.draw();	// 渲染整个视口
 		}
@@ -413,7 +442,7 @@ void update()
 {
 	// per-frame time logic
 	// --------------------
-	float currentFrame = glfwGetTime();
+	currentFrame = glfwGetTime();
 	deltaTime = currentFrame - lastFrame;
 	deltaTime *= 10;
 	lastFrame = currentFrame;
