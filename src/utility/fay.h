@@ -28,7 +28,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
+//#include <boost/noncopyable.hpp>
 #include <glog/logging.h>
 
 // Platform-specific definitions
