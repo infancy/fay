@@ -35,16 +35,13 @@ private:
 
 // 创建纹理后，子类有着不同的加载资源方式
 
-class Texture2D
+class Texture2D : public Texture
 {
 public:
-	Texture2D(const char* filename);
-
-	GLuint id() const { return texture_id ; }
-	/*
-	void enable(uint32_t tex_unit = 0)  {
-		glActiveTexture(GL_TEXTURE0 + tex_unit);	         
-		glBindTexture(GL_TEXTURE_2D, texture_id); }      
+	Texture2D(const char* filename, bool Mipmap = true);
+	Texture2D(GLint internalFormat, GLsizei width, GLsizei height,
+		GLenum format, GLenum type, unsigned char* pixels, bool Mipmap = true);
+	/*     
 	void enable(Shader& shader, std::string& sampler, uint32_t tex_unit) {
 		glActiveTexture(GL_TEXTURE0 + tex_unit);	    // 激活第i号纹理单元
 		shader.set_texture_unit(sampler, tex_unit);		// 将第i号纹理单元连接到着色器中的sampler变量	
@@ -54,7 +51,8 @@ public:
 		glBindTexture(GL_TEXTURE_2D, 0); }
 	*/
 private:
-	GLuint texture_id;
+	void create_texture2d(GLint internalFormat, GLsizei width, GLsizei height,
+		GLenum format, GLenum type, unsigned char* pixels, bool Mipmap);
 };
 
 // Texture1D??

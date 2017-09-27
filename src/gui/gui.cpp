@@ -10,26 +10,164 @@
 #endif
 
 #include "gl/shader.h"
+#include "gl/texture.h"
 
 namespace fay
 {
 
-// Data
-static GLFWwindow*  g_Window = NULL;
-static double       g_Time = 0.0f;
-static bool         g_MousePressed[3] = { false, false, false };
-static float        g_MouseWheel = 0.0f;
-static GLuint       g_FontTexture = 0;
-static int          g_ShaderHandle = 0, g_VertHandle = 0, g_FragHandle = 0;
-static int          g_AttribLocationTex = 0, g_AttribLocationProjMtx = 0;
-static int          g_AttribLocationPosition = 0, g_AttribLocationUV = 0, g_AttribLocationColor = 0;
-static unsigned int g_VboHandle = 0, g_VaoHandle = 0, g_ElementsHandle = 0;
+// Locate Data
+static GLFWwindow*  g_Window = nullptr;
+
+static double g_Time = 0.0f;
+static char   keyboard;
+static bool   g_MousePressed[3] = { false, false, false };
+static float  g_MouseWheel = 0.0f;
+static double g_Mouse_x, g_Mouse_y;
+
+static GLuint   g_FontTexture = 0;
+static int      g_ShaderHandle = 0;
+static int      g_AttribLocationTex = 0, g_AttribLocationProjMtx = 0;
+static uint32_t g_VboHandle = 0, g_VaoHandle = 0, g_ElementsHandle = 0;
+
+// callback
+
+static void error_callback(int error, const char* description)
+{
+	fprintf(stderr, "Error %d: %s\n", error, description);
+}
+
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	// make sure the viewport matches the new window dimensions; note that width and 
+	// height will be significantly larger than specified on retina displays.
+	glViewport(0, 0, width, height);
+}
+
+static void mouse_button_callback(GLFWwindow*, int button, int action, int /*mods*/)
+{
+	if (action == GLFW_PRESS && button >= 0 && button < 3)
+		g_MousePressed[button] = true;
+}
+
+static void scroll_ballback(GLFWwindow*, double /*xoffset*/, double yoffset)
+{
+	g_MouseWheel += (float)yoffset; // Use fractional mouse wheel, 1.0 unit 5 lines.
+}
+
+static void key_callback(GLFWwindow*, int key, int, int action, int mods)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (action == GLFW_PRESS)
+		io.KeysDown[key] = true;
+	if (action == GLFW_RELEASE)
+		io.KeysDown[key] = false;
+
+	(void)mods; // Modifiers are not reliable across systems
+	io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+	io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+	io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+	io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+}
+
+static void char_callback(GLFWwindow*, unsigned int c)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (c > 0 && c < 0x10000)
+		io.AddInputCharacter((unsigned short)c);
+}
+
+// resources
+
+static bool ImGui_CreateFontsTexture()
+{
+	// backup
+	GLint last_texture;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+
+	// Build texture atlas
+	ImGuiIO& io = ImGui::GetIO();
+	unsigned char* pixels;
+	int width, height;
+	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
+
+															  // Upload texture to graphics system
+	Texture2D texture2d(GL_RGBA, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels, false);
+	g_FontTexture = texture2d.id();
+	// Store our identifier
+	io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;
+
+	// Restore state
+	glBindTexture(GL_TEXTURE_2D, last_texture);
+
+	return true;
+}
+
+static bool ImGui_CreateDeviceObjects()
+{
+	// Backup GL state
+	GLint last_texture, last_array_buffer, last_vertex_array;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
+	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
+
+	Shader shader("shader/gui.vs", "shader/gui.fs");
+	g_ShaderHandle = shader.program_id;
+
+	g_AttribLocationTex = glGetUniformLocation(g_ShaderHandle, "Texture");
+	g_AttribLocationProjMtx = glGetUniformLocation(g_ShaderHandle, "ProjMtx");
+
+	glGenBuffers(1, &g_VboHandle);
+	glGenBuffers(1, &g_ElementsHandle);
+	glGenVertexArrays(1, &g_VaoHandle);
+
+	glBindVertexArray(g_VaoHandle);
+	glBindBuffer(GL_ARRAY_BUFFER, g_VboHandle);
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+
+#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
+	glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
+#undef OFFSETOF
+
+	ImGui_CreateFontsTexture();
+
+	// Restore modified GL state
+	glBindTexture(GL_TEXTURE_2D, last_texture);
+	glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+	glBindVertexArray(last_vertex_array);
+
+	return true;
+}
+
+static void ImGui_DeleteDeviceObjects()
+{
+	if (g_VaoHandle)	  glDeleteVertexArrays(1, &g_VaoHandle);
+	if (g_VboHandle)	  glDeleteBuffers(1, &g_VboHandle);
+	if (g_ElementsHandle) glDeleteBuffers(1, &g_ElementsHandle);
+	g_VaoHandle = g_VboHandle = g_ElementsHandle = 0;
+
+	if (g_ShaderHandle) glDeleteProgram(g_ShaderHandle);
+	g_ShaderHandle = 0;
+
+	if (g_FontTexture)
+	{
+		glDeleteTextures(1, &g_FontTexture);
+		ImGui::GetIO().Fonts->TexID = 0;
+		g_FontTexture = 0;
+	}
+}
+
+// 接管窗口I/O，设置渲染函数
 
 // This is the main rendering function that you have to implement and provide to ImGui
 // (via setting up 'RenderDrawListsFn' in the ImGuiIO structure)
 // If text or lines are blurry when integrating ImGui in your engine:
 // - in your Render function, try translating your projection matrix by (0.5f,0.5f) or (0.375f,0.375f)
-void ImGui_RenderDrawLists(ImDrawData* draw_data)
+static void ImGui_RenderDrawLists(ImDrawData* draw_data)
 {
 	// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
 	ImGuiIO& io = ImGui::GetIO();
@@ -72,10 +210,10 @@ void ImGui_RenderDrawLists(ImDrawData* draw_data)
 	glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
 	const float ortho_projection[4][4] =
 	{
-		{ 2.0f / io.DisplaySize.x, 0.0f,                   0.0f, 0.0f },
-		{ 0.0f,                  2.0f / -io.DisplaySize.y, 0.0f, 0.0f },
-		{ 0.0f,                  0.0f,                  -1.0f, 0.0f },
-		{ -1.0f,                  1.0f,                   0.0f, 1.0f },
+		{ 2.0f / io.DisplaySize.x, 0.0f,                     0.0f, 0.0f },
+		{ 0.0f,                    2.0f / -io.DisplaySize.y, 0.0f, 0.0f },
+		{ 0.0f,                    0.0f,                    -1.0f, 0.0f },
+		{ -1.0f,                   1.0f,                     0.0f, 1.0f },
 	};
 	glUseProgram(g_ShaderHandle);
 	glUniform1i(g_AttribLocationTex, 0);
@@ -127,8 +265,7 @@ void ImGui_RenderDrawLists(ImDrawData* draw_data)
 	glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
 }
 
-// clipboard
-
+// todo:fptr to function<>
 static const char* ImGui_GetClipboardText(void* user_data)
 {
 	return glfwGetClipboardString((GLFWwindow*)user_data);
@@ -139,180 +276,8 @@ static void ImGui_SetClipboardText(void* user_data, const char* text)
 	glfwSetClipboardString((GLFWwindow*)user_data, text);
 }
 
-// callback
-
-static void error_callback(int error, const char* description)
+static bool ImGui_Init()
 {
-	fprintf(stderr, "Error %d: %s\n", error, description);
-}
-
-static void mouse_button_callback(GLFWwindow*, int button, int action, int /*mods*/)
-{
-	if (action == GLFW_PRESS && button >= 0 && button < 3)
-		g_MousePressed[button] = true;
-}
-
-static void scroll_ballback(GLFWwindow*, double /*xoffset*/, double yoffset)
-{
-	g_MouseWheel += (float)yoffset; // Use fractional mouse wheel, 1.0 unit 5 lines.
-}
-
-static void key_callback(GLFWwindow*, int key, int, int action, int mods)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	if (action == GLFW_PRESS)
-		io.KeysDown[key] = true;
-	if (action == GLFW_RELEASE)
-		io.KeysDown[key] = false;
-
-	(void)mods; // Modifiers are not reliable across systems
-	io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-	io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-	io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-	io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
-}
-
-static void char_callback(GLFWwindow*, unsigned int c)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	if (c > 0 && c < 0x10000)
-		io.AddInputCharacter((unsigned short)c);
-}
-
-// 
-bool ImGui_CreateFontsTexture()
-{
-	// Build texture atlas
-	ImGuiIO& io = ImGui::GetIO();
-	unsigned char* pixels;
-	int width, height;
-	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
-
-															  // Upload texture to graphics system
-	GLint last_texture;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-	glGenTextures(1, &g_FontTexture);
-	glBindTexture(GL_TEXTURE_2D, g_FontTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-	// Store our identifier
-	io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;
-
-	// Restore state
-	glBindTexture(GL_TEXTURE_2D, last_texture);
-
-	return true;
-}
-
-bool ImGui_CreateDeviceObjects()
-{
-	// Backup GL state
-	GLint last_texture, last_array_buffer, last_vertex_array;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
-	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
-
-	const GLchar *vertex_shader =
-		"#version 330\n"
-		"uniform mat4 ProjMtx;\n"
-		"in vec2 Position;\n"
-		"in vec2 UV;\n"
-		"in vec4 Color;\n"
-		"out vec2 Frag_UV;\n"
-		"out vec4 Frag_Color;\n"
-		"void main()\n"
-		"{\n"
-		"	Frag_UV = UV;\n"
-		"	Frag_Color = Color;\n"
-		"	gl_Position = ProjMtx * vec4(Position.xy,0,1);\n"
-		"}\n";
-
-	const GLchar* fragment_shader =
-		"#version 330\n"
-		"uniform sampler2D Texture;\n"
-		"in vec2 Frag_UV;\n"
-		"in vec4 Frag_Color;\n"
-		"out vec4 Out_Color;\n"
-		"void main()\n"
-		"{\n"
-		"	Out_Color = Frag_Color * texture( Texture, Frag_UV.st);\n"
-		"}\n";
-
-	g_ShaderHandle = glCreateProgram();
-	g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-	g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
-	glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
-	glCompileShader(g_VertHandle);
-	glCompileShader(g_FragHandle);
-	glAttachShader(g_ShaderHandle, g_VertHandle);
-	glAttachShader(g_ShaderHandle, g_FragHandle);
-	glLinkProgram(g_ShaderHandle);
-
-	g_AttribLocationTex = glGetUniformLocation(g_ShaderHandle, "Texture");
-	g_AttribLocationProjMtx = glGetUniformLocation(g_ShaderHandle, "ProjMtx");
-	g_AttribLocationPosition = glGetAttribLocation(g_ShaderHandle, "Position");
-	g_AttribLocationUV = glGetAttribLocation(g_ShaderHandle, "UV");
-	g_AttribLocationColor = glGetAttribLocation(g_ShaderHandle, "Color");
-
-	glGenBuffers(1, &g_VboHandle);
-	glGenBuffers(1, &g_ElementsHandle);
-
-	glGenVertexArrays(1, &g_VaoHandle);
-	glBindVertexArray(g_VaoHandle);
-	glBindBuffer(GL_ARRAY_BUFFER, g_VboHandle);
-	glEnableVertexAttribArray(g_AttribLocationPosition);
-	glEnableVertexAttribArray(g_AttribLocationUV);
-	glEnableVertexAttribArray(g_AttribLocationColor);
-
-#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-	glVertexAttribPointer(g_AttribLocationPosition, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
-	glVertexAttribPointer(g_AttribLocationUV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
-	glVertexAttribPointer(g_AttribLocationColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
-#undef OFFSETOF
-
-	ImGui_CreateFontsTexture();
-
-	// Restore modified GL state
-	glBindTexture(GL_TEXTURE_2D, last_texture);
-	glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
-	glBindVertexArray(last_vertex_array);
-
-	return true;
-}
-
-void ImGui_DeleteDeviceObjects()
-{
-	if (g_VaoHandle)	  glDeleteVertexArrays(1, &g_VaoHandle);
-	if (g_VboHandle)	  glDeleteBuffers(1, &g_VboHandle);
-	if (g_ElementsHandle) glDeleteBuffers(1, &g_ElementsHandle);
-	g_VaoHandle = g_VboHandle = g_ElementsHandle = 0;
-
-	if (g_ShaderHandle && g_VertHandle) glDetachShader(g_ShaderHandle, g_VertHandle);
-	if (g_VertHandle) glDeleteShader(g_VertHandle);
-	g_VertHandle = 0;
-
-	if (g_ShaderHandle && g_FragHandle) glDetachShader(g_ShaderHandle, g_FragHandle);
-	if (g_FragHandle) glDeleteShader(g_FragHandle);
-	g_FragHandle = 0;
-
-	if (g_ShaderHandle) glDeleteProgram(g_ShaderHandle);
-	g_ShaderHandle = 0;
-
-	if (g_FontTexture)
-	{
-		glDeleteTextures(1, &g_FontTexture);
-		ImGui::GetIO().Fonts->TexID = 0;
-		g_FontTexture = 0;
-	}
-}
-
-bool ImGui_Init(GLFWwindow* window, bool install_callbacks)
-{
-	g_Window = window;
-
 	ImGuiIO& io = ImGui::GetIO();
 	io.KeyMap[ImGuiKey_Tab]		   = GLFW_KEY_TAB;  // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
 	io.KeyMap[ImGuiKey_LeftArrow]  = GLFW_KEY_LEFT;
@@ -342,25 +307,75 @@ bool ImGui_Init(GLFWwindow* window, bool install_callbacks)
 	io.ImeWindowHandle = glfwGetWin32Window(g_Window);
 #endif
 
-	if (install_callbacks)
-	{
-		glfwSetMouseButtonCallback(window, mouse_button_callback);
-		glfwSetScrollCallback(window,      scroll_ballback);
-		glfwSetKeyCallback(window,		   key_callback);
-		glfwSetCharCallback(window,		   char_callback);
-	}
-
 	return true;
 }
 
-void ImGui_Shutdown()
+static void ImGui_Shutdown()
 {
 	ImGui_DeleteDeviceObjects();
 	ImGui::Shutdown();
 }
 
-void ImGui_NewFrame()
+// public
+
+bool gui_create_window(int width, int height)		// Setup window
 {
+	glfwSetErrorCallback(error_callback);
+	if (!glfwInit())
+		return false;
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#if __APPLE__
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+	g_Window = glfwCreateWindow(width, height, "ImGui OpenGL3 example", NULL, NULL);
+	CHECK(g_Window != nullptr) << "Failed to create GLFW window";
+	glfwMakeContextCurrent(g_Window);
+
+	glfwSetFramebufferSizeCallback(g_Window, framebuffer_size_callback);
+	glfwSetMouseButtonCallback(g_Window,     mouse_button_callback);
+	glfwSetScrollCallback(g_Window,			 scroll_ballback);
+	glfwSetKeyCallback(g_Window,			 key_callback);
+	glfwSetCharCallback(g_Window,			 char_callback);
+
+	glfwSwapInterval(1); // Enable vsync
+
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		LOG(ERROR) << "Failed to initialize GLAD";
+		return false;
+	}
+
+	// Setup ImGui binding
+	ImGui_Init();
+
+	// Load Fonts
+	// (there is a default font, this is only if you want to change it. see extra_fonts/README.txt for more details)
+	//ImGuiIO& io = ImGui::GetIO();
+	//io.Fonts->AddFontDefault();
+	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/Cousine-Regular.ttf", 15.0f);
+	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/DroidSans.ttf", 16.0f);
+	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyClean.ttf", 13.0f);
+	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyTiny.ttf", 10.0f);
+	//io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+	return true;
+}
+
+bool gui_close_window() { return static_cast<bool>(glfwWindowShouldClose(g_Window)); }
+
+void gui_delete_window()
+{
+	// Cleanup
+	ImGui_Shutdown();
+	glfwTerminate();
+}
+
+void gui_updateIO()	// 先收集这一帧所需要的所有信息
+{
+	glfwPollEvents();
+
 	if (!g_FontTexture)
 		ImGui_CreateDeviceObjects();
 
@@ -383,14 +398,11 @@ void ImGui_NewFrame()
 	// (we already got mouse wheel, keyboard keys & characters from glfw callbacks polled in glfwPollEvents())
 	if (glfwGetWindowAttrib(g_Window, GLFW_FOCUSED))
 	{
-		double mouse_x, mouse_y;
-		glfwGetCursorPos(g_Window, &mouse_x, &mouse_y);
-		io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);   // Mouse position in screen coordinates (set to -1,-1 if no mouse / on another screen, etc.)
+		glfwGetCursorPos(g_Window, &g_Mouse_x, &g_Mouse_y);
+		io.MousePos = ImVec2((float)g_Mouse_x, (float)g_Mouse_y);   // Mouse position in screen coordinates (set to -1,-1 if no mouse / on another screen, etc.)
 	}
 	else
-	{
 		io.MousePos = ImVec2(-1, -1);
-	}
 
 	for (int i = 0; i < 3; i++)
 	{
@@ -408,94 +420,17 @@ void ImGui_NewFrame()
 	ImGui::NewFrame();
 }
 
-int gui_test()
+void gui_drawGUI()	// 不清除颜色，交换缓冲区
 {
-	// Setup window
-	glfwSetErrorCallback(error_callback);
-	if (!glfwInit())
-		return 1;
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#if __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-	GLFWwindow* window = glfwCreateWindow(1280, 720, "ImGui OpenGL3 example", NULL, NULL);
-	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1); // Enable vsync
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		LOG(ERROR) << "Failed to initialize GLAD";
-		return false;
-	}
-
-	// Setup ImGui binding
-	ImGui_Init(window, true);
-
-	// Load Fonts
-	// (there is a default font, this is only if you want to change it. see extra_fonts/README.txt for more details)
-	//ImGuiIO& io = ImGui::GetIO();
-	//io.Fonts->AddFontDefault();
-	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/Cousine-Regular.ttf", 15.0f);
-	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/DroidSans.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyClean.ttf", 13.0f);
-	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyTiny.ttf", 10.0f);
-	//io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-
-	bool show_test_window = true;
-	bool show_another_window = false;
-	ImVec4 clear_color = ImColor(114, 144, 154);
-
-	// Main loop
-	while (!glfwWindowShouldClose(window))
-	{
-		glfwPollEvents();
-		ImGui_NewFrame();
-
-		// 1. Show a simple window
-		// Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
-		{
-			static float f = 0.0f;
-			ImGui::Text("Hello, world!");
-			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-			ImGui::ColorEdit3("clear color", (float*)&clear_color);
-			if (ImGui::Button("Test Window")) show_test_window ^= 1;
-			if (ImGui::Button("Another Window")) show_another_window ^= 1;
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		}
-
-		// 2. Show another simple window, this time using an explicit Begin/End pair
-		if (show_another_window)
-		{
-			ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-			ImGui::Begin("Another Window", &show_another_window);
-			ImGui::Text("Hello");
-			ImGui::End();
-		}
-
-		// 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-		if (show_test_window)
-		{
-			ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-			ImGui::ShowTestWindow(&show_test_window);
-		}
-
-		// Rendering
-		int display_w, display_h;
-		glfwGetFramebufferSize(window, &display_w, &display_h);
-		glViewport(0, 0, display_w, display_h);
-		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-		glClear(GL_COLOR_BUFFER_BIT);
-		ImGui::Render();
-		glfwSwapBuffers(window);
-	}
-
-	// Cleanup
-	ImGui_Shutdown();
-	glfwTerminate();
-
-	return 0;
+	int display_w, display_h;
+	glfwGetFramebufferSize(g_Window, &display_w, &display_h);
+	glViewport(0, 0, display_w, display_h);
+	//glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+	//glClear(GL_COLOR_BUFFER_BIT);
+	ImGui::Render();
+	glfwSwapBuffers(g_Window);
 }
+
+ImGuiIO& gui_get_io() { return ImGui::GetIO(); }
 
 }	//namespace fay

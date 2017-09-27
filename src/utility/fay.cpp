@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 	//paricles();
 
 	//ray_cast();
-	fay::gui_test();
+	fay::ray_cast_gui();
 	//light_gimza();
 	return 0;
 }

@@ -13,7 +13,7 @@ namespace fay
 
 
 
-}	//namespace fay
+}	// namespace fay
 
 #endif //FAY_CORE_T_T_H
 

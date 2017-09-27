@@ -67,43 +67,46 @@ Texture::Texture(GLenum format, GLint filtering, GLint wrap) : texture_id{}
 	gl_check_errors();
 }
 
-Texture2D::Texture2D(const char* filename)
+Texture2D::Texture2D(const char* filename, bool Mipmap) : Texture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT)
 {
-	std::string filepath = filename;
-
-	glGenTextures(1, &texture_id);
-
 	int width, height, nrComponents;
 	// stbi_set_flip_vertically_on_load(true);
-	unsigned char* data = stbi_load(filepath.c_str(), &width, &height, &nrComponents, 0);
-	if (data)
+	unsigned char* data = stbi_load(filename, &width, &height, &nrComponents, 0);
+	CHECK(data != nullptr) << "Texture failed to load at path: ";
+
+	GLenum format{};
+	switch (nrComponents)
 	{
-		LOG(INFO) << "Texture successed to load at path: " << filename;
-		GLenum format{};
-
-		switch (nrComponents)
-		{
-		case 1: format = GL_RED; break;
-		case 3: format = GL_RGB; break;
-		case 4: format = GL_RGBA; break;
-		default:
-			LOG(ERROR) << "nrComponents failed to choose"; break;
-		}
-
-		glBindTexture(GL_TEXTURE_2D, texture_id);	//之后任何的纹理指令都作用于当前绑定的纹理
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, 
-			format, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);	// 为当前绑定的纹理自动生成所有需要的多级渐远纹理
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);	// 多级纹理只用于纹理被缩小的情况
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	case 1: format = GL_RED; break;
+	case 3: format = GL_RGB; break;
+	case 4: format = GL_RGBA; break;
+	default:
+		LOG(ERROR) << "nrComponents failed to choose"; break;
 	}
-	else
-		LOG(ERROR) << "Texture failed to load at path: " << filename;
+
+	create_texture2d(format, width, height, format, GL_UNSIGNED_BYTE, data, Mipmap);
 
 	stbi_image_free(data);
+}
+
+Texture2D::Texture2D(GLint internalFormat, GLsizei width, GLsizei height,
+	GLenum format, GLenum type, unsigned char* pixels, bool Mipmap) : Texture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT)
+{
+	CHECK(pixels != nullptr) << "pixels in Texture2D is nullptr";
+	create_texture2d(internalFormat, width, height, format, type, pixels, Mipmap);
+}
+
+void Texture2D::create_texture2d(GLint internalFormat, GLsizei width, GLsizei height,
+	GLenum format, GLenum type, unsigned char* data, bool Mipmap)
+{
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0,
+		format, type, data);
+
+	if(Mipmap)
+	{ 
+		glGenerateMipmap(GL_TEXTURE_2D);	// 为当前绑定的纹理自动生成所有需要的多级渐远纹理
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);	// 多级纹理只用于纹理被缩小的情况
+	}
 }
 
 TextureArray::TextureArray(vector<string> material_names, string filepath) :

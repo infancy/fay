@@ -74,5 +74,8 @@
     <ClCompile Include="..\..\src\gui\gui.cpp">
       <Filter>gui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ray\ray_cast_gui.cpp">
+      <Filter>ray</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
