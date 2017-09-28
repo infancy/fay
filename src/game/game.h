@@ -3,16 +3,16 @@
 #pragma once
 #endif
 
-#ifndef FAY_RAY_RAYTRACING_H
-#define FAY_RAY_RAYTRACING_H
+#ifndef FAY_GAME_GAME_H
+#define FAY_GAME_GAME_H
 
 #include "fay.h"
 
 namespace fay
 {
 
-int raytracing();
+int color();
 
 }	// namespace fay
 
-#endif //FAY_RAY_RAYTRACING_H
+#endif //FAY_GAME_GAME_H

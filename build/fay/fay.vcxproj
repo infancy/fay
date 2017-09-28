@@ -115,6 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\game\game.h" />
     <ClInclude Include="..\..\src\gl\buffer.h" />
     <ClInclude Include="..\..\src\gl\camera.h" />
     <ClInclude Include="..\..\src\gl\gl_utility.h" />
@@ -122,20 +123,22 @@
     <ClInclude Include="..\..\src\gl\shader.h" />
     <ClInclude Include="..\..\src\gl\texture.h" />
     <ClInclude Include="..\..\src\gui\gui.h" />
+    <ClInclude Include="..\..\src\gui\window.h" />
     <ClInclude Include="..\..\src\ray\raytracing.h" />
     <ClInclude Include="..\..\src\utility\fay.h" />
     <ClInclude Include="..\..\src\utility\platform.h" />
     <ClInclude Include="..\..\src\utility\stencil.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\game\color.cpp" />
     <ClCompile Include="..\..\src\gl\buffer.cpp" />
     <ClCompile Include="..\..\src\gl\camera.cpp" />
     <ClCompile Include="..\..\src\gl\model.cpp" />
     <ClCompile Include="..\..\src\gl\shader.cpp" />
     <ClCompile Include="..\..\src\gl\texture.cpp" />
     <ClCompile Include="..\..\src\gui\gui.cpp" />
+    <ClCompile Include="..\..\src\gui\window.cpp" />
     <ClCompile Include="..\..\src\ray\raytracing.cpp" />
-    <ClCompile Include="..\..\src\ray\ray_cast_gui.cpp" />
     <ClCompile Include="..\..\src\utility\fay.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

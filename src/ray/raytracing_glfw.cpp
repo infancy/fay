@@ -1,7 +1,8 @@
 #include "raytracing.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "gui/window.h"
+#include "GLFW/glfw3.h"
+#include "glad/glad.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -14,14 +15,11 @@
 #include "gl/model.h"
 #include "gl/camera.h"
 #include "gl/shader.h"
-#include "gui/gui.h"
 
 using namespace std;
+using namespace fay;
 
-namespace fay
-{
-
-// 
+// windows
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
@@ -39,7 +37,7 @@ float lastFrame = 0.f;
 ////////////////////////////////////////////////////////////////////////////////////
 
 // 鼠标移动设置与渲染设置
-int move_state = 0;
+int move_light = 0;
 int render_state = 1;
 
 const string blocks = "resources/objects/blocks/blocks.obj";
@@ -52,7 +50,7 @@ const string mesh_filename = CornellBox;
 glm::vec4 bg = glm::vec4(0.5, 0.5, 1, 1);
 
 //scene axially aligned bounding box
-struct BBox { glm::vec3 min, max; } aabb{ { -1000, -1000, -1000 },{ 1000, 1000, 1000 } };
+struct BBox { glm::vec3 min, max; } aabb{{-1000, -1000, -1000}, {1000, 1000, 1000}};
 
 //light crosshair gizmo vetex array and buffer object IDs
 GLuint lightVAOID;
@@ -63,6 +61,11 @@ glm::vec3 lightPosition = glm::vec3(0, 2, 0); //objectspace light position
 float theta = 0.66f;
 float phi = -1.0f;
 float ligth_radius = 70;
+
+//FPS related variables
+int total_frames = 0;
+float fps = 0;
+float lastTime = 0;
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -104,7 +107,7 @@ void obj_to_TextureData(const string& obj_path,
 					j >> dummy >> dummy >> l >>
 					z >> dummy >> dummy >> l;
 			}
-			else
+			else	
 			{
 				size_t count = 0, pos = line.find('/');
 				while (pos != std::string::npos) { count++; pos = line.find('/', pos + 1); }
@@ -138,7 +141,7 @@ void obj_to_TextureData(const string& obj_path,
 
 			if (!iss.eof())	// 若还未到达这一行的结尾，则这是一个长方形的面，分拆成两个三角形
 			{
-				iss >> l;
+				iss >> l;	
 				if (l < 0) l = l + total_positions + 1;
 				indices.push_back(i - 1);
 				indices.push_back(k - 1);
@@ -181,7 +184,7 @@ void obj_to_TextureData(const string& obj_path,
 				mtl_iss >> mtl_token;
 
 				if (mtl_token.compare("newmtl") == 0)
-				{
+				{ 
 					mtl_iss >> material_name;
 					material_name = mtl_line.substr(mtl_line.find(material_name));
 				}
@@ -193,7 +196,7 @@ void obj_to_TextureData(const string& obj_path,
 				}
 			}
 			// 不重复的向纹理数组中添加纹理
-			for (auto& mat_tex : materila_texture)
+			for(auto& mat_tex : materila_texture)
 				if (std::find(texpaths.begin(), texpaths.end(), mat_tex.second) == texpaths.end())
 					texpaths.push_back(mat_tex.second);
 		}
@@ -211,29 +214,66 @@ void update()
 	deltaTime = (currentFrame - lastFrame) * 10;
 	lastFrame = currentFrame;
 
-	ImGuiIO& io = gui_get_io();
+	const IO& io = get_io();
+
+	if (keydown(GLFW_KEY_W)) camera.ProcessKeyboard(FORWARD, deltaTime);
+	if (keydown(GLFW_KEY_S)) camera.ProcessKeyboard(BACKWARD, deltaTime);
+	if (keydown(GLFW_KEY_A)) camera.ProcessKeyboard(LEFT, deltaTime);
+	if (keydown(GLFW_KEY_D)) camera.ProcessKeyboard(RIGHT, deltaTime);
+
+	if (keydown(GLFW_KEY_1)) render_state = 1;	// raster
+	if (keydown(GLFW_KEY_2)) render_state = 2;	// raycast
+	if (keydown(GLFW_KEY_3)) render_state = 3;	// pathtracing
+
+	if (keydown(GLFW_KEY_SPACE) == GLFW_PRESS) move_light ^= 1;	// pathtracing
+
+																	// 鼠标移动
+	float xpos = io.xpos, ypos = io.ypos;
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	// reversed since y-coordinates go from bottom to top but z_xais form out to in
+	float yoffset = lastY - ypos;
+	lastX = xpos; lastY = ypos;
+
+	if (move_light)
+	{
+		theta += xoffset / 60.0f;
+		phi += yoffset / 60.0f;
+		ligth_radius -= 10 * io.wheel;
+	}
+	else
+	{
+		camera.ProcessMouseMovement(xoffset, yoffset);
+		camera.ProcessMouseScroll(io.wheel);
+	}
 }
 
-int ray_cast_gui()
+void ray_cast()
 {
-	gui_create_window();
+	create_window();
 
 	// 加载用于光栅化的模型
 	Model model(mesh_filename);
 
 	// 加载覆盖整个视口的正方形
-	std::vector<float> quadVerts{ -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0 };
+	std::vector<float> quadVerts{ -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0};
 	std::vector<uint32_t> quadIndices{ 0,1,2,0,2,3 };
 	Buffer quad(quadVerts, quadIndices);
 
 	// 加载光之十字
 	glm::vec3 crossHairVertices[6];
 	crossHairVertices[0] = glm::vec3(-0.5f, 0, 0);
-	crossHairVertices[1] = glm::vec3(0.5f, 0, 0);
+	crossHairVertices[1] = glm::vec3(0.5f,  0, 0);
 	crossHairVertices[2] = glm::vec3(0, -0.5f, 0);
-	crossHairVertices[3] = glm::vec3(0, 0.5f, 0);
+	crossHairVertices[3] = glm::vec3(0,  0.5f, 0);
 	crossHairVertices[4] = glm::vec3(0, 0, -0.5f);
-	crossHairVertices[5] = glm::vec3(0, 0, 0.5f);
+	crossHairVertices[5] = glm::vec3(0, 0,  0.5f);
 
 	//setup light gizmo vertex array and vertex buffer object IDs
 	glGenVertexArrays(1, &lightVAOID);
@@ -244,7 +284,7 @@ int ray_cast_gui()
 	//pass crosshair vertices to the buffer object
 	glBufferData(GL_ARRAY_BUFFER, sizeof(crossHairVertices), &(crossHairVertices[0].x), GL_STATIC_DRAW);
 	gl_check_errors();
-	//enable vertex attribute array for vertex position
+		//enable vertex attribute array for vertex position
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -289,14 +329,13 @@ int ray_cast_gui()
 	glEnable(GL_CULL_FACE);
 	glClearColor(bg.r, bg.g, bg.b, 1.0f);
 
-	while (!gui_close_window())
+	while (!close_window())
 	{
-		gui_updateIO();
-
+		updateIO();
 		update();
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+		
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 1.f, 10000.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 		//glm::mat4 modelMat = glm::scale(glm::mat4(1.f), glm::vec3(10.f, 10.f, 10.f));
@@ -318,7 +357,7 @@ int ray_cast_gui()
 
 			model.draw(rasterShader);
 		}
-		else if (render_state == 2)
+		else if (render_state == 2) 
 		{
 			raytraceShader.enable();
 
@@ -373,12 +412,8 @@ int ray_cast_gui()
 		//enable depth test
 		glEnable(GL_DEPTH_TEST);
 
-		gui_drawGUI();
+		swap_framebuffer();
 	}
 
-	gui_delete_window();
-	return 0;
+	delete_window();
 }
-
-}	// namespace fay
-

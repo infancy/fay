@@ -1,7 +1,5 @@
 #include "gui.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #ifdef _WIN32
 #undef APIENTRY
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -363,7 +361,13 @@ bool gui_create_window(int width, int height)		// Setup window
 	return true;
 }
 
-bool gui_close_window() { return static_cast<bool>(glfwWindowShouldClose(g_Window)); }
+bool gui_close_window()
+{
+	if (glfwGetKey(g_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(g_Window, true); 
+	
+	return static_cast<bool>(glfwWindowShouldClose(g_Window)); 
+}
 
 void gui_delete_window()
 {
@@ -425,8 +429,7 @@ void gui_drawGUI()	// 不清除颜色，交换缓冲区
 	int display_w, display_h;
 	glfwGetFramebufferSize(g_Window, &display_w, &display_h);
 	glViewport(0, 0, display_w, display_h);
-	//glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-	//glClear(GL_COLOR_BUFFER_BIT);
+
 	ImGui::Render();
 	glfwSwapBuffers(g_Window);
 }

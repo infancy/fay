@@ -1,6 +1,7 @@
 #include "fay.h"
 #include "ray/raytracing.h"
 #include "gui/gui.h"
+#include "game/game.h"
 //#include "gl/gl.h"
 
 int main(int argc, char** argv)
@@ -14,8 +15,8 @@ int main(int argc, char** argv)
 	//view_model();
 	//paricles();
 
-	//ray_cast();
-	fay::ray_cast_gui();
-	//light_gimza();
+	//fay::raytracing();
+	fay::color();
+
 	return 0;
 }

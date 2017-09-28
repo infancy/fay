@@ -14,32 +14,21 @@
 #include "gl/model.h"
 #include "gl/camera.h"
 #include "gl/shader.h"
+#include "gui/gui.h"
 
 using namespace std;
-using namespace fay;
 
-// environment
+namespace fay
+{
 
-bool create_window();
-void destroy_window();
-void update();
-
-// callback
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void process_keyboard(GLFWwindow *window);
-
-// windows
-GLFWwindow* window {};
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+// 
+const unsigned int WIDTH = 1280;
+const unsigned int HEIGHT = 720;
 
 // camera
 Camera camera(glm::vec3(-3, 3, 10));
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
+float lastX = WIDTH / 2.0f;
+float lastY = HEIGHT / 2.0f;
 bool firstMouse = true;
 
 // timing
@@ -50,20 +39,20 @@ float lastFrame = 0.f;
 ////////////////////////////////////////////////////////////////////////////////////
 
 // 鼠标移动设置与渲染设置
-int move_state = 0;
+bool move_light = false;
 int render_state = 1;
 
 const string blocks = "resources/objects/blocks/blocks.obj";
 const string Rei = "resources/objects/Rei/Rei.obj";
 const string CornellBox = "resources/objects/CornellBox/CornellBox.obj";
 const string rock = "resources/objects/rock/rock.obj";
-const string mesh_filename = CornellBox;
+const string mesh_filename = blocks;
 
 //background color
 glm::vec4 bg = glm::vec4(0.5, 0.5, 1, 1);
 
 //scene axially aligned bounding box
-struct BBox { glm::vec3 min, max; } aabb{{-1000, -1000, -1000}, {1000, 1000, 1000}};
+struct BBox { glm::vec3 min, max; } aabb{ { -1000, -1000, -1000 },{ 1000, 1000, 1000 } };
 
 //light crosshair gizmo vetex array and buffer object IDs
 GLuint lightVAOID;
@@ -75,11 +64,9 @@ float theta = 0.66f;
 float phi = -1.0f;
 float ligth_radius = 70;
 
-//FPS related variables
-int total_frames = 0;
-float fps = 0;
-float lastTime = 0;
-
+// GUI
+static bool show_test_window = true;
+static ImVec4 clear_color = ImColor(114, 144, 154);
 /////////////////////////////////////////////////////////////////////////////////////
 
 void obj_to_TextureData(const string& obj_path,
@@ -120,7 +107,7 @@ void obj_to_TextureData(const string& obj_path,
 					j >> dummy >> dummy >> l >>
 					z >> dummy >> dummy >> l;
 			}
-			else	
+			else
 			{
 				size_t count = 0, pos = line.find('/');
 				while (pos != std::string::npos) { count++; pos = line.find('/', pos + 1); }
@@ -154,7 +141,7 @@ void obj_to_TextureData(const string& obj_path,
 
 			if (!iss.eof())	// 若还未到达这一行的结尾，则这是一个长方形的面，分拆成两个三角形
 			{
-				iss >> l;	
+				iss >> l;
 				if (l < 0) l = l + total_positions + 1;
 				indices.push_back(i - 1);
 				indices.push_back(k - 1);
@@ -197,7 +184,7 @@ void obj_to_TextureData(const string& obj_path,
 				mtl_iss >> mtl_token;
 
 				if (mtl_token.compare("newmtl") == 0)
-				{ 
+				{
 					mtl_iss >> material_name;
 					material_name = mtl_line.substr(mtl_line.find(material_name));
 				}
@@ -209,7 +196,7 @@ void obj_to_TextureData(const string& obj_path,
 				}
 			}
 			// 不重复的向纹理数组中添加纹理
-			for(auto& mat_tex : materila_texture)
+			for (auto& mat_tex : materila_texture)
 				if (std::find(texpaths.begin(), texpaths.end(), mat_tex.second) == texpaths.end())
 					texpaths.push_back(mat_tex.second);
 		}
@@ -217,33 +204,76 @@ void obj_to_TextureData(const string& obj_path,
 	}
 }
 
-void update_lightPos()
+void update()
 {
 	lightPosition.x = ligth_radius * cos(theta)*sin(phi);
 	lightPosition.y = ligth_radius * cos(phi);
 	lightPosition.z = ligth_radius * sin(theta)*sin(phi);
+
+	currentFrame = glfwGetTime();
+	deltaTime = (currentFrame - lastFrame) * 10;
+	lastFrame = currentFrame;
+
+	ImGuiIO& io = gui_get_io();
+
+	if (io.KeysDown[GLFW_KEY_W]) camera.ProcessKeyboard(FORWARD, deltaTime);
+	if (io.KeysDown[GLFW_KEY_S]) camera.ProcessKeyboard(BACKWARD, deltaTime);
+	if (io.KeysDown[GLFW_KEY_A]) camera.ProcessKeyboard(LEFT, deltaTime);
+	if (io.KeysDown[GLFW_KEY_D]) camera.ProcessKeyboard(RIGHT, deltaTime);
+
+	if (io.KeysDown[GLFW_KEY_1]) render_state = 1;	// raster
+	if (io.KeysDown[GLFW_KEY_2]) render_state = 2;	// raycast
+	if (io.KeysDown[GLFW_KEY_3]) render_state = 3;	// pathtracing
+
+	if (io.KeysDown[GLFW_KEY_SPACE] == GLFW_PRESS) move_light ^= 1;	// pathtracing
+
+	// 鼠标移动
+	float xpos = io.MousePos.x, ypos = io.MousePos.y;
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	// reversed since y-coordinates go from bottom to top but z_xais form out to in
+	float yoffset = lastY - ypos;
+	lastX = xpos; lastY = ypos;
+
+	if(move_light)
+	{
+		theta += xoffset / 60.0f;
+		phi += yoffset / 60.0f;
+		ligth_radius -= 10 * io.MouseWheel;
+	}
+	else
+	{ 
+		camera.ProcessMouseMovement(xoffset, yoffset);
+		camera.ProcessMouseScroll(io.MouseWheel);
+	}
 }
 
-void ray_cast()
+int raytracing()
 {
-	create_window();
+	gui_create_window(WIDTH, HEIGHT);
 
 	// 加载用于光栅化的模型
 	Model model(mesh_filename);
 
 	// 加载覆盖整个视口的正方形
-	std::vector<float> quadVerts{ -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0};
+	std::vector<float> quadVerts{ -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0 };
 	std::vector<uint32_t> quadIndices{ 0,1,2,0,2,3 };
 	Buffer quad(quadVerts, quadIndices);
 
 	// 加载光之十字
 	glm::vec3 crossHairVertices[6];
 	crossHairVertices[0] = glm::vec3(-0.5f, 0, 0);
-	crossHairVertices[1] = glm::vec3(0.5f,  0, 0);
+	crossHairVertices[1] = glm::vec3(0.5f, 0, 0);
 	crossHairVertices[2] = glm::vec3(0, -0.5f, 0);
-	crossHairVertices[3] = glm::vec3(0,  0.5f, 0);
+	crossHairVertices[3] = glm::vec3(0, 0.5f, 0);
 	crossHairVertices[4] = glm::vec3(0, 0, -0.5f);
-	crossHairVertices[5] = glm::vec3(0, 0,  0.5f);
+	crossHairVertices[5] = glm::vec3(0, 0, 0.5f);
 
 	//setup light gizmo vertex array and vertex buffer object IDs
 	glGenVertexArrays(1, &lightVAOID);
@@ -254,7 +284,7 @@ void ray_cast()
 	//pass crosshair vertices to the buffer object
 	glBufferData(GL_ARRAY_BUFFER, sizeof(crossHairVertices), &(crossHairVertices[0].x), GL_STATIC_DRAW);
 	gl_check_errors();
-		//enable vertex attribute array for vertex position
+	//enable vertex attribute array for vertex position
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -299,14 +329,15 @@ void ray_cast()
 	glEnable(GL_CULL_FACE);
 	glClearColor(bg.r, bg.g, bg.b, 1.0f);
 
-	while (!glfwWindowShouldClose(window))
+	while (!gui_close_window())
 	{
+		gui_updateIO();
+
 		update();
-		update_lightPos();
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 1.f, 10000.0f);
+
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 1.f, 10000.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 		//glm::mat4 modelMat = glm::scale(glm::mat4(1.f), glm::vec3(10.f, 10.f, 10.f));
 		glm::mat4 modelMat(1.f);
@@ -327,7 +358,7 @@ void ray_cast()
 
 			model.draw(rasterShader);
 		}
-		else if (render_state == 2) 
+		else if (render_state == 2)
 		{
 			raytraceShader.enable();
 
@@ -382,146 +413,29 @@ void ray_cast()
 		//enable depth test
 		glEnable(GL_DEPTH_TEST);
 
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+		// GUI
+		// Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
+		{
+			static float f = 0.0f;
+			ImGui::Text("Hello, world!");
+			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+			ImGui::ColorEdit3("clear color", (float*)&clear_color);
+			if (ImGui::Button("Test Window")) show_test_window ^= 1;
+			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		}
+
+		if (show_test_window)
+		{
+			ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
+			ImGui::ShowTestWindow(&show_test_window);
+		}
+
+		gui_drawGUI();
 	}
 
-	destroy_window();
+	gui_delete_window();
+	return 0;
 }
 
-// environment 
+}	// namespace fay
 
-bool create_window()
-{
-	// glfw: initialize and configure
-	// ------------------------------
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
-#endif
-
-	// glfw window creation
-	window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-	if (window == NULL)
-	{
-		LOG(ERROR) << "Failed to create GLFW window";
-		glfwTerminate();
-		return false;
-	}
-	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetScrollCallback(window, scroll_callback);
-
-	// tell GLFW to capture our mouse
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-	// glad: load all OpenGL function pointers
-	// ---------------------------------------
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		LOG(ERROR) << "Failed to initialize GLAD";
-		return false;
-	}
-	return true;
-}
-
-void destroy_window()
-{
-	// glfw: terminate, clearing all previously allocated GLFW resources.
-	// ------------------------------------------------------------------
-	glfwTerminate();
-}
-
-void update()
-{
-	// per-frame time logic
-	// --------------------
-	currentFrame = glfwGetTime();
-	deltaTime = currentFrame - lastFrame;
-	deltaTime *= 10;
-	lastFrame = currentFrame;
-
-	// input
-	// -----
-	process_keyboard(window);
-}
-
-void process_keyboard(GLFWwindow *window)
-{
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.ProcessKeyboard(FORWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.ProcessKeyboard(LEFT, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.ProcessKeyboard(RIGHT, deltaTime);
-
-	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)	// raster
-		render_state = 1;
-	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)	// raycast
-		render_state = 2;
-	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)	// pathtracing
-		render_state = 3;
-}
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-	// make sure the viewport matches the new window dimensions; note that width and 
-	// height will be significantly larger than specified on retina displays.
-	glViewport(0, 0, width, height);
-}
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-		move_state = 1;	// light
-	else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		move_state = 2;	// scene
-	else
-		move_state = 0;	// camera
-}
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-	if (firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
-
-	float xoffset = xpos - lastX;
-	// reversed since y-coordinates go from bottom to top
-	// but z_xais form out to in
-	float yoffset = lastY - ypos;
-
-	if(move_state == 0) 
-		camera.ProcessMouseMovement(xoffset, yoffset);
-	else if (move_state == 1)
-	{
-		// 在球上运动
-		theta += xoffset / 60.0f;
-		phi   += yoffset / 60.0f;
-	}
-
-	lastX = xpos;
-	lastY = ypos;
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-	if (move_state == 0)
-		camera.ProcessMouseScroll(yoffset);
-	else if (move_state == 1)
-		ligth_radius -= 10 * yoffset;
-}

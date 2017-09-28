@@ -13,6 +13,9 @@
     <Filter Include="gui">
       <UniqueIdentifier>{27a71a91-026e-4c95-adc9-0fafb1b9598d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="game">
+      <UniqueIdentifier>{6046d4a2-3ff5-41f1-b487-44aeb02fca34}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\gl\buffer.h">
@@ -42,11 +45,17 @@
     <ClInclude Include="..\..\src\utility\platform.h">
       <Filter>utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\gui\gui.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\gui\window.h">
+      <Filter>gui</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\ray\raytracing.h">
       <Filter>ray</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\gui\gui.h">
-      <Filter>gui</Filter>
+    <ClInclude Include="..\..\src\game\game.h">
+      <Filter>game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -68,14 +77,17 @@
     <ClCompile Include="..\..\src\utility\fay.cpp">
       <Filter>utility</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\ray\raytracing.cpp">
-      <Filter>ray</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\gui\gui.cpp">
       <Filter>gui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\ray\ray_cast_gui.cpp">
+    <ClCompile Include="..\..\src\gui\window.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ray\raytracing.cpp">
       <Filter>ray</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\color.cpp">
+      <Filter>game</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
