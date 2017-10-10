@@ -21,8 +21,8 @@ using namespace std;
 namespace fay
 {
 
-// 
-const unsigned int WIDTH = 1280;
+// 分辨率
+const unsigned int WIDTH = 1080;
 const unsigned int HEIGHT = 720;
 
 // camera
@@ -66,6 +66,7 @@ float ligth_radius = 70;
 
 // GUI
 static ImVec4 clear_color = ImColor(114, 144, 154);
+
 /////////////////////////////////////////////////////////////////////////////////////
 
 void obj_to_TextureData(const string& obj_path,
@@ -249,7 +250,7 @@ void update()
 	else
 	{ 
 		camera.ProcessMouseMovement(xoffset, yoffset);
-		camera.ProcessMouseScroll(io.MouseWheel);
+		//camera.ProcessMouseScroll(io.MouseWheel); 禁止放缩
 	}
 }
 
@@ -368,7 +369,7 @@ int raytracing()
 
 			pathtraceShader.set_float("time", currentFrame);
 			raytraceShader.set_vec3("eyePos", camera.Position);
-			raytraceShader.set_mat4("invMVP", invMV);
+			raytraceShader.set_mat4("invMV", invMV);
 			raytraceShader.set_vec3("light_position", lightPosition);
 
 			quad.draw();	// 渲染整个视口
