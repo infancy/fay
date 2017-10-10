@@ -65,7 +65,6 @@ float phi = -1.0f;
 float ligth_radius = 70;
 
 // GUI
-static bool show_test_window = true;
 static ImVec4 clear_color = ImColor(114, 144, 154);
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -347,6 +346,7 @@ int raytracing()
 		glm::mat4 MVP = projection * MV;
 		glm::mat4 invMVP = glm::inverse(MVP);
 
+		// 渲染场景
 		if (render_state == 1)
 		{
 			rasterShader.enable();
@@ -388,11 +388,9 @@ int raytracing()
 			quad.draw();	// 渲染整个视口
 		}
 
-		// 渲染小十字
-		//disable depth testing
+		// 渲染 light gizmo
 		glDisable(GL_DEPTH_TEST);
 
-		//draw the light gizmo, set the light vertexx array object
 		glBindVertexArray(lightVAOID);
 		{
 			//set the modelling transform for the light crosshair gizmo
@@ -410,7 +408,7 @@ int raytracing()
 			//unbind the shader
 			flatShader.disable();
 		}
-		//enable depth test
+
 		glEnable(GL_DEPTH_TEST);
 
 		// GUI
@@ -420,14 +418,7 @@ int raytracing()
 			ImGui::Text("Hello, world!");
 			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 			ImGui::ColorEdit3("clear color", (float*)&clear_color);
-			if (ImGui::Button("Test Window")) show_test_window ^= 1;
 			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		}
-
-		if (show_test_window)
-		{
-			ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-			ImGui::ShowTestWindow(&show_test_window);
 		}
 
 		gui_drawGUI();

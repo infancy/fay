@@ -15,8 +15,8 @@ int main(int argc, char** argv)
 	//view_model();
 	//paricles();
 
-	//fay::raytracing();
-	fay::color();
+	fay::raytracing();
+	//fay::color();
 
 	return 0;
 }
