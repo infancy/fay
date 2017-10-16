@@ -1,35 +1,35 @@
 #version 330 core
 
-layout(location = 0) out vec4 vFragColor; //fragment shader output
+layout(location = 0) out vec4 vFragColor; // 输出颜色
 
-//structs for Ray, Box and Camera objects
 struct Ray { vec3 origin, dir;} eyeRay; 
 struct Box { vec3 min, max; };
 
-//input from the vertex shader
-smooth in vec2 vUV;					//interpolated texture coordinates
+smooth in vec2 vUV;		// 平滑插值得到的光栅化坐标
 
-//shader uniforms
-uniform mat4 invMV;				//inverse of combined modelview projection matrix
-uniform vec4 backgroundColor;		//background colour
-uniform vec3 eyePos;				//eye position in object space
-uniform sampler2D vertex_positions;	//mesh vertices
-uniform isampler2D triangles_list;	//mesh triangles
-uniform sampler2DArray textureMaps;	//all mesh textures
-uniform vec3 light_position;		//light position is in object space
-uniform Box aabb;					//scene's bounding box 
-uniform float VERTEX_TEXTURE_SIZE;	//size of the vertex texture
-uniform float TRIANGLE_TEXTURE_SIZE;//size of the triangle texture 
+// uniforms
+uniform int samples_PerPixel;		// 每像素采样次数
+uniform mat4 invMV;				    // MV 矩阵的逆矩阵
+uniform vec4 backgroundColor;		
+uniform vec3 eyePos;				// 对象空间中的视点
+uniform sampler2D vertex_positions;	// 顶点
+uniform isampler2D triangles_list;	// 索引
+uniform sampler2DArray textureMaps;	// 纹理
+uniform vec3 light_position;		
+uniform Box aabb;					
+uniform float VERTEX_TEXTURE_SIZE;	 // 顶点数量
+uniform float TRIANGLE_TEXTURE_SIZE; // 索引数量
  
-//shader constants
-const float k0 = 1.0;	//constant attenuation
-const float k1 = 0.0;	//linear attenuation
-const float k2 = 0.0;	//quadratic attenuation
+// 距离衰减
+const float k0 = 1.0;	// 常数项
+const float k1 = 0.0;	// 线性项
+const float k2 = 0.0;	// 平方项
  
-//function to return the intersection of a ray with a box
+// ray-box intersection
 //returns a vec2 in which the x value contains the t value at the near intersection
 						//the y value contains the t value at the far intersection
-vec2 intersectCube(vec3 origin, vec3 ray, Box cube) {		
+vec2 intersectCube(vec3 origin, vec3 ray, Box cube) 
+{		
 	vec3   tMin = (cube.min - origin) / ray;		
 	vec3   tMax = (cube.max - origin) / ray;		
 	vec3     t1 = min(tMin, tMax);		
@@ -39,7 +39,7 @@ vec2 intersectCube(vec3 origin, vec3 ray, Box cube) {
 	return vec2(tNear, tFar);	
 }
 
-//Generates the eye ray for the given camera and a 2D position
+// 生成相机光线
 void setup_camera(vec2 uv) 
 {
   eyeRay.origin = eyePos; 
@@ -49,13 +49,15 @@ void setup_camera(vec2 uv)
   eyeRay.dir = (invMV * cam_dir).xyz;	// invMV, camera_to_world
 }
 
-//pseudorandom number generator
-float random(vec3 scale, float seed) {		
+// 生成伪随机数
+float random(vec3 scale, float seed) 
+{		
 	return fract(sin(dot(gl_FragCoord.xyz + seed, scale)) * 43758.5453 + seed);	
 }	
 
-//gives a uniform random direction vector
-vec3 uniformlyRandomDirection(float seed) {		
+// 生成一个随机方向
+vec3 uniformlyRandomDirection(float seed) 
+{		
 	float u = random(vec3(12.9898, 78.233, 151.7182), seed);		
 	float v = random(vec3(63.7264, 10.873, 623.6736), seed);		
 	float z = 1.0 - 2.0 * u;		
@@ -64,22 +66,19 @@ vec3 uniformlyRandomDirection(float seed) {
 	return vec3(r * cos(angle), r * sin(angle), z);	
 }	
 
-//returns a uniformly random vector
 vec3 uniformlyRandomVector(float seed) 
 {		
 	return uniformlyRandomDirection(seed) * sqrt(random(vec3(36.7539, 50.3658, 306.2759), seed));	
 }	
 
-//ray triangle intesection routine. The normal is returned in the given 
-//normal reference argument.
-//
-//The return value is a vec4 with
-//x -> t value at intersection.
-//y -> u texture coordinate
-//z -> v texture coordinate
-//w -> texture map id
-vec4 intersectTriangle(vec3 origin, vec3 dir, int index,  out vec3 normal ) {
-	 
+// ray-triangle intesection 
+// The return value is a vec4 with
+// x -> t value at intersection.
+// y -> u texture coordinate
+// z -> v texture coordinate
+// w -> texture map id
+vec4 intersectTriangle(vec3 origin, vec3 dir, int index,  out vec3 normal ) 
+{
 	ivec4 list_pos = texture(triangles_list, vec2((index+0.5)/TRIANGLE_TEXTURE_SIZE, 0.5));
 	if((index+1) % 2 !=0 ) { 
 		list_pos.xyz = list_pos.zxy;
@@ -120,47 +119,42 @@ vec4 intersectTriangle(vec3 origin, vec3 dir, int index,  out vec3 normal ) {
 	return vec4(t,u,v,list_pos.w);
 }
 
-//function to test if the given ray intersect any object
-//if so it returns 0.5 otherwise 1. This darkens the shade
-//simulating shadow
-float shadow(vec3 origin, vec3 dir ) {
+float shadow(vec3 origin, vec3 dir ) 
+{
 	vec3 tmp;
-	for(int i=0;i<int(TRIANGLE_TEXTURE_SIZE);i++) 
+	for(int i = 0; i < int(TRIANGLE_TEXTURE_SIZE); i++) 
 	{
 		vec4 res = intersectTriangle(origin, dir, i, tmp); 
-		if(res.x>0 ) { 
+		if(res.x > 0 ) 
+		{ 
 		   return 0.5;   
 		}
 	}
 	return 1.0;
 }
 
-void main()
+vec4 rayCast(vec2 uv)
 { 
-	//set the maximum t value
+	// 最大距离
 	float t = 10000;  
 
-	//set the fragment colour as the background colour 
-	vFragColor = backgroundColor;
-
-	//setup the camera for the given texture coordinate
-	setup_camera(vUV);
+	// 根据给定的在光栅化坐标生成相机
+	setup_camera(uv);
 	 
-	//check if the ray intersects the scene bounding box 
-	vec2 tNearFar = intersectCube(eyeRay.origin, eyeRay.dir,  aabb);
+	// 检查是否超出场景包围盒
+	vec2 tNearFar = intersectCube(eyeRay.origin, eyeRay.dir, aabb);
 
-	//if we have a valid intersection
-	if(tNearFar.x<tNearFar.y  ) {
+	// if near intersection < far intersection
+	if(tNearFar.x < tNearFar.y  ) {
 		
-		t = tNearFar.y+1; //offset the near intersection to remove the depth artifacts
+		t = tNearFar.y+1; // 对 far intersection 向后偏置，以防止失真
 		  
-		//trace ray through the whole triangle list and see if we have a intersection
-		//if there is a triangle, we do an intersection test
+		// 三角形求交测试
 		 
 		vec4 val=vec4(t,0,0,0);
 		vec3 N;
-		//brute force check all triangles
-		for(int i=0;i<int(TRIANGLE_TEXTURE_SIZE);i++) 
+		// 没有使用加速结构，因而比较低效
+		for(int i=0; i < int(TRIANGLE_TEXTURE_SIZE); i++) 
 		{
 			vec3 normal;
 			vec4 res = intersectTriangle(eyeRay.origin, eyeRay.dir, i, normal); 
@@ -170,35 +164,44 @@ void main()
 		    }
 		}
 
-		//if there is a valid intersection
 		if(val.x < t) {			 
-			//vFragColor = vec4(val.yz,0,1); 
-
-			//get the hit point
+			// 计算交点位置
 			vec3 hit = eyeRay.origin + eyeRay.dir*val.x;
 
-			//cast a random ray from the light position
+			// 从光源处随机投射一条光线
 			vec3  jitteredLight  =  light_position +  uniformlyRandomVector(gl_FragCoord.x);			
 		
-			//get the light vector
+			// 计算从交点到光源的向量
 			vec3 L = (jitteredLight.xyz-hit);
 			float d = length(L);
 			L = normalize(L);
 
-			//calcualte the diffuse component
+			// 计算漫反射项
 			float diffuse = max(0, dot(N, L));	
 
-			//apply attenuation
+			// 应用基于距离的衰减
 			float attenuationAmount = 1.0/(k0 + (k1*d) + (k2*d*d));
 			diffuse *= attenuationAmount;
 
-			//check for shadows
+			// 是否处于阴影中
 			float inShadow = shadow(hit+ N*0.0001, L) ;
-			//return final color
-			vFragColor = inShadow*diffuse*mix(texture(textureMaps, val.yzw), vec4(1), (val.w==255) );	//???
-        	return;
+
+			return inShadow*diffuse*mix(texture(textureMaps, val.yzw), vec4(1), (val.w==255) );
 		}    
 	} 
+	return backgroundColor;
+}
+
+void main()
+{
+	vec4 color = vec4(0, 0, 0, 0);
+	for(int i = 0; i < samples_PerPixel; ++i)
+	{
+		color += rayCast(vUV);
+	}
+
+	vFragColor = color / samples_PerPixel;
+	return;
 }
 
 

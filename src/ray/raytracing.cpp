@@ -66,6 +66,7 @@ float ligth_radius = 70;
 
 // GUI
 static ImVec4 clear_color = ImColor(114, 144, 154);
+static int samples_PerPixel = 1;
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -266,7 +267,7 @@ int raytracing()
 	std::vector<uint32_t> quadIndices{ 0,1,2,0,2,3 };
 	Buffer quad(quadVerts, quadIndices);
 
-	// 加载光之十字
+	// 加载光源标识
 	glm::vec3 crossHairVertices[6];
 	crossHairVertices[0] = glm::vec3(-0.5f, 0, 0);
 	crossHairVertices[1] = glm::vec3(0.5f, 0, 0);
@@ -309,6 +310,7 @@ int raytracing()
 
 	Shader raytraceShader("raytracing/raycast.vert", "raytracing/raycast.frag");
 	raytraceShader.enable();
+	raytraceShader.set_int("samples_PerPixel", samples_PerPixel);
 	raytraceShader.set_float("VERTEX_TEXTURE_SIZE", (float)(positions.size() / 4));
 	raytraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)(indices.size() / 4));
 	raytraceShader.set_vec3("aabb.min", aabb.min);
@@ -383,7 +385,7 @@ int raytracing()
 			pathtraceShader.bind_texture("triangles_list", 2, texTriangles.id());
 
 			pathtraceShader.set_vec3("eyePos", camera.Position);
-			pathtraceShader.set_mat4("invMVP", invMV);
+			pathtraceShader.set_mat4("invMV", invMV);
 			pathtraceShader.set_vec3("light_position", lightPosition);
 
 			quad.draw();	// 渲染整个视口
@@ -415,9 +417,8 @@ int raytracing()
 		// GUI
 		// Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
 		{
-			static float f = 0.0f;
-			ImGui::Text("Hello, world!");
-			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+			ImGui::Text("Info");
+			ImGui::SliderInt("samples_Perpixel", &samples_PerPixel, 1, 16);
 			ImGui::ColorEdit3("clear color", (float*)&clear_color);
 			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		}

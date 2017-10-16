@@ -15,7 +15,7 @@ struct Camera {
 smooth in vec2 vUV;					//interpolated texture coordinates
 
 //shader uniforms
-uniform mat4 invMVP;					//inverse of combined modelview projection matrix
+uniform mat4 invMV;					//inverse of combined modelview projection matrix
 uniform vec4 backgroundColor;			//background colour
 uniform vec3 eyePos; 					//eye position in object space
 uniform sampler2D vertex_positions;		//mesh vertices
@@ -43,24 +43,14 @@ vec2 intersectCube(vec3 origin, vec3 ray, Box cube) {
 	return vec2(tNear, tFar);	
 }
 
-//gets the direction given a 2D position and a Camera
-vec3 get_direction(vec2 p, Camera c) {
-   return normalize(p.x * c.U + p.y * c.V - c.d * c.W);   
-}
-
 //Generates the eye ray for the given camera and a 2D position
-void setup_camera(vec2 uv) {
- 
+void setup_camera(vec2 uv) 
+{
   eyeRay.origin = eyePos; 
-    
-  cam.U = (invMVP*vec4(1,0,0,0)).xyz; 
-  cam.V = (invMVP*vec4(0,1,0,0)).xyz; 
-  cam.W = (invMVP*vec4(0,0,1,0)).xyz; 
-  cam.d = 1;    
-  
-  eyeRay.dir = get_direction(uv , cam); 
-  //eyeRay.dir += cam.U*uv.x;
-  //eyeRay.dir += cam.V*uv.y;  
+
+  // 1080/720 = 1.5；-1 是因为 near = 1，且相机坐标是右手系的；这一步的作用是 NDC_to_screen_to_camera
+  vec4 cam_dir = vec4(uv.x * 1.5, uv.y * 1, -1, 0);
+  eyeRay.dir = (invMV * cam_dir).xyz;	// invMV, camera_to_world
 }
 
 //ray triangle intesection routine. The normal is returned in the given 
