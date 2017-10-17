@@ -65,7 +65,7 @@ float phi = -1.0f;
 float ligth_radius = 70;
 
 // GUI
-static ImVec4 clear_color = ImColor(114, 144, 154);
+static ImVec4 clear_color = ImColor(127, 127, 255);
 static int samples_PerPixel = 1;
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -310,12 +310,10 @@ int raytracing()
 
 	Shader raytraceShader("raytracing/raycast.vert", "raytracing/raycast.frag");
 	raytraceShader.enable();
-	raytraceShader.set_int("samples_PerPixel", samples_PerPixel);
 	raytraceShader.set_float("VERTEX_TEXTURE_SIZE", (float)(positions.size() / 4));
 	raytraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)(indices.size() / 4));
 	raytraceShader.set_vec3("aabb.min", aabb.min);
 	raytraceShader.set_vec3("aabb.max", aabb.max);
-	raytraceShader.set_vec4("backgroundColor", bg);
 	raytraceShader.disable();
 
 	Shader pathtraceShader("raytracing/pathtrace.vert", "raytracing/pathtrace.frag");
@@ -324,12 +322,10 @@ int raytracing()
 	pathtraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)(indices.size() / 4));
 	pathtraceShader.set_vec3("aabb.min", aabb.min);
 	pathtraceShader.set_vec3("aabb.max", aabb.max);
-	pathtraceShader.set_vec4("backgroundColor", bg);
 	pathtraceShader.disable();
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glClearColor(bg.r, bg.g, bg.b, 1.0f);
 
 	while (!gui_close_window())
 	{
@@ -337,6 +333,8 @@ int raytracing()
 
 		update();
 
+		bg = glm::vec4(clear_color.x, clear_color.y, clear_color.z, 1.f);
+		glClearColor(bg.r, bg.g, bg.b, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 1.f, 10000.0f);
@@ -369,10 +367,11 @@ int raytracing()
 			raytraceShader.bind_texture("vertex_positions", 1, texVertices.id());
 			raytraceShader.bind_texture("triangles_list", 2, texTriangles.id());
 
-			pathtraceShader.set_float("time", currentFrame);
+			raytraceShader.set_int("samples_PerPixel", samples_PerPixel);
 			raytraceShader.set_vec3("eyePos", camera.Position);
 			raytraceShader.set_mat4("invMV", invMV);
 			raytraceShader.set_vec3("light_position", lightPosition);
+			raytraceShader.set_vec4("backgroundColor", bg);
 
 			quad.draw();	// 渲染整个视口
 		}
@@ -384,9 +383,12 @@ int raytracing()
 			pathtraceShader.bind_texture("vertex_positions", 1, texVertices.id());
 			pathtraceShader.bind_texture("triangles_list", 2, texTriangles.id());
 
+			pathtraceShader.set_int("samples_PerPixel", samples_PerPixel);
 			pathtraceShader.set_vec3("eyePos", camera.Position);
 			pathtraceShader.set_mat4("invMV", invMV);
 			pathtraceShader.set_vec3("light_position", lightPosition);
+			pathtraceShader.set_float("time", currentFrame);
+			pathtraceShader.set_vec4("backgroundColor", bg);
 
 			quad.draw();	// 渲染整个视口
 		}

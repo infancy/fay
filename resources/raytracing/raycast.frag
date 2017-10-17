@@ -40,7 +40,7 @@ vec2 intersectCube(vec3 origin, vec3 ray, Box cube)
 }
 
 // 生成相机光线
-void setup_camera(vec2 uv) 
+void setup_camera(vec2 uv) // UV 在 NDC 空间
 {
   eyeRay.origin = eyePos; 
 
@@ -153,7 +153,7 @@ vec4 rayCast(vec2 uv)
 		 
 		vec4 val=vec4(t,0,0,0);
 		vec3 N;
-		// 没有使用加速结构，因而比较低效
+		// 三角形求交，没有使用加速结构，因而比较低效
 		for(int i=0; i < int(TRIANGLE_TEXTURE_SIZE); i++) 
 		{
 			vec3 normal;
@@ -197,7 +197,10 @@ void main()
 	vec4 color = vec4(0, 0, 0, 0);
 	for(int i = 0; i < samples_PerPixel; ++i)
 	{
-		color += rayCast(vUV);
+		float u = random(vec3(12.9898, 78.233, 151.7182), gl_FragCoord.x + i);		
+		float v = random(vec3(63.7264, 10.873, 623.6736), gl_FragCoord.y + i);
+		vec2 UV = vUV + vec2((2*u - 0.5) / 1080, (2*v - 0.5) / 720);
+		color += rayCast(UV);
 	}
 
 	vFragColor = color / samples_PerPixel;
