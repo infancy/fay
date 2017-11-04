@@ -42,11 +42,12 @@ float lastFrame = 0.f;
 bool move_light = false;
 int render_state = 1;
 
-const string blocks = "resources/objects/blocks/blocks.obj";
-const string Rei = "resources/objects/Rei/Rei.obj";
+const string blocks		= "resources/objects/blocks/blocks.obj";
+const string Rei		= "resources/objects/Rei/Rei.obj";
 const string CornellBox = "resources/objects/CornellBox/CornellBox.obj";
-const string rock = "resources/objects/rock/rock.obj";
-const string mesh_filename = blocks;
+const string rock		= "resources/objects/rock/rock.obj";
+const string fairy		= "resources/objects/fairy/fairy.obj";
+const string mesh_filename = CornellBox;
 
 //background color
 glm::vec4 bg = glm::vec4(0.5, 0.5, 1, 1);

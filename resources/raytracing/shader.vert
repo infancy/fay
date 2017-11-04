@@ -7,7 +7,7 @@ layout(location = 2) in vec2 vUV;
 // 变换矩阵
 uniform mat4 P; 
 uniform mat4 MV;
-uniform mat3 N;
+uniform mat3 N;		// 变换法线的矩阵
 
 smooth out vec2 vUVout;					
 smooth out vec3 vEyeSpaceNormal;    	// 相机空间
