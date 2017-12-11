@@ -1,5 +1,3 @@
-#include "raytracing.h"
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -8,13 +6,13 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <stb_image.h>
 
-#include "fay.h"
-#include "gl/buffer.h"
-#include "gl/texture.h"
-#include "gl/model.h"
-#include "gl/camera.h"
-#include "gl/shader.h"
-#include "gui/gui.h"
+#include "fay/utility/fay.h"
+#include "fay/gl/buffer.h"
+#include "fay/gl/texture.h"
+#include "fay/gl/model.h"
+#include "fay/gl/camera.h"
+#include "fay/gl/shader.h"
+#include "fay/gui/gui.h"
 
 using namespace std;
 
@@ -47,7 +45,7 @@ const string Rei		= "resources/objects/Rei/Rei.obj";
 const string CornellBox = "resources/objects/CornellBox/CornellBox.obj";
 const string rock		= "resources/objects/rock/rock.obj";
 const string fairy		= "resources/objects/fairy/fairy.obj";
-const string mesh_filename = CornellBox;
+const string mesh_filename = blocks;
 
 //background color
 glm::vec4 bg = glm::vec4(0.5, 0.5, 1, 1);
@@ -434,4 +432,17 @@ int raytracing()
 }
 
 }	// namespace fay
+
+int main(int argc, char** argv)
+{
+	google::InitGoogleLogging(argv[0]);
+	//--stderrthreshold=0 --logtostderr=true
+	//FLAGS_logtostderr = true;
+	//FLAGS_stderrthreshold = 0;
+	//FLAGS_v = 2;
+
+	fay::raytracing();
+
+	return 0;
+}
 

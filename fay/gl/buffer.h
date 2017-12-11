@@ -7,7 +7,7 @@
 #define FAY_GL_BUFFER_H
 
 #include <glad/glad.h>
-#include "fay.h"
+#include "fay/utility/fay.h"
 
 namespace fay
 {
@@ -39,7 +39,7 @@ private:
 	GLuint VBO, EBO, VAO;
 };
 
-}	//namespace fay
+} // namespace fay
 
 
-#endif //FAY_GL_BUFFER_H
+#endif // FAY_GL_BUFFER_H

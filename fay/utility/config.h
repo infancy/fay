@@ -1,10 +1,15 @@
 #if defined(_MSC_VER)
-#define NOMINMAX
 #pragma once
 #endif
 
-#ifndef FAY_UTI_PLATFORM_H
-#define FAY_UTI_PLATFORM_H
+#ifndef FAY_UTILITY_PLATFORM_H
+#define FAY_UTILITY_PLATFORM_H
+
+#if defined(_DEBUG)
+#define FAY_DEBUG
+#endif
+
+// platform
 
 #if defined(_WIN32) || defined(_WIN64)
 	#define FAY_IN_WINDOWS
@@ -29,7 +34,7 @@
 #endif
 */
 
-//platform features
+// platform features
 
 #if defined(FAY_IN_LINUX) || defined(FAY_IN_WINDOWS)
 #define FAY_HAVE_MALLOC_H
@@ -47,7 +52,7 @@
 #define FAY_FORCEINLINE __attribute__((always_inline)) inline
 #endif
 
-#endif //FAY_UTI_PLATFORM_H
+#endif //FAY_UTILITY_PLATFORM_H
 
 
 

@@ -134,4 +134,4 @@ TextureArray::TextureArray(vector<string> material_names, string filepath) :
 }
 
 
-} //namespace fay
+} // namespace fay

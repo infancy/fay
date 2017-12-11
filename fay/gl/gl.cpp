@@ -5,12 +5,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "fay.h"
+#include "fay/utility/fay.h"
 
-#include "gl/buffer.h"
-#include "gl/texture.h"
-#include "gl/model.h"
-#include "gl/camera.h"
+#include "fay/gl/buffer.h"
+#include "fay/gl/texture.h"
+#include "fay/gl/model.h"
+#include "fay/gl/camera.h"
 
 using namespace std;
 using namespace fay;

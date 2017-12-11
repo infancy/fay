@@ -4,90 +4,81 @@
     <Filter Include="gl">
       <UniqueIdentifier>{e0d17724-8d72-47f6-92ba-4edc1f7c27ad}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ray">
-      <UniqueIdentifier>{9a145997-3e7f-42c9-a262-0d9110ef25dd}</UniqueIdentifier>
-    </Filter>
     <Filter Include="utility">
       <UniqueIdentifier>{3df01228-62bc-40b5-8672-a02e864f1f0e}</UniqueIdentifier>
     </Filter>
     <Filter Include="gui">
       <UniqueIdentifier>{27a71a91-026e-4c95-adc9-0fafb1b9598d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="game">
-      <UniqueIdentifier>{6046d4a2-3ff5-41f1-b487-44aeb02fca34}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\gl\buffer.h">
+    <ClCompile Include="..\..\fay\gl\buffer.cpp">
       <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\gl\camera.h">
+    </ClCompile>
+    <ClCompile Include="..\..\fay\gl\mesh.cpp">
       <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\gl\gl_utility.h">
+    </ClCompile>
+    <ClCompile Include="..\..\fay\gl\model.cpp">
       <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\gl\model.h">
+    </ClCompile>
+    <ClCompile Include="..\..\fay\gl\shader.cpp">
       <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\gl\shader.h">
+    </ClCompile>
+    <ClCompile Include="..\..\fay\gl\texture.cpp">
       <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\gl\texture.h">
-      <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\utility\fay.h">
-      <Filter>utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\utility\stencil.h">
-      <Filter>utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\utility\platform.h">
-      <Filter>utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\gui\gui.h">
+    </ClCompile>
+    <ClCompile Include="..\..\fay\gui\gui.cpp">
       <Filter>gui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\gui\window.h">
+    </ClCompile>
+    <ClCompile Include="..\..\fay\gui\window.cpp">
       <Filter>gui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\ray\raytracing.h">
-      <Filter>ray</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\game\game.h">
-      <Filter>game</Filter>
-    </ClInclude>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\gl\buffer.cpp">
+    <ClInclude Include="..\..\fay\gl\buffer.h">
       <Filter>gl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gl\camera.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\camera.h">
       <Filter>gl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gl\model.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\gl.h">
       <Filter>gl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gl\shader.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\gl_utility.h">
       <Filter>gl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gl\texture.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\mesh.h">
       <Filter>gl</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\utility\fay.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\model.h">
+      <Filter>gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\shader.h">
+      <Filter>gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\texture.h">
+      <Filter>gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gui\gui.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gui\window.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\utility\fay.h">
       <Filter>utility</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gui\gui.cpp">
-      <Filter>gui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gui\window.cpp">
-      <Filter>gui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\ray\raytracing.cpp">
-      <Filter>ray</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\game\color.cpp">
-      <Filter>game</Filter>
-    </ClCompile>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\utility\image.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\utility\stencil.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\utility\log.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\utility\config.h">
+      <Filter>utility</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

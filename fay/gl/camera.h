@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "fay.h"
+#include "fay/utility/fay.h"
 
 namespace fay
 {
@@ -140,7 +140,7 @@ private:
 	}
 };
 
-}	//namespace fay
+} // namespace fay
 
 
-#endif //FAY_OPENGL_CAMERA_H
+#endif // FAY_OPENGL_CAMERA_H

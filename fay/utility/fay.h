@@ -6,7 +6,7 @@
 #ifndef FAY_UTI_FAY_H
 #define FAY_UTI_FAY_H
 
-#include "platform.h"
+#include "config.h"
 
 // Global Include Files
 #include <cassert>
@@ -28,7 +28,7 @@
 #include <unordered_map>
 #include <vector>
 
-//#include <boost/noncopyable.hpp>
+#include <boost/noncopyable.hpp>
 #include <glog/logging.h>
 
 // Platform-specific definitions
@@ -81,7 +81,7 @@ inline float gamma(int n)
 }
 */
 
-}	//namespace fay
+} // namespace fay
 
 
 #endif //FAY_UTI_FAY_H

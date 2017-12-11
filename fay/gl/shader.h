@@ -9,7 +9,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
-#include "fay.h"
+#include "fay/utility/fay.h"
 
 namespace fay
 {
@@ -46,8 +46,9 @@ public:
 	
 	void set_mat4(const std::string& name, const glm::mat4& mat) const { glUniformMatrix4fv(glGetUniformLocation(program_id, name.c_str()), 1, GL_FALSE, &mat[0][0]); }
 	
-	//使用 glUniform1i 给纹理采样器分配一个位置值
-	void bind_texture(const std::string& sampler, int tex_unit, GLuint texture_id, GLenum format = GL_TEXTURE_2D) const {
+	// 使用 glUniform1i 给纹理采样器分配一个位置值
+	void bind_texture(const std::string& sampler, int tex_unit, 
+					  GLuint texture_id, GLenum format = GL_TEXTURE_2D) const {
 		glActiveTexture(GL_TEXTURE0 + tex_unit);	    // 激活第i号纹理单元
 		glUniform1i(glGetUniformLocation(program_id, sampler.c_str()), tex_unit);	// 将第i号纹理单元连接到着色器中的sampler变量
 		glBindTexture(format, texture_id); } 	// 将纹理对象绑定到当前激活的纹理单元上
@@ -62,7 +63,7 @@ public:
 	unsigned int program_id {};
 };
 
-}	//namespace fay
+} // namespace fay
 
-#endif //FAY_OPENGL_SHADER_H
+#endif // FAY_OPENGL_SHADER_H
 

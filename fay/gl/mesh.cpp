@@ -42,10 +42,8 @@ void Mesh::draw(Shader shader)
 			number << normalNr++;
 		else if (type == "texture_height")
 			number << heightNr++;
-		
-		glActiveTexture(GL_TEXTURE0 + i);	// 激活纹理单元		
-		shader.set_texture_unit(type + number.str(), i);	// 将第i号纹理单元连接到着色器中的sampler变量
-		glBindTexture(GL_TEXTURE_2D, textures[i].id);	// 开启纹理对象，并将纹理对象绑定到当前激活的纹理单元上
+				
+		shader.bind_texture(type + number.str(), i, textures[i].id);		
 	}
 
 	// draw mesh

@@ -6,7 +6,7 @@
 #ifndef FAY_GUI_WINDOW_H
 #define FAY_GUI_WINDOW_H
 
-#include "fay.h"
+#include "fay/utility/fay.h"
 
 namespace fay
 {
@@ -35,6 +35,6 @@ void swap_framebuffer();
 bool keydown(int key);
 const IO& get_io();	// const ImGuiIO& gui_get_io();	
 
-}	// namespace fay
+} // namespace fay
 
-#endif //FAY_GUI_WINDOW_H
+#endif // FAY_GUI_WINDOW_H

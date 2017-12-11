@@ -11,7 +11,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "fay.h"
+#include "fay/utility/fay.h"
 #include "shader.h"
 
 namespace fay
@@ -124,6 +124,6 @@ private:
 	bool gamma_correction;
 };
 
-}	//namespace fay
+} // namespace fay
 
-#endif //FAY_OPENGL_MODEL_H
+#endif // FAY_OPENGL_MODEL_H

@@ -7,15 +7,15 @@
 #define FAY_GL_GLUTILITY_H
 
 #include "glad/glad.h"
-#include "fay.h"
+#include "fay/utility/fay.h"
 
 namespace fay
 {
 
 inline void gl_check_errors() { CHECK(glGetError() == GL_NO_ERROR); }
 
-}	//namespace fay
+} // namespace fay
 
 
-#endif //FAY_GL_GLUTILITY_H
+#endif // FAY_GL_GLUTILITY_H
 

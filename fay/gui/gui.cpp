@@ -7,8 +7,8 @@
 #include <GLFW/glfw3native.h>
 #endif
 
-#include "gl/shader.h"
-#include "gl/texture.h"
+#include "fay/gl/shader.h"
+#include "fay/gl/texture.h"
 
 namespace fay
 {

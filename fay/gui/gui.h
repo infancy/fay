@@ -6,7 +6,7 @@
 #ifndef FAY_GUI_GUI_H
 #define FAY_GUI_GUI_H
 
-#include "fay.h"
+#include "fay/utility/fay.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -24,6 +24,6 @@ void gui_drawGUI();
 
 ImGuiIO& gui_get_io();	// const ImGuiIO& gui_get_io();	
 
-}	//namespace fay
+} // namespace fay
 
-#endif //FAY_GUI_GUI_H
+#endif // FAY_GUI_GUI_H
