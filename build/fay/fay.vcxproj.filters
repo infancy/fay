@@ -10,6 +10,9 @@
     <Filter Include="gui">
       <UniqueIdentifier>{27a71a91-026e-4c95-adc9-0fafb1b9598d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="vine">
+      <UniqueIdentifier>{9029a7cf-a722-44f8-bbbb-9fb5ffa62e68}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\fay\gl\buffer.cpp">

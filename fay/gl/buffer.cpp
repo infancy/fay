@@ -33,7 +33,7 @@ Buffer::~Buffer()
 	*/
 }
 
-void Buffer::draw()
+void Buffer::draw()	// draw(shader)
 {
 	//shader.enable();
 

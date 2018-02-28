@@ -1,13 +1,7 @@
-#include <imgui.h>
-#include "gui.h"
-#include <stdio.h>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "fay/gui/gui.h"
+using namespace fay;
 
-namespace fay
-{
-
-int gui_test()
+int main()
 {
 	gui_create_window();
 
@@ -58,5 +52,3 @@ int gui_test()
 
 	return 0;
 }
-
-} // namespace fay;
