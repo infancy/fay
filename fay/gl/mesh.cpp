@@ -3,94 +3,57 @@
 namespace fay
 {
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<Texture> textures)
+template<typename Vertex>
+Mesh<Vertex>::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
+	std::vector<std::string> image_paths)
 {
-	this->vertices = vertices;
-	this->indices = indices;
-	this->textures = textures;
+	buffer = create_buffer(vertices, indices);
 
-	// now that we have all the required data, set the vertex buffers and its attribute pointers.
-	setup_mesh();
-}
-Mesh::~Mesh()
-{
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
+	for (auto& filepath : image_paths)
+		textures.emplace_back(filepath);
 }
 
-void Mesh::draw(Shader shader)
+template<typename Vertex>
+Mesh<Vertex>::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<Texture> textures)
 {
-	// bind appropriate textures
-	uint32_t diffuseNr = 1;
-	uint32_t specularNr = 1;
-	uint32_t normalNr = 1;
-	uint32_t heightNr = 1;
+	buffer = create_buffer(vertices, indices);
+	textures = textures;
+}
 
-	for (uint32_t i = 0; i < textures.size(); i++)
+template<typename Vertex>
+void Mesh<Vertex>::draw()
+{
+	buffer.draw();
+}
+
+template<typename Vertex>
+void Mesh<Vertex>::draw(Shader shader)
+{
+	// constexpr int a = '0' - '/';
+	// std::string  diff{ "diff/" }, spec{ "spec/" }, norm{ "norm/" }, heig{ "heig/" };
+	std::string  diff{ "diff" }, spec{ "spec" }, norm{ "normal" }, heig{ "height" };
+	int d{}, s{}, n{}, h{};
+	std::string sampler;
+
+	for (size_t i = 0; i < textures.size(); ++i)
 	{
-		// retrieve texture number (the N in diffuse_textureN)
-		std::string type = textures[i].type;
-		std::stringstream number;
-
-		//switch
-		if (type == "texture_diffuse")
-			number << diffuseNr++; // transfer uint32_t to stream
-		else if (type == "texture_specular")
-			number << specularNr++;
-		else if (type == "texture_normal")
-			number << normalNr++;
-		else if (type == "texture_height")
-			number << heightNr++;
-				
-		shader.bind_texture(type + number.str(), i, textures[i].id);		
+		switch (textures[i].type)
+		{
+		case TexType::diffuse:  sampler = diff; if (d++ > 0) sampler += std::to_string(d); break;
+		case TexType::specular: sampler = spec; if (s++ > 0) sampler += std::to_string(s); break;
+		case TexType::normals:  sampler = norm; if (n++ > 0) sampler += std::to_string(n); break;
+		case TexType::height:   sampler = heig; if (h++ > 0) sampler += std::to_string(h); break;
+		default:
+			LOG(ERROR) << "TexType failed to choose: " << i; break;
+		}
+		// e.g. diff, diff1, diff2...
+		shader.bind_texture(sampler, i, textures[i].id);
 	}
 
-	// draw mesh
-	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
+	buffer.draw();
 
 	// always good practice to set everything back to defaults once configured.
 	glActiveTexture(GL_TEXTURE0);
 }
 
-void Mesh::setup_mesh()
-{
-	// create buffers/arrays
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-
-	glBindVertexArray(VAO);
-
-	// load data into vertex buffers
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	//C++结构体的内存布局是连续的(Sequential)
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), &indices[0], GL_STATIC_DRAW);
-
-	// set the vertex attribute pointers
-	// vertex positions
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-	// vertex normals
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-	// vertex texture coords
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
-	// vertex tangent
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
-	// vertex bitangent
-	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
-
-	glBindVertexArray(0);
-}
-
-}	//namespace fay
+} // namespace fay

@@ -1,16 +1,15 @@
 #if defined(_MSC_VER)
-#define NOMINMAX
 #pragma once
 #endif
 
 #ifndef FAY_OPENGL_CAMERA_H
 #define FAY_OPENGL_CAMERA_H
 
+#include "fay/utility/fay.h"
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-#include "fay/utility/fay.h"
 
 namespace fay
 {

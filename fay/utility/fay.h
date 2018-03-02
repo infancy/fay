@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -26,9 +27,10 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
+// #include <boost/noncopyable.hpp>
 #include <glog/logging.h>
 
 // Platform-specific definitions
@@ -38,6 +40,7 @@
 #pragma warning(disable : 4305)  // double constant assigned to float
 #pragma warning(disable : 4244)  // int -> float conversion
 #pragma warning(disable : 4843)  // double -> float conversion
+#pragma warning(disable : 4201)  // 非标准拓展：匿名的结构、联合
 #endif
 
 namespace fay
@@ -80,6 +83,13 @@ inline float gamma(int n)
 	return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 }
 */
+
+enum class Thirdparty { none, gl, dx, vk };
+
+// graphics --------------------------------------------------------------------
+
+enum class TexType { none, diffuse, specular, ambient, emissive, height, 
+	normals, shininess, opacity, displacement, lightmap, reflection, unknown };
 
 } // namespace fay
 

@@ -146,4 +146,4 @@ void Shader::check_compile_errors(GLuint id, std::string type)
 	}
 }
 
-}	//namespace fay
+} // namespace fay

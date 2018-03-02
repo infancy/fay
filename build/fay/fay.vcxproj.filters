@@ -18,9 +18,6 @@
     <ClCompile Include="..\..\fay\gl\buffer.cpp">
       <Filter>gl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\gl\mesh.cpp">
-      <Filter>gl</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\fay\gl\model.cpp">
       <Filter>gl</Filter>
     </ClCompile>
@@ -36,18 +33,15 @@
     <ClCompile Include="..\..\fay\gui\window.cpp">
       <Filter>gui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\fay\utility\load_model.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\gl\buffer.h">
       <Filter>gl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\gl\camera.h">
-      <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\gl\gl.h">
-      <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\gl\gl_utility.h">
       <Filter>gl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\gl\mesh.h">
@@ -81,6 +75,18 @@
       <Filter>utility</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\utility\config.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\utility\load_model.h">
+      <Filter>utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\resources.h">
+      <Filter>gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\gl.h">
+      <Filter>gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\utility\file.h">
       <Filter>utility</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,13 +1,12 @@
 #if defined(_MSC_VER)
-#define NOMINMAX
 #pragma once
 #endif
 
 #ifndef FAY_GL_TEXTURE_H
 #define FAY_GL_TEXTURE_H
 
-#include "gl_utility.h"
-#include "shader.h"
+#include "gl.h"
+#include "fay/utility/image.h"
 
 namespace fay
 {
@@ -15,7 +14,8 @@ namespace fay
 class Texture
 {
 public: 
-	// 只负责创建纹理，且不指定纹理单元，这样的接口可以防止被误用
+	// Texture(GLuint id) : texture_id{ id } {}
+	// 只负责创建纹理，且不指定纹理单元，设置这样的接口以免被误用
 	Texture(GLenum format = GL_TEXTURE_2D, GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT);
 
 	GLuint id() const { return texture_id; }
@@ -35,12 +35,25 @@ private:
 
 // 创建纹理后，子类有着不同的加载资源方式
 
+// -----------------------------------------------------------------------------
+
 class Texture2D : public Texture
 {
 public:
-	Texture2D(const char* filename, bool Mipmap = true);
+	// Texture2D(GLuint id) : Texture(id) {}
+	Texture2D(const std::string& filepath, TexType textype = TexType::diffuse, bool Mipmap = true);
+	
+	Texture2D(const Image& img, TexType textype = TexType::diffuse, bool Mipmap = true)
+		: Texture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }
+	{
+		CHECK(img.third_party() == Thirdparty::gl) << "image thirdparty error";
+		auto format = img.gl_format();
+
+		create_texture2d(format, img.width(), img.height(), format, GL_UNSIGNED_BYTE, img.data(), Mipmap);
+	}
+	
 	Texture2D(GLint internalFormat, GLsizei width, GLsizei height,
-		GLenum format, GLenum type, unsigned char* pixels, bool Mipmap = true);
+		GLenum format, GLenum type, unsigned char* pixels, bool Mipmap = true, TexType textype = TexType::diffuse);
 	/*     
 	void enable(Shader& shader, std::string& sampler, uint32_t tex_unit) {
 		glActiveTexture(GL_TEXTURE0 + tex_unit);	    // 激活第i号纹理单元
@@ -50,10 +63,33 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, 0); }
 	*/
+
+	TexType type() const { return texture_type; }
+
 private:
 	void create_texture2d(GLint internalFormat, GLsizei width, GLsizei height,
-		GLenum format, GLenum type, unsigned char* pixels, bool Mipmap);
+		GLenum format, GLenum type, const unsigned char* pixels, bool Mipmap);
+
+private:
+	TexType texture_type;
 };
+
+// -----------------------------------------------------------------------------
+
+class Texture2DArray : public Texture
+{
+public:
+	// 必须保证 GL_UNSIGNED_BYTE 的 type，且每张纹理的尺寸相同
+	// TODO：以最大纹理的长宽来设置 glTexImage3D
+	Texture2DArray(std::vector<std::string> material_names, std::string path = {});
+
+	size_t size() const { return material_nums; }
+
+private:
+	size_t material_nums;
+};
+
+// 通过纹理来传输数据 ------------------------------------------------------------
 
 // Texture1D??
 template<typename T>
@@ -69,18 +105,6 @@ public:
 			format, type, data.data());
 		gl_check_errors();
 	}
-};
-
-class TextureArray : public Texture
-{
-public:
-	// 必须保证 GL_UNSIGNED_BYTE 的 type，且尺寸相同
-	TextureArray(std::vector<std::string> material_names, std::string filepath = {});
-
-	size_t size() const { return material_nums; }
-
-private:
-	size_t material_nums;
 };
 
 //glm::vec4、glm::uvec4、glm::ivec4
@@ -105,6 +129,6 @@ public:
 	}
 };
 
-}	//namespace fay
+} // namespace fay
 
-#endif //FAY_GL_TEXTURE_H
+#endif // FAY_GL_TEXTURE_H

@@ -1,15 +1,14 @@
 #if defined(_MSC_VER)
-#define NOMINMAX
 #pragma once
 #endif
 
-#ifndef FAY_OPENGL_SHADER_H
-#define FAY_OPENGL_SHADER_H
+#ifndef FAY_GL_SHADER_H
+#define FAY_GL_SHADER_H
+
+#include "fay/utility/fay.h"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-
-#include "fay/utility/fay.h"
 
 namespace fay
 {
@@ -65,5 +64,5 @@ public:
 
 } // namespace fay
 
-#endif // FAY_OPENGL_SHADER_H
+#endif // FAY_GL_SHADER_H
 

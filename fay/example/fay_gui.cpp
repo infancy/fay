@@ -124,7 +124,7 @@ int raytracing()
 	gui_create_window(WIDTH, HEIGHT);
 
 	// 加载覆盖整个视口的正方形
-	std::vector<float> quadVerts{ -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0 };
+	std::vector<Vertex1> quadVerts{ {-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0} };
 	std::vector<uint32_t> quadIndices{ 0,1,2,0,2,3 };
 	Buffer quad(quadVerts, quadIndices);
 
