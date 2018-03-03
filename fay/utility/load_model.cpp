@@ -52,7 +52,6 @@ static const std::unordered_map<std::string, ObjKeyword> map
 };
 
 // boost::format
-// 三角化、翻转 UV、计算切线
 // 理论上一个 mesh 由 'o' 开始，但碰到 'o'，'g'，'usemtl'，就新建一个 mesh
 ObjModel::ObjModel(const std::string& filepath, Thirdparty api) : BaseModel(filepath, api)
 {
@@ -104,9 +103,8 @@ ObjModel::ObjModel(const std::string& filepath, Thirdparty api) : BaseModel(file
 	}
 
 	for (auto& mesh : objmeshes)
-		meshes.push_back({ 
-		std::move(mesh), 
-		std::move(materials[mesh.mat_name]) });
+		meshes.push_back({ std::move(mesh), materials[mesh.mat_name] });
+		// std::move(materials[mesh.mat_name]) });
 }
 
 std::vector<ObjMesh> ObjModel::load_meshs(
@@ -118,14 +116,14 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 	std::string cur_mesh_name;
 
 	// TODO: explain
-	std::vector<glm::vec3> positions{ 0 };
-	std::vector<glm::vec3> normals{ 0 };
-	std::vector<glm::vec3> texcoords{ 0 };
+	// std::vector<glm::vec3> positions{ 0 };
+	std::vector<glm::vec3> positions(1, glm::vec3());
+	std::vector<glm::vec3> normals(1, glm::vec3());
+	std::vector<glm::vec3> texcoords(1, glm::vec3());
 
 	// int nPositions{}, nNormals{}, nTexcoods{};
 
-	glm::vec3 v;	// value
-	glm::uvec4 p, t, n;	// index
+	glm::vec3 v{};	// value
 
 	auto get_xyz = [&v](std::istringstream& iss) { iss >> v.x >> v.y >> v.z; };
 	
@@ -164,6 +162,10 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 
 		switch (map.at(token))	// operator[] only for nonconstant 
 		{
+		case ObjKeyword::comment:
+			std::cout << "obj file comment: " << line << '\n';
+			break;
+
 		case ObjKeyword::v :
 			get_xyz(iss);
 			positions.emplace_back(v);
@@ -180,13 +182,13 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 		case ObjKeyword::o :	// firstline
 		case ObjKeyword::g :
 			add_and_clear(mesh);
-			cur_mesh_name = erase_white_spaces(line);
+			iss >> cur_mesh_name;
 			mesh.name = cur_mesh_name;
 			break;
 
 		case ObjKeyword::usemtl:
 			add_and_clear(mesh);
-			mesh.mat_name = erase_white_spaces(line);
+			iss >> mesh.mat_name;
 			mesh.name = cur_mesh_name + '_' + mesh.mat_name;
 			break;
 
@@ -197,7 +199,7 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 		case ObjKeyword::f :
 		{
 			// TODO: more simple way
-			auto num_of_char = [](const std::string line, char ch)-> size_t
+			auto num_of_char = [](const std::string& line, char ch)-> size_t
 			{
 				size_t count = 0, pos = line.find(ch);
 				while (pos != std::string::npos) 
@@ -208,6 +210,8 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 				return count;
 			};
 
+			glm::ivec4 p{}, t{}, n{};	// index
+
 			int count = 3;	// 若一个 face 有四个顶点，则需要拆分
 			if (num_of_char(line, ' ') == 4)
 				count = 4;
@@ -216,9 +220,9 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 
 			if (line.find("//") != std::string::npos)	
 			{	// pos//normal, no uv. "f 181//176 182//182 209//208"
+
 				for (int i = 0; i < count; ++i)
 					iss >> p[i] >> ch >> ch >> n[i];
-				t = {0, 0, 0, 0};
 			}
 			else
 			{
@@ -226,29 +230,29 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 
 				if ((nSprit == 6) || (nSprit == 8))		
 				{	// pos/uv/normal. "f 181/292/176 182/250/182 209/210/208"
+
 					for (int i = 0; i < count; ++i)
-						iss >> p[i] >> ch >> t[2] >> ch >> n[i];
+						iss >> p[i] >> ch >> t[i] >> ch >> n[i];
 				}
 				else if ((nSprit == 3) || (nSprit == 4))	
 				{	// pos/uv, no normal. "f 181/176 182/182 209/208"
+
 					for (int i = 0; i < count; ++i)
 						iss >> p[i] >> ch >> t[i];
-					n = { 0, 0, 0, 0 };
 				}
 				else					
 				{	// pos, no uv/normal. "f 181 182 209"
+
 					for (int i = 0; i < count; ++i)
 						iss >> p[i];
-					t = { 0, 0, 0, 0 };
-					n = { 0, 0, 0, 0 };
 				}
 			}
 
 			// deal with negative index
 			// come from -1
-			auto deal_with_negative_index = [](glm::uvec3 v, size_t sz)
+			auto deal_with_negative_index = [](glm::ivec4& v, size_t sz)
 			{
-				if (v[0] < 0) { v += 1; v += sz; } 
+				if (v[0] < 0) { /*v += 1;*/ v += sz; } 
 			};
 
 			deal_with_negative_index(p, positions.size());
@@ -258,10 +262,14 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 
 			// vertex
 			glm::vec3 pos, nor, tex;
-			uint32_t index = mesh.vertices.size() - 1;
+			// uint32_t index = mesh.vertices.size() - 1;
+			uint32_t index = mesh.vertices.size();
 
 			for(int i = 0; i < count; ++i)
 			{	// access container[0] is ok
+				DCHECK(0 <= p[i] && p[i] < positions.size()) << "vector out of range: " << p[i];
+				DCHECK(0 <= n[i] && n[i] < normals.size())   << "vector out of range: " << n[i];
+				DCHECK(0 <= t[i] && t[i] < texcoords.size()) << "vector out of range: " << t[i];
 				pos = positions[p[i]];
 				nor   = normals[n[i]];
 				tex = texcoords[t[i]];
@@ -270,13 +278,21 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 
 			// index
 			if (api == Thirdparty::gl)
-			{
+			{   // 此时无需 UV 反转
 				mesh.indices.insert(mesh.indices.end(), 
 					{ index, index + 1, index + 2 });
 
 				if (count == 4)
 					mesh.indices.insert(mesh.indices.end(),
 						{ index + 2, index + 3, index });
+				/*
+				mesh.indices.insert(mesh.indices.end(), 
+					{ index + 2, index + 1, index });
+
+				if (count == 4)
+					mesh.indices.insert(mesh.indices.end(),
+						{ index, index + 3, index + 2 });
+				*/
 			}
 
 			break;
@@ -287,6 +303,7 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 			break;
 		}
 	}
+	add_and_clear(mesh);	// 加入最后一个 mesh
 
 	return std::move(submeshes);
 }
@@ -299,7 +316,7 @@ ObjModel::load_materials(const std::string& filepath)
 	std::unordered_map<std::string, ObjMaterial> materials;
 	ObjMaterial mat;
 
-	glm::vec3 v;	// value
+	glm::vec3 v{};	// value
 
 	auto get_xyz = [&v](std::istringstream& iss) { iss >> v.x >> v.y >> v.z; };
 
@@ -360,6 +377,7 @@ ObjModel::load_materials(const std::string& filepath)
 			break;
 		}
 	}
+	add_and_clear(mat);
 	
 	return std::move(materials);
 }

@@ -52,8 +52,9 @@ public:
 		int count[8]{};
 		std::string sampler;
 
-		for (size_t i = 0, sz = 0; i < textures.size(); ++i)
+		for (size_t i = 0; i < textures.size(); ++i)
 		{
+			size_t sz = 0;
 			for (; sz < type.size(); ++sz)
 				if (textures[i].type() == type[sz])
 					break;

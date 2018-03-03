@@ -36,6 +36,14 @@ obj_Model::obj_Model(const std::string& filepath, bool gamma) : gamma_correction
 		auto& objmesh = mesh.first;
 		auto& objmat = mesh.second;
 
+	#ifdef _DEBUG
+		std::cout
+			<< objmesh.name
+			<< ' ' << objmesh.mat_name
+			<< ' ' << objmat.name
+			<< ' ' << objmat.map_Kd << '\n';
+	#endif // _DEBUG
+
 		std::vector<std::pair<Image, TexType>> images;
 
 		if (!objmat.map_Ka.empty()) images.emplace_back( 

@@ -57,8 +57,8 @@ enum class ObjKeyword
 
 struct ObjMesh
 {
-	std::string name;
-	std::string mat_name;
+	std::string name{};
+	std::string mat_name{};
 	int smoothing_group{};
 
 	std::vector<Vertex3>  vertices{};
@@ -67,11 +67,11 @@ struct ObjMesh
 
 struct ObjMaterial
 {
-	std::string name;
+	std::string name{};
 
-	glm::vec3 ambient{};
-	glm::vec3 diffuse{};
-	glm::vec3 specular{};
+	// glm::vec3 ambient{};
+	// glm::vec3 diffuse{};
+	// glm::vec3 specular{};
 
 	float Ns, Ni, d, Tr, Tf;
 	int illum;
