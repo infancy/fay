@@ -89,5 +89,8 @@
     <ClInclude Include="..\..\fay\utility\file.h">
       <Filter>utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\fay\utility\string.h">
+      <Filter>utility</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

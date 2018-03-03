@@ -71,7 +71,7 @@ Buffer::Buffer(std::vector<Vertex3>& vertices, std::vector<uint32_t>& indices)
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3), (void*)offsetof(Vertex3, normal));
 	// vertex texture coords
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3), (void*)offsetof(Vertex3, texCoords));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3), (void*)offsetof(Vertex3, texcoord));
 
 	glBindVertexArray(0);
 }
@@ -100,7 +100,7 @@ Buffer::Buffer(std::vector<Vertex5>& vertices, std::vector<uint32_t>& indices)
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex5), (void*)offsetof(Vertex5, normal));
 	// vertex texture coords
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex5), (void*)offsetof(Vertex5, texCoords));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex5), (void*)offsetof(Vertex5, texcoord));
 	// vertex tangent
 	glEnableVertexAttribArray(3);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex5), (void*)offsetof(Vertex5, tangent));
@@ -118,6 +118,7 @@ void Buffer::draw()
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLES, isz, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
+	glActiveTexture(GL_TEXTURE0);
 }
 
 } // namespace fay

@@ -133,6 +133,8 @@ struct _23_light_map;
 struct _30_load_mesh;
 struct _31_load_model;
 
+struct _fay_obj_model;
+
 // -----------------------------------------------------------------------------
 
 struct _00_create_gui
@@ -183,7 +185,7 @@ struct _30_load_mesh
 {
 	// 加载覆盖整个视口的正方形
 	Model model{ Nanosuit };
-	Shader shader{ "shader/model_loading.vs", "shader/model_loading.fs" };
+	Shader shader{ "learngl/30_load_model.vs", "learngl/30_load_model.fs" };
 
 	_30_load_mesh()
 	{
@@ -201,9 +203,29 @@ struct _31_load_model
 {
 	// 加载覆盖整个视口的正方形
 	Model model{ Nanosuit };
-	Shader shader{"shader/model_loading.vs", "shader/model_loading.fs"};
+	Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
 
 	_31_load_model()
+	{
+		shader.enable();
+	}
+
+	void draw(glm::mat4& MVP)
+	{
+		shader.set_mat4("MVP", MVP);
+		model.draw(shader);
+	}
+};
+
+// -----------------------------------------------------------------------------
+
+struct _fay_obj_model
+{
+	// 加载覆盖整个视口的正方形
+	obj_Model model{ Blocks };
+	Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
+
+	_fay_obj_model()
 	{
 		shader.enable();
 	}
@@ -227,7 +249,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_31_load_model xx;
+	_fay_obj_model xx;
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);

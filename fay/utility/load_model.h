@@ -18,7 +18,6 @@ namespace fay
 template<typename Vertex>
 struct BaseMesh
 {
-	// template<typename Vertex> 
 	std::vector<Vertex>   vertices;
 	std::vector<uint32_t> indices;
 	std::vector<std::pair<Image, TexType>> images;
@@ -29,7 +28,6 @@ struct BaseMesh
 	{}
 };
 
-using ObjMesh    = BaseMesh<Vertex3>;
 using AssimpMesh = BaseMesh<Vertex5>;
 
 // model -----------------------------------------------------------------------
@@ -39,18 +37,71 @@ struct BaseModel
 	const std::string path;	// resources_directory
 	Thirdparty api;
 
+	// glm::vec3 min{}, max{};
+
 	BaseModel(const std::string& filepath, Thirdparty api);
 };
 
 // load model by fay -----------------------------------------------------------
 
+enum class ObjKeyword
+{
+	comment, // '#'
+	v, vn, vt, 
+	o, g, s, f,
+	mtllib, usemtl, newmtl,
+	Ns, Ni, d, Tr, Tf, illum,
+	Ka, Kd, Ks, Ke,
+	map_Ka, map_Kd, map_Ks, map_Ke, map_d, map_bump
+};
+
+struct ObjMesh
+{
+	std::string name;
+	std::string mat_name;
+	int smoothing_group{};
+
+	std::vector<Vertex3>  vertices{};
+	std::vector<uint32_t> indices{};
+};
+
+struct ObjMaterial
+{
+	std::string name;
+
+	glm::vec3 ambient{};
+	glm::vec3 diffuse{};
+	glm::vec3 specular{};
+
+	float Ns, Ni, d, Tr, Tf;
+	int illum;
+	glm::vec3 Ka{};
+	glm::vec3 Kd{};
+	glm::vec3 Ks{};
+	glm::vec3 Ke{};
+
+	// static constexpr int nMap = 6;
+	std::string map_Ka, map_Kd, map_Ks, map_Ke, map_d, map_bump;
+	// std::vector<uint32_t> sub_indices;
+	// int offset;
+	// int count;
+
+	// ObjMaterial() { memset(this, 0, sizeof(ObjMaterial)); }
+};
+
 class ObjModel : public BaseModel
 {
 public:
-	std::vector<ObjMesh> meshes;
+	ObjModel(const std::string& filepath, Thirdparty api = Thirdparty::gl);
+
+private:
+	std::vector<ObjMesh> load_meshs(const std::string& firstline, std::ifstream& file);
+	// 也可以在 load_materials() 里直接构造 materials，但这样写更清楚
+	std::unordered_map<std::string, ObjMaterial> 
+		load_materials(const std::string& filepath);
 
 public:
-	ObjModel(const std::string& filepath, Thirdparty api = Thirdparty::gl);
+	std::vector<std::pair<ObjMesh, ObjMaterial>> meshes;
 };
 
 // std::vector<Mesh> create_meshes(const ObjModel& obj);

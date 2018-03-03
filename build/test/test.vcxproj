@@ -18,39 +18,10 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\fay\gl\buffer.cpp" />
-    <ClCompile Include="..\..\fay\gl\model.cpp" />
-    <ClCompile Include="..\..\fay\gl\shader.cpp" />
-    <ClCompile Include="..\..\fay\gl\texture.cpp" />
-    <ClCompile Include="..\..\fay\gui\gui.cpp" />
-    <ClCompile Include="..\..\fay\gui\window.cpp" />
-    <ClCompile Include="..\..\fay\utility\load_model.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\fay\gl\buffer.h" />
-    <ClInclude Include="..\..\fay\gl\camera.h" />
-    <ClInclude Include="..\..\fay\gl\gl.h" />
-    <ClInclude Include="..\..\fay\gl\mesh.h" />
-    <ClInclude Include="..\..\fay\gl\model.h" />
-    <ClInclude Include="..\..\fay\gl\resources.h" />
-    <ClInclude Include="..\..\fay\gl\shader.h" />
-    <ClInclude Include="..\..\fay\gl\texture.h" />
-    <ClInclude Include="..\..\fay\gui\gui.h" />
-    <ClInclude Include="..\..\fay\gui\window.h" />
-    <ClInclude Include="..\..\fay\utility\fay.h" />
-    <ClInclude Include="..\..\fay\utility\file.h" />
-    <ClInclude Include="..\..\fay\utility\image.h" />
-    <ClInclude Include="..\..\fay\utility\log.h" />
-    <ClInclude Include="..\..\fay\utility\config.h" />
-    <ClInclude Include="..\..\fay\utility\load_model.h" />
-    <ClInclude Include="..\..\fay\utility\stencil.h" />
-    <ClInclude Include="..\..\fay\utility\string.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{B93773F7-60E4-429C-90EE-6DE03A620113}</ProjectGuid>
-    <RootNamespace>fay</RootNamespace>
+    <ProjectGuid>{62A188DD-2295-4610-9F3D-07BC831642F6}</ProjectGuid>
+    <RootNamespace>test</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -68,13 +39,13 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -101,18 +72,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -122,6 +95,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -135,12 +109,17 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\fay\test\character_processing.cpp" />
+    <ClCompile Include="..\..\fay\test\test.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

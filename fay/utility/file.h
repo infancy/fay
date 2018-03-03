@@ -5,7 +5,7 @@
 #ifndef FAY_UTILITY_FILE_H
 #define FAY_UTILITY_FILE_H
 
-#include <string>
+#include "fay/utility/fay.h"
 
 namespace fay
 {
@@ -26,6 +26,34 @@ inline std::string get_filetype(const std::string& filepath)
 {
 	return filepath.substr(filepath.find_last_of('.') + 1);
 }
+
+std::ifstream load_file(const std::string& filepath)
+{
+	std::ifstream file(filepath);
+	CHECK(!file.fail()) << "can't open the file: " << filepath;
+
+	std::cout << "loading the file: " << filepath << '\n';
+	return std::move(file);
+}
+
+// 二进制、文本，utf、GB213……
+// template
+class File
+{
+public:
+	File();
+
+	std::string getline();
+	std::string putline();
+	char getchar();
+	void putchar();
+	size_t current_line();
+	size_t current_char();
+
+private:
+	std::queue<std::string> line_cache;	// 用户可自行根据需要确定缓存的行数大小（以备 putline）
+	// std::vector<std::string> line_cache;
+};
 
 } // namespace fay
 

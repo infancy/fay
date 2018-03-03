@@ -20,9 +20,8 @@
 #include <functional>
 #include <iostream>
 #include <limits>
-#include <map>
 #include <memory>
-#include <set>
+#include <queue>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -88,8 +87,8 @@ enum class Thirdparty { none, gl, dx, vk };
 
 // graphics --------------------------------------------------------------------
 
-enum class TexType { none, diffuse, specular, ambient, emissive, height, 
-	normals, shininess, opacity, displacement, lightmap, reflection, unknown };
+enum class TexType { none, diffuse, specular, ambient, emissive, height, alpha,
+	normals, shininess, opacity, displace, lightmap, reflection, unknown };
 
 } // namespace fay
 

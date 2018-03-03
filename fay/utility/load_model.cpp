@@ -1,5 +1,6 @@
 #include "load_model.h"
 #include "fay/utility/file.h"
+#include "fay/utility/string.h"
 #include <assimp/Importer.hpp>
 
 // using namespace std;
@@ -12,8 +13,355 @@ BaseModel::BaseModel(const std::string& filepath, Thirdparty api) :
 
 // load obj model --------------------------------------------------------------
 
+static const std::unordered_map<std::string, ObjKeyword> map
+{
+	{ "#", ObjKeyword::comment },
+
+	{ "v",  ObjKeyword::v },
+	{ "vn", ObjKeyword::vn },
+	{ "vt", ObjKeyword::vt },
+
+	{ "o", ObjKeyword::o },
+	{ "g", ObjKeyword::g },
+	{ "s", ObjKeyword::s },
+	{ "f", ObjKeyword::f },
+
+	{ "mtllib", ObjKeyword::mtllib },
+	{ "usemtl", ObjKeyword::usemtl },
+	{ "newmtl", ObjKeyword::newmtl },
+
+	{ "Ns", ObjKeyword::Ns },
+	{ "Ni", ObjKeyword::Ni },
+	{ "d",  ObjKeyword::d },
+	{ "Tr", ObjKeyword::Tr },
+	{ "Tf", ObjKeyword::Tf },
+	{ "illum", ObjKeyword::illum },
+
+	{ "Ka", ObjKeyword::Ka },
+	{ "Kd", ObjKeyword::Kd },
+	{ "Ks", ObjKeyword::Ks },
+	{ "Ke", ObjKeyword::Ke },
+
+	{ "map_Ka", ObjKeyword::map_Ka },
+	{ "map_Kd", ObjKeyword::map_Kd },
+	{ "map_Ks", ObjKeyword::map_Ks },
+	{ "map_Ke", ObjKeyword::map_Ke },
+	{ "map_d", ObjKeyword::map_d },
+	{ "map_bump", ObjKeyword::map_bump },
+	{ "map_Bump", ObjKeyword::map_bump },
+};
+
+// boost::format
+// 三角化、翻转 UV、计算切线
+// 理论上一个 mesh 由 'o' 开始，但碰到 'o'，'g'，'usemtl'，就新建一个 mesh
 ObjModel::ObjModel(const std::string& filepath, Thirdparty api) : BaseModel(filepath, api)
 {
+	// load *.obj
+	std::ifstream file(filepath);
+	CHECK(!file.fail()) << "can't open the file: " << filepath;
+
+	std::cout << "loading the file: " << filepath << '\n';
+
+	std::unordered_map<std::string, ObjMaterial> materials;
+	std::vector<ObjMesh> submeshes;
+	std::vector<ObjMesh> objmeshes;
+
+	while (!file.eof())
+	{
+		std::string line;
+		std::getline(file, line);
+		line = erase_white_spaces(line);
+		if (line.length() <= 2) continue;
+
+		std::istringstream iss(line);
+		std::string token;
+		iss >> token;
+
+		CHECK(map.find(token) != map.end()) << "can't parser the token: " << token;
+
+		switch (map.at(token))	// operator[] only for nonconstant 
+		{
+		case ObjKeyword::comment :
+			std::cout << "obj file comment: " << line << '\n';
+			break;
+
+		case ObjKeyword::mtllib :
+			// std::fstream mtl("*.mtl");
+			materials = load_materials(erase_front_word(line));
+			break;
+
+		case ObjKeyword::o :
+		case ObjKeyword::v :
+			// CHECK(!line.empty()) << "can't parser the line: " << line;
+			submeshes = load_meshs(line, file);
+			objmeshes.insert(objmeshes.end(), submeshes.begin(), submeshes.end());
+			break;
+
+		default:
+			LOG(ERROR) << "can't parser the token: " << token;
+			break;
+		}
+	}
+
+	for (auto& mesh : objmeshes)
+		meshes.push_back({ 
+		std::move(mesh), 
+		std::move(materials[mesh.mat_name]) });
+}
+
+std::vector<ObjMesh> ObjModel::load_meshs(
+	const std::string& firstline, std::ifstream& file)
+{
+	std::vector<ObjMesh> submeshes;
+
+	ObjMesh mesh;
+	std::string cur_mesh_name;
+
+	// TODO: explain
+	std::vector<glm::vec3> positions{ 0 };
+	std::vector<glm::vec3> normals{ 0 };
+	std::vector<glm::vec3> texcoords{ 0 };
+
+	// int nPositions{}, nNormals{}, nTexcoods{};
+
+	glm::vec3 v;	// value
+	glm::uvec4 p, t, n;	// index
+
+	auto get_xyz = [&v](std::istringstream& iss) { iss >> v.x >> v.y >> v.z; };
+	
+	auto add_and_clear = [&submeshes](ObjMesh& mesh) 
+	{ 
+		if(!mesh.vertices.empty() && !mesh.indices.empty())
+		{	// 避免加入空的 mesh
+			submeshes.push_back(std::move(mesh));
+			mesh = ObjMesh();	// clear
+		}
+	};
+
+	// TODO: remove firstline
+	if (firstline[0] == 'o')
+		mesh.name = erase_front_word(firstline);
+	else
+	{
+		std::istringstream iss(firstline);
+		std::string token;
+		iss >> token >> v.x >> v.y >> v.z;
+		positions.emplace_back(v);
+	}
+
+	while (!file.eof())
+	{
+		std::string line;
+		std::getline(file, line);
+		line = erase_white_spaces(line);
+		if (line.length() <= 2) continue;
+
+		std::istringstream iss(line);
+		std::string token;
+		iss >> token;
+
+		CHECK(map.find(token) != map.end()) << "can't parser the token: " << token;
+
+		switch (map.at(token))	// operator[] only for nonconstant 
+		{
+		case ObjKeyword::v :
+			get_xyz(iss);
+			positions.emplace_back(v);
+			break;
+		case ObjKeyword::vn :
+			get_xyz(iss);
+			normals.emplace_back(v);
+			break;
+		case ObjKeyword::vt :
+			get_xyz(iss);
+			texcoords.emplace_back(v);
+			break;
+
+		case ObjKeyword::o :	// firstline
+		case ObjKeyword::g :
+			add_and_clear(mesh);
+			cur_mesh_name = erase_white_spaces(line);
+			mesh.name = cur_mesh_name;
+			break;
+
+		case ObjKeyword::usemtl:
+			add_and_clear(mesh);
+			mesh.mat_name = erase_white_spaces(line);
+			mesh.name = cur_mesh_name + '_' + mesh.mat_name;
+			break;
+
+		case ObjKeyword::s :
+			iss >> mesh.smoothing_group;
+			break;
+
+		case ObjKeyword::f :
+		{
+			// TODO: more simple way
+			auto num_of_char = [](const std::string line, char ch)-> size_t
+			{
+				size_t count = 0, pos = line.find(ch);
+				while (pos != std::string::npos) 
+				{
+					++count; 
+					pos = line.find(ch, pos + 1); 
+				}
+				return count;
+			};
+
+			int count = 3;	// 若一个 face 有四个顶点，则需要拆分
+			if (num_of_char(line, ' ') == 4)
+				count = 4;
+
+			char ch;
+
+			if (line.find("//") != std::string::npos)	
+			{	// pos//normal, no uv. "f 181//176 182//182 209//208"
+				for (int i = 0; i < count; ++i)
+					iss >> p[i] >> ch >> ch >> n[i];
+				t = {0, 0, 0, 0};
+			}
+			else
+			{
+				auto nSprit = num_of_char(line, '/');
+
+				if ((nSprit == 6) || (nSprit == 8))		
+				{	// pos/uv/normal. "f 181/292/176 182/250/182 209/210/208"
+					for (int i = 0; i < count; ++i)
+						iss >> p[i] >> ch >> t[2] >> ch >> n[i];
+				}
+				else if ((nSprit == 3) || (nSprit == 4))	
+				{	// pos/uv, no normal. "f 181/176 182/182 209/208"
+					for (int i = 0; i < count; ++i)
+						iss >> p[i] >> ch >> t[i];
+					n = { 0, 0, 0, 0 };
+				}
+				else					
+				{	// pos, no uv/normal. "f 181 182 209"
+					for (int i = 0; i < count; ++i)
+						iss >> p[i];
+					t = { 0, 0, 0, 0 };
+					n = { 0, 0, 0, 0 };
+				}
+			}
+
+			// deal with negative index
+			// come from -1
+			auto deal_with_negative_index = [](glm::uvec3 v, size_t sz)
+			{
+				if (v[0] < 0) { v += 1; v += sz; } 
+			};
+
+			deal_with_negative_index(p, positions.size());
+			deal_with_negative_index(t, texcoords.size());
+			deal_with_negative_index(n, normals.size());
+
+
+			// vertex
+			glm::vec3 pos, nor, tex;
+			uint32_t index = mesh.vertices.size() - 1;
+
+			for(int i = 0; i < count; ++i)
+			{	// access container[0] is ok
+				pos = positions[p[i]];
+				nor   = normals[n[i]];
+				tex = texcoords[t[i]];
+				mesh.vertices.emplace_back(pos, nor, glm::vec2{tex.s, tex.t});
+			}
+
+			// index
+			if (api == Thirdparty::gl)
+			{
+				mesh.indices.insert(mesh.indices.end(), 
+					{ index, index + 1, index + 2 });
+
+				if (count == 4)
+					mesh.indices.insert(mesh.indices.end(),
+						{ index + 2, index + 3, index });
+			}
+
+			break;
+		}
+
+		default:
+			LOG(ERROR) << "can't parser the token: " << token;
+			break;
+		}
+	}
+
+	return std::move(submeshes);
+}
+
+std::unordered_map<std::string, ObjMaterial> 
+ObjModel::load_materials(const std::string& filepath)
+{
+	// load *.mtl
+	auto file = load_file(this->path + filepath);
+	std::unordered_map<std::string, ObjMaterial> materials;
+	ObjMaterial mat;
+
+	glm::vec3 v;	// value
+
+	auto get_xyz = [&v](std::istringstream& iss) { iss >> v.x >> v.y >> v.z; };
+
+	auto add_and_clear = [&materials](ObjMaterial& mat)
+	{
+		if (!mat.name.empty())
+		{	// 避免加入空的 material
+			materials.insert({ mat.name, std::move(mat) });
+			mat = ObjMaterial(); // clear
+		}
+	};
+
+	while (!file.eof())
+	{
+		std::string line;
+		std::getline(file, line);
+		line = erase_white_spaces(line);
+		if (line.length() <= 2) continue;
+
+		std::istringstream iss(line);
+		std::string token;
+		iss >> token;
+
+		CHECK(map.find(token) != map.end()) << "can't parser the token: " << token;
+
+		switch (map.at(token))	// operator[] only for nonconstant 
+		{
+		case ObjKeyword::comment :
+			std::cout << "mtl file comment: " << line << '\n';
+			break;
+
+		case ObjKeyword::newmtl :
+			add_and_clear(mat);
+			iss >> mat.name;
+			break;
+
+		case ObjKeyword::Ns : iss >> mat.Ns; break;
+		case ObjKeyword::Ni : iss >> mat.Ni; break;
+		case ObjKeyword::d  : iss >> mat.d;  break;
+		case ObjKeyword::Tr : iss >> mat.Tr; break;
+		case ObjKeyword::Tf : iss >> mat.Tf; break;
+		case ObjKeyword::illum : iss >> mat.illum; break;
+
+		case ObjKeyword::Ka : get_xyz(iss); mat.Ka = v; break;
+		case ObjKeyword::Kd : get_xyz(iss); mat.Kd = v; break;
+		case ObjKeyword::Ks : get_xyz(iss); mat.Ks = v; break;
+		case ObjKeyword::Ke : get_xyz(iss); mat.Ke = v; break;
+
+		case ObjKeyword::map_Ka : iss >> mat.map_Ka; break;
+		case ObjKeyword::map_Kd : iss >> mat.map_Kd; break;
+		case ObjKeyword::map_Ks : iss >> mat.map_Ks; break;
+		case ObjKeyword::map_Ke : iss >> mat.map_Ke; break;
+		case ObjKeyword::map_d  : iss >> mat.map_d;  break;
+		case ObjKeyword::map_bump : iss >> mat.map_bump; break;
+
+		default:
+			LOG(ERROR) << "can't parser the token: " << token;
+			break;
+		}
+	}
+	
+	return std::move(materials);
 }
 
 // 将位置、索引转换成纹理数据
@@ -63,6 +411,7 @@ void objMesh_transform_to_TextureDataArray(
 		<< " texpaths: " << texpaths.size();
 }
 */
+
 // load model by assimp --------------------------------------------------------
 
 AssimpModel::AssimpModel(const std::string& filepath, Thirdparty api) : BaseModel(filepath, api)
@@ -115,11 +464,11 @@ AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
 		{
 			// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
 			// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-			vertex.texCoords.x = mesh->mTextureCoords[0][i].x;
-			vertex.texCoords.y = mesh->mTextureCoords[0][i].y;
+			vertex.texcoord.x = mesh->mTextureCoords[0][i].x;
+			vertex.texcoord.y = mesh->mTextureCoords[0][i].y;
 		}
 		else
-			vertex.texCoords = glm::vec2(0.f, 0.f);
+			vertex.texcoord = glm::vec2(0.f, 0.f);
 
 		vertices.push_back(vertex);
 	}

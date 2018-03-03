@@ -41,7 +41,7 @@ public:
 
 	GLenum gl_format() const
 	{
-		GLenum GLformat;
+		GLenum GLformat{};
 
 		switch (channels)
 		{
