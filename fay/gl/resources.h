@@ -27,9 +27,9 @@ struct Vertex3
 	glm::vec2 texcoord;
 
 	Vertex3(
-		glm::vec3 p = glm::vec3(),
-		glm::vec3 n = glm::vec3(),
-		glm::vec2 t = glm::vec2())
+		glm::vec3 p = glm::vec3(0),
+		glm::vec3 n = glm::vec3(0),
+		glm::vec2 t = glm::vec2(0))
 		: position{ p }, normal{ n }, texcoord{ t } {}
 };
 
@@ -43,12 +43,24 @@ struct Vertex5
 	glm::vec3 bitangent;
 
 	Vertex5(
-		glm::vec3 p = glm::vec3(), 
-		glm::vec3 n = glm::vec3(),
-		glm::vec2 t = glm::vec2(),
-		glm::vec3 a = glm::vec3(),
-		glm::vec3 b = glm::vec3()) 
+		glm::vec3 p = glm::vec3(0), 
+		glm::vec3 n = glm::vec3(0),
+		glm::vec2 t = glm::vec2(0),
+		glm::vec3 a = glm::vec3(0),
+		glm::vec3 b = glm::vec3(0)) 
 		: position{ p }, normal{ n }, texcoord{ t }, tangent{ a }, bitangent{ b } {}
+};
+
+struct VertexN
+{
+	glm::vec3 position;
+	glm::vec3 normal;
+	glm::vec2 texcoord;
+
+	union
+	{
+		float va[16];
+	};
 };
 
 } // namespace fay

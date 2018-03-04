@@ -31,6 +31,7 @@ float deltaTime = 0.f;
 float lastFrame = 0.f;
 
 // objects
+const string Nier_2b = "objects/Nier_2b/2b.obj";
 const string Box = "objects/box/box.obj";
 const string Blocks = "objects/blocks/blocks.obj";
 const string Rei = "objects/Rei/Rei.obj";
@@ -38,21 +39,22 @@ const string CornellBox = "objects/CornellBox/CornellBox.obj";
 const string Rock = "objects/rock/rock.obj";
 const string Fairy = "objects/fairy/fairy.obj";
 const string Nanosuit = "objects/nanosuit/nanosuit.obj";
-const string Cherry_Tree = "objects/Cherry_Tree.fbx";
+const string silly_dancing = "objects/silly_dancing.fbx";
+const string nierautomata_2b = "objects/nierautomata_2b/scene.gltf";
+const string ftm_sketchfab = "objects/ftm/ftm_sketchfab.blend";
+const string Nier_2b_ik_rigged = "objects/Nier_2b_ik_rigged/scene.gltf";
 // const string mesh_filename = Blocks;
 
 // camera
-Camera camera(glm::vec3(0, 0, 10));;
+Camera camera(glm::vec3(0, 5, 10));;
 float lastX = Width / 2.0f;
 float lastY = Height / 2.0f;
 bool firstMouse = true;
 
 //light 
 glm::vec3 lightPosition = glm::vec3(0, 10, 0); //objectspace light position
-//spherical cooridate variables for light rotation
-float theta = 0.f;
-float phi = 0.25f;
-float ligth_radius = 10;
+float light_speed = 2.f;
+glm::vec3 light_scale(0.5f, 0.5f, 0.5f);
 
 // 鼠标移动设置与渲染设置
 char mouse_move = 'z';
@@ -76,23 +78,13 @@ void update()
 
 	ImGuiIO& io = gui_get_io();
 
-	if (io.KeysDown[GLFW_KEY_W]) camera.ProcessKeyboard(FORWARD, deltaTime);
-	if (io.KeysDown[GLFW_KEY_S]) camera.ProcessKeyboard(BACKWARD, deltaTime);
-	if (io.KeysDown[GLFW_KEY_A]) camera.ProcessKeyboard(LEFT, deltaTime);
-	if (io.KeysDown[GLFW_KEY_D]) camera.ProcessKeyboard(RIGHT, deltaTime);
-
 	if (io.KeysDown[GLFW_KEY_1]) render_state = 1;	// raster
 	if (io.KeysDown[GLFW_KEY_2]) render_state = 2;	// raycast
 	if (io.KeysDown[GLFW_KEY_3]) render_state = 3;	// pathtracing
 
 	// 鼠标移动
 	float xpos = io.MousePos.x, ypos = io.MousePos.y;
-	if (firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
+	if (firstMouse) { lastX = xpos; lastY = ypos; firstMouse = false; }
 
 	float xoffset = xpos - lastX;
 	// reversed since y-coordinates go from bottom to top but z_xais form out to in
@@ -101,24 +93,42 @@ void update()
 
 	// 粘滞
 	// if (io.KeysDown[GLFW_KEY_SPACE] == GLFW_PRESS) mouse_move = ++mouse_move % 3;
-	if (io.KeysDown[GLFW_KEY_Z]) mouse_move = 'z';	// raster
-	if (io.KeysDown[GLFW_KEY_X]) mouse_move = 'x';	// raycast
-	if (io.KeysDown[GLFW_KEY_C]) mouse_move = 'c';	// pathtracing
+	if (io.KeysDown[GLFW_KEY_Z]) mouse_move = 'z';
+	if (io.KeysDown[GLFW_KEY_X]) mouse_move = 'x';
+	if (io.KeysDown[GLFW_KEY_C]) mouse_move = 'c';
 
 	if (mouse_move == 'z')
 	{
 		camera.ProcessMouseMovement(xoffset, yoffset);
+		if (io.KeysDown[GLFW_KEY_W]) camera.ProcessKeyboard(FORWARD, deltaTime);
+		if (io.KeysDown[GLFW_KEY_S]) camera.ProcessKeyboard(BACKWARD, deltaTime);
+		if (io.KeysDown[GLFW_KEY_A]) camera.ProcessKeyboard(LEFT, deltaTime);
+		if (io.KeysDown[GLFW_KEY_D]) camera.ProcessKeyboard(RIGHT, deltaTime);
 		//camera.ProcessMouseScroll(io.MouseWheel); 禁止放缩
 	}
 	else if (mouse_move == 'x')
 	{
-		theta += xoffset / 60.0f;
-		phi += yoffset / 60.0f;
-		ligth_radius -= 10 * io.MouseWheel;
+		// 向前滚为正，向后为后，根据速度从 -5 ~ 5
+		light_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * io.MouseWheel;
+		if (light_scale.x < 0.f)
+			light_scale = glm::vec3(0.1f, 0.1f, 0.1f);
+		if (light_scale.x > 1.f)
+			light_scale = glm::vec3(1.f, 1.f, 1.f);
 
-		lightPosition.x = ligth_radius * cos(theta)*sin(phi);
-		lightPosition.y = ligth_radius * cos(phi);
-		lightPosition.z = ligth_radius * sin(theta)*sin(phi);
+		light_speed -= io.MouseWheel;
+		if (light_speed <= 0.f)
+			light_speed = 0.f;
+		if (light_speed >= 10.f)
+			light_speed = 10.f;
+
+		if (io.KeysDown[GLFW_KEY_W]) lightPosition.z -= deltaTime * light_speed;
+		if (io.KeysDown[GLFW_KEY_S]) lightPosition.z += deltaTime * light_speed;
+		if (io.KeysDown[GLFW_KEY_A]) lightPosition.x -= deltaTime * light_speed;
+		if (io.KeysDown[GLFW_KEY_D]) lightPosition.x += deltaTime * light_speed;
+		if (io.MouseDown[0]) lightPosition.y += deltaTime * light_speed;
+		if (io.MouseDown[1]) lightPosition.y -= deltaTime * light_speed;
+
+		// if (io.MouseDown[2]) clear_color = ImColor(255, 255, 255);
 	}
 	else
 	{
@@ -168,14 +178,34 @@ struct _00_create_gui
 
 struct _20_color
 {
-	Model model{ Fairy };
-	Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
+	Model model{ Rei };
+	Shader shader{ "learngl/20_color.vs", "learngl/20_color.fs" };
 	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
 
-	void draw(glm::mat4& MVP)
+	float sAmbient = 0.1f;
+	float strDiffuse = 1.f;
+	float sSpeclar = 0.1f;
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
+		// TODO: bind imgui to shader
+		ImGui::SliderFloat("ambient strength", &sAmbient, 0.f, 1.f);
+		ImGui::SliderFloat("diffuse strength", &strDiffuse, 0.f, 10.f);
+		ImGui::SliderFloat("speclar strength", &sSpeclar, 0.f, 1.f);
+
+		glm::mat4 mat4_normal = glm::transpose(glm::inverse(m));
+		// glm::mat3 m_normal = mat4_normal;
+		glm::mat3 m_normal(mat4_normal);
+
 		shader.enable();
-		shader.set_mat4("MVP", MVP);
+		shader.set_mat4("model", m);
+		shader.set_mat3("NorModel", m_normal);
+		shader.set_mat4("MVP", p * v * m);
+		shader.set_vec3("lightPos", lightPosition);
+		shader.set_vec3("lightcolor", glm::vec3(light_color.x, light_color.y, light_color.z));
+		shader.set_float("sAmbient", sAmbient);
+		shader.set_float("strDiffuse", strDiffuse);
+		shader.set_float("sSpeclar", sSpeclar);
 		// shader.set_vec3("lightcolor", glm::vec3(1, 1, 1));
 		model.draw(shader);
 		// model.draw();
@@ -240,10 +270,10 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
+	_20_color object;
+
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
-
-	_20_color object;
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -264,8 +294,13 @@ int main(int argc, char** argv)
 
 		// draw
 		glm::mat4 model(1.f);
+		// 1.0f, 1.0f, 1.0f
+		// 10.f, 10.f, 10.f
+		// 0.5f, 0.5f, 0.5f
+		// 0.3f, 0.3f, 0.3f
+		model = glm::scale(model, glm::vec3(10.f, 10.f, 10.f));
 		glm::mat4 MVP = projection * view * model;
-		object.draw(MVP);
+		object.draw(projection, view, model);
 
 		// draw light
 		// glDisable(GL_DEPTH_TEST);
@@ -274,7 +309,7 @@ int main(int argc, char** argv)
 			lightshader.enable();
 			glm::mat4 mLight{ 1 };
 			mLight = glm::translate( mLight, lightPosition);
-			mLight = glm::scale(mLight, glm::vec3(0.5f, 0.5f, 0.5f));
+			mLight = glm::scale(mLight, light_scale);
 			lightshader.set_mat4("MVP", projection * view * mLight);
 			// TODO: print error
 			// lightshader.set_vec3("lihgtcolor", glm::vec3(1, 1, 1));
@@ -289,6 +324,8 @@ int main(int argc, char** argv)
 		{
 			ImGui::Text("Info"); 
 			ImGui::Text("mouse move: %c", mouse_move);
+			ImGui::Text("light speed: %.1f", light_speed);
+			ImGui::Text("light scale: %.1f", light_scale.x);
 			ImGui::ColorEdit3("clear color", (float*)&clear_color);
 			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::SliderInt("samples_Perpixel", &samples_PerPixel, 1, 16);

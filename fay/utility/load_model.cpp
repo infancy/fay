@@ -432,7 +432,8 @@ void objMesh_transform_to_TextureDataArray(
 
 // load model by assimp --------------------------------------------------------
 
-AssimpModel::AssimpModel(const std::string& filepath, Thirdparty api) : BaseModel(filepath, api)
+AssimpModel::AssimpModel(const std::string& filepath, Thirdparty api, ModelType model_type) : 
+	BaseModel(filepath, api), model_type{ model_type }
 {
 	Assimp::Importer importer;
 	const aiScene* scene{};
@@ -479,8 +480,11 @@ AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
 
 		copy(vertex.position, mesh->mVertices[i]);
 		copy(vertex.normal, mesh->mNormals[i]);
-		copy(vertex.tangent, mesh->mTangents[i]);
-		copy(vertex.bitangent, mesh->mBitangents[i]);
+		if(model_type == ModelType::obj)
+		{ 
+			copy(vertex.tangent, mesh->mTangents[i]);
+			copy(vertex.bitangent, mesh->mBitangents[i]);
+		}
 
 		if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
 		{
@@ -513,6 +517,7 @@ AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
 		images.insert(images.end(), maps.begin(), maps.end());
 	};
 
+	load_maps(aiTextureType_AMBIENT,  TexType::ambient);
 	load_maps(aiTextureType_DIFFUSE,  TexType::diffuse);
 	load_maps(aiTextureType_SPECULAR, TexType::specular);
 	load_maps(aiTextureType_HEIGHT,   TexType::height);
@@ -536,6 +541,7 @@ AssimpModel::load_images(aiMaterial* mat, aiTextureType type, TexType textype)
 		{ 
 			if (images_cache.find(name) == images_cache.end())
 			{
+				std::cout << '\n' << "load image: " << (path + name);
 				Image img(path + name, api);
 				images.push_back({img, textype});
 				images_cache.insert({ name, img });

@@ -113,7 +113,7 @@ public:
 class AssimpModel : public BaseModel
 {
 public:
-	AssimpModel(const std::string& filepath, Thirdparty api = Thirdparty::gl);
+	AssimpModel(const std::string& filepath, Thirdparty api = Thirdparty::gl, ModelType model_type = ModelType::obj);
 
 private:
 	void process_node(aiNode* node, const aiScene* scene);
@@ -126,6 +126,7 @@ public:
 	std::vector<AssimpMesh> meshes;
 
 private:
+	ModelType model_type;
 	std::unordered_map<std::string, Image> images_cache;	// 保存已加载的图像，避免重复加载
 };
 

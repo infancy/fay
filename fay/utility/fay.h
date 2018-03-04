@@ -87,6 +87,8 @@ enum class Thirdparty { none, gl, dx, vk };
 
 // graphics --------------------------------------------------------------------
 
+enum class ModelType { obj, fbx, gltf, blend, unknown };
+
 enum class TexType { none, diffuse, specular, ambient, emissive, height, alpha,
 	normals, shininess, opacity, displace, lightmap, reflection, unknown };
 

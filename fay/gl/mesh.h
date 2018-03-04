@@ -40,20 +40,10 @@ public:
 		textures = textures;
 	}
 
-	// render the mesh, you need to bind texture by youself
-	void draw()
-	{
-		buffer.draw();
-	}
-
-	// bind texture and render the mesh
-	void draw(Shader shader)
+	void bind_texture(Shader shader)
 	{
 		int count[8]{};
 		std::string sampler;
-
-		// 还需要在 draw 前绑定其它数据
-		// shader.enable();
 
 		for (size_t i = 0; i < textures.size(); ++i)
 		{
@@ -64,11 +54,28 @@ public:
 			LOG_IF(ERROR, sz >= type.size()) << "TexType failed to choose: " << i;
 
 			sampler = name[sz];
-			if (count[sz]++ > 0) 
+			if (count[sz]++ > 0)
 				sampler += std::to_string(count[sz]);
 			// e.g. diff, diff1, diff2...
 			shader.bind_texture(sampler, i, textures[i].id());
 		}
+	}
+
+	// render the mesh, you need to bind texture by youself
+	void draw()
+	{
+		buffer.draw();
+	}
+
+	// bind texture and render the mesh
+	void draw(Shader shader)
+	{
+		// 还需要在 draw 前绑定其它数据
+		// shader.enable();
+
+		if (!textures.empty())
+			bind_texture(shader);
+
 		buffer.draw();
 		// shader.disable();
 		glActiveTexture(GL_TEXTURE0);

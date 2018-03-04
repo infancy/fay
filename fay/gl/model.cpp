@@ -4,17 +4,19 @@
 namespace fay
 {
 
-Model::Model(const std::string& filepath, bool gamma) : gamma_correction(gamma)
+Model::Model(const std::string& filepath, ModelType model_type, bool gamma) : gamma_correction(gamma)
 {
-	AssimpModel model(filepath);
+	AssimpModel model(filepath, Thirdparty::gl, model_type);
 	for (auto& mesh : model.meshes)
 	{
 	#ifdef _DEBUG
-		std::cout
+		std::cout << '\n'
 			<< mesh.vertices.size()
 			<< ' ' << mesh.indices.size()
-			<< ' ' << mesh.images.size()
-			<< ' ' << mesh.images[0].first.file_path() << '\n';
+			<< ' ' << mesh.images.size();
+			// << ' ' << mesh.images[0].first.file_path() << '\n';
+		if (mesh.images.size() != 0)
+			std::cout << ' ' << mesh.images[0].first.file_path();
 	#endif // _DEBUG
 
 		this->meshes.emplace_back(mesh.vertices, mesh.indices, mesh.images);
