@@ -38,6 +38,7 @@ const string CornellBox = "objects/CornellBox/CornellBox.obj";
 const string Rock = "objects/rock/rock.obj";
 const string Fairy = "objects/fairy/fairy.obj";
 const string Nanosuit = "objects/nanosuit/nanosuit.obj";
+const string Cherry_Tree = "objects/Cherry_Tree.fbx";
 // const string mesh_filename = Blocks;
 
 // camera
@@ -167,14 +168,17 @@ struct _00_create_gui
 
 struct _20_color
 {
-	Model model{ Box };
+	Model model{ Fairy };
 	Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
+	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
 
 	void draw(glm::mat4& MVP)
 	{
 		shader.enable();
 		shader.set_mat4("MVP", MVP);
+		// shader.set_vec3("lightcolor", glm::vec3(1, 1, 1));
 		model.draw(shader);
+		// model.draw();
 	}
 };
 
@@ -210,14 +214,17 @@ struct _31_load_model
 
 struct _fay_obj_model
 {
-	obj_Model model{ Blocks };
-	Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
+	obj_Model model{ Fairy };
+	// Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
+	Shader shader{ "learngl/light.vs", "learngl/light.fs" };
 
 	void draw(glm::mat4& MVP)
 	{
 		shader.enable();
 		shader.set_mat4("MVP", MVP);
-		model.draw(shader);
+		shader.set_vec3("lightcolor", glm::vec3(1, 1, 1));
+		// model.draw(shader);
+		model.draw();
 	}
 };
 

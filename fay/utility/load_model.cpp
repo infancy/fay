@@ -435,9 +435,13 @@ void objMesh_transform_to_TextureDataArray(
 AssimpModel::AssimpModel(const std::string& filepath, Thirdparty api) : BaseModel(filepath, api)
 {
 	Assimp::Importer importer;
-	// TODO: if(opengl)
-	const aiScene* scene = importer.ReadFile(filepath,
-		aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	const aiScene* scene{};
+	if(api == Thirdparty::gl)
+		scene = importer.ReadFile(filepath,
+			aiProcess_Triangulate | aiProcess_CalcTangentSpace);
+	else
+		scene = importer.ReadFile(filepath,
+			aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
 	if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE))
 	{
@@ -511,8 +515,8 @@ AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
 
 	load_maps(aiTextureType_DIFFUSE,  TexType::diffuse);
 	load_maps(aiTextureType_SPECULAR, TexType::specular);
-	load_maps(aiTextureType_HEIGHT,   TexType::normals);
-	load_maps(aiTextureType_AMBIENT,  TexType::height);
+	load_maps(aiTextureType_HEIGHT,   TexType::height);
+	load_maps(aiTextureType_AMBIENT,  TexType::ambient);
 
 	return AssimpMesh(vertices, indices, images);
 }
@@ -528,14 +532,17 @@ AssimpModel::load_images(aiMaterial* mat, aiTextureType type, TexType textype)
 		mat->GetTexture(type, i, &ainame);
 		std::string name{ ainame.C_Str() };
 
-		if (images_cache.find(name) == images_cache.end())
-		{
-			Image img(path + name, api);
-			images.push_back({img, textype});
-			images_cache.insert({ name, img });
+		if(!name.empty())
+		{ 
+			if (images_cache.find(name) == images_cache.end())
+			{
+				Image img(path + name, api);
+				images.push_back({img, textype});
+				images_cache.insert({ name, img });
+			}
+			else
+				images.push_back({images_cache[name], textype});
 		}
-		else
-			images.push_back({images_cache[name], textype});
 	}
 	return std::move(images);
 }

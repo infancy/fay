@@ -8,7 +8,17 @@ Model::Model(const std::string& filepath, bool gamma) : gamma_correction(gamma)
 {
 	AssimpModel model(filepath);
 	for (auto& mesh : model.meshes)
+	{
+	#ifdef _DEBUG
+		std::cout
+			<< mesh.vertices.size()
+			<< ' ' << mesh.indices.size()
+			<< ' ' << mesh.images.size()
+			<< ' ' << mesh.images[0].first.file_path() << '\n';
+	#endif // _DEBUG
+
 		this->meshes.emplace_back(mesh.vertices, mesh.indices, mesh.images);
+	}
 }
 
 /*
