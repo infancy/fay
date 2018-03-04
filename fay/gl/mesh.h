@@ -40,7 +40,7 @@ public:
 		textures = textures;
 	}
 
-	// render the mesh
+	// render the mesh, you need to bind texture by youself
 	void draw()
 	{
 		buffer.draw();
@@ -51,6 +51,9 @@ public:
 	{
 		int count[8]{};
 		std::string sampler;
+
+		// 还需要在 draw 前绑定其它数据
+		// shader.enable();
 
 		for (size_t i = 0; i < textures.size(); ++i)
 		{
@@ -66,8 +69,9 @@ public:
 			// e.g. diff, diff1, diff2...
 			shader.bind_texture(sampler, i, textures[i].id());
 		}
-
 		buffer.draw();
+		// shader.disable();
+		glActiveTexture(GL_TEXTURE0);
 	}
 
 public:

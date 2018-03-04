@@ -94,6 +94,8 @@ class ObjModel : public BaseModel
 public:
 	ObjModel(const std::string& filepath, Thirdparty api = Thirdparty::gl);
 
+	std::pair<glm::vec3, glm::vec3> bbox();	// 分离出 bbox 以：不为不需要的东西付出代价 & 避免复杂的加载代码
+
 private:
 	std::vector<ObjMesh> load_meshs(const std::string& firstline, std::ifstream& file);
 	// 也可以在 load_materials() 里直接构造 materials，但这样写更清楚

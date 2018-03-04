@@ -15,6 +15,9 @@ class Model
 public:
 	Model(const std::string& filepath, bool gamma = false);
 
+	// render the mesh, you need to bind texture by youself
+	void draw();
+	// bind texture and render the mesh
 	void draw(Shader shader);
 
 public:
@@ -28,6 +31,7 @@ class obj_Model
 public:
 	obj_Model(const std::string& filepath, bool gamma = false);
 
+	void draw();
 	void draw(Shader shader);
 
 public:

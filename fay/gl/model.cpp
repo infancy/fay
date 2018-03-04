@@ -20,6 +20,12 @@ Model::Model(const std::string& filepath, bool gamma) : gamma_correction(gamma)
 }
 */
 
+void Model::draw()
+{
+	for (auto& mesh : meshes)
+		mesh.draw();
+}
+
 void Model::draw(Shader shader)
 {
 	for (auto& mesh : meshes)
@@ -66,6 +72,12 @@ obj_Model::obj_Model(const std::string& filepath, bool gamma) : gamma_correction
 
 		this->meshes.emplace_back(objmesh.vertices, objmesh.indices, images);
 	}
+}
+
+void obj_Model::draw()
+{
+	for (auto& mesh : meshes)
+		mesh.draw();
 }
 
 void obj_Model::draw(Shader shader)

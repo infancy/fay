@@ -118,7 +118,6 @@ void Buffer::draw()
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLES, isz, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
-	glActiveTexture(GL_TEXTURE0);
 }
 
 } // namespace fay
