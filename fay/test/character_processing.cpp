@@ -1,7 +1,7 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
-#include "fay/utility/file.h"
-#include "fay/utility/string.h"
+#include <fay/utility/file.h>
+#include <fay/utility/string.h>
 
 using namespace fay;
 

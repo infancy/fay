@@ -74,7 +74,7 @@
   <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
@@ -119,6 +119,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\fay\test\character_processing.cpp" />
     <ClCompile Include="..\..\fay\test\test.cpp" />
+    <ClCompile Include="..\..\fay\test\time.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

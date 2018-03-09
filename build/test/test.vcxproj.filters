@@ -3,5 +3,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\fay\test\test.cpp" />
     <ClCompile Include="..\..\fay\test\character_processing.cpp" />
+    <ClCompile Include="..\..\fay\test\time.cpp" />
   </ItemGroup>
 </Project>

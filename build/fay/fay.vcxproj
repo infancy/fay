@@ -44,8 +44,10 @@
     <ClInclude Include="..\..\fay\utility\log.h" />
     <ClInclude Include="..\..\fay\utility\config.h" />
     <ClInclude Include="..\..\fay\utility\load_model.h" />
+    <ClInclude Include="..\..\fay\utility\profiler.h" />
     <ClInclude Include="..\..\fay\utility\stencil.h" />
     <ClInclude Include="..\..\fay\utility\string.h" />
+    <ClInclude Include="..\..\fay\utility\type_traits.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
