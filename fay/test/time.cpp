@@ -49,22 +49,24 @@ TEST(profiler, time_profiler)
 */
 TEST(profiler, time_wrapper)
 {
-	TimeWrapper<nullptr_t()> wrapper([]() { func(); return nullptr;});
+	TimeWrapper<void()> wrapper(func);
 	TimeWrapper<int(int)> iwrapper(ifunc);
-	TimeWrapper<nullptr_t(int)> viwrapper([](int i) { vifunc(i); return nullptr; });
+	TimeWrapper<void(int)> viwrapper(vifunc);
 
-	std::cout << std::boolalpha;
-	std::cout << fay::is_not_void_v<TimeWrapper<nullptr_t()>::R> << '\n';
-	std::cout << fay::is_not_void_v<TimeWrapper<int(int)>::R> << '\n';
-	std::cout << fay::is_not_void_v<TimeWrapper<nullptr_t(int)>::R> << '\n';
+	//std::cout << std::boolalpha;
+	//std::cout << fay::is_not_void_v<TimeWrapper<void()>::R> << '\n';
+	//std::cout << fay::is_not_void_v<TimeWrapper<int(int), Msec>::R> << '\n';
+	//std::cout << fay::is_not_void_v<TimeWrapper<void(int)>::R> << '\n';
 
-	wrapper();
+	// std::function<void()> func = std::bind(&TimeWrapper<void()>::void_call, wrapper);
+
+	wrapper.void_call();
 	std::cout << wrapper.count << " ms" << std::endl;
 
-	iwrapper(1);
+	iwrapper.call(1);
 	std::cout << iwrapper.count << " ms" << std::endl;
 
-	viwrapper(1);
+	viwrapper.void_call(1);
 	std::cout << viwrapper.count << " ms" << std::endl;
 }
 
