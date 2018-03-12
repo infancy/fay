@@ -10,6 +10,8 @@
 namespace fay
 {
 
+// split
+
 // e.g. "  Hello  World  " -> "World  "
 std::string erase_front_word(
 	const std::string& str, std::string split = " \t\f\v\n\r")

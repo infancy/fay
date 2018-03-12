@@ -45,6 +45,9 @@ const string ftm_sketchfab = "objects/ftm/ftm_sketchfab.blend";
 const string Nier_2b_ik_rigged = "objects/Nier_2b_ik_rigged/scene.gltf";
 // const string mesh_filename = Blocks;
 
+// model
+glm::vec3 model_scale(1.f);
+
 // camera
 Camera camera(glm::vec3(0, 5, 10));;
 float lastX = Width / 2.0f;
@@ -99,6 +102,16 @@ void update()
 
 	if (mouse_move == 'z')
 	{
+		if (model_scale.x <= 1.f)
+			model_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * io.MouseWheel;
+		else
+			model_scale -= glm::vec3(1.f, 1.f, 1.f) * io.MouseWheel;
+
+		if (model_scale.x < 0.f)
+			model_scale = glm::vec3(0.1f, 0.1f, 0.1f);
+		else if (model_scale.x > 10.f)
+			model_scale = glm::vec3(10.f, 10.f, 10.f);
+
 		camera.ProcessMouseMovement(xoffset, yoffset);
 		if (io.KeysDown[GLFW_KEY_W]) camera.ProcessKeyboard(FORWARD, deltaTime);
 		if (io.KeysDown[GLFW_KEY_S]) camera.ProcessKeyboard(BACKWARD, deltaTime);
@@ -112,13 +125,13 @@ void update()
 		light_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * io.MouseWheel;
 		if (light_scale.x < 0.f)
 			light_scale = glm::vec3(0.1f, 0.1f, 0.1f);
-		if (light_scale.x > 1.f)
+		else if (light_scale.x > 1.f)
 			light_scale = glm::vec3(1.f, 1.f, 1.f);
 
 		light_speed -= io.MouseWheel;
 		if (light_speed <= 0.f)
 			light_speed = 0.f;
-		if (light_speed >= 10.f)
+		else if (light_speed >= 10.f)
 			light_speed = 10.f;
 
 		if (io.KeysDown[GLFW_KEY_W]) lightPosition.z -= deltaTime * light_speed;
@@ -144,13 +157,12 @@ struct _00_create_gui;
 
 struct _10_hello_triangle;
 
-struct _20_color;
-struct _21_basic_light;
-struct _22_material;
-struct _23_light_map;
+struct _20_load_mesh;
+struct _21_load_model;
 
-struct _30_load_mesh;
-struct _31_load_model;
+struct _30_light_ADS;
+struct _32_material;
+struct _33_light_map;
 
 struct _fay_obj_model;
 
@@ -176,45 +188,7 @@ struct _00_create_gui
 
 // -----------------------------------------------------------------------------
 
-struct _20_color
-{
-	Model model{ Rei };
-	Shader shader{ "learngl/20_color.vs", "learngl/20_color.fs" };
-	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
-
-	float sAmbient = 0.1f;
-	float strDiffuse = 1.f;
-	float sSpeclar = 0.1f;
-
-	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
-	{
-		// TODO: bind imgui to shader
-		ImGui::SliderFloat("ambient strength", &sAmbient, 0.f, 1.f);
-		ImGui::SliderFloat("diffuse strength", &strDiffuse, 0.f, 10.f);
-		ImGui::SliderFloat("speclar strength", &sSpeclar, 0.f, 1.f);
-
-		glm::mat4 mat4_normal = glm::transpose(glm::inverse(m));
-		// glm::mat3 m_normal = mat4_normal;
-		glm::mat3 m_normal(mat4_normal);
-
-		shader.enable();
-		shader.set_mat4("model", m);
-		shader.set_mat3("NorModel", m_normal);
-		shader.set_mat4("MVP", p * v * m);
-		shader.set_vec3("lightPos", lightPosition);
-		shader.set_vec3("lightcolor", glm::vec3(light_color.x, light_color.y, light_color.z));
-		shader.set_float("sAmbient", sAmbient);
-		shader.set_float("strDiffuse", strDiffuse);
-		shader.set_float("sSpeclar", sSpeclar);
-		// shader.set_vec3("lightcolor", glm::vec3(1, 1, 1));
-		model.draw(shader);
-		// model.draw();
-	}
-};
-
-// -----------------------------------------------------------------------------
-
-struct _30_load_mesh
+struct _20_load_mesh
 {
 	Model model{ Nanosuit };
 	Shader shader{ "learngl/30_load_model.vs", "learngl/30_load_model.fs" };
@@ -227,7 +201,7 @@ struct _30_load_mesh
 	}
 };
 
-struct _31_load_model
+struct _21_load_model
 {
 	Model model{ Nanosuit };
 	Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
@@ -237,6 +211,47 @@ struct _31_load_model
 		shader.enable();
 		shader.set_mat4("MVP", MVP);
 		model.draw(shader);
+	}
+};
+
+// -----------------------------------------------------------------------------
+
+struct _30_light_ADS
+{
+	Model model{ Box };
+	Shader shader{ "learngl/30_light_ADS.vs", "learngl/30_light_ADS.fs" };
+	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
+
+	float sAmbient = 1.f;
+	float sDiffuse = 1.f;
+	float sSpeclar = 1.f;
+	int   shininess = 32;
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		// TODO: bind imgui to shader
+		ImGui::SliderFloat("ambient strength", &sAmbient, 0.f, 10.f);
+		ImGui::SliderFloat("diffuse strength", &sDiffuse, 0.f, 10.f);
+		ImGui::SliderFloat("speclar strength", &sSpeclar, 0.f, 10.f);
+		ImGui::SliderInt("shininess", &shininess, 1, 256);
+
+		glm::mat4 MV = v * m;
+		glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
+
+		shader.enable();
+		shader.set_mat4("MV", MV);
+		//shader.set_mat4("NorMV", NormalMV);	// 小心传输着色器变量、先保存再编译
+		shader.set_mat3("NormalMV", NormalMV);		// 失去位移属性
+		shader.set_mat4("MVP", p * v * m);
+		shader.set_vec3("vLightPos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
+		shader.set_vec3("lightcolor", glm::vec3(light_color.x, light_color.y, light_color.z));
+		shader.set_float("sa", sAmbient);
+		shader.set_float("sd", sDiffuse);
+		shader.set_float("ss", sSpeclar);
+		shader.set_int("shininess", shininess);
+		model.draw(shader);
+		// model.draw();
+		gl_check_errors();
 	}
 };
 
@@ -270,7 +285,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_20_color object;
+	_30_light_ADS object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
@@ -294,12 +309,7 @@ int main(int argc, char** argv)
 
 		// draw
 		glm::mat4 model(1.f);
-		// 1.0f, 1.0f, 1.0f
-		// 10.f, 10.f, 10.f
-		// 0.5f, 0.5f, 0.5f
-		// 0.3f, 0.3f, 0.3f
-		model = glm::scale(model, glm::vec3(10.f, 10.f, 10.f));
-		glm::mat4 MVP = projection * view * model;
+		model = glm::scale(model, model_scale);
 		object.draw(projection, view, model);
 
 		// draw light
