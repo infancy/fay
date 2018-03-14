@@ -161,8 +161,8 @@ struct _20_load_mesh;
 struct _21_load_model;
 
 struct _30_light_ADS;
-struct _32_material;
-struct _33_light_map;
+struct _31_light_caster;
+struct _32_mutilights;
 
 struct _fay_obj_model;
 
@@ -255,6 +255,59 @@ struct _30_light_ADS
 	}
 };
 
+struct _31_light_caster
+{
+	Model model{ Blocks };
+	Shader shader{ "learngl/31_light_caster.vs", "learngl/31_light_caster.fs" };
+	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
+
+	float sAmbient = 1.f;
+	float sDiffuse = 1.f;
+	float sSpeclar = 1.f;
+	int   shininess = 32;
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		// TODO: bind imgui to shader
+		ImGui::SliderFloat("ambient strength", &sAmbient, 0.f, 10.f);
+		ImGui::SliderFloat("diffuse strength", &sDiffuse, 0.f, 100.f);
+		ImGui::SliderFloat("speclar strength", &sSpeclar, 0.f, 10.f);
+		ImGui::SliderInt("shininess", &shininess, 1, 256);
+
+		glm::mat4 MV = v * m;
+		glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
+
+		shader.enable();
+		shader.set_mat4("MV", MV);
+		//shader.set_mat4("NorMV", NormalMV);	// 小心传输着色器变量、先保存再编译
+		shader.set_mat3("NormalMV", NormalMV);		// 失去位移属性
+		shader.set_mat4("MVP", p * v * m);
+
+		// directlight
+		shader.set_vec3("dLight.direct", glm::vec3(-1.f, -1.f, -1.f));
+		shader.set_vec3("dLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
+		// pointlight
+		shader.set_vec3("pLight.pos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
+		shader.set_vec3("pLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
+		shader.set_vec3("pLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 个单位
+		// spotlight
+		shader.set_vec3("sLight.pos", camera.Position);
+		shader.set_vec3("sLight.direct", camera.Front);
+		shader.set_vec3("sLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
+		shader.set_vec2("sLight.cutoff", glm::vec2(
+			glm::cos(glm::radians(10.f)), glm::cos(glm::radians(15.f)) ));
+		shader.set_vec3("sLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 个单位
+		
+		shader.set_float("sa", sAmbient);
+		shader.set_float("sd", sDiffuse);
+		shader.set_float("ss", sSpeclar);
+		shader.set_int("shininess", shininess);
+		model.draw(shader);
+		// model.draw();
+		gl_check_errors();
+	}
+};
+
 // -----------------------------------------------------------------------------
 
 struct _fay_obj_model
@@ -285,7 +338,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_30_light_ADS object;
+	_31_light_caster object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
