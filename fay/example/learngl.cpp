@@ -263,16 +263,53 @@ struct _23_stencil_test
 
 struct _24_blending
 {
-	Model model{ Blocks };
-	Shader shader{ "learngl/22_depth_test.vs", "learngl/22_depth_test.fs" };
+	// plane
+	std::vector<Vertex1> planevb{ { -1, 0, 1 },{ 1, 0, 1 },{ 1, 0, -1 },{ -1, 0, -1 } };
+	std::vector<uint32_t> planeib{ 0,1,2,2,3,0 };
+	Buffer planeQuad{ planevb, planeib };
+	// grass
+	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
+	Buffer quad{ vb, ib };
 
-	void draw(glm::mat4&& MVP)
+	Shader shader{ "learngl/24_blending.vs", "learngl/24_blending.fs" };
+	Texture2D green{ "textures/grass.png" };
+	Texture2D marble{ "textures/marble.jpg" };
+	Texture2D window{ "textures/window.png" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		//glDepthMask(GL_FALSE);
-		//glDepthFunc(GL_ALWAYS);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		shader.enable();
-		shader.set_mat4("MVP", MVP);
-		model.draw(shader);
+		glm::mat4 model(1.f);
+
+		shader.bind_texture("diff", 0, marble.id());
+		shader.set_bool("texture_xz", true);
+		glm::mat4 m0 = glm::scale(model, glm::vec3(10.f, 10.f, 10.f));
+		shader.set_mat4("MVP", p * v * m0);
+		planeQuad.draw();
+
+		glDisable(GL_CULL_FACE);
+		shader.bind_texture("diff", 0, green.id());
+		shader.set_bool("texture_xz", false);
+
+		glm::mat4 m1 = glm::scale(model, glm::vec3(3.f, 3.f, 3.f));
+		shader.set_mat4("MVP", p * v * m1);
+		quad.draw();
+
+		//glm::mat4 m2 = glm::translate(model, glm::vec3(-1, 0, 0));
+		glm::mat4 m2 = glm::translate(model, glm::vec3(-3, 0, 0));
+		m2 = glm::scale(m2, glm::vec3(3.f, 3.f, 3.f));
+		shader.set_mat4("MVP", p * v * m2);
+		quad.draw();
+		
+		shader.bind_texture("diff", 0, window.id());
+		glm::mat4 m3 = glm::translate(model, glm::vec3(-0.5f, 0, 1));
+		m3 = glm::scale(m3, glm::vec3(3.f, 3.f, 3.f));
+		shader.set_mat4("MVP", p * v * m3);
+		quad.draw();
+		glEnable(GL_CULL_FACE);
 	}
 };
 
@@ -400,7 +437,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_23_stencil_test object;
+	_24_blending object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
