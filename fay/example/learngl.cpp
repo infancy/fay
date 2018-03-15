@@ -153,16 +153,19 @@ void update()
 
 // tutorials
 // function<void()> _create_gui();
-struct _00_create_gui;
+struct _00_create_gui;	// load buffer
 
 struct _10_hello_triangle;
 
 struct _20_load_mesh;
 struct _21_load_model;
+struct _22_depth_test;
+struct _23_stencil_test;	// Object Outlining
+struct _24_blending;
 
 struct _30_light_ADS;
 struct _31_light_caster;
-struct _32_mutilights;
+//struct _32_mutilights;
 
 struct _fay_obj_model;
 
@@ -177,7 +180,7 @@ struct _00_create_gui
 	Shader shader{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
 	Texture2D diff{ "textures/awesomeface.png" };
 
-	void draw(glm::mat4& MVP)
+	void draw(glm::mat4&& MVP)
 	{
 		shader.enable();
 		shader.bind_texture("diff", 0, diff.id());
@@ -191,9 +194,9 @@ struct _00_create_gui
 struct _20_load_mesh
 {
 	Model model{ Nanosuit };
-	Shader shader{ "learngl/30_load_model.vs", "learngl/30_load_model.fs" };
+	Shader shader{ "learngl/20_load_model.vs", "learngl/20_load_model.fs" };
 
-	void draw(glm::mat4& MVP)
+	void draw(glm::mat4&& MVP)
 	{
 		shader.enable();
 		shader.set_mat4("MVP", MVP);
@@ -204,10 +207,69 @@ struct _20_load_mesh
 struct _21_load_model
 {
 	Model model{ Nanosuit };
-	Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
+	Shader shader{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
 
-	void draw(glm::mat4& MVP)
+	void draw(glm::mat4&& MVP)
 	{
+		shader.enable();
+		shader.set_mat4("MVP", MVP);
+		model.draw(shader);
+	}
+};
+
+struct _22_depth_test
+{
+	Model model{ Blocks };
+	Shader shader{ "learngl/22_depth_test.vs", "learngl/22_depth_test.fs" };
+
+	void draw(glm::mat4&& MVP)
+	{
+		//glDepthMask(GL_FALSE);
+		//glDepthFunc(GL_ALWAYS);
+		shader.enable();
+		shader.set_mat4("MVP", MVP);
+		model.draw(shader);
+	}
+};
+
+struct _23_stencil_test
+{
+	Model model{ Box };
+	Shader shader{ "learngl/23_stencil_test.vs", "learngl/23_stencil_test.fs" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+		glStencilFunc(GL_ALWAYS, 1, 0xFF); // 所有的片段都应该更新模板缓冲
+		glStencilMask(0xFF); // 启用模板缓冲写入
+		shader.enable();
+		shader.set_bool("draw_outlining", false);
+		shader.set_mat4("MVP", p * v * m);
+		model.draw(shader);
+		
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00); // 禁止模板缓冲的写入
+		glDisable(GL_DEPTH_TEST);
+		shader.enable();
+		shader.set_bool("draw_outlining", true);
+		glm::mat4 scaleModel = glm::scale(m, glm::vec3(1.1f, 1.1f, 1.1f));
+		shader.set_mat4("MVP", p * v * scaleModel);
+		model.draw(shader);
+		glStencilMask(0xFF);
+		glEnable(GL_DEPTH_TEST);
+	}
+};
+
+struct _24_blending
+{
+	Model model{ Blocks };
+	Shader shader{ "learngl/22_depth_test.vs", "learngl/22_depth_test.fs" };
+
+	void draw(glm::mat4&& MVP)
+	{
+		//glDepthMask(GL_FALSE);
+		//glDepthFunc(GL_ALWAYS);
 		shader.enable();
 		shader.set_mat4("MVP", MVP);
 		model.draw(shader);
@@ -316,7 +378,7 @@ struct _fay_obj_model
 	// Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
 	Shader shader{ "learngl/light.vs", "learngl/light.fs" };
 
-	void draw(glm::mat4& MVP)
+	void draw(glm::mat4&& MVP)
 	{
 		shader.enable();
 		shader.set_mat4("MVP", MVP);
@@ -338,12 +400,13 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_31_light_caster object;
+	_23_stencil_test object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
 	glEnable(GL_CULL_FACE);
 
 	while (!gui_close_window())
@@ -351,7 +414,7 @@ int main(int argc, char** argv)
 		update();
 
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		// glm::vec3 position = { 0.f, 0.f, 1.f }, center = { 0, 0, 0 }, up = { 0, 1, 0 };
 		// glm::mat4 view = glm::lookAt(position, center, up);
@@ -363,6 +426,7 @@ int main(int argc, char** argv)
 		// draw
 		glm::mat4 model(1.f);
 		model = glm::scale(model, model_scale);
+		//object.draw(projection * view * model);
 		object.draw(projection, view, model);
 
 		// draw light
