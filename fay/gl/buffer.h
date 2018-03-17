@@ -22,6 +22,9 @@ public:
 	Buffer(std::vector<Vertex5>& vertices, std::vector<uint32_t>& indices);
 	//Buffer(std::vector<Vertex5>& vertices, std::vector<uint32_t>& indices, std::function<void()> vertexattribpointer);
 
+	uint32_t id() const { return vao; }
+	uint32_t size() const { return isz; }
+
 	void draw();
 
 	~Buffer(){ /* glDeleteVertexArrays(1, &VAO); glDeleteBuffers(1, &VBO); glDeleteBuffers(1, &IBO); */ }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fay", "build\fay\fay.vcxproj", "{B93773F7-60E4-429C-90EE-6DE03A620113}"
 EndProject
@@ -20,6 +20,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "learngl", "build\learngl\le
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "image", "build\image\image.vcxproj", "{735FFB0E-5B85-483F-95F1-B2902290CA37}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B93773F7-60E4-429C-90EE-6DE03A620113} = {B93773F7-60E4-429C-90EE-6DE03A620113}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "build\test\test.vcxproj", "{62A188DD-2295-4610-9F3D-07BC831642F6}"
 EndProject

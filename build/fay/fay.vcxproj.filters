@@ -98,5 +98,8 @@
     <ClInclude Include="..\..\fay\utility\type_traits.h">
       <Filter>utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\fay\gl\framebuffer.h">
+      <Filter>gl</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

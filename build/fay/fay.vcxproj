@@ -30,6 +30,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\fay\gl\buffer.h" />
     <ClInclude Include="..\..\fay\gl\camera.h" />
+    <ClInclude Include="..\..\fay\gl\framebuffer.h" />
     <ClInclude Include="..\..\fay\gl\gl.h" />
     <ClInclude Include="..\..\fay\gl\mesh.h" />
     <ClInclude Include="..\..\fay\gl\model.h" />

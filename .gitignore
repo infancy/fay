@@ -262,3 +262,5 @@ __pycache__/
 /resources/objects
 /resources/textures
 /resources/.vscode
+/resources/skybox
+/resources/image

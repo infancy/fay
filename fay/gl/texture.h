@@ -43,14 +43,7 @@ public:
 	// Texture2D(GLuint id) : Texture(id) {}
 	Texture2D(const std::string& filepath, TexType textype = TexType::diffuse, bool Mipmap = true);
 	
-	Texture2D(const Image& img, TexType textype = TexType::diffuse, bool Mipmap = true)
-		: Texture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }
-	{
-		CHECK(img.third_party() == Thirdparty::gl) << "image thirdparty error";
-		auto format = img.gl_format();
-
-		create_texture2d(format, img.width(), img.height(), format, GL_UNSIGNED_BYTE, img.data(), Mipmap);
-	}
+	Texture2D(const Image& img, TexType textype = TexType::diffuse, bool Mipmap = true);
 	
 	Texture2D(GLint internalFormat, GLsizei width, GLsizei height,
 		GLenum format, GLenum type, unsigned char* pixels, bool Mipmap = true, TexType textype = TexType::diffuse);
@@ -64,6 +57,8 @@ public:
 		glBindTexture(GL_TEXTURE_2D, 0); }
 	*/
 
+	int width()  const { return w; }
+	int height() const { return h; }
 	TexType type() const { return texture_type; }
 
 private:
@@ -71,6 +66,7 @@ private:
 		GLenum format, GLenum type, const unsigned char* pixels, bool Mipmap);
 
 private:
+	int w, h;
 	TexType texture_type;
 };
 

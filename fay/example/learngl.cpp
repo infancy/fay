@@ -9,6 +9,7 @@
 #include <stb_image.h>
 
 #include "fay/gl/buffer.h"
+#include "fay/gl/framebuffer.h"
 #include "fay/gl/texture.h"
 #include "fay/gl/mesh.h"
 #include "fay/gl/model.h"
@@ -154,19 +155,23 @@ void update()
 // tutorials
 // function<void()> _create_gui();
 struct _00_create_gui;	// load buffer
-
+// hello world
 struct _10_hello_triangle;
-
+// pipeline
 struct _20_load_mesh;
 struct _21_load_model;
 struct _22_depth_test;
 struct _23_stencil_test;	// Object Outlining
 struct _24_blending;
-
-struct _30_light_ADS;
+struct _25_framebuffers;
+// light
+struct _30_phong_shading;
 struct _31_light_caster;
 //struct _32_mutilights;
 
+// render
+
+// other
 struct _fay_obj_model;
 
 // -----------------------------------------------------------------------------
@@ -313,9 +318,55 @@ struct _24_blending
 	}
 };
 
+struct _25_framebuffers
+{
+	Model model{ Blocks };
+	// quad
+	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
+	Buffer quad{ vb, ib };
+
+	Framebuffer fb{Width, Height};
+	Texture2D green{ "textures/grass.png" };
+	Shader shader{ "learngl/25_framebuffers.vs", "learngl/25_framebuffers.fs" };
+	Shader gui{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		fb.bind(glm::vec3(0.f));
+		//glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		shader.enable();
+		shader.set_mat4("MVP", p * v * m);
+		model.draw(shader);
+
+		fb.unbind();
+		gui.enable();
+		glm::mat4 m0(1.f);
+		m0 = glm::translate(m0, glm::vec3(-4, -4, -4));
+		m0 = glm::scale(m0, glm::vec3(8.f, 8.f, 8.f));
+		shader.set_mat4("MVP", p * m0);
+		gui.bind_texture("diff", 0, fb.tex_id());
+		quad.draw();
+	}
+};
+
+struct _xx
+{
+	Model model{ Blocks };
+	Shader shader{ "learngl/xxxxxxxxxxxx.vs", "learngl/xxxxxxxxxxxxxx.fs" };
+
+	void draw(glm::mat4&& MVP)
+	{
+		shader.enable();
+		shader.set_mat4("MVP", MVP);
+		model.draw(shader);
+	}
+};
+
 // -----------------------------------------------------------------------------
 
-struct _30_light_ADS
+struct _30_phong_shading
 {
 	Model model{ Box };
 	Shader shader{ "learngl/30_light_ADS.vs", "learngl/30_light_ADS.fs" };
@@ -437,7 +488,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_24_blending object;
+	_25_framebuffers object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
