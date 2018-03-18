@@ -48,9 +48,9 @@ Texture2D::Texture2D(const std::string& filepath, TexType textype, bool Mipmap)
 {
 	const Image img(filepath, Thirdparty::gl);
 	w = img.width(), h = img.height();
-	auto format = img.gl_format();
+	fmt = img.gl_format();
 
-	create_texture2d(format, img.width(), img.height(), format, GL_UNSIGNED_BYTE, img.data(), Mipmap);
+	create_texture2d(fmt, img.width(), img.height(), fmt, GL_UNSIGNED_BYTE, img.data(), Mipmap);
 }
 
 Texture2D::Texture2D(const Image& img, TexType textype, bool Mipmap)
@@ -58,15 +58,15 @@ Texture2D::Texture2D(const Image& img, TexType textype, bool Mipmap)
 	w{ img.width() }, h{ img.height() }
 {
 	CHECK(img.third_party() == Thirdparty::gl) << "image thirdparty error";
-	auto format = img.gl_format();
+	fmt = img.gl_format();
 
-	create_texture2d(format, img.width(), img.height(), format, GL_UNSIGNED_BYTE, img.data(), Mipmap);
+	create_texture2d(fmt, img.width(), img.height(), fmt, GL_UNSIGNED_BYTE, img.data(), Mipmap);
 }
 
 Texture2D::Texture2D(GLint internalFormat, GLsizei width, GLsizei height,
 	GLenum format, GLenum type, unsigned char* pixels, bool Mipmap, TexType textype)
 	: Texture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype },
-	w{ width }, h{ height }
+	w{ width }, h{ height }, fmt{ format }	// TODO:internalFormat
 {
 	CHECK(pixels != nullptr) << "pixels in Texture2D is nullptr";
 	create_texture2d(internalFormat, width, height, format, type, pixels, Mipmap);

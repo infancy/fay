@@ -6,7 +6,6 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <stb_image.h>
 
 #include "fay/gl/buffer.h"
 #include "fay/gl/framebuffer.h"
@@ -48,7 +47,6 @@ char mouse_state = 'z';
 // image_processing
 int processing_mode = 0;
 float ip_gamma = 1.f;
-bool save_image = false;
 bool have_save = false;
 
 // GUI
@@ -67,8 +65,6 @@ void update()
 	lastFrame = currentFrame;
 
 	ImGuiIO& io = gui_get_io();
-
-	if (io.KeysDown[GLFW_KEY_S]) save_image = true;
 
 	if (io.KeysDown[GLFW_KEY_1]) processing_mode = 1;
 	if (io.KeysDown[GLFW_KEY_2]) processing_mode = 2;
@@ -188,7 +184,7 @@ void gamma_transformation(const string& imgpath, const string& filename, float g
 		}
 	}
 
-	save_ppm(filename, v.data(), width, height);
+	save_ppm(filename, width, height, v.data());
 }
 
 void median_filter(const string& imgpath, const string& filename)
@@ -218,36 +214,41 @@ void median_filter(const string& imgpath, const string& filename)
 		}
 	}
 
-	save_pgm(filename, v.data(), width, height);
+	save_pgm(filename, width, height, v.data());
+}
+
+void save_image(Framebuffer& fb, const string& imgpath)
+{
+	// TODO
+	//CHECK(!imgpath.empty()) << "imgpath is empty";
+
+	int bytes{};
+
+	switch (fb.format())
+	{
+	case GL_RED:	bytes = 1;	  break;	// grey
+	case GL_RG32UI: bytes = 2;	  break;	// TODO: 2 or 4
+	case GL_RGB:	bytes = 3;	  break;
+	case GL_RGBA:	bytes = 4;	  break;
+	default:
+		LOG(ERROR) << "channels failed to choose" << imgpath; break;
+	}
+
+	std::cout << "save image: " << imgpath << std::endl;
+	std::vector<uint8_t> data(fb.width() * fb.height() * bytes);	//RGB
+	//glBindTexture(GL_TEXTURE_2D, fb.tex_id());
+	glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo_id());
+	glReadPixels(0, 0, fb.width(), fb.height(), fb.format(), GL_UNSIGNED_BYTE, data.data());
+	
+	//save_ppm("test.ppm", data.data(), fb.width(), fb.height());
+	save_jpg("default.jpg", fb.width(), fb.height(), bytes, data.data());
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void image_processing(const std::string& imgpath)
 {
-	Texture2D img{ imgpath };
-
-	unsigned int texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	// 为当前绑定的纹理对象设置环绕、过滤方式
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// 加载并生成纹理
-	int wwidth, wheight, nrChannels;
-	unsigned char *data = stbi_load("image/7.jpg", &wwidth, &wheight, &nrChannels, 0);
-	if (data)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, wwidth, wheight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}
-	stbi_image_free(data);
-
-	uint32_t width = img.width(), height = img.height();
+	Texture2D tex{ imgpath };
+	uint32_t width = tex.width(), height = tex.height();
 	float ratio = (float)height / (float)width;
 
 	// quad
@@ -257,11 +258,10 @@ void image_processing(const std::string& imgpath)
 	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
 	Buffer quad{ vb, ib };
 
-	//Framebuffer fb{ width, height };
-	//Shader ip{ "image_processing/processing.vs", "image_processing/processing.fs" };
+	Framebuffer fb{ width, height, tex.format() };
+	Shader ip{ "image_processing/processing.vs", "image_processing/processing.fs" };
 	Shader gui{ "image_processing/gui.vs", "image_processing/gui.fs" };
 
-	//glViewport(0, 0, width, height);
 	while (!gui_close_window())
 	{
 		update();
@@ -270,53 +270,39 @@ void image_processing(const std::string& imgpath)
 		float wratio = (float)Height / (float)Width;
 		glm::mat4 ortho1 = glm::ortho(-1.f, 1.f, -wratio, wratio);
 		glm::mat4 model0(1.f), model1(1.f);
-		/*
+		
 		fb.enable(glm::vec3(1.f, 0.f, 0.f));
 		ip.enable();
 		ip.set_mat4("MVP", ortho0 * model0);
-		ip.bind_texture("diff", 0, img.id());
+		ip.bind_texture("diff", 0, tex.id());
 		ip.set_int("processing_mode", processing_mode);
 		ip.set_float("gamma", ip_gamma);
 		quad.draw();
-		*/
-		//gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
-		glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		
+		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
 		gui.enable();
 		model1 = glm::translate(model1,
 			glm::vec3(mouse_offset.x / Width, mouse_offset.y / Height, 0));
 		model1 = glm::scale(model1, model_scale);
 		gui.set_mat4("MVP", ortho1 * model1);
-		gui.bind_texture("diff", 0, texture);
+		gui.bind_texture("diff", 0, fb.tex_id());
 		quad.draw();
 
 		// GUI
 		ImGui::Text("current processing mode: %d", processing_mode);
 		ImGui::SliderFloat("gamma", &ip_gamma, 0.f, 25.f);
+		char save_img[256]{};
+		// TODO:与 mode 的干扰,callback
+		ImGui::InputText("##Text", save_img, 256);
+		if (ImGui::Button("save image")) 
+			save_image(fb, save_img);
+
 		ImGui::Text("Info");
 		//ImGui::Text("mouse move: %c", mouse_state);
 		ImGui::ColorEdit3("clear color", (float*)&clear_color);
 		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		//ImGui::SliderInt("samples_Perpixel", &samples_PerPixel, 1, 16);
 		gui_drawGUI();
-		/*
-		if (save_image)
-		{
-			save_image = false;
-
-			if(!have_save)
-			{
-				std::cout << "save" << std::endl;
-				std::vector<uint8_t> data(width * height * 3);	//RGB
-				//glBindTexture(GL_TEXTURE_2D, fb.tex_id());
-				glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo_id());
-				glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data.data());
-				save_ppm("test.ppm", data.data(), width, height);
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			}
-			have_save = true;
-		}
-		*/
 	}
 }
 
@@ -330,7 +316,7 @@ int main(int argc, char** argv)
 	google::InitGoogleLogging(argv[0]);
 	gui_create_window(Width, Height);
 
-	image_processing("image/2.png");
+	image_processing("image/8.jpg");
 	//image_processing(argv[1]);
 	//histogram("image/1.png", "1.ppm");
 	//gamma_transformation("image/3.png", "3.ppm", 3.0);

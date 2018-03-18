@@ -13,15 +13,16 @@ namespace fay
 class Framebuffer
 {
 public:
-	Framebuffer(uint32_t width, uint32_t height)
+	Framebuffer(uint32_t width, uint32_t height, GLenum glformat = GL_RGB)
 	{
 		glGenFramebuffers(1, &fbo);
-		reset(width, height);
+		reset(width, height, glformat);
 	}
 
-	void reset(uint32_t width, uint32_t height)
+	void reset(uint32_t width, uint32_t height, GLenum glformat)
 	{
-		w = width, h = height;
+		w = width, h = height; fmt = glformat;
+
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		//glViewport(0, 0, width, height);
 
@@ -31,7 +32,8 @@ public:
 		// create a color attachment texture
 		glGenTextures(1, &tbo);
 		glBindTexture(GL_TEXTURE_2D, tbo);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		// 外部传入图像的格式为 GL_UNSIGNED_BYTE
+		glTexImage2D(GL_TEXTURE_2D, 0, glformat, width, height, 0, glformat, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -57,6 +59,10 @@ public:
 
 	uint32_t tex_id() { return tbo; }
 
+	int width()  const { return w; }
+	int height() const { return h; }
+	GLenum format() const { return fmt; }
+
 	void enable(glm::vec3 clear_color) 
 	{ 
 		gl_enable_framebuffer(fbo, w, h, clear_color);
@@ -67,6 +73,7 @@ public:
 private:
 	//bool is_reset{ false };
 	int w{}, h{};
+	GLenum fmt;
 	uint32_t fbo{}, tbo{}, rbo{};
 };
 

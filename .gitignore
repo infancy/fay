@@ -264,3 +264,5 @@ __pycache__/
 /resources/.vscode
 /resources/skybox
 /resources/image
+/resources/bug
+/resources/default.jpg

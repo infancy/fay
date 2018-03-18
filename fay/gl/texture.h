@@ -59,6 +59,7 @@ public:
 
 	int width()  const { return w; }
 	int height() const { return h; }
+	GLenum format() const { return fmt; }
 	TexType type() const { return texture_type; }
 
 private:
@@ -67,6 +68,7 @@ private:
 
 private:
 	int w, h;
+	GLenum fmt;
 	TexType texture_type;
 };
 

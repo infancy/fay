@@ -7,7 +7,8 @@
 
 #include "fay/gl/gl.h"
 #include "fay/utility/math.h"
-#include <stb_image.h>
+#include <stb/stb_image.h>
+#include <stb/stb_image_write.h>
 
 namespace fay
 {
@@ -91,27 +92,29 @@ inline bool operator==(const Image& left, const Image& right)
 
 // -----------------------------------------------------------------------------
 
-inline bool save_ppm(std::string filename, const uint8_t* pixel,
-	int width, int height)
+inline bool save_jpg(std::string filename, int width, int height, int comp,
+	const uint8_t* pixel, int quality = 80)
+{
+	int r = stbi_write_jpg(filename.c_str(), 
+		width, height, comp, pixel, quality);
+	return r == 0 ? false : true;
+}
+
+inline bool save_ppm(std::string filename, int width, int height,
+	const uint8_t* pixel /*bool flip_vertically = false*/)
 {
 	std::ofstream ppm(filename);
 	CHECK(!ppm.fail()) << "\ncan't create file";
 
 	ppm << "P3\n" << width << " " << height << "\n255\n";
 
-	// ·´×ª y Öá
-	//for (int y = height - 1; y >= 0; --y)
 	for (int y = 0; y < height; ++y)
 	{
 		for (int x = 0; x < width; ++x, pixel += 3)
 		{
-			auto r = pixel[0];
-			auto g = pixel[1];
-			auto b = pixel[2];
-
-			ppm << clamp<int>(r, 0, 255) << " "
-				<< clamp<int>(g, 0, 255) << " "
-				<< clamp<int>(b, 0, 255) << " ";
+			ppm << clamp<int>(pixel[0], 0, 255) << " "
+				<< clamp<int>(pixel[1], 0, 255) << " "
+				<< clamp<int>(pixel[2], 0, 255) << " ";
 		}
 		ppm << std::endl;
 	}
@@ -119,8 +122,8 @@ inline bool save_ppm(std::string filename, const uint8_t* pixel,
 	return true;
 }
 
-inline bool save_pgm(std::string filename, const uint8_t* pixel,
-	int width, int height)
+inline bool save_pgm(std::string filename, int width, int height, 
+	const uint8_t* pixel)
 {
 	std::ofstream pgm(filename);
 	CHECK(!pgm.fail()) << "\ncan't create file";
