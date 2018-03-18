@@ -25,6 +25,7 @@
     <ClCompile Include="..\..\fay\gl\texture.cpp" />
     <ClCompile Include="..\..\fay\gui\gui.cpp" />
     <ClCompile Include="..\..\fay\gui\window.cpp" />
+    <ClCompile Include="..\..\fay\utility\image.cpp" />
     <ClCompile Include="..\..\fay\utility\load_model.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -45,6 +46,7 @@
     <ClInclude Include="..\..\fay\utility\log.h" />
     <ClInclude Include="..\..\fay\utility\config.h" />
     <ClInclude Include="..\..\fay\utility\load_model.h" />
+    <ClInclude Include="..\..\fay\utility\math.h" />
     <ClInclude Include="..\..\fay\utility\profiler.h" />
     <ClInclude Include="..\..\fay\utility\stencil.h" />
     <ClInclude Include="..\..\fay\utility\string.h" />

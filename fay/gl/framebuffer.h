@@ -53,6 +53,8 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
+	uint32_t fbo_id() { return fbo; }
+
 	uint32_t tex_id() { return tbo; }
 
 	void enable(glm::vec3 clear_color) 

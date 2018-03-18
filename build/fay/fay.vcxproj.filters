@@ -36,6 +36,9 @@
     <ClCompile Include="..\..\fay\utility\load_model.cpp">
       <Filter>utility</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\fay\utility\image.cpp">
+      <Filter>utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\gl\buffer.h">
@@ -100,6 +103,9 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\gl\framebuffer.h">
       <Filter>gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\utility\math.h">
+      <Filter>utility</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

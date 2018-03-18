@@ -6,12 +6,13 @@
 #define FAY_UTILITY_IMAGE_H
 
 #include "fay/gl/gl.h"
+#include "fay/utility/math.h"
 #include <stb_image.h>
 
 namespace fay
 {
 
-class Image	// shared_image
+class Image	// shared_image, stbImage
 {
 public:
 	Image(const std::string& filepath = {}, Thirdparty thirdparty = Thirdparty::none) :
@@ -37,7 +38,20 @@ public:
 	std::string file_path()  const { return filepath; }
 	Thirdparty third_party() const { return thirdparty; }
 
-	const unsigned char* data() const { return pixels; }
+	const uint8_t* data() const { return pixels; }
+
+	uint8_t operator()(float s, float t) const
+	{
+		s *= w; t *= h;
+		return operator()((size_t)s, (size_t)t);
+	}
+	uint8_t operator()(size_t s, size_t t) const
+	{
+		size_t x = s % w, y = t % h;
+		if (x < 0) x += w;
+		if (y < 0) y += h;
+		return pixels[y * w + x];
+	}
 
 	GLenum gl_format() const
 	{
@@ -65,7 +79,7 @@ private:
 	std::string filepath;
 	Thirdparty thirdparty;
 
-	unsigned char* pixels;
+	uint8_t* pixels;
 	int w, h, channels;
 	std::shared_ptr<unsigned char> manager;
 };
@@ -73,6 +87,55 @@ private:
 inline bool operator==(const Image& left, const Image& right)
 {
 	return left.file_path() == right.file_path();
+}
+
+// -----------------------------------------------------------------------------
+
+inline bool save_ppm(std::string filename, const uint8_t* pixel,
+	int width, int height)
+{
+	std::ofstream ppm(filename);
+	CHECK(!ppm.fail()) << "\ncan't create file";
+
+	ppm << "P3\n" << width << " " << height << "\n255\n";
+
+	// ·´×ª y Öá
+	//for (int y = height - 1; y >= 0; --y)
+	for (int y = 0; y < height; ++y)
+	{
+		for (int x = 0; x < width; ++x, pixel += 3)
+		{
+			auto r = pixel[0];
+			auto g = pixel[1];
+			auto b = pixel[2];
+
+			ppm << clamp<int>(r, 0, 255) << " "
+				<< clamp<int>(g, 0, 255) << " "
+				<< clamp<int>(b, 0, 255) << " ";
+		}
+		ppm << std::endl;
+	}
+
+	return true;
+}
+
+inline bool save_pgm(std::string filename, const uint8_t* pixel,
+	int width, int height)
+{
+	std::ofstream pgm(filename);
+	CHECK(!pgm.fail()) << "\ncan't create file";
+
+	pgm << "P2\n" << width << " " << height << "\n255\n";
+
+	//for (int y = height - 1; y >= 0; --y)
+	for (int y = 0; y < height; ++y)
+	{
+		for (int x = 0; x < width; ++x, ++pixel)
+			pgm << clamp<int>(pixel[0], 0, 255) << " ";
+		pgm << std::endl;
+	}
+
+	return true;
 }
 
 } // namespace fay

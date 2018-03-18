@@ -333,14 +333,12 @@ struct _25_framebuffers
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		fb.bind(glm::vec3(0.f));
-		//glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		fb.enable(glm::vec3(1.f, 0.f, 0.f));
 		shader.enable();
 		shader.set_mat4("MVP", p * v * m);
 		model.draw(shader);
 
-		fb.unbind();
+		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
 		gui.enable();
 		glm::mat4 m0(1.f);
 		m0 = glm::translate(m0, glm::vec3(-4, -4, -4));
