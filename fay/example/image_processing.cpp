@@ -47,7 +47,6 @@ char mouse_state = 'z';
 // image_processing
 int processing_mode = 0;
 float ip_gamma = 1.f;
-bool have_save = false;
 
 // GUI
 //background color，会自动转化为 0.f~1.f 的浮点数
@@ -217,10 +216,9 @@ void median_filter(const string& imgpath, const string& filename)
 	save_pgm(filename, width, height, v.data());
 }
 
-void save_image(Framebuffer& fb, const string& imgpath)
+void save_image(Framebuffer& fb, const string imgpath)
 {
-	// TODO
-	//CHECK(!imgpath.empty()) << "imgpath is empty";
+	CHECK(!imgpath.empty()) << "imgpath is empty";
 
 	int bytes{};
 
@@ -241,7 +239,7 @@ void save_image(Framebuffer& fb, const string& imgpath)
 	glReadPixels(0, 0, fb.width(), fb.height(), fb.format(), GL_UNSIGNED_BYTE, data.data());
 	
 	//save_ppm("test.ppm", data.data(), fb.width(), fb.height());
-	save_jpg("default.jpg", fb.width(), fb.height(), bytes, data.data());
+	save_jpg(imgpath, fb.width(), fb.height(), bytes, data.data());
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -262,6 +260,7 @@ void image_processing(const std::string& imgpath)
 	Shader ip{ "image_processing/processing.vs", "image_processing/processing.fs" };
 	Shader gui{ "image_processing/gui.vs", "image_processing/gui.fs" };
 
+	char saveimgpath[256]{"aa"};
 	while (!gui_close_window())
 	{
 		update();
@@ -291,11 +290,11 @@ void image_processing(const std::string& imgpath)
 		// GUI
 		ImGui::Text("current processing mode: %d", processing_mode);
 		ImGui::SliderFloat("gamma", &ip_gamma, 0.f, 25.f);
-		char save_img[256]{};
 		// TODO:与 mode 的干扰,callback
-		ImGui::InputText("##Text", save_img, 256);
-		if (ImGui::Button("save image")) 
-			save_image(fb, save_img);
+		//char saveimgpath[256]{"tmpstr"};
+		ImGui::InputText("imgpath", saveimgpath, 256);
+		if (ImGui::Button("save image"))
+			save_image(fb, saveimgpath);
 
 		ImGui::Text("Info");
 		//ImGui::Text("mouse move: %c", mouse_state);
