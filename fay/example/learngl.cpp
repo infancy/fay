@@ -6,7 +6,6 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <stb_image.h>
 
 #include "fay/gl/buffer.h"
 #include "fay/gl/framebuffer.h"
@@ -50,13 +49,13 @@ const string Nier_2b_ik_rigged = "objects/Nier_2b_ik_rigged/scene.gltf";
 glm::vec3 model_scale(1.f);
 
 // camera
-Camera camera(glm::vec3(0, 5, 10));;
+Camera camera(glm::vec3(0, 0, 0));;
 float lastX = Width / 2.0f;
 float lastY = Height / 2.0f;
 bool firstMouse = true;
 
 //light 
-glm::vec3 lightPosition = glm::vec3(0, 10, 0); //objectspace light position
+glm::vec3 lightPosition = glm::vec3(0, 1, 0); //objectspace light position
 float light_speed = 2.f;
 glm::vec3 light_scale(0.5f, 0.5f, 0.5f);
 
@@ -82,18 +81,12 @@ void update()
 
 	ImGuiIO& io = gui_get_io();
 
-	if (io.KeysDown[GLFW_KEY_1]) render_state = 1;	// raster
-	if (io.KeysDown[GLFW_KEY_2]) render_state = 2;	// raycast
-	if (io.KeysDown[GLFW_KEY_3]) render_state = 3;	// pathtracing
-
 	// 鼠标移动
 	float xpos = io.MousePos.x, ypos = io.MousePos.y;
 	if (firstMouse) { lastX = xpos; lastY = ypos; firstMouse = false; }
-
-	float xoffset = xpos - lastX;
+	float xoffset = xpos - lastX; lastX = xpos;
 	// reversed since y-coordinates go from bottom to top but z_xais form out to in
-	float yoffset = lastY - ypos;
-	lastX = xpos; lastY = ypos;
+	float yoffset = lastY - ypos; lastY = ypos;
 
 	// 粘滞
 	// if (io.KeysDown[GLFW_KEY_SPACE] == GLFW_PRESS) mouse_move = ++mouse_move % 3;
@@ -164,6 +157,7 @@ struct _22_depth_test;
 struct _23_stencil_test;	// Object Outlining
 struct _24_blending;
 struct _25_framebuffers;
+struct _26_cubemaps;
 // light
 struct _30_phong_shading;
 struct _31_light_caster;
@@ -188,7 +182,7 @@ struct _00_create_gui
 	void draw(glm::mat4&& MVP)
 	{
 		shader.enable();
-		shader.bind_texture("diff", 0, diff.id());
+		shader.bind_texture("diff", 0, diff);
 		shader.set_mat4("MVP", MVP);
 		quad.draw();
 	}
@@ -289,14 +283,14 @@ struct _24_blending
 		shader.enable();
 		glm::mat4 model(1.f);
 
-		shader.bind_texture("diff", 0, marble.id());
+		shader.bind_texture("diff", 0, marble);
 		shader.set_bool("texture_xz", true);
 		glm::mat4 m0 = glm::scale(model, glm::vec3(10.f, 10.f, 10.f));
 		shader.set_mat4("MVP", p * v * m0);
 		planeQuad.draw();
 
 		glDisable(GL_CULL_FACE);
-		shader.bind_texture("diff", 0, green.id());
+		shader.bind_texture("diff", 0, green);
 		shader.set_bool("texture_xz", false);
 
 		glm::mat4 m1 = glm::scale(model, glm::vec3(3.f, 3.f, 3.f));
@@ -309,7 +303,7 @@ struct _24_blending
 		shader.set_mat4("MVP", p * v * m2);
 		quad.draw();
 		
-		shader.bind_texture("diff", 0, window.id());
+		shader.bind_texture("diff", 0, window);
 		glm::mat4 m3 = glm::translate(model, glm::vec3(-0.5f, 0, 1));
 		m3 = glm::scale(m3, glm::vec3(3.f, 3.f, 3.f));
 		shader.set_mat4("MVP", p * v * m3);
@@ -333,7 +327,7 @@ struct _25_framebuffers
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		fb.enable(glm::vec3(1.f, 0.f, 0.f));
+		fb.enable(glm::vec3(0.f, 0.f, 0.f));
 		shader.enable();
 		shader.set_mat4("MVP", p * v * m);
 		model.draw(shader);
@@ -344,8 +338,94 @@ struct _25_framebuffers
 		m0 = glm::translate(m0, glm::vec3(-4, -4, -4));
 		m0 = glm::scale(m0, glm::vec3(8.f, 8.f, 8.f));
 		shader.set_mat4("MVP", p * m0);
-		gui.bind_texture("diff", 0, fb.tex_id());
+		gui.bind_texture("diff", 0, fb.tex());
 		quad.draw();
+	}
+};
+
+struct _26_cubemaps
+{
+	Model model{ Blocks };
+	Model box{ Box };
+
+	float skyboxVertices[108] = {
+		// positions          
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		1.0f,  1.0f, -1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		1.0f, -1.0f,  1.0f
+	};
+
+	const string files[7] = { "skybox/blue_sky/",
+		"right.jpg", "left.jpg",
+		"top.jpg", "bottom.jpg",
+		"back.jpg", "front.jpg" };
+	TextureCube sky{files};
+	Texture2D green{ "textures/grass.png" };
+
+	Shader gui{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
+	Shader shader{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
+	Shader cubemap{ "learngl/26_cubemaps.vs", "learngl/26_cubemaps.fs" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		glCullFace(GL_FRONT);
+		//glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_FALSE);
+		cubemap.enable();
+
+		glm::mat4 view_withoutMove = glm::mat4(glm::mat3(v));
+		cubemap.set_mat4("MVP", p * view_withoutMove);
+		cubemap.bind_texture("cubemap", 0, sky);
+		//gui.enable();
+		//gui.set_mat4("MVP", p * view_withoutMove);
+		//gui.bind_texture("diffuse", 0, green);
+		box.draw();
+		//glDepthFunc(GL_LESS); // set depth function back to default
+		glDepthMask(GL_TRUE);
+		glCullFace(GL_BACK);
+		gl_check_errors();
+
+		shader.enable();
+		shader.set_mat4("MVP", p * v * m);
+		model.draw(shader);
 	}
 };
 
@@ -354,10 +434,10 @@ struct _xx
 	Model model{ Blocks };
 	Shader shader{ "learngl/xxxxxxxxxxxx.vs", "learngl/xxxxxxxxxxxxxx.fs" };
 
-	void draw(glm::mat4&& MVP)
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
 		shader.enable();
-		shader.set_mat4("MVP", MVP);
+		shader.set_mat4("MVP", p * v * m);
 		model.draw(shader);
 	}
 };
@@ -486,7 +566,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_25_framebuffers object;
+	_26_cubemaps object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
@@ -504,7 +584,6 @@ int main(int argc, char** argv)
 
 		// glm::vec3 position = { 0.f, 0.f, 1.f }, center = { 0, 0, 0 }, up = { 0, 1, 0 };
 		// glm::mat4 view = glm::lookAt(position, center, up);
-		// TODO：获得对象的大小并压缩到一个固定的方位内
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
 			(float)Width / (float)Height, 0.1f, 10000.0f);
@@ -512,7 +591,6 @@ int main(int argc, char** argv)
 		// draw
 		glm::mat4 model(1.f);
 		model = glm::scale(model, model_scale);
-		//object.draw(projection * view * model);
 		object.draw(projection, view, model);
 
 		// draw light

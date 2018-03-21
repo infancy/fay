@@ -469,7 +469,7 @@ AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
 {
 	std::vector<Vertex5>  vertices;
 	std::vector<uint32_t> indices;
-	std::vector<std::pair<Image, TexType>> images;
+	std::vector<std::pair<ImagePtr, TexType>> images;
 
 	// vertices
 	for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
@@ -526,10 +526,10 @@ AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
 	return AssimpMesh(vertices, indices, images);
 }
 
-std::vector<std::pair<Image, TexType>> 
+std::vector<std::pair<ImagePtr, TexType>> 
 AssimpModel::load_images(aiMaterial* mat, aiTextureType type, TexType textype)
 {
-	std::vector<std::pair<Image, TexType>> images;
+	std::vector<std::pair<ImagePtr, TexType>> images;
 
 	for (uint32_t i = 0; i < mat->GetTextureCount(type); ++i)
 	{
@@ -542,7 +542,7 @@ AssimpModel::load_images(aiMaterial* mat, aiTextureType type, TexType textype)
 			if (images_cache.find(name) == images_cache.end())
 			{
 				std::cout << '\n' << "load image: " << (path + name);
-				Image img(path + name, api);
+				ImagePtr img(path + name, api);
 				images.push_back({img, textype});
 				images_cache.insert({ name, img });
 			}

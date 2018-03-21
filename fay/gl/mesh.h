@@ -27,15 +27,15 @@ public:
 	}
 
 	Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-		std::vector<std::pair<Image, TexType>> images) : buffer(vertices, indices)
+		std::vector<std::pair<ImagePtr, TexType>> images) : buffer(vertices, indices)
 	{
 		for (auto& img : images)
-			textures.emplace_back(img.first, img.second, true);	// true
+			textures.emplace_back(img.first, img.second);
 	}
 
 	// ’‚—˘…Ë÷√ Texture £ø£ø
 	Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-		std::vector<Texture> textures) : buffer(vertices, indices)
+		std::vector<Texture2D> textures) : buffer(vertices, indices)
 	{
 		textures = textures;
 	}
@@ -57,7 +57,7 @@ public:
 			if (count[sz]++ > 0)
 				sampler += std::to_string(count[sz]);
 			// e.g. diff, diff1, diff2...
-			shader.bind_texture(sampler, i, textures[i].id());
+			shader.bind_texture(sampler, i, textures[i]);
 		}
 	}
 
@@ -95,7 +95,7 @@ private:
 	};
 	std::vector<std::string> name	// name in the shader
 	{
-		{ "diff" }, { "spec" }, { "ambient" }, { "emissive" }, 
+		{ "diffuse" }, { "specular" }, { "ambient" }, { "emissive" }, 
 		{ "alpha" }, { "normal" }, { "displace" }, { "height" }
 	};
 

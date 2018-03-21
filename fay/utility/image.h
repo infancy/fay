@@ -13,25 +13,20 @@
 namespace fay
 {
 
-class Image	// shared_image, stbImage
+class BaseImage
 {
 public:
-	Image(const std::string& filepath = {}, Thirdparty thirdparty = Thirdparty::none) :
+	BaseImage(const std::string& filepath = {}, Thirdparty thirdparty = Thirdparty::none) :
 		filepath{ filepath }, thirdparty{ thirdparty }
 	{
-		LOG_IF(ERROR, filepath.empty()) << "image path is empty: ";
-		if (thirdparty == Thirdparty::gl)
-			stbi_set_flip_vertically_on_load(true);
-
-		pixels = stbi_load(filepath.c_str(), &w, &h, &channels, 0);
-		LOG_IF(ERROR, pixels == nullptr) << "image failed to load at path: " << filepath;
-		
-		// const_cast<int&>(width)  = w;  const_cast<int&>(height) = h;
-		manager.reset(pixels, [](unsigned char* pixels) { stbi_image_free(pixels); });
 	}
 
-	// 无需显式删除移动和拷贝函数？？
-	// ~Image() { stbi_image_free(pixels); }
+	BaseImage(const std::string& filepath, int width, int height, int format,
+		Thirdparty thirdparty = Thirdparty::none) :
+		filepath{ filepath }, w{ width }, h{ height }, 
+		fmt{ format }, thirdparty{ thirdparty }
+	{
+	}
 
 	int width()  const { return w; }
 	int height() const { return h; }
@@ -39,14 +34,95 @@ public:
 	std::string file_path()  const { return filepath; }
 	Thirdparty third_party() const { return thirdparty; }
 
+	GLenum gl_format() const
+	{
+		GLenum GLformat{};
+
+		switch (fmt)
+		{
+		case 1: GLformat = GL_RED;	  break;	// grey
+		case 2:	GLformat = GL_RG32UI; break;	// grey&alpha
+		case 3: GLformat = GL_RGB;	  break;
+		case 4: GLformat = GL_RGBA;	  break;
+		default:
+			LOG(ERROR) << "format failed to choose" << filepath; break;
+		}
+
+		return GLformat;
+	}
+
+protected:
+	std::string filepath;
+	Thirdparty thirdparty;
+
+	int w, h, fmt;
+};
+
+// -----------------------------------------------------------------------------
+
+class ImagePtr : public BaseImage	// shared_image, stbImagePtr
+{
+public:
+	ImagePtr(const std::string& filepath = {}, Thirdparty thirdparty = Thirdparty::none) :
+		BaseImage(filepath, thirdparty)
+	{
+		LOG_IF(ERROR, filepath.empty()) << "image path is empty: ";
+		if (thirdparty == Thirdparty::gl)
+			stbi_set_flip_vertically_on_load(true);
+
+		pixels = stbi_load(filepath.c_str(), &w, &h, &fmt, 0);
+		LOG_IF(ERROR, pixels == nullptr) << "image failed to load at path: " << filepath;
+		
+		// const_cast<int&>(width)  = w;  const_cast<int&>(height) = h;
+		manager.reset(pixels, [](unsigned char* pixels) { stbi_image_free(pixels); });
+	}
+
 	const uint8_t* data() const { return pixels; }
 
-	uint8_t operator()(float s, float t) const
+private:
+	uint8_t* pixels;
+	std::shared_ptr<unsigned char> manager;
+};
+
+inline bool operator==(const ImagePtr& left, const ImagePtr& right)
+{
+	return left.file_path() == right.file_path();
+}
+
+// -----------------------------------------------------------------------------
+
+class Image : public BaseImage
+{
+public:
+	Image(const std::string& filepath = {}, Thirdparty thirdparty = Thirdparty::none) :
+		BaseImage(filepath, thirdparty)
+	{
+		LOG_IF(ERROR, filepath.empty()) << "image path is empty\n";
+		if (thirdparty == Thirdparty::gl)
+			stbi_set_flip_vertically_on_load(true);
+
+		uint8_t* ptr = stbi_load(filepath.c_str(), &w, &h, &fmt, 0);
+		LOG_IF(ERROR, ptr == nullptr) << "image failed to load at path: " << filepath;
+
+		pixels = std::vector<uint8_t>(ptr, ptr + w * h * fmt);	// TODO
+
+		stbi_image_free(ptr);
+	}
+
+	Image(const std::string& filepath, int width , int height, int format, Thirdparty thirdparty = Thirdparty::none) :
+		BaseImage(filepath, width, height, format, thirdparty), pixels(w * h * fmt)
+	{
+		pixels.clear();
+	}
+
+	uint8_t* data() { return pixels.data(); }
+
+	uint8_t& operator()(float s, float t)
 	{
 		s *= w; t *= h;
 		return operator()((size_t)s, (size_t)t);
 	}
-	uint8_t operator()(size_t s, size_t t) const
+	uint8_t& operator()(size_t s, size_t t)
 	{
 		size_t x = s % w, y = t % h;
 		if (x < 0) x += w;
@@ -54,35 +130,8 @@ public:
 		return pixels[y * w + x];
 	}
 
-	GLenum gl_format() const
-	{
-		GLenum GLformat{};
-
-		switch (channels)
-		{
-		case 1: GLformat = GL_RED;	  break;	// grey
-		case 2:	GLformat = GL_RG32UI; break;	// grey&alpha
-		case 3: GLformat = GL_RGB;	  break;
-		case 4: GLformat = GL_RGBA;	  break;
-		default:
-			LOG(ERROR) << "channels failed to choose" << filepath; break;
-		}
-
-		return GLformat;
-	}
-
-public:
-	// const std::string filepath;
-	// const Thirdparty thirdparty;
-	// const int width{}, height{};
-
 private:
-	std::string filepath;
-	Thirdparty thirdparty;
-
-	uint8_t* pixels;
-	int w, h, channels;
-	std::shared_ptr<unsigned char> manager;
+	std::vector<uint8_t> pixels;
 };
 
 inline bool operator==(const Image& left, const Image& right)

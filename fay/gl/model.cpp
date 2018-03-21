@@ -62,25 +62,25 @@ obj_Model::obj_Model(const std::string& filepath, bool gamma) : gamma_correction
 			<< ' ' << objmat.map_Kd << '\n';
 	#endif // _DEBUG
 
-		std::vector<std::pair<Image, TexType>> images;
+		std::vector<std::pair<ImagePtr, TexType>> images;
 
 		if (!objmat.map_Ka.empty()) images.emplace_back( 
-			Image(model.path + objmat.map_Ka, Thirdparty::gl), TexType::ambient);
+			ImagePtr(model.path + objmat.map_Ka, Thirdparty::gl), TexType::ambient);
 
 		if (!objmat.map_Kd.empty()) images.emplace_back(
-			Image(model.path + objmat.map_Kd, Thirdparty::gl), TexType::diffuse);
+			ImagePtr(model.path + objmat.map_Kd, Thirdparty::gl), TexType::diffuse);
 
 		if (!objmat.map_Ks.empty()) images.emplace_back(
-			Image(model.path + objmat.map_Ks, Thirdparty::gl), TexType::specular);
+			ImagePtr(model.path + objmat.map_Ks, Thirdparty::gl), TexType::specular);
 
 		if (!objmat.map_Ke.empty()) images.emplace_back(
-			Image(model.path + objmat.map_Ke, Thirdparty::gl), TexType::emissive);
+			ImagePtr(model.path + objmat.map_Ke, Thirdparty::gl), TexType::emissive);
 
 		if (!objmat.map_d.empty()) images.emplace_back(
-			Image(model.path + objmat.map_d, Thirdparty::gl), TexType::alpha);
+			ImagePtr(model.path + objmat.map_d, Thirdparty::gl), TexType::alpha);
 
 		if (!objmat.map_bump.empty()) images.emplace_back(
-			Image(model.path + objmat.map_bump, Thirdparty::gl), TexType::displace);
+			ImagePtr(model.path + objmat.map_bump, Thirdparty::gl), TexType::displace);
 
 		this->meshes.emplace_back(objmesh.vertices, objmesh.indices, images);
 	}

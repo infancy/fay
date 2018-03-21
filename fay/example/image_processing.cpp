@@ -65,18 +65,15 @@ void update()
 
 	ImGuiIO& io = gui_get_io();
 
-	if (io.KeysDown[GLFW_KEY_1]) processing_mode = 1;
-	if (io.KeysDown[GLFW_KEY_2]) processing_mode = 2;
-	if (io.KeysDown[GLFW_KEY_3]) processing_mode = 3;
+	//if (io.KeysDown[GLFW_KEY_1]) processing_mode = 1;
 
 	// 鼠标移动
 	float xpos = io.MousePos.x, ypos = io.MousePos.y;
 	if (firstMouse) { lastX = xpos; lastY = ypos; firstMouse = false; }
 
-	float xoffset = xpos - lastX;
+	float xoffset = xpos - lastX; lastX = xpos;
 	// reversed since y-coordinates go from bottom to top but z_xais form out to in
-	float yoffset = lastY - ypos;
-	lastX = xpos; lastY = ypos;
+	float yoffset = lastY - ypos; lastY = ypos;
 
 	// 粘滞
 	// if (io.KeysDown[GLFW_KEY_SPACE] == GLFW_PRESS) mouse_state = ++mouse_state % 3;
@@ -110,7 +107,7 @@ void update()
 
 void histogram(const string& imgpath, const string& filename)
 {
-	Image img{ imgpath };
+	ImagePtr img{ imgpath };
 	auto data = img.data();
 
 	std::vector<float> v(256, 0.f);
@@ -158,7 +155,7 @@ void histogram(const string& imgpath, const string& filename)
 
 void gamma_transformation(const string& imgpath, const string& filename, float gamma)
 {
-	Image img{ imgpath };
+	ImagePtr img{ imgpath };
 	auto data = img.data();
 	auto width = img.width(), height = img.height(), pixels = width * height;
 
@@ -243,11 +240,34 @@ void save_image(Framebuffer& fb, const string imgpath)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+// kernel
+float Sharpen0[9]{ -1, -1, -1, -1, 9, -1, -1, -1, -1 };
+
+float Blurred0[9]{ 
+	1.f / 16.f, 2.f / 16.f, 1.f / 16.f,
+	2.f / 16.f, 4.f / 16.f, 2.f / 16.f,
+	1.f / 16.f, 2.f / 16.f, 1.f / 16.f };
+
+float EdgeDetection0[9]{ 2, 2, 2, 2, -15, 2, 2, 2, 2 };
+
 void image_processing(const std::string& imgpath)
 {
 	Texture2D tex{ imgpath };
 	uint32_t width = tex.width(), height = tex.height();
 	float ratio = (float)height / (float)width;
+
+	float xoffset = 1.f / width, yoffset = 1.f / height;
+	glm::vec2 offset[9] = {
+		{ -xoffset, yoffset  }, // 左上
+		{ 0.0f,	    yoffset  }, // 正上
+		{ xoffset,  yoffset  }, // 右上
+		{ -xoffset, 0.0f     }, // 左
+		{ 0.0f,	    0.0f     }, // 中
+		{ xoffset,  0.0f     }, // 右
+		{ -xoffset, -yoffset }, // 左下
+		{ 0.0f,	    -yoffset }, // 正下
+		{ xoffset,  -yoffset }  // 右下
+	};
 
 	// quad
 	// left, right, bottom, top
@@ -260,7 +280,8 @@ void image_processing(const std::string& imgpath)
 	Shader ip{ "image_processing/processing.vs", "image_processing/processing.fs" };
 	Shader gui{ "image_processing/gui.vs", "image_processing/gui.fs" };
 
-	char saveimgpath[256]{"aa"};
+	char saveimgpath[256]{".jpg"};
+
 	while (!gui_close_window())
 	{
 		update();
@@ -273,9 +294,22 @@ void image_processing(const std::string& imgpath)
 		fb.enable(glm::vec3(1.f, 0.f, 0.f));
 		ip.enable();
 		ip.set_mat4("MVP", ortho0 * model0);
-		ip.bind_texture("diff", 0, tex.id());
+		ip.bind_texture("diff", 0, tex);
 		ip.set_int("processing_mode", processing_mode);
 		ip.set_float("gamma", ip_gamma);
+		
+		//#define FILTERXY(i) "filter[" #i "]"
+		//"filter[" ('0' + i) "]"
+		string strfilter("filter[0]");
+		string stroffset("offset[0]");
+		for (int i = 0; i < 9; ++i)
+		{
+			string tmp1 = strfilter; tmp1[7] += i;
+			string tmp2 = stroffset; tmp2[7] += i;
+			ip.set_float(tmp1, Sharpen0[i]);
+			ip.set_vec2(tmp2, offset[i]);
+		}
+
 		quad.draw();
 		
 		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
@@ -284,11 +318,11 @@ void image_processing(const std::string& imgpath)
 			glm::vec3(mouse_offset.x / Width, mouse_offset.y / Height, 0));
 		model1 = glm::scale(model1, model_scale);
 		gui.set_mat4("MVP", ortho1 * model1);
-		gui.bind_texture("diff", 0, fb.tex_id());
+		gui.bind_texture("diff", 0, fb.tex);
 		quad.draw();
 
 		// GUI
-		ImGui::Text("current processing mode: %d", processing_mode);
+		ImGui::SliderInt("mode", &processing_mode, 0, 4);
 		ImGui::SliderFloat("gamma", &ip_gamma, 0.f, 25.f);
 		// TODO:与 mode 的干扰,callback
 		//char saveimgpath[256]{"tmpstr"};
@@ -315,7 +349,7 @@ int main(int argc, char** argv)
 	google::InitGoogleLogging(argv[0]);
 	gui_create_window(Width, Height);
 
-	image_processing("image/8.jpg");
+	image_processing("image/3.png");
 	//image_processing(argv[1]);
 	//histogram("image/1.png", "1.ppm");
 	//gamma_transformation("image/3.png", "3.ppm", 3.0);

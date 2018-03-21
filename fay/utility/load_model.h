@@ -20,10 +20,10 @@ struct BaseMesh
 {
 	std::vector<Vertex>   vertices;
 	std::vector<uint32_t> indices;
-	std::vector<std::pair<Image, TexType>> images;
+	std::vector<std::pair<ImagePtr, TexType>> images;
 
 	BaseMesh(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, 
-		std::vector<std::pair<Image, TexType>>& images) :
+		std::vector<std::pair<ImagePtr, TexType>>& images) :
 		vertices{ vertices }, indices{ indices }, images{ images }
 	{}
 };
@@ -119,7 +119,7 @@ private:
 	void process_node(aiNode* node, const aiScene* scene);
 	AssimpMesh process_mesh(aiMesh* mesh, const aiScene* scene);
 
-	std::vector<std::pair<Image, TexType>> 
+	std::vector<std::pair<ImagePtr, TexType>> 
 	load_images(aiMaterial* mat, aiTextureType type, TexType textype);
 
 public:
@@ -127,7 +127,7 @@ public:
 
 private:
 	ModelType model_type;
-	std::unordered_map<std::string, Image> images_cache;	// 保存已加载的图像，避免重复加载
+	std::unordered_map<std::string, ImagePtr> images_cache;	// 保存已加载的图像，避免重复加载
 };
 
 } // namespace fay
