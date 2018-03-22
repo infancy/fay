@@ -415,6 +415,33 @@ struct _27_uniform
 	}
 };
 
+struct _28_geometry_shader
+{
+	float time{};
+	Model model{ Nanosuit };
+	Shader bomb{ "learngl/28_geometry_shader.vs", "learngl/28_gs_bomb.fs", "learngl/28_gs_bomb.gs" };
+	Shader normal{ "learngl/28_geometry_shader.vs", "learngl/28_gs_normal.fs", "learngl/28_gs_normal.gs" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		bomb.enable();
+		bomb.set_mat4("MVP", p * v * m);
+		if (mouse_move != 'z')
+		{
+			time += deltaTime / 10;
+			bomb.set_float("time", time);
+		}
+		model.draw(bomb);
+
+		normal.enable();
+		normal.set_mat3("NormalMV", glm::mat3(glm::transpose(glm::inverse(v * m))));
+		normal.set_mat4("P", p);
+		normal.set_mat4("MVP", p * v * m);
+		normal.set_float("Length", 0.2f);
+		model.draw(normal);
+	}
+};
+
 struct _xx
 {
 	Model model{ Blocks };
@@ -552,7 +579,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_27_uniform object;
+	_28_geometry_shader object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
