@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 
 #include "fay/gl/texture.h"
+#include "fay/gl/uniform.h"
 
 namespace fay
 {
@@ -47,11 +48,20 @@ public:
 	
 	void set_mat4(const std::string& name, const glm::mat4& mat) const { glUniformMatrix4fv(glGetUniformLocation(program_id, name.c_str()), 1, GL_FALSE, &mat[0][0]); }
 	
-	// 使用 glUniform1i 给纹理采样器分配一个位置值
-	void bind_texture(const std::string& sampler, int tex_unit, const BaseTexture& tex) const {
+	void bind_texture(const std::string& sampler, int tex_unit, const BaseTexture& tex) const 
+	{
 		glActiveTexture(GL_TEXTURE0 + tex_unit);	    // 激活第i号纹理单元
-		glUniform1i(glGetUniformLocation(program_id, sampler.c_str()), tex_unit);	// 将第i号纹理单元连接到着色器中的sampler变量
-		glBindTexture(tex.target(), tex.id()); } 	// 将纹理对象绑定到当前激活的纹理单元上
+		// 使用 glUniform1i 给纹理采样器分配一个位置值，将第i号纹理单元连接到着色器中的sampler变量
+		glUniform1i(glGetUniformLocation(program_id, sampler.c_str()), tex_unit);
+		glBindTexture(tex.target(), tex.id());	// 将纹理对象绑定到当前激活的纹理单元上
+	}
+
+	void bind_uniform(const std::string& uniform, int bind_point, const Uniform& ubo) const
+	{
+		glUniformBlockBinding(program_id, glGetUniformBlockIndex(program_id, uniform.c_str()), bind_point);
+		glBindBufferBase(GL_UNIFORM_BUFFER, bind_point, ubo.id());
+		// glBindBufferRange(GL_UNIFORM_BUFFER, bind_point, ubo.id(), begin, end);
+	}
 
 private:
 	void create_shader(const char* vertexSouce, const char* fragmentSource, 

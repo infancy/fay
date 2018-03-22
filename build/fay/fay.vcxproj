@@ -38,6 +38,7 @@
     <ClInclude Include="..\..\fay\gl\resources.h" />
     <ClInclude Include="..\..\fay\gl\shader.h" />
     <ClInclude Include="..\..\fay\gl\texture.h" />
+    <ClInclude Include="..\..\fay\gl\uniform.h" />
     <ClInclude Include="..\..\fay\gui\gui.h" />
     <ClInclude Include="..\..\fay\gui\window.h" />
     <ClInclude Include="..\..\fay\utility\fay.h" />

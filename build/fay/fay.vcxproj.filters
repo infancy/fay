@@ -107,5 +107,8 @@
     <ClInclude Include="..\..\fay\utility\math.h">
       <Filter>utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\fay\gl\uniform.h">
+      <Filter>gl</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

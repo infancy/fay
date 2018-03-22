@@ -10,8 +10,5 @@ uniform mat4 MVP;
 void main()
 {
     vTex = mPos;    
-    //gl_Position = (MVP * vec4(mPos, 1.0)).xyww;
-    vec4 pos = MVP * vec4(mPos, 1.0);
-    //gl_Position = pos.xyww;
-    gl_Position = pos;
+    gl_Position = (MVP * vec4(mPos, 1.0)).xyww;
 }

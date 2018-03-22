@@ -14,6 +14,7 @@
 #include "fay/gl/model.h"
 #include "fay/gl/camera.h"
 #include "fay/gl/shader.h"
+#include "fay/gl/uniform.h"
 #include "fay/gui/gui.h"
 
 using namespace std;
@@ -49,13 +50,13 @@ const string Nier_2b_ik_rigged = "objects/Nier_2b_ik_rigged/scene.gltf";
 glm::vec3 model_scale(1.f);
 
 // camera
-Camera camera(glm::vec3(0, 0, 0));;
+Camera camera(glm::vec3(0, 5, 10));;
 float lastX = Width / 2.0f;
 float lastY = Height / 2.0f;
 bool firstMouse = true;
 
 //light 
-glm::vec3 lightPosition = glm::vec3(0, 1, 0); //objectspace light position
+glm::vec3 lightPosition = glm::vec3(0, 10, 0); //objectspace light position
 float light_speed = 2.f;
 glm::vec3 light_scale(0.5f, 0.5f, 0.5f);
 
@@ -345,87 +346,72 @@ struct _25_framebuffers
 
 struct _26_cubemaps
 {
-	Model model{ Blocks };
+	Model model{ Nier_2b };
 	Model box{ Box };
-
-	float skyboxVertices[108] = {
-		// positions          
-		-1.0f,  1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		-1.0f,  1.0f, -1.0f,
-		1.0f,  1.0f, -1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		1.0f, -1.0f,  1.0f
-	};
 
 	const string files[7] = { "skybox/blue_sky/",
 		"right.jpg", "left.jpg",
 		"top.jpg", "bottom.jpg",
 		"back.jpg", "front.jpg" };
 	TextureCube sky{files};
-	Texture2D green{ "textures/grass.png" };
 
-	Shader gui{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
-	Shader shader{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
+	Shader shader{ "learngl/26_environment_map.vs", "learngl/26_environment_map.fs" };
 	Shader cubemap{ "learngl/26_cubemaps.vs", "learngl/26_cubemaps.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
+		shader.enable();
+
+		glm::mat4 MV = v * m;
+		glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
+		shader.enable();
+		shader.set_mat4("MV", MV);
+		shader.set_mat3("NormalMV", NormalMV);		//  ß»•Œª“∆ Ù–‘
+		shader.set_mat4("MVP", p * v * m);
+		model.draw(shader);
+
 		glCullFace(GL_FRONT);
-		//glDepthFunc(GL_LEQUAL);
-		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_LEQUAL);
+		//glDepthMask(GL_FALSE);
 		cubemap.enable();
 
 		glm::mat4 view_withoutMove = glm::mat4(glm::mat3(v));
 		cubemap.set_mat4("MVP", p * view_withoutMove);
 		cubemap.bind_texture("cubemap", 0, sky);
-		//gui.enable();
-		//gui.set_mat4("MVP", p * view_withoutMove);
-		//gui.bind_texture("diffuse", 0, green);
-		box.draw();
-		//glDepthFunc(GL_LESS); // set depth function back to default
-		glDepthMask(GL_TRUE);
-		glCullFace(GL_BACK);
-		gl_check_errors();
 
-		shader.enable();
-		shader.set_mat4("MVP", p * v * m);
-		model.draw(shader);
+		box.draw();
+		glDepthFunc(GL_LESS);
+		//glDepthMask(GL_TRUE);
+		glCullFace(GL_BACK);
+	}
+};
+
+struct _27_uniform
+{
+	Model model{ Box };
+	Uniform uniform{ 128 };	// 2 * mat4, mat4 = 4 * vec4 = 16 * float = 64 * bytes
+	Shader shader1{ "learngl/27_uniform.vs", "learngl/27_uniform.fs" };
+	Shader shader2{ "learngl/27_uniform.vs", "learngl/27_uniform.fs" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		// struct Mat { mat4 p; mat v; }
+		// uniform.set(OFFSET(p), sizeof(v), &v);
+		CHECK(sizeof(glm::mat4) == 64);
+		uniform.set(0, 64, glm::value_ptr(p));
+		uniform.set(64, 64, glm::value_ptr(v));
+
+		shader1.enable();
+		shader1.set_mat4("model", m);
+		shader1.bind_uniform("Mat", 0, uniform);
+		shader1.set_bool("inverse", false);
+		model.draw(shader1);
+
+		shader2.enable();
+		shader2.set_mat4("model", glm::translate(m, lightPosition));
+		shader2.bind_uniform("Mat", 0, uniform);
+		shader2.set_bool("inverse", true);
+		model.draw(shader2);
 	}
 };
 
@@ -566,7 +552,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_26_cubemaps object;
+	_27_uniform object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
