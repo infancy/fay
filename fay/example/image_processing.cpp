@@ -318,7 +318,7 @@ void image_processing(const std::string& imgpath)
 			glm::vec3(mouse_offset.x / Width, mouse_offset.y / Height, 0));
 		model1 = glm::scale(model1, model_scale);
 		gui.set_mat4("MVP", ortho1 * model1);
-		gui.bind_texture("diffuse", 0, fb.tex_id());
+		gui.bind_texture("diffuse", 0, fb.tex());
 		quad.draw();
 
 		// GUI

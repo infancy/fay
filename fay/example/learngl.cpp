@@ -524,7 +524,7 @@ struct _29_instancing
 	}
 };
 
-struct _anti_aliasing
+struct _2a_anti_aliasing
 {
 	Model model{ Blocks };
 	// quad
@@ -558,27 +558,15 @@ struct _anti_aliasing
 	}
 };
 
-struct _xx
-{
-	Model model{ Blocks };
-	Shader shader{ "learngl/xxxxxxxxxxxx.vs", "learngl/xxxxxxxxxxxxxx.fs" };
-
-	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
-	{
-		shader.enable();
-		shader.set_mat4("MVP", p * v * m);
-		model.draw(shader);
-	}
-};
-
 // -----------------------------------------------------------------------------
 
 struct _30_phong_shading
 {
-	Model model{ Box };
-	Shader shader{ "learngl/30_light_ADS.vs", "learngl/30_light_ADS.fs" };
+	Model model{ Blocks };
+	Shader shader{ "learngl/30_phong_shading.vs", "learngl/30_phong_shading.fs" };
 	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
 
+	bool some_flag = false;
 	float sAmbient = 1.f;
 	float sDiffuse = 1.f;
 	float sSpeclar = 1.f;
@@ -587,6 +575,9 @@ struct _30_phong_shading
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
 		// TODO: bind imgui to shader
+		if (ImGui::Button("blinn_phong"))
+			some_flag ^= 1;
+		//cout << (some_flag ? "true\n" : "false\n");
 		ImGui::SliderFloat("ambient strength", &sAmbient, 0.f, 10.f);
 		ImGui::SliderFloat("diffuse strength", &sDiffuse, 0.f, 10.f);
 		ImGui::SliderFloat("speclar strength", &sSpeclar, 0.f, 10.f);
@@ -596,6 +587,7 @@ struct _30_phong_shading
 		glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
 
 		shader.enable();
+		shader.set_bool("blinn_phong", some_flag);
 		shader.set_mat4("MV", MV);
 		//shader.set_mat4("NorMV", NormalMV);	// 小心传输着色器变量、先保存再编译
 		shader.set_mat3("NormalMV", NormalMV);		// 失去位移属性
@@ -665,7 +657,22 @@ struct _31_light_caster
 	}
 };
 
+
+
 // -----------------------------------------------------------------------------
+
+struct _xx
+{
+	Model model{ Blocks };
+	Shader shader{ "learngl/xxxxxxxxxxxx.vs", "learngl/xxxxxxxxxxxxxx.fs" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		shader.enable();
+		shader.set_mat4("MVP", p * v * m);
+		model.draw(shader);
+	}
+};
 
 struct _fay_obj_model
 {
@@ -695,7 +702,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height, true);
 
-	_anti_aliasing object;
+	_30_phong_shading object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };

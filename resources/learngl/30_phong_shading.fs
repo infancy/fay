@@ -12,6 +12,7 @@ uniform vec3 vLightPos;
 uniform vec3 lightcolor;
 
 // strength
+uniform bool blinn_phong;
 uniform float sa;
 uniform float sd;
 uniform float ss;
@@ -31,8 +32,18 @@ void main()
 
     // spec
     vec3 viewdir = normalize(-vPos);
-    vec3 reflectdir = reflect(-lightdir, normal);
-    float ks = pow(max(dot(viewdir, reflectdir), 0.0), shininess);
+    vec3 halfwaydir, reflectdir;
+    float ks;
+    if(blinn_phong)
+    {
+        halfwaydir = normalize(lightdir + viewdir);
+        ks = pow(max(dot(normal, halfwaydir), 0.0), shininess);
+    }
+    else
+    {
+        reflectdir = reflect(-lightdir, normal);
+        ks = pow(max(dot(viewdir, reflectdir), 0.0), shininess);
+    }
     vec4 spec = ks * ss * texture(specular, vTex) * vec4(lightcolor, 1.0);
 
     FragColor = ambi + diff + spec;
