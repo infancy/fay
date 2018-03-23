@@ -16,9 +16,9 @@ public:
 	Model(const std::string& filepath, ModelType model_type = ModelType::obj, bool gamma = false);
 
 	// render the mesh, you need to bind texture by youself
-	void draw();
+	void draw(GLsizei sz = 1);
 	// bind texture and render the mesh
-	void draw(Shader shader);
+	void draw(Shader shader, GLsizei sz = 1);
 
 public:
 	// std::vector<Mesh<Vertex>> meshes;
@@ -31,8 +31,8 @@ class obj_Model
 public:
 	obj_Model(const std::string& filepath, bool gamma = false);
 
-	void draw();
-	void draw(Shader shader);
+	void draw(GLsizei sz = 1);
+	void draw(Shader shader, GLsizei sz = 1);
 
 public:
 	// std::vector<Mesh<Vertex>> meshes;

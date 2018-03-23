@@ -2,7 +2,7 @@
 in vec2 vTex;
 out vec4 FragColor;
 
-uniform sampler2D diff;
+uniform sampler2D diffuse;
 uniform int   processing_mode;
 uniform float gamma;
 uniform float filter[9];
@@ -13,28 +13,28 @@ void main()
     // standard
 	if (processing_mode == 0)
 	{
-		FragColor = texture(diff, vTex);
+		FragColor = texture(diffuse, vTex);
 	}
 
 	// greyscale
 	if (processing_mode == 1)
 	{
 		// Convert to greyscale using NTSC weightings
-		float grey = dot(texture(diff, vTex).rgb, vec3(0.299, 0.587, 0.114));
+		float grey = dot(texture(diffuse, vTex).rgb, vec3(0.299, 0.587, 0.114));
 		FragColor = vec4(grey, grey, grey, 1.0);
 	}
 
 	// inversion
 	if (processing_mode == 2)
 	{
-		FragColor = vec4(vec3(1.0 - texture(diff, vTex)), 1.0);
+		FragColor = vec4(vec3(1.0 - texture(diffuse, vTex)), 1.0);
 	}
 
     // power-law(gamma) transformation
     if (processing_mode == 3)
 	{
 		// Convert to greyscale using NTSC weightings
-        vec4 c = texture(diff, vTex);
+        vec4 c = texture(diffuse, vTex);
 		float r = pow(c.r, gamma);
         float g = pow(c.g, gamma);
         float b = pow(c.b, gamma);
@@ -47,7 +47,7 @@ void main()
 	{
 		vec3 sampleTex[9];
     	for(int i = 0; i < 9; i++)
-        	sampleTex[i] = vec3(texture(diff, vTex + offset[i]));
+        	sampleTex[i] = vec3(texture(diffuse, vTex + offset[i]));
 
     	vec3 sum = vec3(0.0);
     	for(int i = 0; i < 9; i++)

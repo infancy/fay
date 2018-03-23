@@ -2,12 +2,12 @@
 in vec2 vTex;
 out vec4 FragColor;
 
-uniform sampler2D diff;
+uniform sampler2D diffuse;
 
 void main()
 {    
-    //FragColor = texture(diff, vTex);
-    vec4 c = texture(diff, vTex);
+    //FragColor = texture(diffuse, vTex);
+    vec4 c = texture(diffuse, vTex);
     //FragColor = vec4(c.r, c.r, c.r, 1);
     FragColor = vec4(c.r, c.g, c.b, 1);
 }

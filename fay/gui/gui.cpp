@@ -316,7 +316,7 @@ static void ImGui_Shutdown()
 
 // public
 
-bool gui_create_window(int width, int height)		// Setup window
+bool gui_create_window(int width, int height, bool multisample)		// Setup window
 {
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
@@ -324,6 +324,8 @@ bool gui_create_window(int width, int height)		// Setup window
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	if(multisample)
+		glfwWindowHint(GLFW_SAMPLES, 4);
 #if __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif

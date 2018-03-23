@@ -62,13 +62,13 @@ public:
 	}
 
 	// render the mesh, you need to bind texture by youself
-	void draw()
+	void draw(GLsizei sz = 1)
 	{
-		buffer.draw();
+		buffer.draw(sz);
 	}
 
 	// bind texture and render the mesh
-	void draw(Shader shader)
+	void draw(Shader shader, GLsizei sz = 1)
 	{
 		// 还需要在 draw 前绑定其它数据
 		// shader.enable();
@@ -76,7 +76,7 @@ public:
 		if (!textures.empty())
 			bind_texture(shader);
 
-		buffer.draw();
+		buffer.draw(sz);
 		// shader.disable();
 		glActiveTexture(GL_TEXTURE0);
 	}

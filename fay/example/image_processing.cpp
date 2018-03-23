@@ -232,7 +232,7 @@ void save_image(Framebuffer& fb, const string imgpath)
 	std::cout << "save image: " << imgpath << std::endl;
 	std::vector<uint8_t> data(fb.width() * fb.height() * bytes);	//RGB
 	//glBindTexture(GL_TEXTURE_2D, fb.tex_id());
-	glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo_id());
+	glBindFramebuffer(GL_FRAMEBUFFER, fb.id());
 	glReadPixels(0, 0, fb.width(), fb.height(), fb.format(), GL_UNSIGNED_BYTE, data.data());
 	
 	//save_ppm("test.ppm", data.data(), fb.width(), fb.height());
@@ -276,7 +276,7 @@ void image_processing(const std::string& imgpath)
 	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
 	Buffer quad{ vb, ib };
 
-	Framebuffer fb{ width, height, tex.format() };
+	Framebuffer fb{ width, height, false, tex.format() };
 	Shader ip{ "image_processing/processing.vs", "image_processing/processing.fs" };
 	Shader gui{ "image_processing/gui.vs", "image_processing/gui.fs" };
 
@@ -294,7 +294,7 @@ void image_processing(const std::string& imgpath)
 		fb.enable(glm::vec3(1.f, 0.f, 0.f));
 		ip.enable();
 		ip.set_mat4("MVP", ortho0 * model0);
-		ip.bind_texture("diff", 0, tex);
+		ip.bind_texture("diffuse", 0, tex);
 		ip.set_int("processing_mode", processing_mode);
 		ip.set_float("gamma", ip_gamma);
 		
@@ -318,7 +318,7 @@ void image_processing(const std::string& imgpath)
 			glm::vec3(mouse_offset.x / Width, mouse_offset.y / Height, 0));
 		model1 = glm::scale(model1, model_scale);
 		gui.set_mat4("MVP", ortho1 * model1);
-		gui.bind_texture("diff", 0, fb.tex);
+		gui.bind_texture("diffuse", 0, fb.tex_id());
 		quad.draw();
 
 		// GUI

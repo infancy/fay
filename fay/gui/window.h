@@ -25,7 +25,7 @@ struct IO
 	double last_time{}, cur_time{}, delta_time{};
 };
 
-bool create_window(int width = 1080, int height = 720);
+bool create_window(int width = 1080, int height = 720, bool multisample = false);
 bool close_window();
 void delete_window();
 

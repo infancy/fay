@@ -15,7 +15,7 @@
 namespace fay
 {
 
-bool gui_create_window(int width = 1080, int height = 720);
+bool gui_create_window(int width = 1080, int height = 720, bool multisample = false);
 bool gui_close_window();
 void gui_delete_window();
 

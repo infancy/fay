@@ -32,16 +32,16 @@ Model::Model(const std::string& filepath, ModelType model_type, bool gamma) : ga
 }
 */
 
-void Model::draw()
+void Model::draw(GLsizei sz)
 {
 	for (auto& mesh : meshes)
-		mesh.draw();
+		mesh.draw(sz);
 }
 
-void Model::draw(Shader shader)
+void Model::draw(Shader shader, GLsizei sz)
 {
 	for (auto& mesh : meshes)
-		mesh.draw(shader);
+		mesh.draw(shader, sz);
 }
 
 // -----------------------------------------------------------------------------
@@ -86,16 +86,16 @@ obj_Model::obj_Model(const std::string& filepath, bool gamma) : gamma_correction
 	}
 }
 
-void obj_Model::draw()
+void obj_Model::draw(GLsizei sz)
 {
 	for (auto& mesh : meshes)
-		mesh.draw();
+		mesh.draw(sz);
 }
 
-void obj_Model::draw(Shader shader)
+void obj_Model::draw(Shader shader, GLsizei sz)
 {
 	for (auto& mesh : meshes)
-		mesh.draw(shader);
+		mesh.draw(shader, sz);
 }
 
 }	//namespace fay

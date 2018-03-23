@@ -8,15 +8,15 @@ Buffer::Buffer(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices,
 	std::function<void()> set_vertex_attribPointer)
 {
 	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ibo);
+	glGenBuffers(1, &vbo_);
+	glGenBuffers(1, &ibo_);
 
 	glBindVertexArray(vao);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
 
 	set_vertex_attribPointer();
@@ -30,15 +30,15 @@ Buffer::Buffer(std::vector<Vertex1>& vertices, std::vector<uint32_t>& indices)
 	: isz{ static_cast<GLsizei>(indices.size()) }
 {
 	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ibo);
+	glGenBuffers(1, &vbo_);
+	glGenBuffers(1, &ibo_);
 
 	glBindVertexArray(vao);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex1), vertices.data(), GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
@@ -51,15 +51,15 @@ Buffer::Buffer(std::vector<Vertex3>& vertices, std::vector<uint32_t>& indices)
 	: isz{ static_cast<GLsizei>(indices.size()) }
 {
 	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ibo);
+	glGenBuffers(1, &vbo_);
+	glGenBuffers(1, &ibo_);
 
 	glBindVertexArray(vao);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex3), vertices.data(), GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
 
 	// set the vertex attribute pointers
@@ -80,15 +80,15 @@ Buffer::Buffer(std::vector<Vertex5>& vertices, std::vector<uint32_t>& indices)
 	: isz{ static_cast<GLsizei>(indices.size()) }
 {
 	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ibo);
+	glGenBuffers(1, &vbo_);
+	glGenBuffers(1, &ibo_);
 
 	glBindVertexArray(vao);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex5), vertices.data(), GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
 
 	// set the vertex attribute pointers
@@ -113,10 +113,14 @@ Buffer::Buffer(std::vector<Vertex5>& vertices, std::vector<uint32_t>& indices)
 
 // -----------------------------------------------------------------------------
 
-void Buffer::draw()
+void Buffer::draw(GLsizei sz)
 {
+	DCHECK(sz >= 1) << "buffer: error size";
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, isz, GL_UNSIGNED_INT, 0);
+	if(sz == 1)
+		glDrawElements(GL_TRIANGLES, isz, GL_UNSIGNED_INT, 0);
+	else
+		glDrawElementsInstanced(GL_TRIANGLES, isz, GL_UNSIGNED_INT, 0, sz);
 	glBindVertexArray(0);
 }
 

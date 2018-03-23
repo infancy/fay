@@ -26,11 +26,15 @@ BaseTexture::BaseTexture(GLenum target, GLint filtering, GLint wrap) :
 	//glActiveTexture(GL_TEXTURE0 + tex_unit);
 	glBindTexture(target_, id_);	// 之后任何的纹理指令都作用于当前绑定的纹理
 
-	glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, filtering);
-	glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, filtering);
+	if (target_ != GL_TEXTURE_2D_MULTISAMPLE)
+	{
+		glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, filtering);
+		glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, filtering);
 
-	glTexParameteri(target_, GL_TEXTURE_WRAP_S, wrap);
-	glTexParameteri(target_, GL_TEXTURE_WRAP_T, wrap);
+		glTexParameteri(target_, GL_TEXTURE_WRAP_S, wrap);
+		glTexParameteri(target_, GL_TEXTURE_WRAP_T, wrap);
+	}
+
 	if (target_ == GL_PROXY_TEXTURE_3D ||
 		target_ == GL_TEXTURE_CUBE_MAP)
 		glTexParameteri(target_, GL_TEXTURE_WRAP_R, wrap);

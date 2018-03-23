@@ -37,6 +37,7 @@ const string Box = "objects/box/box.obj";
 const string Blocks = "objects/blocks/blocks.obj";
 const string Rei = "objects/Rei/Rei.obj";
 const string CornellBox = "objects/CornellBox/CornellBox.obj";
+const string Planet = "objects/planet/planet.obj";
 const string Rock = "objects/rock/rock.obj";
 const string Fairy = "objects/fairy/fairy.obj";
 const string Nanosuit = "objects/nanosuit/nanosuit.obj";
@@ -321,7 +322,7 @@ struct _25_framebuffers
 	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
 	Buffer quad{ vb, ib };
 
-	Framebuffer fb{Width, Height};
+	Framebuffer fb{Width, Height};	// doesn't use mulitesample, need to modify code in the main()
 	Texture2D green{ "textures/grass.png" };
 	Shader shader{ "learngl/25_framebuffers.vs", "learngl/25_framebuffers.fs" };
 	Shader gui{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
@@ -339,7 +340,7 @@ struct _25_framebuffers
 		m0 = glm::translate(m0, glm::vec3(-4, -4, -4));
 		m0 = glm::scale(m0, glm::vec3(8.f, 8.f, 8.f));
 		shader.set_mat4("MVP", p * m0);
-		gui.bind_texture("diff", 0, fb.tex());
+		gui.bind_texture("diffuse", 0, fb.tex());
 		quad.draw();
 	}
 };
@@ -418,7 +419,7 @@ struct _27_uniform
 struct _28_geometry_shader
 {
 	float time{};
-	Model model{ Nanosuit };
+	Model model{ Fairy };
 	Shader bomb{ "learngl/28_geometry_shader.vs", "learngl/28_gs_bomb.fs", "learngl/28_gs_bomb.gs" };
 	Shader normal{ "learngl/28_geometry_shader.vs", "learngl/28_gs_normal.fs", "learngl/28_gs_normal.gs" };
 
@@ -437,8 +438,123 @@ struct _28_geometry_shader
 		normal.set_mat3("NormalMV", glm::mat3(glm::transpose(glm::inverse(v * m))));
 		normal.set_mat4("P", p);
 		normal.set_mat4("MVP", p * v * m);
-		normal.set_float("Length", 0.2f);
+		normal.set_float("Length", 1.2f);
 		model.draw(normal);
+	}
+};
+
+struct _29_instancing
+{
+	Model planet{ Planet };
+	Model rock{ Rock };
+	Shader model{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
+	Shader shader{ "learngl/29_instancing.vs", "learngl/29_instancing.fs" };
+	// 使用独显运行
+	const int amount = 100000;
+	std::vector<glm::mat4> mat4s{ amount };
+
+	_29_instancing()
+	{
+		srand(glfwGetTime());
+		float radius = 100.0;
+		float offset = 25.0f;
+
+		for (unsigned int i = 0; i < amount; i++)
+		{
+			glm::mat4 model{ 1 };
+			// 1. translation: displace along circle with 'radius' in range [-offset, offset]
+			float angle = (float)i / (float)amount * 360.0f;
+			float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+			float x = sin(angle) * radius + displacement;
+			displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+			float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
+			displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+			float z = cos(angle) * radius + displacement;
+			model = glm::translate(model, glm::vec3(x, y, z));
+
+			// 2. scale: Scale between 0.05 and 0.25f
+			float scale = (rand() % 20) / 100.0f + 0.05;
+			model = glm::scale(model, glm::vec3(scale));
+
+			// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
+			float rotAngle = (rand() % 360);
+			model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+			// 4. now add to list of matrices
+			mat4s[i] = model;
+		}
+
+		unsigned int instanceVBO;
+		glGenBuffers(1, &instanceVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+		glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), mat4s.data(), GL_STATIC_DRAW);
+
+		for (unsigned int i = 0; i < rock.meshes.size(); ++i)
+		{
+			glBindVertexArray(rock.meshes[i].buffer.id());
+
+			GLsizei vec4Size = sizeof(glm::vec4);
+			glEnableVertexAttribArray(3);
+			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+			glEnableVertexAttribArray(4);
+			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
+			glEnableVertexAttribArray(5);
+			glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+			glEnableVertexAttribArray(6);
+			glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+			glVertexAttribDivisor(3, 1);
+			glVertexAttribDivisor(4, 1);
+			glVertexAttribDivisor(5, 1);
+			glVertexAttribDivisor(6, 1);
+
+			glBindVertexArray(0);
+		}
+	}
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		model.enable();
+		model.set_mat4("MVP", p * v * m);
+		planet.draw(model, amount);
+		
+		shader.enable();
+		shader.set_mat4("PV", p * v);
+		rock.draw(shader, amount);
+	}
+};
+
+struct _anti_aliasing
+{
+	Model model{ Blocks };
+	// quad
+	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
+	Buffer quad{ vb, ib };
+
+	Framebuffer fb{ Width, Height, true };	// use mulitesample
+	//Framebuffer fb{ Width, Height, false };	// use mulitesample
+	Texture2D green{ "textures/grass.png" };
+	Shader shader{ "learngl/25_framebuffers.vs", "learngl/25_framebuffers.fs" };
+	Shader gui{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		fb.enable(glm::vec3(0.f, 0.f, 0.f));
+		shader.enable();
+		shader.set_mat4("MVP", p * v * m);
+		model.draw(shader);
+
+		fb.blit();
+
+		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
+		gui.enable();
+		glm::mat4 m0(1.f);
+		m0 = glm::translate(m0, glm::vec3(-4, -4, -4));
+		m0 = glm::scale(m0, glm::vec3(8.f, 8.f, 8.f));
+		shader.set_mat4("MVP", p * m0);
+		gui.bind_texture("diffuse", 0, fb.tex());
+		quad.draw();
 	}
 };
 
@@ -577,13 +693,14 @@ int main(int argc, char** argv)
 	//FLAGS_stderrthreshold = 0;
 	//FLAGS_v = 2;
 
-	gui_create_window(Width, Height);
+	gui_create_window(Width, Height, true);
 
-	_28_geometry_shader object;
+	_anti_aliasing object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
 
+	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
 	glEnable(GL_CULL_FACE);
