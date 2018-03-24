@@ -62,6 +62,7 @@ float light_speed = 2.f;
 glm::vec3 light_scale(0.5f, 0.5f, 0.5f);
 
 // 鼠标移动设置与渲染设置
+bool some_flag = false;
 char mouse_move = 'z';
 int render_state = 1;
 
@@ -314,18 +315,34 @@ struct _24_blending
 	}
 };
 
-struct _25_framebuffers
+struct Post_Processing	// gamma_correction, 
 {
-	Model model{ Blocks };
 	// quad
 	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
 	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
 	Buffer quad{ vb, ib };
 
-	Framebuffer fb{Width, Height};	// doesn't use mulitesample, need to modify code in the main()
 	Texture2D green{ "textures/grass.png" };
+
+	Shader gui{ "learngl/post_processing.vs", "learngl/post_processing.fs" };
+
+	void draw_gui(const BaseTexture& tex)
+	{
+		gui.enable();
+		glm::mat4 ortho0 = glm::ortho(0.f, 1.f, 0.f, 1.f);
+		gui.set_mat4("MVP", ortho0);
+		gui.set_bool("gamma_correction", false);
+		gui.bind_texture("diffuse", 0, tex);
+		quad.draw();
+	}
+};
+
+struct _25_framebuffers : public Post_Processing
+{
+	Model model{ Blocks };
+
+	FrameBuffer fb{Width, Height};	// doesn't use mulitesample, need to modify code in the main()
 	Shader shader{ "learngl/25_framebuffers.vs", "learngl/25_framebuffers.fs" };
-	Shader gui{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
@@ -335,13 +352,7 @@ struct _25_framebuffers
 		model.draw(shader);
 
 		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
-		gui.enable();
-		glm::mat4 m0(1.f);
-		m0 = glm::translate(m0, glm::vec3(-4, -4, -4));
-		m0 = glm::scale(m0, glm::vec3(8.f, 8.f, 8.f));
-		shader.set_mat4("MVP", p * m0);
-		gui.bind_texture("diffuse", 0, fb.tex());
-		quad.draw();
+		draw_gui(fb.tex());
 	}
 };
 
@@ -524,19 +535,13 @@ struct _29_instancing
 	}
 };
 
-struct _2a_anti_aliasing
+struct _2a_anti_aliasing : public Post_Processing
 {
 	Model model{ Blocks };
-	// quad
-	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
-	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
-	Buffer quad{ vb, ib };
 
-	Framebuffer fb{ Width, Height, true };	// use mulitesample
-	//Framebuffer fb{ Width, Height, false };	// use mulitesample
-	Texture2D green{ "textures/grass.png" };
+	MultiSampleFrameBuffer fb{ Width, Height };	// use mulitesample
+
 	Shader shader{ "learngl/25_framebuffers.vs", "learngl/25_framebuffers.fs" };
-	Shader gui{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
@@ -548,13 +553,7 @@ struct _2a_anti_aliasing
 		fb.blit();
 
 		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
-		gui.enable();
-		glm::mat4 m0(1.f);
-		m0 = glm::translate(m0, glm::vec3(-4, -4, -4));
-		m0 = glm::scale(m0, glm::vec3(8.f, 8.f, 8.f));
-		shader.set_mat4("MVP", p * m0);
-		gui.bind_texture("diffuse", 0, fb.tex());
-		quad.draw();
+		draw_gui(fb.tex());
 	}
 };
 
@@ -566,7 +565,6 @@ struct _30_phong_shading
 	Shader shader{ "learngl/30_phong_shading.vs", "learngl/30_phong_shading.fs" };
 	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
 
-	bool some_flag = false;
 	float sAmbient = 1.f;
 	float sDiffuse = 1.f;
 	float sSpeclar = 1.f;
@@ -657,7 +655,46 @@ struct _31_light_caster
 	}
 };
 
+struct _32_shadow_map : public Post_Processing
+{
+	Model model{ Blocks };
+	Shader shader{ "learngl/32_shadow_map.vs", "learngl/32_shadow_map.fs" };
+	Shader shadowModel{ "learngl/32_shadow_model.vs", "learngl/32_shadow_model.fs" };
+	ShadowMapFrameBuffer smfb;
 
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		GLfloat near_plane = 1.0f, far_plane = 512.f;
+
+		// 使用正交相机时，深度是线性的
+		glm::mat4 lightOrtho = glm::ortho(-512.0f, 512.0f, -512.0f, 512.0f, near_plane, far_plane);
+		// 使用投影相机时，只有接近近平面的地方效果比较好
+		glm::mat4 lightProj = glm::perspective(glm::radians(120.f),
+			1.f / 1.f, 10.f, 512.f);
+		
+		glm::mat4 lightView = glm::lookAt(
+			lightPosition, glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
+		glm::mat4 lightSpace = lightProj * lightView;
+		
+		glCullFace(GL_FRONT);
+		smfb.enable(glm::vec3(0.f, 0.f, 0.f));
+		shader.enable();
+		shader.set_mat4("MVP", lightSpace * m);
+		model.draw(shader);
+		glCullFace(GL_BACK);
+
+		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
+		shadowModel.enable();
+		shadowModel.set_mat4("proj", p);
+		shadowModel.set_mat4("view", v);
+		shadowModel.set_mat4("model", m);
+		shadowModel.set_mat4("lightSpace", lightSpace);
+		shadowModel.set_vec3("lightPos", lightPosition);
+		shadowModel.set_vec3("viewPos", camera.Position);
+		shadowModel.bind_texture("shadowmap", 3, smfb.tex());
+		model.draw(shadowModel);
+	}
+};
 
 // -----------------------------------------------------------------------------
 
@@ -700,14 +737,14 @@ int main(int argc, char** argv)
 	//FLAGS_stderrthreshold = 0;
 	//FLAGS_v = 2;
 
-	gui_create_window(Width, Height, true);
+	gui_create_window(Width, Height);
 
-	_30_phong_shading object;
+	_32_shadow_map object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
 
-	glEnable(GL_MULTISAMPLE);
+	//glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
 	glEnable(GL_CULL_FACE);

@@ -5,6 +5,8 @@
 #ifndef FAY_GL_TEXTURE_H
 #define FAY_GL_TEXTURE_H
 
+#include <array>
+
 #include "gl.h"
 #include "fay/utility/image.h"
 
@@ -20,6 +22,7 @@ public:
 	BaseTexture(GLenum target = GL_TEXTURE_2D, GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT);
 
 	void set_format(GLenum format) { format_ = format; }
+	void set_border_color(std::array<GLfloat, 4> borderColor);
 
 	GLuint id() const { return id_; }
 	GLenum target() const { return target_; }

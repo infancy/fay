@@ -38,13 +38,15 @@ BaseTexture::BaseTexture(GLenum target, GLint filtering, GLint wrap) :
 	if (target_ == GL_PROXY_TEXTURE_3D ||
 		target_ == GL_TEXTURE_CUBE_MAP)
 		glTexParameteri(target_, GL_TEXTURE_WRAP_R, wrap);
-	/*
-	如果选择了边缘过滤，还需要指定边缘颜色
-	float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-	*/
+	
+	// 如果选择了边缘过滤，还需要指定边缘颜色
 
 	gl_check_errors();
+}
+
+void BaseTexture::set_border_color(std::array<GLfloat, 4> borderColor)
+{
+	glTexParameterfv(target_, GL_TEXTURE_BORDER_COLOR, borderColor.data());
 }
 
 // -----------------------------------------------------------------------------
