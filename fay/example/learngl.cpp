@@ -315,6 +315,28 @@ struct _24_blending
 	}
 };
 
+struct Box	// gamma_correction, 
+{
+	// quad
+	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
+	Buffer quad{ vb, ib };
+
+	Texture2D green{ "textures/grass.png" };
+
+	Shader gui{ "learngl/post_processing.vs", "learngl/post_processing.fs" };
+
+	void draw_gui(const BaseTexture& tex)
+	{
+		gui.enable();
+		glm::mat4 ortho0 = glm::ortho(0.f, 1.f, 0.f, 1.f);
+		gui.set_mat4("MVP", ortho0);
+		gui.set_bool("gamma_correction", false);
+		gui.bind_texture("diffuse", 0, tex);
+		quad.draw();
+	}
+};
+
 struct Post_Processing	// gamma_correction, 
 {
 	// quad
@@ -696,22 +718,20 @@ struct _32_shadow_map : public Post_Processing
 	}
 };
 
-struct _34_normal_map
+struct Light_Parameter
 {
-	Model model{ Nier_2b };
-	Shader shader{ "learngl/34_normal_map.vs", "learngl/34_normal_map.fs" };
-
 	float sAmbient = 0.2f;
 	float sDiffuse = 1.f;
 	float sSpeclar = 0.f;
 	int   shininess = 32;
 
-	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	void set(glm::mat4& p, glm::mat4& v, glm::mat4& m, Shader& shader)
 	{
 		if (ImGui::Button("normal map"))
 			some_flag ^= 1;
-		if(some_flag)
+		if (some_flag)
 			ImGui::Text("use_normal_map");
+
 		ImGui::SliderFloat("ambient strength", &sAmbient, 0.f, 10.f);
 		ImGui::SliderFloat("diffuse strength", &sDiffuse, 0.f, 10.f);
 		ImGui::SliderFloat("speclar strength", &sSpeclar, 0.f, 10.f);
@@ -722,26 +742,165 @@ struct _34_normal_map
 		shader.set_mat4("MVP", p * v * m);
 		shader.set_vec3("LightPos", lightPosition);
 		shader.set_vec3("ViewPos", camera.Position);
-		
+
 		shader.set_bool("use_normal_map", some_flag);
 		shader.set_float("sa", sAmbient);
 		shader.set_float("sd", sDiffuse);
 		shader.set_float("ss", sSpeclar);
 		shader.set_int("shininess", shininess);
+	}
+};
+
+struct _34_normal_map : public Light_Parameter
+{
+	Model model{ Nier_2b };
+	Shader shader{ "learngl/34_normal_map.vs", "learngl/34_normal_map.fs" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		set(p, v, m, shader);
 		model.draw(shader);
 	}
 };
 
-struct _34_parallax_map
+struct _35_parallax_map : public Light_Parameter
 {
-	Model model{ Nier_2b };
-	Shader shader{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
+	Model model{ Box };
+	// TODO：改进方法
+	Shader shader{ "learngl/34_normal_map.vs", "learngl/35_parallax_map.fs" };
+
+	Texture2D diffuse{ "textures/bricks2.jpg" };
+	Texture2D normal{  "textures/bricks2_normal.jpg" };
+	Texture2D height{  "textures/bricks2_disp.jpg" };
+
+	float heightScale = 0.1;
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		shader.enable();
-		shader.set_mat4("MVP", p * v * m);
-		model.draw(shader);
+		ImGui::SliderFloat("heightScale", &heightScale, 0.f, 1.f);
+
+		set(p, v, m, shader);
+		shader.bind_texture("Diffuse", 0, diffuse);
+		shader.bind_texture("Normal", 1, normal);
+		shader.bind_texture("Depth", 2, height);
+		shader.set_float("heightScale", heightScale);
+		model.draw();
+	}
+};
+
+struct _38_deferred_shading
+{
+	// quad
+	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
+	Buffer quad{ vb, ib };
+
+	Model model{ Nanosuit };
+	Model box{ Box };
+	Shader geometryPass{ "learngl/30_phong_shading.vs", "learngl/38_g_buffer.fs" };
+	Shader LightPass{ "learngl/post_processing.vs", "learngl/38_deferred_shading.fs" };
+	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
+	GBufferFrameBuffer gbuffer{ Width, Height };
+
+	std::vector<glm::vec3> objectPositions;
+	const unsigned int NR_LIGHTS = 32;
+	std::vector<glm::vec3> lightPositions;
+	std::vector<glm::vec3> lightColors;
+
+	_38_deferred_shading()
+	{
+		objectPositions.push_back(glm::vec3(-3.0, -3.0, -3.0));
+		objectPositions.push_back(glm::vec3(0.0, -3.0, -3.0));
+		objectPositions.push_back(glm::vec3(3.0, -3.0, -3.0));
+		objectPositions.push_back(glm::vec3(-3.0, -3.0, 0.0));
+		objectPositions.push_back(glm::vec3(0.0, -3.0, 0.0));
+		objectPositions.push_back(glm::vec3(3.0, -3.0, 0.0));
+		objectPositions.push_back(glm::vec3(-3.0, -3.0, 3.0));
+		objectPositions.push_back(glm::vec3(0.0, -3.0, 3.0));
+		objectPositions.push_back(glm::vec3(3.0, -3.0, 3.0));
+
+		srand(glfwGetTime());
+		for (unsigned int i = 0; i < NR_LIGHTS; i++)
+		{
+			// calculate slightly random offsets
+			float xPos = ((rand() % 100) / 100.0) * 6.0 - 3.0;
+			float yPos = ((rand() % 100) / 100.0) * 6.0 - 4.0;
+			float zPos = ((rand() % 100) / 100.0) * 6.0 - 3.0;
+			lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
+			// also calculate random color
+			float rColor = ((rand() % 100) / 200.0f) + 0.5; // between 0.5 and 1.0
+			float gColor = ((rand() % 100) / 200.0f) + 0.5; // between 0.5 and 1.0
+			float bColor = ((rand() % 100) / 200.0f) + 0.5; // between 0.5 and 1.0
+			lightColors.push_back(glm::vec3(rColor, gColor, bColor));
+		}
+	}
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		gbuffer.enable(glm::vec3(0.f, 0.f, 0.f));
+		geometryPass.enable();
+		for (unsigned int i = 0; i < objectPositions.size(); i++)
+		{
+			glm::mat4 objectmodel = glm::mat4(1);
+			objectmodel = glm::translate(objectmodel, objectPositions[i]);
+			objectmodel = glm::scale(objectmodel, glm::vec3(0.25f));
+
+			glm::mat4 MV = v * objectmodel;
+			glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
+
+			geometryPass.set_mat4("MV", MV);
+			geometryPass.set_mat3("NormalMV", NormalMV);
+			geometryPass.set_mat4("MVP", p * MV);
+			model.draw(geometryPass);
+		}
+
+		// light pass
+		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
+		LightPass.enable();
+		glm::mat4 ortho0 = glm::ortho(0.f, 1.f, 0.f, 1.f);
+		LightPass.set_mat4("MVP", ortho0);
+		auto& texs = gbuffer.texs();
+		LightPass.bind_texture("gPosition", 0, texs[0]);
+		LightPass.bind_texture("gNormal", 1, texs[1]);
+		LightPass.bind_texture("gAlbedoSpec", 2, texs[2]);
+
+		for (unsigned int i = 0; i < lightPositions.size(); i++)
+		{
+			LightPass.set_vec3("lights[" + std::to_string(i) + "].Position", lightPositions[i]);
+			LightPass.set_vec3("lights[" + std::to_string(i) + "].Color", lightColors[i]);
+			// update attenuation parameters and calculate radius
+			const float constant = 1.0; // note that we don't send this to the shader, we assume it is always 1.0 (in our case)
+			const float linear = 0.7;
+			const float quadratic = 1.8;
+			LightPass.set_float("lights[" + std::to_string(i) + "].Linear", linear);
+			LightPass.set_float("lights[" + std::to_string(i) + "].Quadratic", quadratic);
+		}
+		LightPass.set_vec3("viewPos", camera.Position);
+		quad.draw();
+		// render light
+
+		// 2.5. copy content of geometry's depth buffer to default framebuffer's depth buffer
+		// ----------------------------------------------------------------------------------
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, gbuffer.id());
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+		// blit to default framebuffer. Note that this may or may not work as the internal formats of both the FBO and default framebuffer have to match.
+		// the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the 		
+		// depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
+		glBlitFramebuffer(0, 0, Width, Height, 0, 0, Width, Height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		// 3. render lights on top of scene
+		// --------------------------------
+		lightshader.enable();
+		for (unsigned int i = 0; i < lightPositions.size(); i++)
+		{
+			glm::mat4 lightmodel = glm::mat4(1);
+			lightmodel = glm::translate(lightmodel, lightPositions[i]);
+			lightmodel = glm::scale(lightmodel, glm::vec3(0.125f));
+			lightshader.set_mat4("MVP", p * v * lightmodel);
+			lightshader.set_vec3("lightcolor", lightColors[i]);
+			box.draw(lightshader);
+		}
 	}
 };
 
@@ -788,7 +947,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_34_normal_map object;
+	_38_deferred_shading object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };

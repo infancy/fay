@@ -3,7 +3,7 @@ in vec3 vPos;
 in vec3 vNor;
 out vec4 FragColor;
 
-uniform samplerCube cubemap;
+uniform samplerCube Cubemap;
 
 void main()
 {             
@@ -15,5 +15,5 @@ void main()
     float ratio = 1.00 / 1.52;
     vec3 I = normalize(vPos);
     vec3 R = refract(I, normalize(vNor), ratio);
-    FragColor = vec4(texture(cubemap, R).rgb, 1.0);
+    FragColor = vec4(texture(Cubemap, R).rgb, 1.0);
 }

@@ -5,8 +5,8 @@ in vec2 vTex;
 
 out vec4 FragColor;
 
-uniform sampler2D diffuse;
-uniform sampler2D specular;
+uniform sampler2D Diffuse;
+uniform sampler2D Specular;
 
 struct DirectLight
 {
@@ -42,28 +42,28 @@ uniform int shininess;
 
 vec4 directlight(vec3 normal, vec3 viewdir)
 {
-    // diffuse
+    // Diffuse
     vec3 lightdir = normalize(-dLight.direct);
     float kd = max(dot(normal, lightdir), 0.0);
-    vec4 diff = kd * sd * texture(diffuse, vTex) * vec4(dLight.color, 1.0);
-    // specular
+    vec4 diff = kd * sd * texture(Diffuse, vTex) * vec4(dLight.color, 1.0);
+    // Specular
     vec3 reflectdir = reflect(-lightdir, normal);
     float ks = pow(max(dot(viewdir, reflectdir), 0.0), shininess);
-    vec4 spec = ks * ss * texture(specular, vTex) * vec4(dLight.color, 1.0);
+    vec4 spec = ks * ss * texture(Specular, vTex) * vec4(dLight.color, 1.0);
     
     return diff + spec;
 }
 
 vec4 pointlight(vec3 normal, vec3 viewdir)
 {
-    // diffuse
+    // Diffuse
     vec3 lightdir = normalize(pLight.pos - vPos);
     float kd = max(dot(normal, lightdir), 0.0);
-    vec4 diff = kd * sd * texture(diffuse, vTex) * vec4(pLight.color, 1.0);
-    // specular
+    vec4 diff = kd * sd * texture(Diffuse, vTex) * vec4(pLight.color, 1.0);
+    // Specular
     vec3 reflectdir = reflect(-lightdir, normal);
     float ks = pow(max(dot(viewdir, reflectdir), 0.0), shininess);
-    vec4 spec = ks * ss * texture(specular, vTex) * vec4(pLight.color, 1.0);
+    vec4 spec = ks * ss * texture(Specular, vTex) * vec4(pLight.color, 1.0);
     
     float distance = length(pLight.pos - vPos);
     float falloff = 1.0 / (pLight.falloff.x + pLight.falloff.y * distance
@@ -73,14 +73,14 @@ vec4 pointlight(vec3 normal, vec3 viewdir)
 
 vec4 spotlight(vec3 normal, vec3 viewdir)
 {
-    // diffuse
+    // Diffuse
     vec3 lightdir = normalize(sLight.pos - vPos);
     float kd = max(dot(normal, lightdir), 0.0);
-    vec4 diff = kd * sd * texture(diffuse, vTex) * vec4(sLight.color, 1.0);
-    // specular
+    vec4 diff = kd * sd * texture(Diffuse, vTex) * vec4(sLight.color, 1.0);
+    // Specular
     vec3 reflectdir = reflect(-lightdir, normal);
     float ks = pow(max(dot(viewdir, reflectdir), 0.0), shininess);
-    vec4 spec = ks * ss * texture(specular, vTex) * vec4(sLight.color, 1.0);
+    vec4 spec = ks * ss * texture(Specular, vTex) * vec4(sLight.color, 1.0);
     
     float distance = length(sLight.pos - vPos);
     float falloff = 1.0 / (sLight.falloff.x + sLight.falloff.y * distance
@@ -97,7 +97,7 @@ void main()
 {    
     // ambient
     float ka = 1.0;
-    vec4 ambi = ka * sa * texture(diffuse, vTex);
+    vec4 ambi = ka * sa * texture(Diffuse, vTex);
 
     vec3 normal = normalize(vNor);
     vec3 viewdir = normalize(-vPos);

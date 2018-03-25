@@ -2,7 +2,7 @@
 in vec2 vTex;
 out vec4 FragColor;
 
-uniform sampler2D diffuse;
+uniform sampler2D Diffuse;
 
 void main()
 {    
@@ -10,5 +10,5 @@ void main()
     //if(texColor.a < 0.1)
     //    discard;
     //FragColor = texColor;
-    FragColor = texture(diffuse, vTex);
+    FragColor = texture(Diffuse, vTex);
 }

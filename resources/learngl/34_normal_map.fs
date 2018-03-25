@@ -30,7 +30,7 @@ uniform float shininess;
 void main()
 {   
     // ambient
-    vec3 ambient = 1.0 * texture(Ambient, fs_in.wTex).rgb;
+    vec3 ambient = 1.0 * texture(Ambient, fs_in.wTex).rrr;
     vec3 diffuse, specular;
     if(use_normal_map)
     {

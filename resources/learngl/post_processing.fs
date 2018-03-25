@@ -5,11 +5,11 @@ out vec4 FragColor;
 float invgamma = 0.454545;  // 1.0 / 2.2
 
 uniform bool gamma_correction;
-uniform sampler2D diffuse;
+uniform sampler2D Diffuse;
 
 void main()
 {    
-    FragColor = texture(diffuse, vTex);
+    FragColor = texture(Diffuse, vTex);
     //FragColor.g =  FragColor.r;
     //FragColor.b =  FragColor.r;
 

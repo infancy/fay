@@ -34,7 +34,7 @@ void main()
     vec3 N = normalize(normalMatrix * mNor);
     T = normalize(T - dot(T, N) * N);
     vec3 B = cross(N, T);
-    
+    // 正交矩阵的转置矩阵即其逆矩阵
     mat3 TBN = transpose(mat3(T, B, N));    
     vs_out.tLightPos = TBN * LightPos;
     vs_out.tViewPos  = TBN * ViewPos;

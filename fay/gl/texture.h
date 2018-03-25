@@ -19,7 +19,8 @@ class BaseTexture
 {
 public: 
 	// 只负责创建纹理，且不指定纹理单元，设置这样的接口以免被误用
-	BaseTexture(GLenum target = GL_TEXTURE_2D, GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT);
+	BaseTexture() {}
+	BaseTexture(GLenum target, GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT);
 
 	void set_format(GLenum format) { format_ = format; }
 	void set_border_color(std::array<GLfloat, 4> borderColor);
@@ -45,17 +46,15 @@ public:
 	
 	Texture2D(const ImagePtr& img, TexType textype = TexType::diffuse, bool Mipmap = true);
 	
-	Texture2D(GLint internalFormat, GLsizei width, GLsizei height,
-		GLenum format, GLenum type, unsigned char* pixels, bool Mipmap = true, TexType textype = TexType::diffuse);
+	Texture2D(GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT, TexType textype = TexType::diffuse);
+
+	void create(GLint internalFormat, GLsizei width, GLsizei height,
+		GLenum format, GLenum type, const uint8_t* data, bool Mipmap = true);
 
 	int width()  const { return w; }
 	int height() const { return h; }
 
 	TexType type() const { return texture_type; }
-
-private:
-	void create_texture2d(GLint internalFormat, GLsizei width, GLsizei height,
-		GLenum format, GLenum type, const unsigned char* pixels, bool Mipmap);
 
 private:
 	int w, h;

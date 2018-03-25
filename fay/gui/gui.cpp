@@ -89,7 +89,8 @@ static bool ImGui_CreateFontsTexture()
 	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
 															  // Upload texture to graphics system
-	Texture2D texture2d(GL_RGBA, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels, false);
+	Texture2D texture2d;
+	texture2d.create(GL_RGBA, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels, false);
 	g_FontTexture = texture2d.id();
 	// Store our identifier
 	io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;

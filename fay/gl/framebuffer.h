@@ -59,6 +59,8 @@ protected:
 	uint32_t fbo, rbo;
 };
 
+// -----------------------------------------------------------------------------
+
 class FrameBuffer : public BaseFrameBuffer
 {
 public:
@@ -87,6 +89,8 @@ public:
 		check_and_disable();
 	}
 };
+
+// -----------------------------------------------------------------------------
 
 class MultiSampleFrameBuffer : public BaseFrameBuffer
 {
@@ -148,6 +152,8 @@ private:
 	uint32_t infbo;
 };
 
+// -----------------------------------------------------------------------------
+
 class ShadowMapFrameBuffer : public BaseFrameBuffer
 {
 public:
@@ -171,6 +177,54 @@ public:
 		glReadBuffer(GL_NONE);
 		check_and_disable();
 	}
+};
+
+// -----------------------------------------------------------------------------
+
+class GBufferFrameBuffer : public BaseFrameBuffer
+{
+public:
+	GBufferFrameBuffer(uint32_t width, uint32_t height,
+		GLenum format = GL_NEAREST, GLenum type = GL_FLOAT)
+	{
+		reset(width, height, format, type);
+	}
+
+	virtual void reset(uint32_t width, uint32_t height, GLenum format, GLenum type) override
+	{
+		set_and_enable(width, height);
+
+		texs_.resize(3);
+		// position color buffer
+		texs_[0] = Texture2D(GL_NEAREST, GL_REPEAT, TexType::diffuse);
+		texs_[0].create(GL_RGB16F, w, h, GL_RGB, GL_FLOAT, NULL, false);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texs_[0].id(), 0);
+		// normal color buffer
+		texs_[1] = Texture2D(GL_NEAREST, GL_REPEAT, TexType::diffuse);
+		texs_[1].create(GL_RGB16F, w, h, GL_RGB, GL_FLOAT, NULL, false);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, texs_[1].id(), 0);
+		// color + specular color buffer
+		texs_[2] = Texture2D(GL_NEAREST, GL_REPEAT, TexType::diffuse);
+		texs_[2].create(GL_RGBA, w, h, GL_RGBA, GL_UNSIGNED_BYTE, NULL, false);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, texs_[2].id(), 0);
+			
+		// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
+		unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+		glDrawBuffers(3, attachments);
+		// create and attach depth buffer (renderbuffer)
+		unsigned int rboDepth;
+		glGenRenderbuffers(1, &rbo);
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+		check_and_disable();
+	}
+
+	const std::vector<Texture2D>& texs() { return texs_; }
+
+private:
+	std::vector<Texture2D> texs_;
 };
 
 } // namespace fay

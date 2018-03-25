@@ -520,8 +520,10 @@ AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
 	load_maps(aiTextureType_AMBIENT,  TexType::ambient);
 	load_maps(aiTextureType_DIFFUSE,  TexType::diffuse);
 	load_maps(aiTextureType_SPECULAR, TexType::specular);
-	std::cout << "\nheight:";
-	load_maps(aiTextureType_HEIGHT,   TexType::parallax);
+	if (model_type == ModelType::obj)
+		load_maps(aiTextureType_HEIGHT,   TexType::parallax);
+	else
+		load_maps(aiTextureType_NORMALS,  TexType::parallax);
 	//std::cout << "\nnormals:";
 	//load_maps(aiTextureType_NORMALS,  TexType::normals);
 	//load_maps(aiTextureType_UNKNOWN, TexType::unknown);

@@ -55,40 +55,32 @@ Texture2D::Texture2D(const std::string& filepath, TexType textype, bool Mipmap)
 	: BaseTexture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }
 {
 	const ImagePtr img(filepath, Thirdparty::gl);
-	w = img.width(), h = img.height();
-	format_ = img.gl_format();
 
-	create_texture2d(format_, img.width(), img.height(), format_, GL_UNSIGNED_BYTE, img.data(), Mipmap);
+	create(img.gl_format(), img.width(), img.height(), img.gl_format(), GL_UNSIGNED_BYTE, img.data(), Mipmap);
 }
 
 Texture2D::Texture2D(const ImagePtr& img, TexType textype, bool Mipmap)
-	: BaseTexture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }, 
-	w{ img.width() }, h{ img.height() }
+	: BaseTexture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }
 {
 	CHECK(img.third_party() == Thirdparty::gl) << "image thirdparty error";
-	format_ = img.gl_format();
-
-	create_texture2d(format_, img.width(), img.height(), format_, GL_UNSIGNED_BYTE, img.data(), Mipmap);
+	// create(format_, img.width(), img.height(), format_, GL_UNSIGNED_BYTE, img.data(), Mipmap);
+	create(img.gl_format(), img.width(), img.height(), img.gl_format(), GL_UNSIGNED_BYTE, img.data(), Mipmap);
 }
 
-Texture2D::Texture2D(GLint internalFormat, GLsizei width, GLsizei height,
-	GLenum format, GLenum type, unsigned char* pixels, bool Mipmap, TexType textype)
-	: BaseTexture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype },
-	w{ width }, h{ height }
+Texture2D::Texture2D(GLint filtering, GLint wrap, TexType textype)
+	// : BaseTexture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }
+	: BaseTexture(GL_TEXTURE_2D, filtering, wrap), texture_type{ textype }
 {
-	format_ = format;	// TODO:internalFormat
-
-	CHECK(pixels != nullptr) << "pixels in Texture2D is nullptr";
-	create_texture2d(internalFormat, width, height, format, type, pixels, Mipmap);
 }
 
-void Texture2D::create_texture2d(GLint internalFormat, GLsizei width, GLsizei height,
-	GLenum format, GLenum type, const unsigned char* data, bool Mipmap)
+void Texture2D::create(GLint internalFormat, GLsizei width, GLsizei height,
+	GLenum format, GLenum type, const uint8_t* data, bool Mipmap)
 {
 	// https://stackoverflow.com/questions/34497195/difference-between-format-and-internalformat
 	
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0,
-		format, type, data);
+	w = width; h = height; format_ = internalFormat;
+
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data);
 
 	if(Mipmap)
 	{ 

@@ -2,9 +2,9 @@
 in vec3 vTex;
 out vec4 FragColor;
 
-uniform samplerCube cubemap;
+uniform samplerCube Cubemap;
 
 void main()
 {    
-    FragColor = texture(cubemap, vTex);
+    FragColor = texture(Cubemap, vTex);
 }

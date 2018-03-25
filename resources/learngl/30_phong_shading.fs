@@ -3,7 +3,9 @@ in vec3 vPos;
 in vec3 vNor;
 in vec2 vTex;
 
-out vec4 FragColor;
+layout (location = 0) out vec3 gPos;
+layout (location = 1) out vec3 gNor;
+layout (location = 2) out vec4 gAlbedoSpec;
 
 uniform sampler2D Diffuse;
 uniform sampler2D Specular;
