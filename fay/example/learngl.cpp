@@ -561,7 +561,7 @@ struct _2a_anti_aliasing : public Post_Processing
 
 struct _30_phong_shading
 {
-	Model model{ Blocks };
+	Model model{ Nier_2b };
 	Shader shader{ "learngl/30_phong_shading.vs", "learngl/30_phong_shading.fs" };
 	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
 
@@ -591,7 +591,7 @@ struct _30_phong_shading
 		shader.set_mat3("NormalMV", NormalMV);		//  ß»•Œª“∆ Ù–‘
 		shader.set_mat4("MVP", p * v * m);
 		shader.set_vec3("vLightPos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
-		shader.set_vec3("lightcolor", glm::vec3(light_color.x, light_color.y, light_color.z));
+		shader.set_vec3("Lightcolor", glm::vec3(light_color.x, light_color.y, light_color.z));
 		shader.set_float("sa", sAmbient);
 		shader.set_float("sd", sDiffuse);
 		shader.set_float("ss", sSpeclar);
@@ -685,14 +685,63 @@ struct _32_shadow_map : public Post_Processing
 
 		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
 		shadowModel.enable();
-		shadowModel.set_mat4("proj", p);
-		shadowModel.set_mat4("view", v);
-		shadowModel.set_mat4("model", m);
-		shadowModel.set_mat4("lightSpace", lightSpace);
-		shadowModel.set_vec3("lightPos", lightPosition);
-		shadowModel.set_vec3("viewPos", camera.Position);
-		shadowModel.bind_texture("shadowmap", 3, smfb.tex());
+		shadowModel.set_mat4("Proj", p);
+		shadowModel.set_mat4("View", v);
+		shadowModel.set_mat4("Model", m);
+		shadowModel.set_mat4("LightSpace", lightSpace);
+		shadowModel.set_vec3("LightPos", lightPosition);
+		shadowModel.set_vec3("ViewPos", camera.Position);
+		shadowModel.bind_texture("Shadowmap", 3, smfb.tex());
 		model.draw(shadowModel);
+	}
+};
+
+struct _34_normal_map
+{
+	Model model{ Nier_2b };
+	Shader shader{ "learngl/34_normal_map.vs", "learngl/34_normal_map.fs" };
+
+	float sAmbient = 0.2f;
+	float sDiffuse = 1.f;
+	float sSpeclar = 0.f;
+	int   shininess = 32;
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		if (ImGui::Button("normal map"))
+			some_flag ^= 1;
+		if(some_flag)
+			ImGui::Text("use_normal_map");
+		ImGui::SliderFloat("ambient strength", &sAmbient, 0.f, 10.f);
+		ImGui::SliderFloat("diffuse strength", &sDiffuse, 0.f, 10.f);
+		ImGui::SliderFloat("speclar strength", &sSpeclar, 0.f, 10.f);
+		ImGui::SliderInt("shininess", &shininess, 1, 256);
+
+		shader.enable();
+		shader.set_mat4("Model", m);
+		shader.set_mat4("MVP", p * v * m);
+		shader.set_vec3("LightPos", lightPosition);
+		shader.set_vec3("ViewPos", camera.Position);
+		
+		shader.set_bool("use_normal_map", some_flag);
+		shader.set_float("sa", sAmbient);
+		shader.set_float("sd", sDiffuse);
+		shader.set_float("ss", sSpeclar);
+		shader.set_int("shininess", shininess);
+		model.draw(shader);
+	}
+};
+
+struct _34_parallax_map
+{
+	Model model{ Nier_2b };
+	Shader shader{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
+
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	{
+		shader.enable();
+		shader.set_mat4("MVP", p * v * m);
+		model.draw(shader);
 	}
 };
 
@@ -739,7 +788,7 @@ int main(int argc, char** argv)
 
 	gui_create_window(Width, Height);
 
-	_32_shadow_map object;
+	_34_normal_map object;
 
 	Model light{ Box };
 	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };

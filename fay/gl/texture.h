@@ -71,7 +71,6 @@ public:
 	TextureCube(const std::string files[7], TexType textype = TexType::cubemap)
 		: BaseTexture(GL_TEXTURE_CUBE_MAP, GL_LINEAR, GL_CLAMP_TO_EDGE), texture_type{ textype }
 	{
-		int width, height, format;
 		for (int i = 0; i < 6; ++i)
 		{
 			ImagePtr img(files[0] + files[i + 1]/*, Thirdparty::gl*/);

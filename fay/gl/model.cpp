@@ -10,7 +10,7 @@ Model::Model(const std::string& filepath, ModelType model_type, bool gamma) : ga
 	for (auto& mesh : model.meshes)
 	{
 	#ifdef _DEBUG
-		std::cout << '\n'
+		std::cout << '\n\n'
 			<< mesh.vertices.size()
 			<< ' ' << mesh.indices.size()
 			<< ' ' << mesh.images.size();

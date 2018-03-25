@@ -89,8 +89,8 @@ enum class Thirdparty { none, gl, dx, vk };
 
 enum class ModelType { obj, fbx, gltf, blend, unknown };
 
-enum class TexType { none, diffuse, specular, ambient, emissive, height, alpha,
-	normals, shininess, opacity, displace, lightmap, reflection, cubemap, shadowmap, unknown };
+enum class TexType { none, diffuse, specular, ambient, emissive, height, alpha, parallax,
+	normal, shininess, opacity, displace, lightmap, reflection, cubemap, shadowmap, unknown };
 
 } // namespace fay
 

@@ -42,22 +42,33 @@ public:
 
 	void bind_texture(Shader shader)
 	{
+		/*
 		int count[8]{};
 		std::string sampler;
 
 		for (size_t i = 0; i < textures.size(); ++i)
 		{
-			size_t sz = 0;
-			for (; sz < type.size(); ++sz)
-				if (textures[i].type() == type[sz])
+			size_t index = 0;
+			for (; index < type.size(); ++index)
+				if (textures[i].type() == type[index])
 					break;
-			LOG_IF(ERROR, sz >= type.size()) << "TexType failed to choose: " << i;
+			LOG_IF(ERROR, index >= type.size()) << "TexType failed to choose: " << i;
 
-			sampler = name[sz];
-			if (count[sz]++ > 0)
-				sampler += std::to_string(count[sz]);
+			sampler = name[index];
+			if (count[index]++ > 0)
+				sampler += std::to_string(count[index]);
 			// e.g. diff, diff1, diff2...
 			shader.bind_texture(sampler, i, textures[i]);
+		}
+		*/
+		for (size_t i = 0; i < textures.size(); ++i)
+		{
+			auto& tex = textures[i];
+
+			LOG_IF(ERROR, type_name.find(tex.type()) == type_name.end())
+				<< "TexType failed to choose: " << i;
+
+			shader.bind_texture(type_name.at(tex.type()), i, tex);
 		}
 	}
 
@@ -87,16 +98,14 @@ public:
 	// Texture2DArray textures;
 
 private:
-	// std::unordered_map<TexType, int> type_num; // hash<TexType>
-	std::vector<TexType> type
-	{ 
-		TexType::diffuse, TexType::specular, TexType::ambient, TexType::emissive,
-		TexType::alpha, TexType::normals, TexType::displace, TexType::height 
-	};
-	std::vector<std::string> name	// name in the shader
+	const std::unordered_map<TexType, std::string> type_name
 	{
-		{ "diffuse" }, { "specular" }, { "ambient" }, { "emissive" }, 
-		{ "alpha" }, { "normal" }, { "displace" }, { "height" }
+		{ TexType::alpha,    "Alpha"    },
+		{ TexType::ambient,  "Ambient"  },
+		{ TexType::diffuse,  "Diffuse"  },
+		{ TexType::specular, "Specular" },
+		{ TexType::parallax, "Parallax" },
+		{ TexType::emissive, "Emissive" }
 	};
 
 };

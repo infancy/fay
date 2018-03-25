@@ -11,17 +11,17 @@ out VS_OUT
     vec4 LightSpacePos;
 } vs_out;
 
-uniform mat4 proj;
-uniform mat4 view;
-uniform mat4 model;
-uniform mat4 lightSpace;
+uniform mat4 Proj;
+uniform mat4 View;
+uniform mat4 Model;
+uniform mat4 LightSpace;
 
 void main()
 {
-    gl_Position = proj * view * model * vec4(mPos, 1.0f);
+    gl_Position = Proj * View * Model * vec4(mPos, 1.0f);
     // 在世界空间中做计算
-    vs_out.wPos = vec3(model * vec4(mPos, 1.0));
-    vs_out.wNor = transpose(inverse(mat3(model))) * mNor;
+    vs_out.wPos = vec3(Model * vec4(mPos, 1.0));
+    vs_out.wNor = transpose(inverse(mat3(Model))) * mNor;
     vs_out.wTex = mTex;
-    vs_out.LightSpacePos = lightSpace * vec4(vs_out.wPos, 1.0);
+    vs_out.LightSpacePos = LightSpace * vec4(vs_out.wPos, 1.0);
 }

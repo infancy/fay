@@ -520,8 +520,11 @@ AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
 	load_maps(aiTextureType_AMBIENT,  TexType::ambient);
 	load_maps(aiTextureType_DIFFUSE,  TexType::diffuse);
 	load_maps(aiTextureType_SPECULAR, TexType::specular);
-	load_maps(aiTextureType_HEIGHT,   TexType::height);
-	load_maps(aiTextureType_AMBIENT,  TexType::ambient);
+	std::cout << "\nheight:";
+	load_maps(aiTextureType_HEIGHT,   TexType::parallax);
+	//std::cout << "\nnormals:";
+	//load_maps(aiTextureType_NORMALS,  TexType::normals);
+	//load_maps(aiTextureType_UNKNOWN, TexType::unknown);
 
 	return AssimpMesh(vertices, indices, images);
 }
@@ -541,7 +544,7 @@ AssimpModel::load_images(aiMaterial* mat, aiTextureType type, TexType textype)
 		{ 
 			if (images_cache.find(name) == images_cache.end())
 			{
-				std::cout << '\n' << "load image: " << (path + name);
+				std::cout << "\nload image: " << (path + name);
 				ImagePtr img(path + name, api);
 				images.push_back({img, textype});
 				images_cache.insert({ name, img });
