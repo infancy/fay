@@ -13,6 +13,9 @@
     <Filter Include="core">
       <UniqueIdentifier>{101d3609-14e6-4c75-b743-57530cbeac80}</UniqueIdentifier>
     </Filter>
+    <Filter Include="resouces">
+      <UniqueIdentifier>{432ba19b-7e9c-4cb1-8227-c8600e21751d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\fay\gl\buffer.cpp">
@@ -33,11 +36,11 @@
     <ClCompile Include="..\..\fay\gui\window.cpp">
       <Filter>gui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\utility\load_model.cpp">
-      <Filter>utility</Filter>
+    <ClCompile Include="..\..\fay\resources\load_model.cpp">
+      <Filter>resouces</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\utility\image.cpp">
-      <Filter>utility</Filter>
+    <ClCompile Include="..\..\fay\resources\image.cpp">
+      <Filter>resouces</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -65,31 +68,13 @@
     <ClInclude Include="..\..\fay\gui\window.h">
       <Filter>gui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\utility\image.h">
-      <Filter>utility</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\utility\stencil.h">
       <Filter>utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\utility\log.h">
-      <Filter>utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\utility\load_model.h">
-      <Filter>utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\gl\resources.h">
-      <Filter>gl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\gl\gl.h">
       <Filter>gl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\utility\file.h">
-      <Filter>utility</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\utility\string.h">
-      <Filter>utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\utility\profiler.h">
       <Filter>utility</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\utility\type_traits.h">
@@ -112,6 +97,24 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\core\config.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resources\load_model.h">
+      <Filter>resouces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resources\image.h">
+      <Filter>resouces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resources\file.h">
+      <Filter>resouces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\profiler.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\log.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gl\geometry.h">
+      <Filter>gl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

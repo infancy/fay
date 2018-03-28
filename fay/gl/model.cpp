@@ -1,5 +1,5 @@
 #include "model.h"
-#include "fay/utility/load_model.h"
+#include "fay/resources/load_model.h"
 
 namespace fay
 {

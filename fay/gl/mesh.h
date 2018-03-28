@@ -5,12 +5,9 @@
 #ifndef FAY_GL_MESH_H
 #define FAY_GL_MESH_H
 
-#include <assimp/Importer.hpp>
-
 #include "fay/gl/buffer.h"
 #include "fay/gl/shader.h"
 #include "fay/gl/texture.h"
-#include "fay/utility/image.h"
 
 namespace fay
 {

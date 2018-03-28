@@ -8,7 +8,7 @@
 #include <array>
 
 #include "fay/gl/gl.h"
-#include "fay/utility/image.h"
+#include "fay/resources/image.h"
 
 namespace fay
 {

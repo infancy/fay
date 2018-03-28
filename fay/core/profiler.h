@@ -2,8 +2,8 @@
 #pragma once
 #endif
 
-#ifndef FAY_UTILITY_PROFILER_H
-#define FAY_UTILITY_PROFILER_H
+#ifndef FAY_CORE_PROFILER_H
+#define FAY_CORE_PROFILER_H
 
 #include "fay/core/fay.h"
 
@@ -209,4 +209,4 @@ struct time_wrapper
 
 } // namespace fay
 
-#endif // FAY_UTILITY_PROFILER_H
+#endif // FAY_CORE_PROFILER_H

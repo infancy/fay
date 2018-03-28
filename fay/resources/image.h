@@ -2,8 +2,8 @@
 #pragma once
 #endif
 
-#ifndef FAY_UTILITY_IMAGE_H
-#define FAY_UTILITY_IMAGE_H
+#ifndef FAY_RESOURCES_IMAGE_H
+#define FAY_RESOURCES_IMAGE_H
 
 #include "fay/gl/gl.h"
 #include "fay/utility/math.h"
@@ -197,4 +197,4 @@ inline bool save_pgm(std::string filename, int width, int height,
 
 } // namespace fay
 
-#endif // FAY_UTILITY_IMAGE_H
+#endif // FAY_RESOURCES_IMAGE_H

@@ -5,7 +5,7 @@
 #ifndef FAY_GL_BUFFER_H
 #define FAY_GL_BUFFER_H
 
-#include "fay/gl/resources.h"
+#include "fay/gl/geometry.h"
 
 namespace fay
 {

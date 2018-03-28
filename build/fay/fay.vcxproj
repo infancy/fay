@@ -25,12 +25,14 @@
     <ClCompile Include="..\..\fay\gl\texture.cpp" />
     <ClCompile Include="..\..\fay\gui\gui.cpp" />
     <ClCompile Include="..\..\fay\gui\window.cpp" />
-    <ClCompile Include="..\..\fay\utility\image.cpp" />
-    <ClCompile Include="..\..\fay\utility\load_model.cpp" />
+    <ClCompile Include="..\..\fay\resources\image.cpp" />
+    <ClCompile Include="..\..\fay\resources\load_model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\core\config.h" />
     <ClInclude Include="..\..\fay\core\fay.h" />
+    <ClInclude Include="..\..\fay\core\log.h" />
+    <ClInclude Include="..\..\fay\core\profiler.h" />
     <ClInclude Include="..\..\fay\core\thread_pool.h" />
     <ClInclude Include="..\..\fay\gl\buffer.h" />
     <ClInclude Include="..\..\fay\gl\camera.h" />
@@ -38,18 +40,16 @@
     <ClInclude Include="..\..\fay\gl\gl.h" />
     <ClInclude Include="..\..\fay\gl\mesh.h" />
     <ClInclude Include="..\..\fay\gl\model.h" />
-    <ClInclude Include="..\..\fay\gl\resources.h" />
+    <ClInclude Include="..\..\fay\gl\geometry.h" />
     <ClInclude Include="..\..\fay\gl\shader.h" />
     <ClInclude Include="..\..\fay\gl\texture.h" />
     <ClInclude Include="..\..\fay\gl\uniform.h" />
     <ClInclude Include="..\..\fay\gui\gui.h" />
     <ClInclude Include="..\..\fay\gui\window.h" />
-    <ClInclude Include="..\..\fay\utility\file.h" />
-    <ClInclude Include="..\..\fay\utility\image.h" />
-    <ClInclude Include="..\..\fay\utility\log.h" />
-    <ClInclude Include="..\..\fay\utility\load_model.h" />
+    <ClInclude Include="..\..\fay\resources\file.h" />
+    <ClInclude Include="..\..\fay\resources\image.h" />
+    <ClInclude Include="..\..\fay\resources\load_model.h" />
     <ClInclude Include="..\..\fay\utility\math.h" />
-    <ClInclude Include="..\..\fay\utility\profiler.h" />
     <ClInclude Include="..\..\fay\utility\stencil.h" />
     <ClInclude Include="..\..\fay\utility\string.h" />
     <ClInclude Include="..\..\fay\utility\type_traits.h" />

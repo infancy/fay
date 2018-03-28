@@ -2,11 +2,11 @@
 #pragma once
 #endif
 
-#ifndef FAY_UTILITY_LOAD_MODEL_H
-#define FAY_UTILITY_LOAD_MODEL_H
+#ifndef FAY_RESOURCES_LOAD_MODEL_H
+#define FAY_RESOURCES_LOAD_MODEL_H
 
-#include "fay/gl/resources.h"
-#include "fay/utility/image.h"
+#include "fay/gl/geometry.h"
+#include "fay/resources/image.h"
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -130,4 +130,4 @@ private:
 
 } // namespace fay
 
-#endif // FAY_UTILITY_LOAD_MODEL_H
+#endif // FAY_RESOURCES_LOAD_MODEL_H

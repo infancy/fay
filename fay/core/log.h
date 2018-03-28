@@ -2,8 +2,8 @@
 #pragma once
 #endif
 
-#ifndef FAY_UTILITY_LOG_H
-#define FAY_UTILITY_LOG_H
+#ifndef FAY_CORE_LOG_H
+#define FAY_CORE_LOG_H
 
 #include "fay/core/config.h"
 
@@ -20,4 +20,4 @@ namespace fay
 
 } // namespace fay
 
-#endif // FAY_UTILITY_LOG_H
+#endif // FAY_CORE_LOG_H
