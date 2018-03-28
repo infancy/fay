@@ -8,52 +8,52 @@
 namespace fay
 {
 
-BaseModel::BaseModel(const std::string& filepath, Thirdparty api) : 
+resource_model::resource_model(const std::string& filepath, third_party api) : 
 	path{ get_path(filepath) }, api{ api } {}
 
 // load obj model --------------------------------------------------------------
 
-static const std::unordered_map<std::string, ObjKeyword> map
+static const std::unordered_map<std::string, obj_keyword> map
 {
-	{ "#", ObjKeyword::comment },
+	{ "#", obj_keyword::comment },
 
-	{ "v",  ObjKeyword::v },
-	{ "vn", ObjKeyword::vn },
-	{ "vt", ObjKeyword::vt },
+	{ "v",  obj_keyword::v },
+	{ "vn", obj_keyword::vn },
+	{ "vt", obj_keyword::vt },
 
-	{ "o", ObjKeyword::o },
-	{ "g", ObjKeyword::g },
-	{ "s", ObjKeyword::s },
-	{ "f", ObjKeyword::f },
+	{ "o", obj_keyword::o },
+	{ "g", obj_keyword::g },
+	{ "s", obj_keyword::s },
+	{ "f", obj_keyword::f },
 
-	{ "mtllib", ObjKeyword::mtllib },
-	{ "usemtl", ObjKeyword::usemtl },
-	{ "newmtl", ObjKeyword::newmtl },
+	{ "mtllib", obj_keyword::mtllib },
+	{ "usemtl", obj_keyword::usemtl },
+	{ "newmtl", obj_keyword::newmtl },
 
-	{ "Ns", ObjKeyword::Ns },
-	{ "Ni", ObjKeyword::Ni },
-	{ "d",  ObjKeyword::d },
-	{ "Tr", ObjKeyword::Tr },
-	{ "Tf", ObjKeyword::Tf },
-	{ "illum", ObjKeyword::illum },
+	{ "Ns", obj_keyword::Ns },
+	{ "Ni", obj_keyword::Ni },
+	{ "d",  obj_keyword::d },
+	{ "Tr", obj_keyword::Tr },
+	{ "Tf", obj_keyword::Tf },
+	{ "illum", obj_keyword::illum },
 
-	{ "Ka", ObjKeyword::Ka },
-	{ "Kd", ObjKeyword::Kd },
-	{ "Ks", ObjKeyword::Ks },
-	{ "Ke", ObjKeyword::Ke },
+	{ "Ka", obj_keyword::Ka },
+	{ "Kd", obj_keyword::Kd },
+	{ "Ks", obj_keyword::Ks },
+	{ "Ke", obj_keyword::Ke },
 
-	{ "map_Ka", ObjKeyword::map_Ka },
-	{ "map_Kd", ObjKeyword::map_Kd },
-	{ "map_Ks", ObjKeyword::map_Ks },
-	{ "map_Ke", ObjKeyword::map_Ke },
-	{ "map_d", ObjKeyword::map_d },
-	{ "map_bump", ObjKeyword::map_bump },
-	{ "map_Bump", ObjKeyword::map_bump },
+	{ "map_Ka", obj_keyword::map_Ka },
+	{ "map_Kd", obj_keyword::map_Kd },
+	{ "map_Ks", obj_keyword::map_Ks },
+	{ "map_Ke", obj_keyword::map_Ke },
+	{ "map_d", obj_keyword::map_d },
+	{ "map_bump", obj_keyword::map_bump },
+	{ "map_Bump", obj_keyword::map_bump },
 };
 
 // boost::format
 // 理论上一个 mesh 由 'o' 开始，但碰到 'o'，'g'，'usemtl'，就新建一个 mesh
-ObjModel::ObjModel(const std::string& filepath, Thirdparty api) : BaseModel(filepath, api)
+obj_model::obj_model(const std::string& filepath, third_party api) : resource_model(filepath, api)
 {
 	// load *.obj
 	std::ifstream file(filepath);
@@ -61,9 +61,9 @@ ObjModel::ObjModel(const std::string& filepath, Thirdparty api) : BaseModel(file
 
 	std::cout << "loading the file: " << filepath << '\n';
 
-	std::unordered_map<std::string, ObjMaterial> materials;
-	std::vector<ObjMesh> submeshes;
-	std::vector<ObjMesh> objmeshes;
+	std::unordered_map<std::string, obj_material> materials;
+	std::vector<obj_mesh> submeshes;
+	std::vector<obj_mesh> objmeshes;
 
 	while (!file.eof())
 	{
@@ -80,17 +80,17 @@ ObjModel::ObjModel(const std::string& filepath, Thirdparty api) : BaseModel(file
 
 		switch (map.at(token))	// operator[] only for nonconstant 
 		{
-		case ObjKeyword::comment :
+		case obj_keyword::comment :
 			std::cout << "obj file comment: " << line << '\n';
 			break;
 
-		case ObjKeyword::mtllib :
+		case obj_keyword::mtllib :
 			// std::fstream mtl("*.mtl");
 			materials = load_materials(erase_front_word(line));
 			break;
 
-		case ObjKeyword::o :
-		case ObjKeyword::v :
+		case obj_keyword::o :
+		case obj_keyword::v :
 			// CHECK(!line.empty()) << "can't parser the line: " << line;
 			submeshes = load_meshs(line, file);
 			objmeshes.insert(objmeshes.end(), submeshes.begin(), submeshes.end());
@@ -107,12 +107,12 @@ ObjModel::ObjModel(const std::string& filepath, Thirdparty api) : BaseModel(file
 		// std::move(materials[mesh.mat_name]) });
 }
 
-std::vector<ObjMesh> ObjModel::load_meshs(
+std::vector<obj_mesh> obj_model::load_meshs(
 	const std::string& firstline, std::ifstream& file)
 {
-	std::vector<ObjMesh> submeshes;
+	std::vector<obj_mesh> submeshes;
 
-	ObjMesh mesh;
+	obj_mesh mesh;
 	std::string cur_mesh_name;
 
 	// TODO: explain
@@ -127,12 +127,12 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 
 	auto get_xyz = [&v](std::istringstream& iss) { iss >> v.x >> v.y >> v.z; };
 	
-	auto add_and_clear = [&submeshes](ObjMesh& mesh) 
+	auto add_and_clear = [&submeshes](obj_mesh& mesh) 
 	{ 
 		if(!mesh.vertices.empty() && !mesh.indices.empty())
 		{	// 避免加入空的 mesh
 			submeshes.push_back(std::move(mesh));
-			mesh = ObjMesh();	// clear
+			mesh = obj_mesh();	// clear
 		}
 	};
 
@@ -162,41 +162,41 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 
 		switch (map.at(token))	// operator[] only for nonconstant 
 		{
-		case ObjKeyword::comment:
+		case obj_keyword::comment:
 			std::cout << "obj file comment: " << line << '\n';
 			break;
 
-		case ObjKeyword::v :
+		case obj_keyword::v :
 			get_xyz(iss);
 			positions.emplace_back(v);
 			break;
-		case ObjKeyword::vn :
+		case obj_keyword::vn :
 			get_xyz(iss);
 			normals.emplace_back(v);
 			break;
-		case ObjKeyword::vt :
+		case obj_keyword::vt :
 			get_xyz(iss);
 			texcoords.emplace_back(v);
 			break;
 
-		case ObjKeyword::o :	// firstline
-		case ObjKeyword::g :
+		case obj_keyword::o :	// firstline
+		case obj_keyword::g :
 			add_and_clear(mesh);
 			iss >> cur_mesh_name;
 			mesh.name = cur_mesh_name;
 			break;
 
-		case ObjKeyword::usemtl:
+		case obj_keyword::usemtl:
 			add_and_clear(mesh);
 			iss >> mesh.mat_name;
 			mesh.name = cur_mesh_name + '_' + mesh.mat_name;
 			break;
 
-		case ObjKeyword::s :
+		case obj_keyword::s :
 			iss >> mesh.smoothing_group;
 			break;
 
-		case ObjKeyword::f :
+		case obj_keyword::f :
 		{
 			// TODO: more simple way
 			auto num_of_char = [](const std::string& line, char ch)-> size_t
@@ -277,7 +277,7 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 			}
 
 			// index
-			if (api == Thirdparty::gl)
+			if (api == third_party::gl)
 			{   // 此时无需 UV 反转
 				mesh.indices.insert(mesh.indices.end(), 
 					{ index, index + 1, index + 2 });
@@ -308,24 +308,24 @@ std::vector<ObjMesh> ObjModel::load_meshs(
 	return std::move(submeshes);
 }
 
-std::unordered_map<std::string, ObjMaterial> 
-ObjModel::load_materials(const std::string& filepath)
+std::unordered_map<std::string, obj_material> 
+obj_model::load_materials(const std::string& filepath)
 {
 	// load *.mtl
 	auto file = load_file(this->path + filepath);
-	std::unordered_map<std::string, ObjMaterial> materials;
-	ObjMaterial mat;
+	std::unordered_map<std::string, obj_material> materials;
+	obj_material mat;
 
 	glm::vec3 v{};	// value
 
 	auto get_xyz = [&v](std::istringstream& iss) { iss >> v.x >> v.y >> v.z; };
 
-	auto add_and_clear = [&materials](ObjMaterial& mat)
+	auto add_and_clear = [&materials](obj_material& mat)
 	{
 		if (!mat.name.empty())
 		{	// 避免加入空的 material
 			materials.insert({ mat.name, std::move(mat) });
-			mat = ObjMaterial(); // clear
+			mat = obj_material(); // clear
 		}
 	};
 
@@ -344,33 +344,33 @@ ObjModel::load_materials(const std::string& filepath)
 
 		switch (map.at(token))	// operator[] only for nonconstant 
 		{
-		case ObjKeyword::comment :
+		case obj_keyword::comment :
 			std::cout << "mtl file comment: " << line << '\n';
 			break;
 
-		case ObjKeyword::newmtl :
+		case obj_keyword::newmtl :
 			add_and_clear(mat);
 			iss >> mat.name;
 			break;
 
-		case ObjKeyword::Ns : iss >> mat.Ns; break;
-		case ObjKeyword::Ni : iss >> mat.Ni; break;
-		case ObjKeyword::d  : iss >> mat.d;  break;
-		case ObjKeyword::Tr : iss >> mat.Tr; break;
-		case ObjKeyword::Tf : iss >> mat.Tf; break;
-		case ObjKeyword::illum : iss >> mat.illum; break;
+		case obj_keyword::Ns : iss >> mat.Ns; break;
+		case obj_keyword::Ni : iss >> mat.Ni; break;
+		case obj_keyword::d  : iss >> mat.d;  break;
+		case obj_keyword::Tr : iss >> mat.Tr; break;
+		case obj_keyword::Tf : iss >> mat.Tf; break;
+		case obj_keyword::illum : iss >> mat.illum; break;
 
-		case ObjKeyword::Ka : get_xyz(iss); mat.Ka = v; break;
-		case ObjKeyword::Kd : get_xyz(iss); mat.Kd = v; break;
-		case ObjKeyword::Ks : get_xyz(iss); mat.Ks = v; break;
-		case ObjKeyword::Ke : get_xyz(iss); mat.Ke = v; break;
+		case obj_keyword::Ka : get_xyz(iss); mat.Ka = v; break;
+		case obj_keyword::Kd : get_xyz(iss); mat.Kd = v; break;
+		case obj_keyword::Ks : get_xyz(iss); mat.Ks = v; break;
+		case obj_keyword::Ke : get_xyz(iss); mat.Ke = v; break;
 
-		case ObjKeyword::map_Ka : iss >> mat.map_Ka; break;
-		case ObjKeyword::map_Kd : iss >> mat.map_Kd; break;
-		case ObjKeyword::map_Ks : iss >> mat.map_Ks; break;
-		case ObjKeyword::map_Ke : iss >> mat.map_Ke; break;
-		case ObjKeyword::map_d  : iss >> mat.map_d;  break;
-		case ObjKeyword::map_bump : iss >> mat.map_bump; break;
+		case obj_keyword::map_Ka : iss >> mat.map_Ka; break;
+		case obj_keyword::map_Kd : iss >> mat.map_Kd; break;
+		case obj_keyword::map_Ks : iss >> mat.map_Ks; break;
+		case obj_keyword::map_Ke : iss >> mat.map_Ke; break;
+		case obj_keyword::map_d  : iss >> mat.map_d;  break;
+		case obj_keyword::map_bump : iss >> mat.map_bump; break;
 
 		default:
 			LOG(ERROR) << "can't parser the token: " << token;
@@ -385,7 +385,7 @@ ObjModel::load_materials(const std::string& filepath)
 // 将位置、索引转换成纹理数据
 /*
 void objMesh_transform_to_TextureDataArray(
-	std::vector<ObjMesh>& meshes,
+	std::vector<obj_mesh>& meshes,
 	std::vector<glm::vec4>& positions,
 	std::vector<glm::uvec4>& indices,
 	std::vector<std::string>& texpaths)
@@ -432,12 +432,12 @@ void objMesh_transform_to_TextureDataArray(
 
 // load model by assimp --------------------------------------------------------
 
-AssimpModel::AssimpModel(const std::string& filepath, Thirdparty api, ModelType model_type) : 
-	BaseModel(filepath, api), model_type{ model_type }
+assimp_model::assimp_model(const std::string& filepath, third_party api, model_type model_type) : 
+	resource_model(filepath, api), modeltype{ model_type }
 {
 	Assimp::Importer importer;
 	const aiScene* scene{};
-	if(api == Thirdparty::gl)
+	if(api == third_party::gl)
 		scene = importer.ReadFile(filepath,
 			aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 	else
@@ -453,7 +453,7 @@ AssimpModel::AssimpModel(const std::string& filepath, Thirdparty api, ModelType 
 	process_node(scene->mRootNode, scene);	// process ASSIMP's root node recursively
 }
 
-void AssimpModel::process_node(aiNode* node, const aiScene* scene)
+void assimp_model::process_node(aiNode* node, const aiScene* scene)
 {
 	for (uint32_t i = 0; i < node->mNumMeshes; ++i)
 	{
@@ -465,22 +465,22 @@ void AssimpModel::process_node(aiNode* node, const aiScene* scene)
 		process_node(node->mChildren[i], scene);
 }
 
-AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
+assimp_mesh assimp_model::process_mesh(aiMesh* mesh, const aiScene* scene)
 {
-	std::vector<Vertex5>  vertices;
+	std::vector<vertex5>  vertices;
 	std::vector<uint32_t> indices;
-	std::vector<std::pair<ImagePtr, TexType>> images;
+	std::vector<std::pair<image_ptr, texture_type>> images;
 
 	// vertices
 	for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
 	{
-		Vertex5 vertex;
+		vertex5 vertex;
 
 		auto copy = [](glm::vec3& vec, aiVector3D& rhs) { vec.x = rhs.x; vec.y = rhs.y; vec.z = rhs.z; };
 
 		copy(vertex.position, mesh->mVertices[i]);
 		copy(vertex.normal, mesh->mNormals[i]);
-		if(model_type == ModelType::obj)
+		if(modeltype == model_type::obj)
 		{ 
 			copy(vertex.tangent, mesh->mTangents[i]);
 			copy(vertex.bitangent, mesh->mBitangents[i]);
@@ -511,30 +511,30 @@ AssimpMesh AssimpModel::process_mesh(aiMesh* mesh, const aiScene* scene)
 	// materials
 	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-	auto load_maps = [this, &images, material](aiTextureType type, TexType textype)
+	auto load_maps = [this, &images, material](aiTextureType type, texture_type textype)
 	{
 		auto maps = load_images(material, type, textype);
 		images.insert(images.end(), maps.begin(), maps.end());
 	};
 
-	load_maps(aiTextureType_AMBIENT,  TexType::ambient);
-	load_maps(aiTextureType_DIFFUSE,  TexType::diffuse);
-	load_maps(aiTextureType_SPECULAR, TexType::specular);
-	if (model_type == ModelType::obj)
-		load_maps(aiTextureType_HEIGHT,   TexType::parallax);
+	load_maps(aiTextureType_AMBIENT,  texture_type::ambient);
+	load_maps(aiTextureType_DIFFUSE,  texture_type::diffuse);
+	load_maps(aiTextureType_SPECULAR, texture_type::specular);
+	if (modeltype == model_type::obj)
+		load_maps(aiTextureType_HEIGHT,   texture_type::parallax);
 	else
-		load_maps(aiTextureType_NORMALS,  TexType::parallax);
+		load_maps(aiTextureType_NORMALS,  texture_type::parallax);
 	//std::cout << "\nnormals:";
-	//load_maps(aiTextureType_NORMALS,  TexType::normals);
-	//load_maps(aiTextureType_UNKNOWN, TexType::unknown);
+	//load_maps(aiTextureType_NORMALS,  texture_type::normals);
+	//load_maps(aiTextureType_UNKNOWN, texture_type::unknown);
 
-	return AssimpMesh(vertices, indices, images);
+	return assimp_mesh(vertices, indices, images);
 }
 
-std::vector<std::pair<ImagePtr, TexType>> 
-AssimpModel::load_images(aiMaterial* mat, aiTextureType type, TexType textype)
+std::vector<std::pair<image_ptr, texture_type>> 
+assimp_model::load_images(aiMaterial* mat, aiTextureType type, texture_type textype)
 {
-	std::vector<std::pair<ImagePtr, TexType>> images;
+	std::vector<std::pair<image_ptr, texture_type>> images;
 
 	for (uint32_t i = 0; i < mat->GetTextureCount(type); ++i)
 	{
@@ -547,7 +547,7 @@ AssimpModel::load_images(aiMaterial* mat, aiTextureType type, TexType textype)
 			if (images_cache.find(name) == images_cache.end())
 			{
 				std::cout << "\nload image: " << (path + name);
-				ImagePtr img(path + name, api);
+				image_ptr img(path + name, api);
 				images.push_back({img, textype});
 				images_cache.insert({ name, img });
 			}

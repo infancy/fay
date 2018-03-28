@@ -1,5 +1,4 @@
 #include "texture.h"
-#include "fay/utility/image.h"
 
 namespace fay
 {
@@ -18,7 +17,7 @@ GL_CLAMP_TO_BORDER	超出的坐标为用户指定的边缘颜色。
 
 */
 
-BaseTexture::BaseTexture(GLenum target, GLint filtering, GLint wrap) : 
+base_texture::base_texture(GLenum target, GLint filtering, GLint wrap) : 
 	id_{}, target_{ target }
 {
 	glGenTextures(1, &id_);
@@ -44,36 +43,36 @@ BaseTexture::BaseTexture(GLenum target, GLint filtering, GLint wrap) :
 	gl_check_errors();
 }
 
-void BaseTexture::set_border_color(std::array<GLfloat, 4> borderColor)
+void base_texture::set_border_color(std::array<GLfloat, 4> borderColor)
 {
 	glTexParameterfv(target_, GL_TEXTURE_BORDER_COLOR, borderColor.data());
 }
 
 // -----------------------------------------------------------------------------
 
-Texture2D::Texture2D(const std::string& filepath, TexType textype, bool Mipmap) 
-	: BaseTexture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }
+texture2d::texture2d(const std::string& filepath, texture_type textype, bool Mipmap) 
+	: base_texture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), textype_{ textype }
 {
-	const ImagePtr img(filepath, Thirdparty::gl);
+	const image_ptr img(filepath, third_party::gl);
 
 	create(img.gl_format(), img.width(), img.height(), img.gl_format(), GL_UNSIGNED_BYTE, img.data(), Mipmap);
 }
 
-Texture2D::Texture2D(const ImagePtr& img, TexType textype, bool Mipmap)
-	: BaseTexture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }
+texture2d::texture2d(const image_ptr& img, texture_type textype, bool Mipmap)
+	: base_texture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), textype_{ textype }
 {
-	CHECK(img.third_party() == Thirdparty::gl) << "image thirdparty error";
+	CHECK(img.is_flip_vertical() == true) << "image thirdparty error";
 	// create(format_, img.width(), img.height(), format_, GL_UNSIGNED_BYTE, img.data(), Mipmap);
 	create(img.gl_format(), img.width(), img.height(), img.gl_format(), GL_UNSIGNED_BYTE, img.data(), Mipmap);
 }
 
-Texture2D::Texture2D(GLint filtering, GLint wrap, TexType textype)
-	// : BaseTexture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }
-	: BaseTexture(GL_TEXTURE_2D, filtering, wrap), texture_type{ textype }
+texture2d::texture2d(GLint filtering, GLint wrap, texture_type textype)
+	// : base_texture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), texture_type{ textype }
+	: base_texture(GL_TEXTURE_2D, filtering, wrap), textype_{ textype }
 {
 }
 
-void Texture2D::create(GLint internalFormat, GLsizei width, GLsizei height,
+void texture2d::create(GLint internalFormat, GLsizei width, GLsizei height,
 	GLenum format, GLenum type, const uint8_t* data, bool Mipmap)
 {
 	// https://stackoverflow.com/questions/34497195/difference-between-format-and-internalformat
@@ -92,12 +91,12 @@ void Texture2D::create(GLint internalFormat, GLsizei width, GLsizei height,
 
 // -----------------------------------------------------------------------------
 
-Texture2DArray::Texture2DArray(std::vector<std::string> material_names, std::string path) :
-	BaseTexture(GL_TEXTURE_2D_ARRAY), material_nums{ material_names.size() }
+texture2d_array::texture2d_array(std::vector<std::string> material_names, std::string path) :
+	base_texture(GL_TEXTURE_2D_ARRAY), material_nums{ material_names.size() }
 {
 	for(int i = 0; i < material_names.size(); ++i)
 	{ 
-		const ImagePtr img(path + material_names[i], Thirdparty::gl);	// 当前路径 + 文件名
+		const image_ptr img(path + material_names[i], third_party::gl);	// 当前路径 + 文件名
 		auto format = img.gl_format();
 
 		// 首次先创建一个 2D 纹理数组
@@ -106,12 +105,11 @@ Texture2DArray::Texture2DArray(std::vector<std::string> material_names, std::str
 			format_ = format;
 			glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, format, img.width(), img.height(), material_nums, 0, format, GL_UNSIGNED_BYTE, NULL);
 		}
-		CHECK(format_ == format) << "Texture2DArray: different format!";
+		CHECK(format_ == format) << "texture2d_array: different format!";
 		//modify the existing texture
 		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, img.width(), img.height(), 1, format, GL_UNSIGNED_BYTE, img.data());
 	}
 	gl_check_errors();
 }
-
 
 } // namespace fay

@@ -2,8 +2,8 @@
 #pragma once
 #endif
 
-#ifndef FAY_UTILITY_PLATFORM_H
-#define FAY_UTILITY_PLATFORM_H
+#ifndef FAY_CORE_CONFIG_H
+#define FAY_CORE_CONFIG_H
 
 #if defined(_DEBUG)
 #define FAY_DEBUG
@@ -52,7 +52,7 @@
 #define FAY_FORCEINLINE __attribute__((always_inline)) inline
 #endif
 
-#endif //FAY_UTILITY_PLATFORM_H
+#endif // FAY_CORE_CONFIG_H
 
 
 

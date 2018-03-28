@@ -15,32 +15,32 @@
 namespace fay
 {
 
-template<typename Vertex>
-class Mesh 
+template<typename vertex>
+class mesh 
 {
 public:
-	Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-		std::vector<std::string> image_paths) : buffer(vertices, indices)
+	mesh(std::vector<vertex> vertices, std::vector<uint32_t> indices,
+		std::vector<std::string> image_paths) : buf(vertices, indices)
 	{
 		for (auto& filepath : image_paths)
 			textures.emplace_back(filepath);
 	}
 
-	Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-		std::vector<std::pair<ImagePtr, TexType>> images) : buffer(vertices, indices)
+	mesh(std::vector<vertex> vertices, std::vector<uint32_t> indices,
+		std::vector<std::pair<image_ptr, texture_type>> images) : buf(vertices, indices)
 	{
 		for (auto& img : images)
 			textures.emplace_back(img.first, img.second);
 	}
 
 	// 这样设置 Texture ？？
-	Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
-		std::vector<Texture2D> textures) : buffer(vertices, indices)
+	mesh(std::vector<vertex> vertices, std::vector<uint32_t> indices,
+		std::vector<texture2d> textures) : buf(vertices, indices)
 	{
 		textures = textures;
 	}
 
-	void bind_texture(Shader shader)
+	void bind_texture(shader shader)
 	{
 		/*
 		int count[8]{};
@@ -52,7 +52,7 @@ public:
 			for (; index < type.size(); ++index)
 				if (textures[i].type() == type[index])
 					break;
-			LOG_IF(ERROR, index >= type.size()) << "TexType failed to choose: " << i;
+			LOG_IF(ERROR, index >= type.size()) << "texture_type failed to choose: " << i;
 
 			sampler = name[index];
 			if (count[index]++ > 0)
@@ -66,7 +66,7 @@ public:
 			auto& tex = textures[i];
 
 			LOG_IF(ERROR, type_name.find(tex.type()) == type_name.end())
-				<< "TexType failed to choose: " << i;
+				<< "texture_type failed to choose: " << i;
 
 			shader.bind_texture(type_name.at(tex.type()), i, tex);
 		}
@@ -75,11 +75,11 @@ public:
 	// render the mesh, you need to bind texture by youself
 	void draw(GLsizei sz = 1)
 	{
-		buffer.draw(sz);
+		buf.draw(sz);
 	}
 
 	// bind texture and render the mesh
-	void draw(Shader shader, GLsizei sz = 1)
+	void draw(shader shader, GLsizei sz = 1)
 	{
 		// 还需要在 draw 前绑定其它数据
 		// shader.enable();
@@ -87,25 +87,25 @@ public:
 		if (!textures.empty())
 			bind_texture(shader);
 
-		buffer.draw(sz);
+		buf.draw(sz);
 		// shader.disable();
 		glActiveTexture(GL_TEXTURE0);
 	}
 
 public:
-	Buffer buffer;
-	std::vector<Texture2D> textures;
-	// Texture2DArray textures;
+	buffer buf;
+	std::vector<texture2d> textures;
+	// texture2d_array textures;
 
 private:
-	const std::unordered_map<TexType, std::string> type_name
+	const std::unordered_map<texture_type, std::string> type_name
 	{
-		{ TexType::alpha,    "Alpha"    },
-		{ TexType::ambient,  "Ambient"  },
-		{ TexType::diffuse,  "Diffuse"  },
-		{ TexType::specular, "Specular" },
-		{ TexType::parallax, "Parallax" },
-		{ TexType::emissive, "Emissive" }
+		{ texture_type::alpha,    "Alpha"    },
+		{ texture_type::ambient,  "Ambient"  },
+		{ texture_type::diffuse,  "Diffuse"  },
+		{ texture_type::specular, "Specular" },
+		{ texture_type::parallax, "Parallax" },
+		{ texture_type::emissive, "Emissive" }
 	};
 
 };

@@ -5,7 +5,7 @@
 #ifndef FAY_UTILITY_PROFILER_H
 #define FAY_UTILITY_PROFILER_H
 
-#include "fay/utility/fay.h"
+#include "fay/core/fay.h"
 
 #include <chrono>
 #include <functional>
@@ -20,7 +20,7 @@ namespace fay
 // https://segmentfault.com/a/1190000002548499
 
 template<typename Precision = std::chrono::milliseconds>
-struct TimeProfiler
+struct time_profiler
 {
 	typename Precision::rep count{};
 
@@ -52,7 +52,7 @@ struct TimeProfiler
 /*
 // milliseconds : ∫¡√Î£¨microseconds: Œ¢√Î£¨nanoseconds : ƒ…√Î
 template<typename Precision = std::chrono::milliseconds>
-struct TimeProfiler
+struct time_profiler
 {
 	typename Precision::rep count{};
 
@@ -88,7 +88,7 @@ template<typename Func, typename Precision = std::chrono::milliseconds,
 	typename Enable = boost::disable_if<std::is_void<
 	typename std::function<Func>::result_type>,
 	typename std::function<Func>::result_type>::type>
-struct TimeWrapper
+struct time_wrapper
 	<Func, Precision, typename std::enable_if_t<fay::is_not_void_v<
 	typename std::function<Func>::result_type>, typename std::function<Func>::result_type>>
 {
@@ -97,7 +97,7 @@ struct TimeWrapper
 	std::function<Func> func{};
 	typename Precision::rep count{};
 
-	TimeWrapper(std::function<Func>&& func) { wrap(std::move(func)); }
+	time_wrapper(std::function<Func>&& func) { wrap(std::move(func)); }
 
 	void wrap(std::function<Func>&& func)
 	{
@@ -126,17 +126,17 @@ struct TimeWrapper
 };
 
 template<typename Func, typename Precision = std::chrono::milliseconds>
-struct TimeWrapper
+struct time_wrapper
 {
 	static_assert(!std::is_void_v<typename std::function<Func>::result_type>, 
-		"TimeWrapper: the func can't return void");
+		"time_wrapper: the func can't return void");
 
 	using R = typename std::function<Func>::result_type;
 
 	std::function<Func> func{};
 	typename Precision::rep count{};
 
-	TimeWrapper(std::function<Func>&& func) { wrap(std::move(func)); }
+	time_wrapper(std::function<Func>&& func) { wrap(std::move(func)); }
 
 	void wrap(std::function<Func>&& func)
 	{
@@ -162,14 +162,14 @@ struct TimeWrapper
 // using Msec = std::chrono::milliseconds;
 
 template<typename Func, typename Precision = std::chrono::milliseconds>
-struct TimeWrapper
+struct time_wrapper
 {
 	using R = typename std::function<Func>::result_type;
 
 	std::function<Func> func{};
 	typename Precision::rep count{};
 
-	TimeWrapper(std::function<Func>&& func) { wrap(std::move(func)); }
+	time_wrapper(std::function<Func>&& func) { wrap(std::move(func)); }
 
 	void wrap(std::function<Func>&& func)
 	{
@@ -204,7 +204,7 @@ struct TimeWrapper
 //auto timeWrapper = [&](Args&&...) -> R { ... }
 
 // R functor(Args&&... args);
-// TimeWrapper<R(Args&&...)> wrapper(functor);
+// time_wrapper<R(Args&&...)> wrapper(functor);
 // std::function<decltype(wrapper)> func(wrapper);
 
 } // namespace fay

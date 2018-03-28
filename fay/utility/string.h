@@ -5,6 +5,8 @@
 #ifndef FAY_UTILITY_STRING_H
 #define FAY_UTILITY_STRING_H
 
+#include <cctype>
+
 #include <string>
 
 namespace fay

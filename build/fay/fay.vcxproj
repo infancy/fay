@@ -29,6 +29,9 @@
     <ClCompile Include="..\..\fay\utility\load_model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\fay\core\config.h" />
+    <ClInclude Include="..\..\fay\core\fay.h" />
+    <ClInclude Include="..\..\fay\core\thread_pool.h" />
     <ClInclude Include="..\..\fay\gl\buffer.h" />
     <ClInclude Include="..\..\fay\gl\camera.h" />
     <ClInclude Include="..\..\fay\gl\framebuffer.h" />
@@ -41,11 +44,9 @@
     <ClInclude Include="..\..\fay\gl\uniform.h" />
     <ClInclude Include="..\..\fay\gui\gui.h" />
     <ClInclude Include="..\..\fay\gui\window.h" />
-    <ClInclude Include="..\..\fay\utility\fay.h" />
     <ClInclude Include="..\..\fay\utility\file.h" />
     <ClInclude Include="..\..\fay\utility\image.h" />
     <ClInclude Include="..\..\fay\utility\log.h" />
-    <ClInclude Include="..\..\fay\utility\config.h" />
     <ClInclude Include="..\..\fay\utility\load_model.h" />
     <ClInclude Include="..\..\fay\utility\math.h" />
     <ClInclude Include="..\..\fay\utility\profiler.h" />

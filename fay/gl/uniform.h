@@ -10,10 +10,10 @@
 namespace fay
 {
 
-class Uniform
+class unifrom
 {
 public:
-	Uniform(uint32_t bytes) : bytes{ bytes }
+	unifrom(uint32_t bytes) : bytes{ bytes }
 	{
 		glGenBuffers(1, &ubo);
 		glBindBuffer(GL_UNIFORM_BUFFER, ubo);

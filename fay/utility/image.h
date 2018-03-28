@@ -13,18 +13,16 @@
 namespace fay
 {
 
-class BaseImage
+class base_image
 {
 public:
-	BaseImage(const std::string& filepath = {}, Thirdparty thirdparty = Thirdparty::none) :
-		filepath{ filepath }, thirdparty{ thirdparty }
+	base_image(const std::string& filepath = {}) :
+		filepath{ filepath }
 	{
 	}
 
-	BaseImage(const std::string& filepath, int width, int height, int format,
-		Thirdparty thirdparty = Thirdparty::none) :
-		filepath{ filepath }, w{ width }, h{ height }, 
-		fmt{ format }, thirdparty{ thirdparty }
+	base_image(const std::string& filepath, int width, int height, int format) :
+		filepath{ filepath }, w{ width }, h{ height }, fmt{ format }
 	{
 	}
 
@@ -32,7 +30,7 @@ public:
 	int height() const { return h; }
 
 	std::string file_path()  const { return filepath; }
-	Thirdparty third_party() const { return thirdparty; }
+	bool is_flip_vertical() const { return is_flip_vertical_; }
 
 	GLenum gl_format() const
 	{
@@ -53,22 +51,26 @@ public:
 
 protected:
 	std::string filepath;
-	Thirdparty thirdparty;
+	bool is_flip_vertical_{ false };
 
 	int w, h, fmt;
 };
 
 // -----------------------------------------------------------------------------
 
-class ImagePtr : public BaseImage	// shared_image, stbImagePtr
+class image_ptr : public base_image	// shared_image, stbImagePtr
 {
 public:
-	ImagePtr(const std::string& filepath = {}, Thirdparty thirdparty = Thirdparty::none) :
-		BaseImage(filepath, thirdparty)
+	image_ptr(const std::string& filepath = {}, third_party thirdparty = third_party::none) :
+		base_image(filepath)
 	{
 		LOG_IF(ERROR, filepath.empty()) << "image path is empty: ";
-		if (thirdparty == Thirdparty::gl)
+
+		if (thirdparty == third_party::gl)
+		{
+			is_flip_vertical_ = true;
 			stbi_set_flip_vertically_on_load(true);
+		}
 
 		pixels = stbi_load(filepath.c_str(), &w, &h, &fmt, 0);
 		LOG_IF(ERROR, pixels == nullptr) << "image failed to load at path: " << filepath;
@@ -84,22 +86,25 @@ private:
 	std::shared_ptr<unsigned char> manager;
 };
 
-inline bool operator==(const ImagePtr& left, const ImagePtr& right)
+inline bool operator==(const image_ptr& left, const image_ptr& right)
 {
 	return left.file_path() == right.file_path();
 }
 
 // -----------------------------------------------------------------------------
 
-class Image : public BaseImage
+class image : public base_image
 {
 public:
-	Image(const std::string& filepath = {}, Thirdparty thirdparty = Thirdparty::none) :
-		BaseImage(filepath, thirdparty)
+	image(const std::string& filepath = {}, third_party thirdparty = third_party::none) :
+		base_image(filepath)
 	{
 		LOG_IF(ERROR, filepath.empty()) << "image path is empty\n";
-		if (thirdparty == Thirdparty::gl)
+		if (thirdparty == third_party::gl)
+		{
+			is_flip_vertical_ = true;
 			stbi_set_flip_vertically_on_load(true);
+		}
 
 		uint8_t* ptr = stbi_load(filepath.c_str(), &w, &h, &fmt, 0);
 		LOG_IF(ERROR, ptr == nullptr) << "image failed to load at path: " << filepath;
@@ -109,8 +114,8 @@ public:
 		stbi_image_free(ptr);
 	}
 
-	Image(const std::string& filepath, int width , int height, int format, Thirdparty thirdparty = Thirdparty::none) :
-		BaseImage(filepath, width, height, format, thirdparty), pixels(w * h * fmt)
+	image(const std::string& filepath, int width , int height, int format, third_party thirdparty = third_party::none) :
+		base_image(filepath, width, height, format), pixels(w * h * fmt)
 	{
 		pixels.clear();
 	}
@@ -134,7 +139,7 @@ private:
 	std::vector<uint8_t> pixels;
 };
 
-inline bool operator==(const Image& left, const Image& right)
+inline bool operator==(const image& left, const image& right)
 {
 	return left.file_path() == right.file_path();
 }

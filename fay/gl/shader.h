@@ -5,7 +5,7 @@
 #ifndef FAY_GL_SHADER_H
 #define FAY_GL_SHADER_H
 
-#include "fay/utility/fay.h"
+#include "fay/core/fay.h"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -16,13 +16,13 @@
 namespace fay
 {
 
-class Shader // : public boost::noncopyable
+class shader // : public boost::noncopyable
 {
 public:
-	Shader(const char* glslPath);
-	Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
-	Shader(std::string& vertexSource, std::string& fragmentsource, std::string geometryPath = {});
-	//~Shader(){ glDeleteProgram(program_id); }
+	shader(const char* glslPath);
+	shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
+	shader(std::string& vertexSource, std::string& fragmentsource, std::string geometryPath = {});
+	//~shader(){ glDeleteProgram(program_id); }
 
 	void enable()  { glUseProgram(program_id); }
 	void disable() { glUseProgram(0); }
@@ -48,7 +48,7 @@ public:
 	
 	void set_mat4(const std::string& name, const glm::mat4& mat) const { glUniformMatrix4fv(glGetUniformLocation(program_id, name.c_str()), 1, GL_FALSE, &mat[0][0]); }
 	
-	void bind_texture(const std::string& sampler, int tex_unit, const BaseTexture& tex) const 
+	void bind_texture(const std::string& sampler, int tex_unit, const base_texture& tex) const 
 	{
 		glActiveTexture(GL_TEXTURE0 + tex_unit);	    // 激活第i号纹理单元
 		// 使用 glUniform1i 给纹理采样器分配一个位置值，将第i号纹理单元连接到着色器中的sampler变量
@@ -56,7 +56,7 @@ public:
 		glBindTexture(tex.target(), tex.id());	// 将纹理对象绑定到当前激活的纹理单元上
 	}
 
-	void bind_uniform(const std::string& uniform, int bind_point, const Uniform& ubo) const
+	void bind_uniform(const std::string& uniform, int bind_point, const unifrom& ubo) const
 	{
 		glUniformBlockBinding(program_id, glGetUniformBlockIndex(program_id, uniform.c_str()), bind_point);
 		glBindBufferBase(GL_UNIFORM_BUFFER, bind_point, ubo.id());

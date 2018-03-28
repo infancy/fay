@@ -1,4 +1,4 @@
-#include "fay/utility/fay.h"
+#include "fay/core/fay.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -47,11 +47,11 @@ const string ftm_sketchfab = "objects/ftm/ftm_sketchfab.blend";
 const string Nier_2b_ik_rigged = "objects/Nier_2b_ik_rigged/scene.gltf";
 // const string mesh_filename = Blocks;
 
-// model
+// md
 glm::vec3 model_scale(1.f);
 
-// camera
-Camera camera(glm::vec3(0, 5, 10));;
+// camera_
+camera camera_(glm::vec3(0, 5, 10));;
 float lastX = Width / 2.0f;
 float lastY = Height / 2.0f;
 bool firstMouse = true;
@@ -109,12 +109,12 @@ void update()
 		else if (model_scale.x > 10.f)
 			model_scale = glm::vec3(10.f, 10.f, 10.f);
 
-		camera.ProcessMouseMovement(xoffset, yoffset);
-		if (io.KeysDown[GLFW_KEY_W]) camera.ProcessKeyboard(FORWARD, deltaTime);
-		if (io.KeysDown[GLFW_KEY_S]) camera.ProcessKeyboard(BACKWARD, deltaTime);
-		if (io.KeysDown[GLFW_KEY_A]) camera.ProcessKeyboard(LEFT, deltaTime);
-		if (io.KeysDown[GLFW_KEY_D]) camera.ProcessKeyboard(RIGHT, deltaTime);
-		//camera.ProcessMouseScroll(io.MouseWheel); 禁止放缩
+		camera_.ProcessMouseMovement(xoffset, yoffset);
+		if (io.KeysDown[GLFW_KEY_W]) camera_.ProcessKeyboard(FORWARD, deltaTime);
+		if (io.KeysDown[GLFW_KEY_S]) camera_.ProcessKeyboard(BACKWARD, deltaTime);
+		if (io.KeysDown[GLFW_KEY_A]) camera_.ProcessKeyboard(LEFT, deltaTime);
+		if (io.KeysDown[GLFW_KEY_D]) camera_.ProcessKeyboard(RIGHT, deltaTime);
+		//camera_.ProcessMouseScroll(io.MouseWheel); 禁止放缩
 	}
 	else if (mouse_move == 'x')
 	{
@@ -176,17 +176,17 @@ struct _fay_obj_model;
 struct _00_create_gui
 {
 	// 加载覆盖整个视口的正方形
-	std::vector<Vertex1> vb{ {-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0} };
+	std::vector<vertex1> vb{ {-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0} };
 	std::vector<uint32_t> ib{ 0,1,2,0,2,3 };
-	Buffer quad{ vb, ib };
-	Shader shader{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
-	Texture2D diff{ "textures/awesomeface.png" };
+	buffer quad{ vb, ib };
+	shader sd{ "learngl/00_gui.vs", "learngl/00_gui.fs" };
+	texture2d diff{ "textures/awesomeface.png" };
 
 	void draw(glm::mat4&& MVP)
 	{
-		shader.enable();
-		shader.bind_texture("diff", 0, diff);
-		shader.set_mat4("MVP", MVP);
+		sd.enable();
+		sd.bind_texture("diff", 0, diff);
+		sd.set_mat4("MVP", MVP);
 		quad.draw();
 	}
 };
@@ -195,49 +195,49 @@ struct _00_create_gui
 
 struct _20_load_mesh
 {
-	Model model{ Nanosuit };
-	Shader shader{ "learngl/20_load_model.vs", "learngl/20_load_model.fs" };
+	model md{ Nanosuit };
+	shader sd{ "learngl/20_load_model.vs", "learngl/20_load_model.fs" };
 
 	void draw(glm::mat4&& MVP)
 	{
-		shader.enable();
-		shader.set_mat4("MVP", MVP);
-		model.draw(shader);
+		sd.enable();
+		sd.set_mat4("MVP", MVP);
+		md.draw(sd);
 	}
 };
 
 struct _21_load_model
 {
-	Model model{ Nanosuit };
-	Shader shader{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
+	model md{ Nanosuit };
+	shader sd{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
 
 	void draw(glm::mat4&& MVP)
 	{
-		shader.enable();
-		shader.set_mat4("MVP", MVP);
-		model.draw(shader);
+		sd.enable();
+		sd.set_mat4("MVP", MVP);
+		md.draw(sd);
 	}
 };
 
 struct _22_depth_test
 {
-	Model model{ Blocks };
-	Shader shader{ "learngl/22_depth_test.vs", "learngl/22_depth_test.fs" };
+	model md{ Blocks };
+	shader sd{ "learngl/22_depth_test.vs", "learngl/22_depth_test.fs" };
 
 	void draw(glm::mat4&& MVP)
 	{
 		//glDepthMask(GL_FALSE);
 		//glDepthFunc(GL_ALWAYS);
-		shader.enable();
-		shader.set_mat4("MVP", MVP);
-		model.draw(shader);
+		sd.enable();
+		sd.set_mat4("MVP", MVP);
+		md.draw(sd);
 	}
 };
 
 struct _23_stencil_test
 {
-	Model model{ Box };
-	Shader shader{ "learngl/23_stencil_test.vs", "learngl/23_stencil_test.fs" };
+	model md{ Box };
+	shader sd{ "learngl/23_stencil_test.vs", "learngl/23_stencil_test.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
@@ -245,19 +245,19 @@ struct _23_stencil_test
 
 		glStencilFunc(GL_ALWAYS, 1, 0xFF); // 所有的片段都应该更新模板缓冲
 		glStencilMask(0xFF); // 启用模板缓冲写入
-		shader.enable();
-		shader.set_bool("draw_outlining", false);
-		shader.set_mat4("MVP", p * v * m);
-		model.draw(shader);
+		sd.enable();
+		sd.set_bool("draw_outlining", false);
+		sd.set_mat4("MVP", p * v * m);
+		md.draw(sd);
 		
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 		glStencilMask(0x00); // 禁止模板缓冲的写入
 		glDisable(GL_DEPTH_TEST);
-		shader.enable();
-		shader.set_bool("draw_outlining", true);
+		sd.enable();
+		sd.set_bool("draw_outlining", true);
 		glm::mat4 scaleModel = glm::scale(m, glm::vec3(1.1f, 1.1f, 1.1f));
-		shader.set_mat4("MVP", p * v * scaleModel);
-		model.draw(shader);
+		sd.set_mat4("MVP", p * v * scaleModel);
+		md.draw(sd);
 		glStencilMask(0xFF);
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -266,50 +266,50 @@ struct _23_stencil_test
 struct _24_blending
 {
 	// plane
-	std::vector<Vertex1> planevb{ { -1, 0, 1 },{ 1, 0, 1 },{ 1, 0, -1 },{ -1, 0, -1 } };
+	std::vector<vertex1> planevb{ { -1, 0, 1 },{ 1, 0, 1 },{ 1, 0, -1 },{ -1, 0, -1 } };
 	std::vector<uint32_t> planeib{ 0,1,2,2,3,0 };
-	Buffer planeQuad{ planevb, planeib };
+	buffer planeQuad{ planevb, planeib };
 	// grass
-	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+	std::vector<vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
 	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
-	Buffer quad{ vb, ib };
+	buffer quad{ vb, ib };
 
-	Shader shader{ "learngl/24_blending.vs", "learngl/24_blending.fs" };
-	Texture2D green{ "textures/grass.png" };
-	Texture2D marble{ "textures/marble.jpg" };
-	Texture2D window{ "textures/window.png" };
+	shader sd{ "learngl/24_blending.vs", "learngl/24_blending.fs" };
+	texture2d green{ "textures/grass.png" };
+	texture2d marble{ "textures/marble.jpg" };
+	texture2d window{ "textures/window.png" };
 
-	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
+	void draw(glm::mat4& p, glm::mat4& v, glm::mat4&)
 	{
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		shader.enable();
-		glm::mat4 model(1.f);
+		sd.enable();
+		glm::mat4 m(1.f);
 
-		shader.bind_texture("diff", 0, marble);
-		shader.set_bool("texture_xz", true);
-		glm::mat4 m0 = glm::scale(model, glm::vec3(10.f, 10.f, 10.f));
-		shader.set_mat4("MVP", p * v * m0);
+		sd.bind_texture("diff", 0, marble);
+		sd.set_bool("texture_xz", true);
+		glm::mat4 m0 = glm::scale(m, glm::vec3(10.f, 10.f, 10.f));
+		sd.set_mat4("MVP", p * v * m0);
 		planeQuad.draw();
 
 		glDisable(GL_CULL_FACE);
-		shader.bind_texture("diff", 0, green);
-		shader.set_bool("texture_xz", false);
+		sd.bind_texture("diff", 0, green);
+		sd.set_bool("texture_xz", false);
 
-		glm::mat4 m1 = glm::scale(model, glm::vec3(3.f, 3.f, 3.f));
-		shader.set_mat4("MVP", p * v * m1);
+		glm::mat4 m1 = glm::scale(m, glm::vec3(3.f, 3.f, 3.f));
+		sd.set_mat4("MVP", p * v * m1);
 		quad.draw();
 
-		//glm::mat4 m2 = glm::translate(model, glm::vec3(-1, 0, 0));
-		glm::mat4 m2 = glm::translate(model, glm::vec3(-3, 0, 0));
+		//glm::mat4 m2 = glm::translate(m, glm::vec3(-1, 0, 0));
+		glm::mat4 m2 = glm::translate(m, glm::vec3(-3, 0, 0));
 		m2 = glm::scale(m2, glm::vec3(3.f, 3.f, 3.f));
-		shader.set_mat4("MVP", p * v * m2);
+		sd.set_mat4("MVP", p * v * m2);
 		quad.draw();
 		
-		shader.bind_texture("diff", 0, window);
-		glm::mat4 m3 = glm::translate(model, glm::vec3(-0.5f, 0, 1));
+		sd.bind_texture("diff", 0, window);
+		glm::mat4 m3 = glm::translate(m, glm::vec3(-0.5f, 0, 1));
 		m3 = glm::scale(m3, glm::vec3(3.f, 3.f, 3.f));
-		shader.set_mat4("MVP", p * v * m3);
+		sd.set_mat4("MVP", p * v * m3);
 		quad.draw();
 		glEnable(GL_CULL_FACE);
 	}
@@ -318,15 +318,15 @@ struct _24_blending
 struct Box	// gamma_correction, 
 {
 	// quad
-	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+	std::vector<vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
 	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
-	Buffer quad{ vb, ib };
+	buffer quad{ vb, ib };
 
-	Texture2D green{ "textures/grass.png" };
+	texture2d green{ "textures/grass.png" };
 
-	Shader gui{ "learngl/post_processing.vs", "learngl/post_processing.fs" };
+	shader gui{ "learngl/post_processing.vs", "learngl/post_processing.fs" };
 
-	void draw_gui(const BaseTexture& tex)
+	void draw_gui(const base_texture& tex)
 	{
 		gui.enable();
 		glm::mat4 ortho0 = glm::ortho(0.f, 1.f, 0.f, 1.f);
@@ -340,15 +340,15 @@ struct Box	// gamma_correction,
 struct Post_Processing	// gamma_correction, 
 {
 	// quad
-	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+	std::vector<vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
 	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
-	Buffer quad{ vb, ib };
+	buffer quad{ vb, ib };
 
-	Texture2D green{ "textures/grass.png" };
+	texture2d green{ "textures/grass.png" };
 
-	Shader gui{ "learngl/post_processing.vs", "learngl/post_processing.fs" };
+	shader gui{ "learngl/post_processing.vs", "learngl/post_processing.fs" };
 
-	void draw_gui(const BaseTexture& tex)
+	void draw_gui(const base_texture& tex)
 	{
 		gui.enable();
 		glm::mat4 ortho0 = glm::ortho(0.f, 1.f, 0.f, 1.f);
@@ -361,17 +361,17 @@ struct Post_Processing	// gamma_correction,
 
 struct _25_framebuffers : public Post_Processing
 {
-	Model model{ Blocks };
+	model md{ Blocks };
 
-	FrameBuffer fb{Width, Height};	// doesn't use mulitesample, need to modify code in the main()
-	Shader shader{ "learngl/25_framebuffers.vs", "learngl/25_framebuffers.fs" };
+	framebuffer fb{Width, Height};	// doesn't use mulitesample, need to modify code in the main()
+	shader sd{ "learngl/25_framebuffers.vs", "learngl/25_framebuffers.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
 		fb.enable(glm::vec3(0.f, 0.f, 0.f));
-		shader.enable();
-		shader.set_mat4("MVP", p * v * m);
-		model.draw(shader);
+		sd.enable();
+		sd.set_mat4("MVP", p * v * m);
+		md.draw(sd);
 
 		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
 		draw_gui(fb.tex());
@@ -380,29 +380,29 @@ struct _25_framebuffers : public Post_Processing
 
 struct _26_cubemaps
 {
-	Model model{ Nier_2b };
-	Model box{ Box };
+	model md{ Nier_2b };
+	model box{ Box };
 
 	const string files[7] = { "skybox/blue_sky/",
 		"right.jpg", "left.jpg",
 		"top.jpg", "bottom.jpg",
 		"back.jpg", "front.jpg" };
-	TextureCube sky{files};
+	texture_cube sky{files};
 
-	Shader shader{ "learngl/26_environment_map.vs", "learngl/26_environment_map.fs" };
-	Shader cubemap{ "learngl/26_cubemaps.vs", "learngl/26_cubemaps.fs" };
+	shader sd{ "learngl/26_environment_map.vs", "learngl/26_environment_map.fs" };
+	shader cubemap{ "learngl/26_cubemaps.vs", "learngl/26_cubemaps.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		shader.enable();
+		sd.enable();
 
 		glm::mat4 MV = v * m;
 		glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
-		shader.enable();
-		shader.set_mat4("MV", MV);
-		shader.set_mat3("NormalMV", NormalMV);		// 失去位移属性
-		shader.set_mat4("MVP", p * v * m);
-		model.draw(shader);
+		sd.enable();
+		sd.set_mat4("MV", MV);
+		sd.set_mat3("NormalMV", NormalMV);		// 失去位移属性
+		sd.set_mat4("MVP", p * v * m);
+		md.draw(sd);
 
 		glCullFace(GL_FRONT);
 		glDepthFunc(GL_LEQUAL);
@@ -422,39 +422,39 @@ struct _26_cubemaps
 
 struct _27_uniform
 {
-	Model model{ Box };
-	Uniform uniform{ 128 };	// 2 * mat4, mat4 = 4 * vec4 = 16 * float = 64 * bytes
-	Shader shader1{ "learngl/27_uniform.vs", "learngl/27_uniform.fs" };
-	Shader shader2{ "learngl/27_uniform.vs", "learngl/27_uniform.fs" };
+	model md{ Box };
+	unifrom ubo{ 128 };	// 2 * mat4, mat4 = 4 * vec4 = 16 * float = 64 * bytes
+	shader shader1{ "learngl/27_uniform.vs", "learngl/27_uniform.fs" };
+	shader shader2{ "learngl/27_uniform.vs", "learngl/27_uniform.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
 		// struct Mat { mat4 p; mat v; }
 		// uniform.set(OFFSET(p), sizeof(v), &v);
 		CHECK(sizeof(glm::mat4) == 64);
-		uniform.set(0, 64, glm::value_ptr(p));
-		uniform.set(64, 64, glm::value_ptr(v));
+		ubo.set(0, 64, glm::value_ptr(p));
+		ubo.set(64, 64, glm::value_ptr(v));
 
 		shader1.enable();
 		shader1.set_mat4("model", m);
-		shader1.bind_uniform("Mat", 0, uniform);
+		shader1.bind_uniform("Mat", 0, ubo);
 		shader1.set_bool("inverse", false);
-		model.draw(shader1);
+		md.draw(shader1);
 
 		shader2.enable();
 		shader2.set_mat4("model", glm::translate(m, lightPosition));
-		shader2.bind_uniform("Mat", 0, uniform);
+		shader2.bind_uniform("Mat", 0, ubo);
 		shader2.set_bool("inverse", true);
-		model.draw(shader2);
+		md.draw(shader2);
 	}
 };
 
 struct _28_geometry_shader
 {
 	float time{};
-	Model model{ Fairy };
-	Shader bomb{ "learngl/28_geometry_shader.vs", "learngl/28_gs_bomb.fs", "learngl/28_gs_bomb.gs" };
-	Shader normal{ "learngl/28_geometry_shader.vs", "learngl/28_gs_normal.fs", "learngl/28_gs_normal.gs" };
+	model md{ Fairy };
+	shader bomb{ "learngl/28_geometry_shader.vs", "learngl/28_gs_bomb.fs", "learngl/28_gs_bomb.gs" };
+	shader normal{ "learngl/28_geometry_shader.vs", "learngl/28_gs_normal.fs", "learngl/28_gs_normal.gs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
@@ -465,23 +465,23 @@ struct _28_geometry_shader
 			time += deltaTime / 10;
 			bomb.set_float("time", time);
 		}
-		model.draw(bomb);
+		md.draw(bomb);
 
 		normal.enable();
 		normal.set_mat3("NormalMV", glm::mat3(glm::transpose(glm::inverse(v * m))));
 		normal.set_mat4("P", p);
 		normal.set_mat4("MVP", p * v * m);
 		normal.set_float("Length", 1.2f);
-		model.draw(normal);
+		md.draw(normal);
 	}
 };
 
 struct _29_instancing
 {
-	Model planet{ Planet };
-	Model rock{ Rock };
-	Shader model{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
-	Shader shader{ "learngl/29_instancing.vs", "learngl/29_instancing.fs" };
+	model planet{ Planet };
+	model rock{ Rock };
+	shader s1{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
+	shader s2{ "learngl/29_instancing.vs", "learngl/29_instancing.fs" };
 	// 使用独显运行
 	const int amount = 100000;
 	std::vector<glm::mat4> mat4s{ amount };
@@ -492,9 +492,9 @@ struct _29_instancing
 		float radius = 100.0;
 		float offset = 25.0f;
 
-		for (unsigned int i = 0; i < amount; i++)
+		for (int i = 0; i < amount; ++i)
 		{
-			glm::mat4 model{ 1 };
+			glm::mat4 m{ 1 };
 			// 1. translation: displace along circle with 'radius' in range [-offset, offset]
 			float angle = (float)i / (float)amount * 360.0f;
 			float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
@@ -503,18 +503,18 @@ struct _29_instancing
 			float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
 			displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
 			float z = cos(angle) * radius + displacement;
-			model = glm::translate(model, glm::vec3(x, y, z));
+			m = glm::translate(m, glm::vec3(x, y, z));
 
 			// 2. scale: Scale between 0.05 and 0.25f
 			float scale = (rand() % 20) / 100.0f + 0.05;
-			model = glm::scale(model, glm::vec3(scale));
+			m = glm::scale(m, glm::vec3(scale));
 
 			// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
 			float rotAngle = (rand() % 360);
-			model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+			m = glm::rotate(m, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
 
 			// 4. now add to list of matrices
-			mat4s[i] = model;
+			mat4s[i] = m;
 		}
 
 		unsigned int instanceVBO;
@@ -524,7 +524,7 @@ struct _29_instancing
 
 		for (unsigned int i = 0; i < rock.meshes.size(); ++i)
 		{
-			glBindVertexArray(rock.meshes[i].buffer.id());
+			glBindVertexArray(rock.meshes[i].buf.id());
 
 			GLsizei vec4Size = sizeof(glm::vec4);
 			glEnableVertexAttribArray(3);
@@ -547,30 +547,30 @@ struct _29_instancing
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		model.enable();
-		model.set_mat4("MVP", p * v * m);
-		planet.draw(model, amount);
+		s1.enable();
+		s1.set_mat4("MVP", p * v * m);
+		planet.draw(s1, amount);
 		
-		shader.enable();
-		shader.set_mat4("PV", p * v);
-		rock.draw(shader, amount);
+		s2.enable();
+		s2.set_mat4("PV", p * v);
+		rock.draw(s2, amount);
 	}
 };
 
 struct _2a_anti_aliasing : public Post_Processing
 {
-	Model model{ Blocks };
+	model md{ Blocks };
 
-	MultiSampleFrameBuffer fb{ Width, Height };	// use mulitesample
+	multisample_framebuffer fb{ Width, Height };	// use mulitesample
 
-	Shader shader{ "learngl/25_framebuffers.vs", "learngl/25_framebuffers.fs" };
+	shader sd{ "learngl/25_framebuffers.vs", "learngl/25_framebuffers.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
 		fb.enable(glm::vec3(0.f, 0.f, 0.f));
-		shader.enable();
-		shader.set_mat4("MVP", p * v * m);
-		model.draw(shader);
+		sd.enable();
+		sd.set_mat4("MVP", p * v * m);
+		md.draw(sd);
 
 		fb.blit();
 
@@ -583,9 +583,9 @@ struct _2a_anti_aliasing : public Post_Processing
 
 struct _30_phong_shading
 {
-	Model model{ Nier_2b };
-	Shader shader{ "learngl/30_phong_shading.vs", "learngl/30_phong_shading.fs" };
-	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
+	model md{ Nier_2b };
+	shader sd{ "learngl/30_phong_shading.vs", "learngl/30_phong_shading.fs" };
+	// shader sd{ "learngl/light.vs", "learngl/light.fs" };
 
 	float sAmbient = 1.f;
 	float sDiffuse = 1.f;
@@ -606,29 +606,29 @@ struct _30_phong_shading
 		glm::mat4 MV = v * m;
 		glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
 
-		shader.enable();
-		shader.set_bool("blinn_phong", some_flag);
-		shader.set_mat4("MV", MV);
-		//shader.set_mat4("NorMV", NormalMV);	// 小心传输着色器变量、先保存再编译
-		shader.set_mat3("NormalMV", NormalMV);		// 失去位移属性
-		shader.set_mat4("MVP", p * v * m);
-		shader.set_vec3("vLightPos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
-		shader.set_vec3("Lightcolor", glm::vec3(light_color.x, light_color.y, light_color.z));
-		shader.set_float("sa", sAmbient);
-		shader.set_float("sd", sDiffuse);
-		shader.set_float("ss", sSpeclar);
-		shader.set_int("shininess", shininess);
-		model.draw(shader);
-		// model.draw();
+		sd.enable();
+		sd.set_bool("blinn_phong", some_flag);
+		sd.set_mat4("MV", MV);
+		//sd.set_mat4("NorMV", NormalMV);	// 小心传输着色器变量、先保存再编译
+		sd.set_mat3("NormalMV", NormalMV);		// 失去位移属性
+		sd.set_mat4("MVP", p * v * m);
+		sd.set_vec3("vLightPos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
+		sd.set_vec3("Lightcolor", glm::vec3(light_color.x, light_color.y, light_color.z));
+		sd.set_float("sa", sAmbient);
+		sd.set_float("sd", sDiffuse);
+		sd.set_float("ss", sSpeclar);
+		sd.set_int("shininess", shininess);
+		md.draw(sd);
+		// md.draw();
 		gl_check_errors();
 	}
 };
 
 struct _31_light_caster
 {
-	Model model{ Blocks };
-	Shader shader{ "learngl/31_light_caster.vs", "learngl/31_light_caster.fs" };
-	// Shader shader{ "learngl/light.vs", "learngl/light.fs" };
+	model md{ Blocks };
+	shader sd{ "learngl/31_light_caster.vs", "learngl/31_light_caster.fs" };
+	// shader sd{ "learngl/light.vs", "learngl/light.fs" };
 
 	float sAmbient = 1.f;
 	float sDiffuse = 1.f;
@@ -637,7 +637,7 @@ struct _31_light_caster
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		// TODO: bind imgui to shader
+		// TODO: bind imgui to sd
 		ImGui::SliderFloat("ambient strength", &sAmbient, 0.f, 10.f);
 		ImGui::SliderFloat("diffuse strength", &sDiffuse, 0.f, 100.f);
 		ImGui::SliderFloat("speclar strength", &sSpeclar, 0.f, 10.f);
@@ -646,43 +646,43 @@ struct _31_light_caster
 		glm::mat4 MV = v * m;
 		glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
 
-		shader.enable();
-		shader.set_mat4("MV", MV);
-		//shader.set_mat4("NorMV", NormalMV);	// 小心传输着色器变量、先保存再编译
-		shader.set_mat3("NormalMV", NormalMV);		// 失去位移属性
-		shader.set_mat4("MVP", p * v * m);
+		sd.enable();
+		sd.set_mat4("MV", MV);
+		//sd.set_mat4("NorMV", NormalMV);	// 小心传输着色器变量、先保存再编译
+		sd.set_mat3("NormalMV", NormalMV);		// 失去位移属性
+		sd.set_mat4("MVP", p * v * m);
 
 		// directlight
-		shader.set_vec3("dLight.direct", glm::vec3(-1.f, -1.f, -1.f));
-		shader.set_vec3("dLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
+		sd.set_vec3("dLight.direct", glm::vec3(-1.f, -1.f, -1.f));
+		sd.set_vec3("dLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
 		// pointlight
-		shader.set_vec3("pLight.pos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
-		shader.set_vec3("pLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
-		shader.set_vec3("pLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 个单位
+		sd.set_vec3("pLight.pos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
+		sd.set_vec3("pLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
+		sd.set_vec3("pLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 个单位
 		// spotlight
-		shader.set_vec3("sLight.pos", camera.Position);
-		shader.set_vec3("sLight.direct", camera.Front);
-		shader.set_vec3("sLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
-		shader.set_vec2("sLight.cutoff", glm::vec2(
+		sd.set_vec3("sLight.pos", camera_.Position);
+		sd.set_vec3("sLight.direct", camera_.Front);
+		sd.set_vec3("sLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
+		sd.set_vec2("sLight.cutoff", glm::vec2(
 			glm::cos(glm::radians(10.f)), glm::cos(glm::radians(15.f)) ));
-		shader.set_vec3("sLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 个单位
+		sd.set_vec3("sLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 个单位
 		
-		shader.set_float("sa", sAmbient);
-		shader.set_float("sd", sDiffuse);
-		shader.set_float("ss", sSpeclar);
-		shader.set_int("shininess", shininess);
-		model.draw(shader);
-		// model.draw();
+		sd.set_float("sa", sAmbient);
+		sd.set_float("sd", sDiffuse);
+		sd.set_float("ss", sSpeclar);
+		sd.set_int("shininess", shininess);
+		md.draw(sd);
+		// md.draw();
 		gl_check_errors();
 	}
 };
 
 struct _32_shadow_map : public Post_Processing
 {
-	Model model{ Blocks };
-	Shader shader{ "learngl/32_shadow_map.vs", "learngl/32_shadow_map.fs" };
-	Shader shadowModel{ "learngl/32_shadow_model.vs", "learngl/32_shadow_model.fs" };
-	ShadowMapFrameBuffer smfb;
+	model md{ Blocks };
+	shader sd{ "learngl/32_shadow_map.vs", "learngl/32_shadow_map.fs" };
+	shader shadowModel{ "learngl/32_shadow_model.vs", "learngl/32_shadow_model.fs" };
+	shadowmap_framebuffer smfb;
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
@@ -700,9 +700,9 @@ struct _32_shadow_map : public Post_Processing
 		
 		glCullFace(GL_FRONT);
 		smfb.enable(glm::vec3(0.f, 0.f, 0.f));
-		shader.enable();
-		shader.set_mat4("MVP", lightSpace * m);
-		model.draw(shader);
+		sd.enable();
+		sd.set_mat4("MVP", lightSpace * m);
+		md.draw(sd);
 		glCullFace(GL_BACK);
 
 		gl_enable_framebuffer(0, Width, Height, glm::vec3(clear_color.x, clear_color.y, clear_color.z));
@@ -712,9 +712,9 @@ struct _32_shadow_map : public Post_Processing
 		shadowModel.set_mat4("Model", m);
 		shadowModel.set_mat4("LightSpace", lightSpace);
 		shadowModel.set_vec3("LightPos", lightPosition);
-		shadowModel.set_vec3("ViewPos", camera.Position);
+		shadowModel.set_vec3("ViewPos", camera_.Position);
 		shadowModel.bind_texture("Shadowmap", 3, smfb.tex());
-		model.draw(shadowModel);
+		md.draw(shadowModel);
 	}
 };
 
@@ -725,7 +725,7 @@ struct Light_Parameter
 	float sSpeclar = 0.f;
 	int   shininess = 32;
 
-	void set(glm::mat4& p, glm::mat4& v, glm::mat4& m, Shader& shader)
+	void set(glm::mat4& p, glm::mat4& v, glm::mat4& m, shader& sd)
 	{
 		if (ImGui::Button("normal map"))
 			some_flag ^= 1;
@@ -737,41 +737,41 @@ struct Light_Parameter
 		ImGui::SliderFloat("speclar strength", &sSpeclar, 0.f, 10.f);
 		ImGui::SliderInt("shininess", &shininess, 1, 256);
 
-		shader.enable();
-		shader.set_mat4("Model", m);
-		shader.set_mat4("MVP", p * v * m);
-		shader.set_vec3("LightPos", lightPosition);
-		shader.set_vec3("ViewPos", camera.Position);
+		sd.enable();
+		sd.set_mat4("Model", m);
+		sd.set_mat4("MVP", p * v * m);
+		sd.set_vec3("LightPos", lightPosition);
+		sd.set_vec3("ViewPos", camera_.Position);
 
-		shader.set_bool("use_normal_map", some_flag);
-		shader.set_float("sa", sAmbient);
-		shader.set_float("sd", sDiffuse);
-		shader.set_float("ss", sSpeclar);
-		shader.set_int("shininess", shininess);
+		sd.set_bool("use_normal_map", some_flag);
+		sd.set_float("sa", sAmbient);
+		sd.set_float("sd", sDiffuse);
+		sd.set_float("ss", sSpeclar);
+		sd.set_int("shininess", shininess);
 	}
 };
 
 struct _34_normal_map : public Light_Parameter
 {
-	Model model{ Nier_2b };
-	Shader shader{ "learngl/34_normal_map.vs", "learngl/34_normal_map.fs" };
+	model md{ Nier_2b };
+	shader sd{ "learngl/34_normal_map.vs", "learngl/34_normal_map.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		set(p, v, m, shader);
-		model.draw(shader);
+		set(p, v, m, sd);
+		md.draw(sd);
 	}
 };
 
 struct _35_parallax_map : public Light_Parameter
 {
-	Model model{ Box };
+	model md{ Box };
 	// TODO：改进方法
-	Shader shader{ "learngl/34_normal_map.vs", "learngl/35_parallax_map.fs" };
+	shader sd{ "learngl/34_normal_map.vs", "learngl/35_parallax_map.fs" };
 
-	Texture2D diffuse{ "textures/bricks2.jpg" };
-	Texture2D normal{  "textures/bricks2_normal.jpg" };
-	Texture2D height{  "textures/bricks2_disp.jpg" };
+	texture2d diffuse{ "textures/bricks2.jpg" };
+	texture2d normal{  "textures/bricks2_normal.jpg" };
+	texture2d height{  "textures/bricks2_disp.jpg" };
 
 	float heightScale = 0.1;
 
@@ -779,28 +779,28 @@ struct _35_parallax_map : public Light_Parameter
 	{
 		ImGui::SliderFloat("heightScale", &heightScale, 0.f, 1.f);
 
-		set(p, v, m, shader);
-		shader.bind_texture("Diffuse", 0, diffuse);
-		shader.bind_texture("Normal", 1, normal);
-		shader.bind_texture("Depth", 2, height);
-		shader.set_float("heightScale", heightScale);
-		model.draw();
+		set(p, v, m, sd);
+		sd.bind_texture("Diffuse", 0, diffuse);
+		sd.bind_texture("Normal", 1, normal);
+		sd.bind_texture("Depth", 2, height);
+		sd.set_float("heightScale", heightScale);
+		md.draw();
 	}
 };
 
 struct _38_deferred_shading
 {
 	// quad
-	std::vector<Vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+	std::vector<vertex1> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
 	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
-	Buffer quad{ vb, ib };
+	buffer quad{ vb, ib };
 
-	Model model{ Nanosuit };
-	Model box{ Box };
-	Shader geometryPass{ "learngl/30_phong_shading.vs", "learngl/38_g_buffer.fs" };
-	Shader LightPass{ "learngl/post_processing.vs", "learngl/38_deferred_shading.fs" };
-	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
-	GBufferFrameBuffer gbuffer{ Width, Height };
+	model md{ Nanosuit };
+	model box{ Box };
+	shader geometryPass{ "learngl/30_phong_shading.vs", "learngl/38_g_buffer.fs" };
+	shader LightPass{ "learngl/post_processing.vs", "learngl/38_deferred_shading.fs" };
+	shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
+	gbuffer_framebuffer gbuffer{ Width, Height };
 
 	std::vector<glm::vec3> objectPositions;
 	const unsigned int NR_LIGHTS = 32;
@@ -851,7 +851,7 @@ struct _38_deferred_shading
 			geometryPass.set_mat4("MV", MV);
 			geometryPass.set_mat3("NormalMV", NormalMV);
 			geometryPass.set_mat4("MVP", p * MV);
-			model.draw(geometryPass);
+			md.draw(geometryPass);
 		}
 
 		// light pass
@@ -875,7 +875,7 @@ struct _38_deferred_shading
 			LightPass.set_float("lights[" + std::to_string(i) + "].Linear", linear);
 			LightPass.set_float("lights[" + std::to_string(i) + "].Quadratic", quadratic);
 		}
-		LightPass.set_vec3("viewPos", camera.Position);
+		LightPass.set_vec3("viewPos", camera_.Position);
 		quad.draw();
 		// render light
 
@@ -908,30 +908,30 @@ struct _38_deferred_shading
 
 struct _xx
 {
-	Model model{ Blocks };
-	Shader shader{ "learngl/xxxxxxxxxxxx.vs", "learngl/xxxxxxxxxxxxxx.fs" };
+	model md{ Blocks };
+	shader sd{ "learngl/xxxxxxxxxxxx.vs", "learngl/xxxxxxxxxxxxxx.fs" };
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		shader.enable();
-		shader.set_mat4("MVP", p * v * m);
-		model.draw(shader);
+		sd.enable();
+		sd.set_mat4("MVP", p * v * m);
+		md.draw(sd);
 	}
 };
 
 struct _fay_obj_model
 {
-	obj_Model model{ Fairy };
-	// Shader shader{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
-	Shader shader{ "learngl/light.vs", "learngl/light.fs" };
+	objmodel md{ Fairy };
+	// shader sd{ "learngl/31_load_model.vs", "learngl/31_load_model.fs" };
+	shader sd{ "learngl/light.vs", "learngl/light.fs" };
 
 	void draw(glm::mat4&& MVP)
 	{
-		shader.enable();
-		shader.set_mat4("MVP", MVP);
-		shader.set_vec3("lightcolor", glm::vec3(1, 1, 1));
-		// model.draw(shader);
-		model.draw();
+		sd.enable();
+		sd.set_mat4("MVP", MVP);
+		sd.set_vec3("lightcolor", glm::vec3(1, 1, 1));
+		// md.draw(sd);
+		md.draw();
 	}
 };
 
@@ -949,8 +949,8 @@ int main(int argc, char** argv)
 
 	_38_deferred_shading object;
 
-	Model light{ Box };
-	Shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
+	model light{ Box };
+	shader lightshader{ "learngl/light.vs", "learngl/light.fs" };
 
 	//glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
@@ -966,14 +966,14 @@ int main(int argc, char** argv)
 
 		// glm::vec3 position = { 0.f, 0.f, 1.f }, center = { 0, 0, 0 }, up = { 0, 1, 0 };
 		// glm::mat4 view = glm::lookAt(position, center, up);
-		glm::mat4 view = camera.GetViewMatrix();
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
+		glm::mat4 view = camera_.GetViewMatrix();
+		glm::mat4 projection = glm::perspective(glm::radians(camera_.Zoom),
 			(float)Width / (float)Height, 0.1f, 10000.0f);
 
 		// draw
-		glm::mat4 model(1.f);
-		model = glm::scale(model, model_scale);
-		object.draw(projection, view, model);
+		glm::mat4 m(1.f);
+		m = glm::scale(m, model_scale);
+		object.draw(projection, view, m);
 
 		// draw light
 		// glDisable(GL_DEPTH_TEST);

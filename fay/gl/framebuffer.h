@@ -11,10 +11,10 @@
 namespace fay
 {
 
-class BaseFrameBuffer
+class base_framebuffer
 {
 public:
-	BaseFrameBuffer()
+	base_framebuffer()
 	{
 		glGenFramebuffers(1, &fbo);
 		// 不要在构造函数里调用虚函数
@@ -24,7 +24,7 @@ public:
 	virtual void reset(uint32_t width, uint32_t height, GLenum format, GLenum type) = 0;
 
 	uint32_t id() { return fbo; }
-	virtual BaseTexture tex() { return tex_; }
+	virtual base_texture tex() { return tex_; }
 
 	int width()  const { return w; }
 	int height() const { return h; }
@@ -55,16 +55,16 @@ protected:
 protected:
 	//bool is_reset{ false };
 	int w, h;
-	BaseTexture tex_;
+	base_texture tex_;
 	uint32_t fbo, rbo;
 };
 
 // -----------------------------------------------------------------------------
 
-class FrameBuffer : public BaseFrameBuffer
+class framebuffer : public base_framebuffer
 {
 public:
-	FrameBuffer(uint32_t width, uint32_t height, 
+	framebuffer(uint32_t width, uint32_t height, 
 		GLenum format = GL_RGB, GLenum type = GL_UNSIGNED_BYTE)
 	{
 		reset(width, height, format, type);
@@ -74,8 +74,8 @@ public:
 	{
 		set_and_enable(width, height);
 
-		DLOG(INFO) << "FrameBuffer: reset";
-		tex_ = std::move(BaseTexture(GL_TEXTURE_2D));
+		DLOG(INFO) << "framebuffer: reset";
+		tex_ = std::move(base_texture(GL_TEXTURE_2D));
 		tex_.set_format(format);
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, NULL);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex_.id(), 0);
@@ -92,10 +92,10 @@ public:
 
 // -----------------------------------------------------------------------------
 
-class MultiSampleFrameBuffer : public BaseFrameBuffer
+class multisample_framebuffer : public base_framebuffer
 {
 public:
-	MultiSampleFrameBuffer(uint32_t width, uint32_t height, 
+	multisample_framebuffer(uint32_t width, uint32_t height, 
 		GLenum format = GL_RGB, GLenum type = GL_UNSIGNED_BYTE)
 	{
 		reset(width, height, format, type);
@@ -105,8 +105,8 @@ public:
 	{
 		set_and_enable(width, height);
 
-		DLOG(INFO) << "MultiSampleFrameBuffer: reset";
-		tex_ = std::move(BaseTexture(GL_TEXTURE_2D_MULTISAMPLE));
+		DLOG(INFO) << "multisample_framebuffer: reset";
+		tex_ = std::move(base_texture(GL_TEXTURE_2D_MULTISAMPLE));
 		tex_.set_format(format);
 		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, format, width, height, GL_TRUE);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, tex_.id(), 0);
@@ -123,7 +123,7 @@ public:
 		glGenFramebuffers(1, &infbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, infbo);
 
-		intex_ = std::move(BaseTexture(GL_TEXTURE_2D));
+		intex_ = std::move(base_texture(GL_TEXTURE_2D));
 		intex_.set_format(format);
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, NULL);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, intex_.id(), 0);
@@ -142,22 +142,22 @@ public:
 		glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	}
 
-	virtual BaseTexture tex() override
+	virtual base_texture tex() override
 	{
 		return intex_;
 	}
 
 private:
-	BaseTexture intex_;
+	base_texture intex_;
 	uint32_t infbo;
 };
 
 // -----------------------------------------------------------------------------
 
-class ShadowMapFrameBuffer : public BaseFrameBuffer
+class shadowmap_framebuffer : public base_framebuffer
 {
 public:
-	ShadowMapFrameBuffer(uint32_t width = 1024, uint32_t height = 1024,
+	shadowmap_framebuffer(uint32_t width = 1024, uint32_t height = 1024,
 		GLenum format = GL_DEPTH_COMPONENT, GLenum type = GL_FLOAT)
 	{
 		reset(width, height, format, type);
@@ -167,8 +167,8 @@ public:
 	{
 		set_and_enable(width, height);
 
-		DLOG(INFO) << "ShadowMapFrameBuffer: reset";
-		tex_ = std::move(BaseTexture(GL_TEXTURE_2D, GL_NEAREST, GL_CLAMP_TO_BORDER));
+		DLOG(INFO) << "shadowmap_framebuffer: reset";
+		tex_ = std::move(base_texture(GL_TEXTURE_2D, GL_NEAREST, GL_CLAMP_TO_BORDER));
 		tex_.set_border_color({ 1.f, 1.f, 1.f, 1.f });
 		tex_.set_format(format);
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, NULL);
@@ -181,10 +181,10 @@ public:
 
 // -----------------------------------------------------------------------------
 
-class GBufferFrameBuffer : public BaseFrameBuffer
+class gbuffer_framebuffer : public base_framebuffer
 {
 public:
-	GBufferFrameBuffer(uint32_t width, uint32_t height,
+	gbuffer_framebuffer(uint32_t width, uint32_t height,
 		GLenum format = GL_NEAREST, GLenum type = GL_FLOAT)
 	{
 		reset(width, height, format, type);
@@ -196,15 +196,15 @@ public:
 
 		texs_.resize(3);
 		// position color buffer
-		texs_[0] = Texture2D(GL_NEAREST, GL_REPEAT, TexType::diffuse);
+		texs_[0] = texture2d(GL_NEAREST, GL_REPEAT, texture_type::diffuse);
 		texs_[0].create(GL_RGB16F, w, h, GL_RGB, GL_FLOAT, NULL, false);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texs_[0].id(), 0);
 		// normal color buffer
-		texs_[1] = Texture2D(GL_NEAREST, GL_REPEAT, TexType::diffuse);
+		texs_[1] = texture2d(GL_NEAREST, GL_REPEAT, texture_type::diffuse);
 		texs_[1].create(GL_RGB16F, w, h, GL_RGB, GL_FLOAT, NULL, false);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, texs_[1].id(), 0);
 		// color + specular color buffer
-		texs_[2] = Texture2D(GL_NEAREST, GL_REPEAT, TexType::diffuse);
+		texs_[2] = texture2d(GL_NEAREST, GL_REPEAT, texture_type::diffuse);
 		texs_[2].create(GL_RGBA, w, h, GL_RGBA, GL_UNSIGNED_BYTE, NULL, false);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, texs_[2].id(), 0);
 			
@@ -212,7 +212,6 @@ public:
 		unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 		glDrawBuffers(3, attachments);
 		// create and attach depth buffer (renderbuffer)
-		unsigned int rboDepth;
 		glGenRenderbuffers(1, &rbo);
 		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
@@ -221,10 +220,10 @@ public:
 		check_and_disable();
 	}
 
-	const std::vector<Texture2D>& texs() { return texs_; }
+	const std::vector<texture2d>& texs() { return texs_; }
 
 private:
-	std::vector<Texture2D> texs_;
+	std::vector<texture2d> texs_;
 };
 
 } // namespace fay

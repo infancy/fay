@@ -4,9 +4,9 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <stb_image.h>
+#include <stb/stb_image.h>
 
-#include "fay/utility/fay.h"
+#include "fay/core/fay.h"
 #include "fay/gl/buffer.h"
 #include "fay/gl/texture.h"
 #include "fay/gl/model.h"
@@ -23,8 +23,8 @@ namespace fay
 const unsigned int WIDTH = 1080;
 const unsigned int HEIGHT = 720;
 
-// camera
-Camera camera(glm::vec3(-3, 3, 10));
+// camera_
+camera camera_(glm::vec3(-3, 3, 10));
 float lastX = WIDTH / 2.0f;
 float lastY = HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -81,10 +81,10 @@ void update()
 
 	ImGuiIO& io = gui_get_io();
 
-	if (io.KeysDown[GLFW_KEY_W]) camera.ProcessKeyboard(FORWARD, deltaTime);
-	if (io.KeysDown[GLFW_KEY_S]) camera.ProcessKeyboard(BACKWARD, deltaTime);
-	if (io.KeysDown[GLFW_KEY_A]) camera.ProcessKeyboard(LEFT, deltaTime);
-	if (io.KeysDown[GLFW_KEY_D]) camera.ProcessKeyboard(RIGHT, deltaTime);
+	if (io.KeysDown[GLFW_KEY_W]) camera_.ProcessKeyboard(FORWARD, deltaTime);
+	if (io.KeysDown[GLFW_KEY_S]) camera_.ProcessKeyboard(BACKWARD, deltaTime);
+	if (io.KeysDown[GLFW_KEY_A]) camera_.ProcessKeyboard(LEFT, deltaTime);
+	if (io.KeysDown[GLFW_KEY_D]) camera_.ProcessKeyboard(RIGHT, deltaTime);
 
 	if (io.KeysDown[GLFW_KEY_1]) render_state = 1;	// raster
 	if (io.KeysDown[GLFW_KEY_2]) render_state = 2;	// raycast
@@ -114,8 +114,8 @@ void update()
 	}
 	else
 	{
-		camera.ProcessMouseMovement(xoffset, yoffset);
-		//camera.ProcessMouseScroll(io.MouseWheel); 禁止放缩
+		camera_.ProcessMouseMovement(xoffset, yoffset);
+		//camera_.ProcessMouseScroll(io.MouseWheel); 禁止放缩
 	}
 }
 
@@ -124,14 +124,14 @@ int raytracing()
 	gui_create_window(WIDTH, HEIGHT);
 
 	// 加载覆盖整个视口的正方形
-	std::vector<Vertex1> quadVerts{ {-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0} };
+	std::vector<vertex1> quadVerts{ {-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0} };
 	std::vector<uint32_t> quadIndices{ 0,1,2,0,2,3 };
-	Buffer quad(quadVerts, quadIndices);
+	buffer quad(quadVerts, quadIndices);
 
 	// 加载着色器
-	Shader texShader("shader/fay_gui.vs", "shader/fay_gui.fs");
+	shader texShader("shader/fay_gui.vs", "shader/fay_gui.fs");
 
-	Texture2D texture0("resources/face.png");
+	texture2d texture0("resources/face.png");
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -148,7 +148,7 @@ int raytracing()
 
 		glm::vec3 position = { 1.1f, 1.1f, 0.1f }, center = { 0, 0, 0 }, up = { -1, 1, -1 };
 		glm::mat4 view = glm::lookAt(position, center, up);
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 
+		glm::mat4 projection = glm::perspective(glm::radians(camera_.Zoom), 
 			(float)WIDTH / (float)HEIGHT, 0.1f, 10000.0f);
 
 		glm::mat4 MVP = projection * view;

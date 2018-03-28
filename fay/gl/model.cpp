@@ -4,9 +4,9 @@
 namespace fay
 {
 
-Model::Model(const std::string& filepath, ModelType model_type, bool gamma) : gamma_correction(gamma)
+model::model(const std::string& filepath, model_type model_type, bool gamma) : gamma_correction(gamma)
 {
-	AssimpModel model(filepath, Thirdparty::gl, model_type);
+	assimp_model model(filepath, third_party::gl, model_type);
 	for (auto& mesh : model.meshes)
 	{
 	#ifdef _DEBUG
@@ -32,13 +32,13 @@ Model::Model(const std::string& filepath, ModelType model_type, bool gamma) : ga
 }
 */
 
-void Model::draw(GLsizei sz)
+void model::draw(GLsizei sz)
 {
 	for (auto& mesh : meshes)
 		mesh.draw(sz);
 }
 
-void Model::draw(Shader shader, GLsizei sz)
+void model::draw(shader shader, GLsizei sz)
 {
 	for (auto& mesh : meshes)
 		mesh.draw(shader, sz);
@@ -46,9 +46,9 @@ void Model::draw(Shader shader, GLsizei sz)
 
 // -----------------------------------------------------------------------------
 
-obj_Model::obj_Model(const std::string& filepath, bool gamma) : gamma_correction(gamma)
+objmodel::objmodel(const std::string& filepath, bool gamma) : gamma_correction(gamma)
 {
-	ObjModel model(filepath);
+	obj_model model(filepath);
 	for (auto& mesh : model.meshes)
 	{ 
 		auto& objmesh = mesh.first;
@@ -62,37 +62,37 @@ obj_Model::obj_Model(const std::string& filepath, bool gamma) : gamma_correction
 			<< ' ' << objmat.map_Kd << '\n';
 	#endif // _DEBUG
 
-		std::vector<std::pair<ImagePtr, TexType>> images;
+		std::vector<std::pair<image_ptr, texture_type>> images;
 
 		if (!objmat.map_Ka.empty()) images.emplace_back( 
-			ImagePtr(model.path + objmat.map_Ka, Thirdparty::gl), TexType::ambient);
+			image_ptr(model.path + objmat.map_Ka, third_party::gl), texture_type::ambient);
 
 		if (!objmat.map_Kd.empty()) images.emplace_back(
-			ImagePtr(model.path + objmat.map_Kd, Thirdparty::gl), TexType::diffuse);
+			image_ptr(model.path + objmat.map_Kd, third_party::gl), texture_type::diffuse);
 
 		if (!objmat.map_Ks.empty()) images.emplace_back(
-			ImagePtr(model.path + objmat.map_Ks, Thirdparty::gl), TexType::specular);
+			image_ptr(model.path + objmat.map_Ks, third_party::gl), texture_type::specular);
 
 		if (!objmat.map_Ke.empty()) images.emplace_back(
-			ImagePtr(model.path + objmat.map_Ke, Thirdparty::gl), TexType::emissive);
+			image_ptr(model.path + objmat.map_Ke, third_party::gl), texture_type::emissive);
 
 		if (!objmat.map_d.empty()) images.emplace_back(
-			ImagePtr(model.path + objmat.map_d, Thirdparty::gl), TexType::alpha);
+			image_ptr(model.path + objmat.map_d, third_party::gl), texture_type::alpha);
 
 		if (!objmat.map_bump.empty()) images.emplace_back(
-			ImagePtr(model.path + objmat.map_bump, Thirdparty::gl), TexType::displace);
+			image_ptr(model.path + objmat.map_bump, third_party::gl), texture_type::displace);
 
 		this->meshes.emplace_back(objmesh.vertices, objmesh.indices, images);
 	}
 }
 
-void obj_Model::draw(GLsizei sz)
+void objmodel::draw(GLsizei sz)
 {
 	for (auto& mesh : meshes)
 		mesh.draw(sz);
 }
 
-void obj_Model::draw(Shader shader, GLsizei sz)
+void objmodel::draw(shader shader, GLsizei sz)
 {
 	for (auto& mesh : meshes)
 		mesh.draw(shader, sz);

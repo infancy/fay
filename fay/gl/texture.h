@@ -7,7 +7,7 @@
 
 #include <array>
 
-#include "gl.h"
+#include "fay/gl/gl.h"
 #include "fay/utility/image.h"
 
 namespace fay
@@ -15,12 +15,12 @@ namespace fay
 
 // #if OPENGL_VERSION < ...
 
-class BaseTexture
+class base_texture
 {
 public: 
 	// 只负责创建纹理，且不指定纹理单元，设置这样的接口以免被误用
-	BaseTexture() {}
-	BaseTexture(GLenum target, GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT);
+	base_texture() {}
+	base_texture(GLenum target, GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT);
 
 	void set_format(GLenum format) { format_ = format; }
 	void set_border_color(std::array<GLfloat, 4> borderColor);
@@ -39,14 +39,14 @@ protected:
 
 // -----------------------------------------------------------------------------
 
-class Texture2D : public BaseTexture
+class texture2d : public base_texture
 {
 public:
-	Texture2D(const std::string& filepath, TexType textype = TexType::diffuse, bool Mipmap = true);
+	texture2d(const std::string& filepath, texture_type textype = texture_type::diffuse, bool Mipmap = true);
 	
-	Texture2D(const ImagePtr& img, TexType textype = TexType::diffuse, bool Mipmap = true);
+	texture2d(const image_ptr& img, texture_type textype = texture_type::diffuse, bool Mipmap = true);
 	
-	Texture2D(GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT, TexType textype = TexType::diffuse);
+	texture2d(GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT, texture_type textype = texture_type::diffuse);
 
 	void create(GLint internalFormat, GLsizei width, GLsizei height,
 		GLenum format, GLenum type, const uint8_t* data, bool Mipmap = true);
@@ -54,50 +54,50 @@ public:
 	int width()  const { return w; }
 	int height() const { return h; }
 
-	TexType type() const { return texture_type; }
+	texture_type type() const { return textype_; }
 
 private:
 	int w, h;
-	TexType texture_type;
+	texture_type textype_;
 };
 
 // -----------------------------------------------------------------------------
 
-class TextureCube : public BaseTexture
+class texture_cube : public base_texture
 {
 public:
 	// filepath + 6 * filename( right, left, top, bottom, back, front )
-	TextureCube(const std::string files[7], TexType textype = TexType::cubemap)
-		: BaseTexture(GL_TEXTURE_CUBE_MAP, GL_LINEAR, GL_CLAMP_TO_EDGE), texture_type{ textype }
+	texture_cube(const std::string files[7], texture_type textype = texture_type::cubemap)
+		: base_texture(GL_TEXTURE_CUBE_MAP, GL_LINEAR, GL_CLAMP_TO_EDGE), texture_type{ textype }
 	{
 		for (int i = 0; i < 6; ++i)
 		{
-			ImagePtr img(files[0] + files[i + 1]/*, Thirdparty::gl*/);
+			image_ptr img(files[0] + files[i + 1]/*, third_party::gl*/);
 
 			if (i == 0)
 				format_ = img.gl_format();
 
-			CHECK(format_ == img.gl_format()) << "TextureCube: channels error!";
+			CHECK(format_ == img.gl_format()) << "texture_cube: channels error!";
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format_,
 				img.width(), img.height(), 0, format_, GL_UNSIGNED_BYTE, img.data());
 		}
 		gl_check_errors();
 	}
 
-	TexType type() const { return texture_type; }
+	texture_type type() const { return texture_type; }
 
 private:
-	TexType texture_type;
+	texture_type texture_type;
 };
 
 // -----------------------------------------------------------------------------
 
-class Texture2DArray : public BaseTexture
+class texture2d_array : public base_texture
 {
 public:
 	// 必须保证 GL_UNSIGNED_BYTE 的 type，且每张纹理的尺寸相同
 	// TODO：以最大纹理的长宽来设置 glTexImage3D
-	Texture2DArray(std::vector<std::string> material_names, std::string path = {});
+	texture2d_array(std::vector<std::string> material_names, std::string path = {});
 
 	size_t size() const { return material_nums; }
 
@@ -109,13 +109,13 @@ private:
 
 // Texture1D??
 template<typename T>
-class TextureData : public BaseTexture
+class texture_data : public base_texture
 {
 public:
 	// 必须考虑 width 和 format 的关系，如 data<float> 和 GL_RGBA，则 width = data.size() / 4
-	TextureData(GLint internalFormat, GLsizei width, 
+	texture_data(GLint internalFormat, GLsizei width, 
 		GLenum format, GLenum type, std::vector<T>& data) :
-		BaseTexture(GL_TEXTURE_2D, GL_NEAREST, GL_REPEAT)
+		base_texture(GL_TEXTURE_2D, GL_NEAREST, GL_REPEAT)
 	{
 		format_ = internalFormat;
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, 1, 0,
@@ -126,11 +126,11 @@ public:
 
 //glm::vec4、glm::uvec4、glm::ivec4
 template<typename T>
-class TextureDataArray : public BaseTexture
+class texture_data_array : public base_texture
 {
 public:
-	TextureDataArray(GLint internalFormat, GLenum format, GLenum type, std::vector<std::vector<T>>& datas) :
-		BaseTexture(GL_TEXTURE_2D_ARRAY, GL_NEAREST, GL_REPEAT)
+	texture_data_array(GLint internalFormat, GLenum format, GLenum type, std::vector<std::vector<T>>& datas) :
+		base_texture(GL_TEXTURE_2D_ARRAY, GL_NEAREST, GL_REPEAT)
 	{
 		format_ = internalFormat;
 		// 先创建一个 2D 纹理数组

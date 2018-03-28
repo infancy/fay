@@ -5,7 +5,7 @@
 #ifndef FAY_UTILITY_LOG_H
 #define FAY_UTILITY_LOG_H
 
-#include "fay/utility/config.h"
+#include "fay/core/config.h"
 
 #ifdef FAY_DEBUG 
 #define FAY_FILE_LINE(format,...) printf("File: "__FILE__", Line: %05d: "format"/n", __LINE__, ##__VA_ARGS__)  

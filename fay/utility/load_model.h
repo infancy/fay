@@ -14,37 +14,33 @@
 namespace fay
 {
 
-// template<tynename Vertex>
+// template<tynename vertex>
 template<typename Vertex>
-struct BaseMesh
+struct resource_mesh
 {
 	std::vector<Vertex>   vertices;
 	std::vector<uint32_t> indices;
-	std::vector<std::pair<ImagePtr, TexType>> images;
+	std::vector<std::pair<image_ptr, texture_type>> images;
 
-	BaseMesh(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, 
-		std::vector<std::pair<ImagePtr, TexType>>& images) :
+	resource_mesh(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, 
+		std::vector<std::pair<image_ptr, texture_type>>& images) :
 		vertices{ vertices }, indices{ indices }, images{ images }
 	{}
 };
 
-using AssimpMesh = BaseMesh<Vertex5>;
-
-// model -----------------------------------------------------------------------
-
-struct BaseModel
+struct resource_model
 {
 	const std::string path;	// resources_directory
-	Thirdparty api;
+	third_party api;
 
 	// glm::vec3 min{}, max{};
 
-	BaseModel(const std::string& filepath, Thirdparty api);
+	resource_model(const std::string& filepath, third_party api);
 };
 
 // load model by fay -----------------------------------------------------------
 
-enum class ObjKeyword
+enum class obj_keyword
 {
 	comment, // '#'
 	v, vn, vt, 
@@ -55,17 +51,17 @@ enum class ObjKeyword
 	map_Ka, map_Kd, map_Ks, map_Ke, map_d, map_bump
 };
 
-struct ObjMesh
+struct obj_mesh
 {
 	std::string name{};
 	std::string mat_name{};
 	int smoothing_group{};
 
-	std::vector<Vertex3>  vertices{};
+	std::vector<vertex3>  vertices{};
 	std::vector<uint32_t> indices{};
 };
 
-struct ObjMaterial
+struct obj_material
 {
 	std::string name{};
 
@@ -86,48 +82,50 @@ struct ObjMaterial
 	// int offset;
 	// int count;
 
-	// ObjMaterial() { memset(this, 0, sizeof(ObjMaterial)); }
+	// obj_material() { memset(this, 0, sizeof(obj_material)); }
 };
 
-class ObjModel : public BaseModel
+class obj_model : public resource_model
 {
 public:
-	ObjModel(const std::string& filepath, Thirdparty api = Thirdparty::gl);
+	obj_model(const std::string& filepath, third_party api = third_party::gl);
 
 	std::pair<glm::vec3, glm::vec3> bbox();	// 分离出 bbox 以：不为不需要的东西付出代价 & 避免复杂的加载代码
 
 private:
-	std::vector<ObjMesh> load_meshs(const std::string& firstline, std::ifstream& file);
+	std::vector<obj_mesh> load_meshs(const std::string& firstline, std::ifstream& file);
 	// 也可以在 load_materials() 里直接构造 materials，但这样写更清楚
-	std::unordered_map<std::string, ObjMaterial> 
+	std::unordered_map<std::string, obj_material> 
 		load_materials(const std::string& filepath);
 
 public:
-	std::vector<std::pair<ObjMesh, ObjMaterial>> meshes;
+	std::vector<std::pair<obj_mesh, obj_material>> meshes;
 };
 
-// std::vector<Mesh> create_meshes(const ObjModel& obj);
+// std::vector<mesh> create_meshes(const obj_model& obj);
 
 // load model by assimp --------------------------------------------------------
 
-class AssimpModel : public BaseModel
+using assimp_mesh = resource_mesh<vertex5>;
+
+class assimp_model : public resource_model
 {
 public:
-	AssimpModel(const std::string& filepath, Thirdparty api = Thirdparty::gl, ModelType model_type = ModelType::obj);
+	assimp_model(const std::string& filepath, third_party api = third_party::gl, model_type model_type = model_type::obj);
 
 private:
 	void process_node(aiNode* node, const aiScene* scene);
-	AssimpMesh process_mesh(aiMesh* mesh, const aiScene* scene);
+	assimp_mesh process_mesh(aiMesh* mesh, const aiScene* scene);
 
-	std::vector<std::pair<ImagePtr, TexType>> 
-	load_images(aiMaterial* mat, aiTextureType type, TexType textype);
+	std::vector<std::pair<image_ptr, texture_type>> 
+	load_images(aiMaterial* mat, aiTextureType type, texture_type textype);
 
 public:
-	std::vector<AssimpMesh> meshes;
+	std::vector<assimp_mesh> meshes;
 
 private:
-	ModelType model_type;
-	std::unordered_map<std::string, ImagePtr> images_cache;	// 保存已加载的图像，避免重复加载
+	model_type modeltype;
+	std::unordered_map<std::string, image_ptr> images_cache;	// 保存已加载的图像，避免重复加载
 };
 
 } // namespace fay

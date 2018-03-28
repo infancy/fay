@@ -3,7 +3,7 @@
 namespace fay
 {
 
-Shader::Shader(const char* glslPath)
+shader::shader(const char* glslPath)
 {
 	/*
 	ifstream fp;
@@ -22,7 +22,7 @@ Shader::Shader(const char* glslPath)
 	*/
 }
 
-Shader::Shader(const char* vertexPath, const char* fragmentPath, 
+shader::shader(const char* vertexPath, const char* fragmentPath, 
 	const char* geometryPath)
 {
 	// retrieve the vertex/fragment source code from filePath
@@ -69,7 +69,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath,
 		create_shader(vertexSource.c_str(), fragmentSource.c_str());
 }
 
-Shader::Shader(std::string& vertexSource, std::string& fragmentsource, std::string geometryPath)
+shader::shader(std::string& vertexSource, std::string& fragmentsource, std::string geometryPath)
 {
 	if (geometryPath != "")
 		create_shader(vertexSource.c_str(), fragmentsource.c_str(), geometryPath.c_str());
@@ -77,7 +77,7 @@ Shader::Shader(std::string& vertexSource, std::string& fragmentsource, std::stri
 		create_shader(vertexSource.c_str(), fragmentsource.c_str());
 }
 
-void Shader::create_shader(const char* vertexSouce, const char* fragmentSource,
+void shader::create_shader(const char* vertexSouce, const char* fragmentSource,
 	const char* geometrySource)
 {
 	GLuint vertex, fragment, geometry;
@@ -88,7 +88,7 @@ void Shader::create_shader(const char* vertexSouce, const char* fragmentSource,
 	glCompileShader(vertex);
 	check_compile_errors(vertex, "VERTEX");
 
-	// fragment Shader
+	// fragment shader
 	fragment = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragment, 1, &fragmentSource, NULL);
 	glCompileShader(fragment);
@@ -120,7 +120,7 @@ void Shader::create_shader(const char* vertexSouce, const char* fragmentSource,
 		glDeleteShader(geometry);
 }
 
-void Shader::check_compile_errors(GLuint id, std::string type)
+void shader::check_compile_errors(GLuint id, std::string type)
 {
 	GLint state;
 	GLchar infoLog[1024];

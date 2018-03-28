@@ -1,4 +1,4 @@
-#include "fay/utility/fay.h"
+#include "fay/core/fay.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -107,7 +107,7 @@ void update()
 
 void histogram(const string& imgpath, const string& filename)
 {
-	ImagePtr img{ imgpath };
+	image_ptr img{ imgpath };
 	auto data = img.data();
 
 	std::vector<float> v(256, 0.f);
@@ -155,7 +155,7 @@ void histogram(const string& imgpath, const string& filename)
 
 void gamma_transformation(const string& imgpath, const string& filename, float gamma)
 {
-	ImagePtr img{ imgpath };
+	image_ptr img{ imgpath };
 	auto data = img.data();
 	auto width = img.width(), height = img.height(), pixels = width * height;
 
@@ -185,7 +185,7 @@ void gamma_transformation(const string& imgpath, const string& filename, float g
 
 void median_filter(const string& imgpath, const string& filename)
 {
-	Image img{ imgpath };
+	image img{ imgpath };
 	auto data = img.data();
 	auto width = img.width(), height = img.height(), pixels = width * height;
 
@@ -252,7 +252,7 @@ float EdgeDetection0[9]{ 2, 2, 2, 2, -15, 2, 2, 2, 2 };
 
 void image_processing(const std::string& imgpath)
 {
-	Texture2D tex{ imgpath };
+	texture2d tex{ imgpath };
 	uint32_t width = tex.width(), height = tex.height();
 	float ratio = (float)height / (float)width;
 
@@ -272,13 +272,13 @@ void image_processing(const std::string& imgpath)
 	// quad
 	// left, right, bottom, top
 	glm::vec4 p = { -1.f, 1.f, -ratio, ratio };
-	std::vector<Vertex1> vb{ { p.x, p.z, 0 },{ p.y, p.z, 0 },{ p.y, p.w, 0 },{ p.x, p.w, 0 } };
+	std::vector<vertex1> vb{ { p.x, p.z, 0 },{ p.y, p.z, 0 },{ p.y, p.w, 0 },{ p.x, p.w, 0 } };
 	std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
 	Buffer quad{ vb, ib };
 
 	Framebuffer fb{ width, height, false, tex.format() };
-	Shader ip{ "image_processing/processing.vs", "image_processing/processing.fs" };
-	Shader gui{ "image_processing/gui.vs", "image_processing/gui.fs" };
+	shader ip{ "image_processing/processing.vs", "image_processing/processing.fs" };
+	shader gui{ "image_processing/gui.vs", "image_processing/gui.fs" };
 
 	char saveimgpath[256]{".jpg"};
 

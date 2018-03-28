@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\fay\test\test.cpp" />
-    <ClCompile Include="..\..\fay\test\character_processing.cpp" />
     <ClCompile Include="..\..\fay\test\time.cpp" />
+    <ClCompile Include="..\..\fay\test\task.cpp" />
   </ItemGroup>
 </Project>

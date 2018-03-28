@@ -10,8 +10,8 @@
     <Filter Include="gui">
       <UniqueIdentifier>{27a71a91-026e-4c95-adc9-0fafb1b9598d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="vine">
-      <UniqueIdentifier>{9029a7cf-a722-44f8-bbbb-9fb5ffa62e68}</UniqueIdentifier>
+    <Filter Include="core">
+      <UniqueIdentifier>{101d3609-14e6-4c75-b743-57530cbeac80}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -65,9 +65,6 @@
     <ClInclude Include="..\..\fay\gui\window.h">
       <Filter>gui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\utility\fay.h">
-      <Filter>utility</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\utility\image.h">
       <Filter>utility</Filter>
     </ClInclude>
@@ -75,9 +72,6 @@
       <Filter>utility</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\utility\log.h">
-      <Filter>utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\utility\config.h">
       <Filter>utility</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\utility\load_model.h">
@@ -109,6 +103,15 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\gl\uniform.h">
       <Filter>gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\thread_pool.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\fay.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\config.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

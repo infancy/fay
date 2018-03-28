@@ -35,7 +35,7 @@ void vifunc(int i)
 /*
 TEST(profiler, time_profiler)
 {
-	TimeProfiler<> profiler;
+	time_profiler<> profiler;
 	
 	profiler([]() { std::cout << "In lambda run for "; });
 	std::cout << profiler.count << " ms" << std::endl;
@@ -49,16 +49,16 @@ TEST(profiler, time_profiler)
 */
 TEST(profiler, time_wrapper)
 {
-	TimeWrapper<void()> wrapper(func);
-	TimeWrapper<int(int)> iwrapper(ifunc);
-	TimeWrapper<void(int)> viwrapper(vifunc);
+	time_wrapper<void()> wrapper(func);
+	time_wrapper<int(int)> iwrapper(ifunc);
+	time_wrapper<void(int)> viwrapper(vifunc);
 
 	//std::cout << std::boolalpha;
-	//std::cout << fay::is_not_void_v<TimeWrapper<void()>::R> << '\n';
-	//std::cout << fay::is_not_void_v<TimeWrapper<int(int), Msec>::R> << '\n';
-	//std::cout << fay::is_not_void_v<TimeWrapper<void(int)>::R> << '\n';
+	//std::cout << fay::is_not_void_v<time_wrapper<void()>::R> << '\n';
+	//std::cout << fay::is_not_void_v<time_wrapper<int(int), Msec>::R> << '\n';
+	//std::cout << fay::is_not_void_v<time_wrapper<void(int)>::R> << '\n';
 
-	// std::function<void()> func = std::bind(&TimeWrapper<void()>::void_call, wrapper);
+	// std::function<void()> func = std::bind(&time_wrapper<void()>::void_call, wrapper);
 
 	wrapper.void_call();
 	std::cout << wrapper.count << " ms" << std::endl;

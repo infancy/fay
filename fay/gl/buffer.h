@@ -11,16 +11,16 @@ namespace fay
 {
 
 // template<int VertexAttrib>
-// template<bool onlyPosition> Mesh
-class Buffer // : boost::noncopyable
+// template<bool onlyPosition> mesh
+class buffer // : boost::noncopyable
 {
 public:
 	// vec3 position, vec3 normal, vec2 texCoords, vec3 tangent, vec3 bitangent
 	// vertexAttribPointer
-	Buffer(std::vector<Vertex1>& vertices, std::vector<uint32_t>& indices);
-	Buffer(std::vector<Vertex3>& vertices, std::vector<uint32_t>& indices);
-	Buffer(std::vector<Vertex5>& vertices, std::vector<uint32_t>& indices);
-	//Buffer(std::vector<Vertex5>& vertices, std::vector<uint32_t>& indices, std::function<void()> vertexattribpointer);
+	buffer(std::vector<vertex1>& vertices, std::vector<uint32_t>& indices);
+	buffer(std::vector<vertex3>& vertices, std::vector<uint32_t>& indices);
+	buffer(std::vector<vertex5>& vertices, std::vector<uint32_t>& indices);
+	//buffer(std::vector<vertex5>& vertices, std::vector<uint32_t>& indices, std::function<void()> vertexattribpointer);
 
 	uint32_t id() const { return vao; }
 	uint32_t vbo() const { return vbo_; }
@@ -28,7 +28,7 @@ public:
 
 	void draw(GLsizei sz = 1);
 
-	~Buffer(){ /* glDeleteVertexArrays(1, &VAO); glDeleteBuffers(1, &VBO); glDeleteBuffers(1, &IBO); */ }
+	~buffer(){ /* glDeleteVertexArrays(1, &VAO); glDeleteBuffers(1, &VBO); glDeleteBuffers(1, &IBO); */ }
 
 private:
 	GLuint vao{}, vbo_{}, ibo_{};

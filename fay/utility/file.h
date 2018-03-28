@@ -5,7 +5,9 @@
 #ifndef FAY_UTILITY_FILE_H
 #define FAY_UTILITY_FILE_H
 
-#include "fay/utility/fay.h"
+#include "fay/core/fay.h"
+
+#include <queue>
 
 namespace fay
 {

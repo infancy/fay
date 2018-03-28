@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "fay/utility/fay.h"
+#include "fay/core/fay.h"
 #include "fay/gl/buffer.h"
 #include "fay/gl/texture.h"
 #include "fay/gl/model.h"
@@ -258,7 +258,7 @@ int raytracing()
 	gui_create_window(WIDTH, HEIGHT);
 
 	// 加载用于光栅化的模型
-	Model model(mesh_filename);
+	fay::model model(mesh_filename);
 
 	// 加载覆盖整个视口的正方形
 	std::vector<float> quadVerts{ -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0 };
@@ -297,16 +297,16 @@ int raytracing()
 	TextureArray material_arrays(texpaths, mesh_path);
 
 	// 将位置、索引打包成一维纹理传入片元着色器
-	TextureData<float> texVertices(GL_RGBA32F, positions.size() / 4, GL_RGBA, GL_FLOAT, positions);
+	texture_data<float> texVertices(GL_RGBA32F, positions.size() / 4, GL_RGBA, GL_FLOAT, positions);
 
-	TextureData<uint32_t> texTriangles(GL_RGBA32UI, indices.size() / 4, GL_RGBA_INTEGER, GL_UNSIGNED_INT, indices);
+	texture_data<uint32_t> texTriangles(GL_RGBA32UI, indices.size() / 4, GL_RGBA_INTEGER, GL_UNSIGNED_INT, indices);
 
 	// 加载着色器
-	Shader flatShader("raytracing/flat.vert", "raytracing/flat.frag");
+	shader flatShader("raytracing/flat.vert", "raytracing/flat.frag");
 
-	Shader rasterShader("raytracing/shader.vert", "raytracing/shader.frag");
+	shader rasterShader("raytracing/shader.vert", "raytracing/shader.frag");
 
-	Shader raytraceShader("raytracing/raycast.vert", "raytracing/raycast.frag");
+	shader raytraceShader("raytracing/raycast.vert", "raytracing/raycast.frag");
 	raytraceShader.enable();
 	raytraceShader.set_float("VERTEX_TEXTURE_SIZE", (float)(positions.size() / 4));
 	raytraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)(indices.size() / 4));
@@ -314,7 +314,7 @@ int raytracing()
 	raytraceShader.set_vec3("aabb.max", aabb.max);
 	raytraceShader.disable();
 
-	Shader pathtraceShader("raytracing/pathtrace.vert", "raytracing/pathtrace.frag");
+	shader pathtraceShader("raytracing/pathtrace.vert", "raytracing/pathtrace.frag");
 	pathtraceShader.enable();
 	pathtraceShader.set_float("VERTEX_TEXTURE_SIZE", (float)(positions.size() / 4));
 	pathtraceShader.set_float("TRIANGLE_TEXTURE_SIZE", (float)(indices.size() / 4));

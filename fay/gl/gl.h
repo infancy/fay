@@ -5,7 +5,8 @@
 #ifndef FAY_GL_GL_H
 #define FAY_GL_GL_H
 
-#include "fay/utility/fay.h"
+#include "fay/core/fay.h"
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 

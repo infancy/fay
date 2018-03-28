@@ -1,12 +1,11 @@
 #if defined(_MSC_VER)
-#define NOMINMAX
 #pragma once
 #endif
 
 #ifndef FAY_GUI_GUI_H
 #define FAY_GUI_GUI_H
 
-#include "fay/utility/fay.h"
+#include "fay/core/fay.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
