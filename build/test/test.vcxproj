@@ -119,7 +119,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\fay\test\task.cpp" />
     <ClCompile Include="..\..\fay\test\test.cpp" />
-    <ClCompile Include="..\..\fay\test\time.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

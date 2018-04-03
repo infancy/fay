@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include <gtest/gtest.h>
-#include <fay/utility/profiler.h>
+#include <fay/core/profiler.h>
 
 using namespace fay;
 

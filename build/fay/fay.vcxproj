@@ -32,8 +32,9 @@
     <ClInclude Include="..\..\fay\core\config.h" />
     <ClInclude Include="..\..\fay\core\fay.h" />
     <ClInclude Include="..\..\fay\core\log.h" />
+    <ClInclude Include="..\..\fay\core\parallel.hpp" />
     <ClInclude Include="..\..\fay\core\profiler.h" />
-    <ClInclude Include="..\..\fay\core\thread_pool.h" />
+    <ClInclude Include="..\..\fay\core\thread_pool.hpp" />
     <ClInclude Include="..\..\fay\gl\buffer.h" />
     <ClInclude Include="..\..\fay\gl\camera.h" />
     <ClInclude Include="..\..\fay\gl\framebuffer.h" />
