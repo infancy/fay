@@ -19,6 +19,35 @@
 namespace fay
 {
 
+template<typename T>
+class Sync_queue {
+public:
+    void put(const T& val);
+    void put(T&& val);
+    void get(T& val);
+private:
+    mutex mtx;
+    condition_variable cond;    // ç”¨äºæ§åˆ¶è®¿é—®
+    list<T> q;
+};
+
+template<typename T>
+void Sync_queue<T>::put(const T& val)
+{
+    lock_guard<mutex> lck(mtx);
+    q.push_back(val);
+    cond.notify_one();
+}
+
+template<typename T>
+void Sync_queue<T>::get(T& val)
+{
+    unique_lock<mutex> lck(mtx);
+    cond.wait(lck, [this]{ return !q.empty(); });    // é˜²æ­¢å‡æ€§å”¤é†’
+    val = q.front();
+    q.pop_front();
+}
+
 // a half sync/half async thread pool
 
 using T = std::function<void()>;
@@ -31,7 +60,7 @@ public:
 	}
 
 	void put(const T& t) { add(t); }
-	// sq ÊµÀı»¯ºó put ÊÇÒ»¸öÆÕÍ¨º¯Êı£¬T&& ÊÇÒ»¸öÓÒÖµÒıÓÃ£¬¶ø·ÇÍ¨ÓÃÒıÓÃ
+	// sq å®ä¾‹åŒ–å put æ˜¯ä¸€ä¸ªæ™®é€šå‡½æ•°ï¼ŒT&& æ˜¯ä¸€ä¸ªå³å€¼å¼•ç”¨ï¼Œè€Œéé€šç”¨å¼•ç”¨
 	void put(T&& t) { add(/*std::forward<T>(t)*/std::move(t)); }
 
 	void get(std::deque<T>& tasks)
@@ -145,7 +174,7 @@ public:
 
 	void stop()
 	{
-		std::call_once(flag_, [this]() { stop_threads(); }); //±£Ö¤¶àÏß³ÌÇé¿öÏÂÖ»µ÷ÓÃÒ»´Îstop_threads
+		std::call_once(flag_, [this]() { stop_threads(); }); //ä¿è¯å¤šçº¿ç¨‹æƒ…å†µä¸‹åªè°ƒç”¨ä¸€æ¬¡stop_threads
 	}
 
 private:
@@ -153,7 +182,7 @@ private:
 	{
 		while (running_)
 		{
-			//È¡ÈÎÎñ·Ö±ğÖ´ĞĞ
+			//å–ä»»åŠ¡åˆ†åˆ«æ‰§è¡Œ
 			std::deque<Task> queue;
 			queue_.get(queue);
 
@@ -169,10 +198,10 @@ private:
 
 	void stop_threads()
 	{
-		queue_.stop(); //ÈÃÍ¬²½¶ÓÁĞÖĞµÄÏß³ÌÍ£Ö¹
-		running_ = false; //ÖÃÎªfalse£¬ÈÃÄÚ²¿Ïß³ÌÌø³öÑ­»·²¢ÍË³ö
+		queue_.stop(); //è®©åŒæ­¥é˜Ÿåˆ—ä¸­çš„çº¿ç¨‹åœæ­¢
+		running_ = false; //ç½®ä¸ºfalseï¼Œè®©å†…éƒ¨çº¿ç¨‹è·³å‡ºå¾ªç¯å¹¶é€€å‡º
 
-		for (auto thread : threads_) //µÈ´ıÏß³Ì½áÊø
+		for (auto thread : threads_) //ç­‰å¾…çº¿ç¨‹ç»“æŸ
 		{
 			if (thread)
 				thread->join();
@@ -181,9 +210,9 @@ private:
 	}
 
 private:
-	std::list<std::shared_ptr<std::thread>> threads_; //´¦ÀíÈÎÎñµÄÏß³Ì×é
-	sync_queue queue_; //Í¬²½¶ÓÁĞ     
-	std::atomic<bool> running_; //ÊÇ·ñÍ£Ö¹µÄ±êÖ¾
+	std::list<std::shared_ptr<std::thread>> threads_; //å¤„ç†ä»»åŠ¡çš„çº¿ç¨‹ç»„
+	sync_queue queue_; //åŒæ­¥é˜Ÿåˆ—     
+	std::atomic<bool> running_; //æ˜¯å¦åœæ­¢çš„æ ‡å¿—
 	std::once_flag flag_;
 };
 

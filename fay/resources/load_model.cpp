@@ -52,7 +52,7 @@ static const std::unordered_map<std::string, obj_keyword> map
 };
 
 // boost::format
-// ÀíÂÛÉÏÒ»¸ö mesh ÓÉ 'o' ¿ªÊ¼£¬µ«Åöµ½ 'o'£¬'g'£¬'usemtl'£¬¾ÍĞÂ½¨Ò»¸ö mesh
+// Ã€Ã­Ã‚Ã›Ã‰ÃÃ’Â»Â¸Ã¶ mesh Ã“Ã‰ 'o' Â¿ÂªÃŠÂ¼Â£Â¬ÂµÂ«Ã…Ã¶ÂµÂ½ 'o'Â£Â¬'g'Â£Â¬'usemtl'Â£Â¬Â¾ÃÃÃ‚Â½Â¨Ã’Â»Â¸Ã¶ mesh
 obj_model::obj_model(const std::string& filepath, third_party api) : resource_model(filepath, api)
 {
 	// load *.obj
@@ -130,7 +130,7 @@ std::vector<obj_mesh> obj_model::load_meshs(
 	auto add_and_clear = [&submeshes](obj_mesh& mesh) 
 	{ 
 		if(!mesh.vertices.empty() && !mesh.indices.empty())
-		{	// ±ÜÃâ¼ÓÈë¿ÕµÄ mesh
+		{	// Â±ÃœÃƒÃ¢Â¼Ã“ÃˆÃ«Â¿Ã•ÂµÃ„ mesh
 			submeshes.push_back(std::move(mesh));
 			mesh = obj_mesh();	// clear
 		}
@@ -162,44 +162,55 @@ std::vector<obj_mesh> obj_model::load_meshs(
 
 		switch (map.at(token))	// operator[] only for nonconstant 
 		{
+		// TODO: vã€vnã€vtã€f......
+		// TODO: ç®€åŒ– case f
 		case obj_keyword::comment:
+
 			std::cout << "obj file comment: " << line << '\n';
 			break;
 
 		case obj_keyword::v :
+
 			get_xyz(iss);
 			positions.emplace_back(v);
 			break;
+
 		case obj_keyword::vn :
+
 			get_xyz(iss);
 			normals.emplace_back(v);
 			break;
+
 		case obj_keyword::vt :
+
 			get_xyz(iss);
 			texcoords.emplace_back(v);
 			break;
 
 		case obj_keyword::o :	// firstline
 		case obj_keyword::g :
+
 			add_and_clear(mesh);
 			iss >> cur_mesh_name;
 			mesh.name = cur_mesh_name;
 			break;
 
 		case obj_keyword::usemtl:
+
 			add_and_clear(mesh);
 			iss >> mesh.mat_name;
 			mesh.name = cur_mesh_name + '_' + mesh.mat_name;
 			break;
 
 		case obj_keyword::s :
+
 			iss >> mesh.smoothing_group;
 			break;
 
 		case obj_keyword::f :
 		{
 			// TODO: more simple way
-			auto num_of_char = [](const std::string& line, char ch)-> size_t
+			auto num_of_char = [](const std::string& line, char ch)
 			{
 				size_t count = 0, pos = line.find(ch);
 				while (pos != std::string::npos) 
@@ -212,7 +223,7 @@ std::vector<obj_mesh> obj_model::load_meshs(
 
 			glm::ivec4 p{}, t{}, n{};	// index
 
-			int count = 3;	// ÈôÒ»¸ö face ÓĞËÄ¸ö¶¥µã£¬ÔòĞèÒª²ğ·Ö
+			int count = 3;	// ÃˆÃ´Ã’Â»Â¸Ã¶ face Ã“ÃÃ‹Ã„Â¸Ã¶Â¶Â¥ÂµÃ£Â£Â¬Ã”Ã²ÃÃ¨Ã’ÂªÂ²Ã°Â·Ã–
 			if (num_of_char(line, ' ') == 4)
 				count = 4;
 
@@ -271,14 +282,14 @@ std::vector<obj_mesh> obj_model::load_meshs(
 				DCHECK(0 <= n[i] && n[i] < normals.size())   << "vector out of range: " << n[i];
 				DCHECK(0 <= t[i] && t[i] < texcoords.size()) << "vector out of range: " << t[i];
 				pos = positions[p[i]];
-				nor   = normals[n[i]];
+				nor =   normals[n[i]];
 				tex = texcoords[t[i]];
 				mesh.vertices.emplace_back(pos, nor, glm::vec2{tex.s, tex.t});
 			}
 
 			// index
 			if (api == third_party::gl)
-			{   // ´ËÊ±ÎŞĞè UV ·´×ª
+			{   // Â´Ã‹ÃŠÂ±ÃÃÃÃ¨ UV Â·Â´Ã—Âª
 				mesh.indices.insert(mesh.indices.end(), 
 					{ index, index + 1, index + 2 });
 
@@ -303,7 +314,7 @@ std::vector<obj_mesh> obj_model::load_meshs(
 			break;
 		}
 	}
-	add_and_clear(mesh);	// ¼ÓÈë×îºóÒ»¸ö mesh
+	add_and_clear(mesh);	// Â¼Ã“ÃˆÃ«Ã—Ã®ÂºÃ³Ã’Â»Â¸Ã¶ mesh
 
 	return std::move(submeshes);
 }
@@ -323,7 +334,7 @@ obj_model::load_materials(const std::string& filepath)
 	auto add_and_clear = [&materials](obj_material& mat)
 	{
 		if (!mat.name.empty())
-		{	// ±ÜÃâ¼ÓÈë¿ÕµÄ material
+		{	// Â±ÃœÃƒÃ¢Â¼Ã“ÃˆÃ«Â¿Ã•ÂµÃ„ material
 			materials.insert({ mat.name, std::move(mat) });
 			mat = obj_material(); // clear
 		}
@@ -382,7 +393,7 @@ obj_model::load_materials(const std::string& filepath)
 	return std::move(materials);
 }
 
-// ½«Î»ÖÃ¡¢Ë÷Òı×ª»»³ÉÎÆÀíÊı¾İ
+// Â½Â«ÃÂ»Ã–ÃƒÂ¡Â¢Ã‹Ã·Ã’Ã½Ã—ÂªÂ»Â»Â³Ã‰ÃÃ†Ã€Ã­ÃŠÃ½Â¾Ã
 /*
 void objMesh_transform_to_TextureDataArray(
 	std::vector<obj_mesh>& meshes,
@@ -390,7 +401,7 @@ void objMesh_transform_to_TextureDataArray(
 	std::vector<glm::uvec4>& indices,
 	std::vector<std::string>& texpaths)
 {
-	// ¿¼ÂÇµ½ºÏ²¢ÁËÖØ¸´µÄÎÆÀí£¬Òò´Ë texpaths ¿ÉÄÜ¸üĞ¡Ò»µã
+	// Â¿Â¼Ã‚Ã‡ÂµÂ½ÂºÃÂ²Â¢ÃÃ‹Ã–Ã˜Â¸Â´ÂµÃ„ÃÃ†Ã€Ã­Â£Â¬Ã’Ã²Â´Ã‹ texpaths Â¿Ã‰Ã„ÃœÂ¸Ã¼ÃÂ¡Ã’Â»ÂµÃ£
 	// positions[p1, p2, ...... pn]
 	// indices  [i1, i2, ...... in]
 	// texpaths [t1, t2, ...... tn]
@@ -405,7 +416,7 @@ void objMesh_transform_to_TextureDataArray(
 		uint32_t tex_index{};
 		if (!mesh.images.empty())
 		{
-			// Ö»Ê¹ÓÃµÚÒ»ÕÅÎÆÀí
+			// Ã–Â»ÃŠÂ¹Ã“ÃƒÂµÃšÃ’Â»Ã•Ã…ÃÃ†Ã€Ã­
 			std::string tex_filepath = { mesh.images[0].first.filepath };
 
 			if (std::find(texpaths.begin(), texpaths.end(), tex_filepath) == texpaths.end())
@@ -418,7 +429,7 @@ void objMesh_transform_to_TextureDataArray(
 		else
 			tex_index = 255;
 
-		// ÔÚ×ÅÉ«Æ÷ÖĞÍ¨¹ı tex_index£¬¼´ÎÆÀíµÄÏÂ±ê£¬ÕÒµ½¶ÔÓ¦µÄÎÆÀí
+		// Ã”ÃšÃ—Ã…Ã‰Â«Ã†Ã·Ã–ÃÃÂ¨Â¹Ã½ tex_indexÂ£Â¬Â¼Â´ÃÃ†Ã€Ã­ÂµÃ„ÃÃ‚Â±ÃªÂ£Â¬Ã•Ã’ÂµÂ½Â¶Ã”Ã“Â¦ÂµÃ„ÃÃ†Ã€Ã­
 		auto& indices = mesh.indices;
 		for (size_t j{}; j < indices.size(); j += 3)
 			indices.emplace_back(glm::vec4{ indices[j], indices[j + 1], indices[j + 2], tex_index });

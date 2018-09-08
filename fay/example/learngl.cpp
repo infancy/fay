@@ -22,7 +22,7 @@ using namespace fay;
 
 // -----------------------------------------------------------------------------
 
-// 分辨率
+// 路脰卤忙脗脢
 const unsigned int Width = 1080;
 const unsigned int Height = 720;
 
@@ -61,13 +61,13 @@ glm::vec3 lightPosition = glm::vec3(0, 10, 0); //objectspace light position
 float light_speed = 2.f;
 glm::vec3 light_scale(0.5f, 0.5f, 0.5f);
 
-// 鼠标移动设置与渲染设置
+// 脢贸卤锚脪脝露炉脡猫脰脙脫毛盲脰脠戮脡猫脰脙
 bool some_flag = false;
 char mouse_move = 'z';
 int render_state = 1;
 
 // GUI
-//background color，会自动转化为 0.f~1.f 的浮点数
+//background color拢卢禄谩脳脭露炉脳陋禄炉脦陋 0.f~1.f 碌脛赂隆碌茫脢媒
 static ImVec4 clear_color = ImColor(0, 0, 0);
 static ImVec4 light_color = ImColor(255, 255, 255);
 static int samples_PerPixel = 1;
@@ -84,14 +84,14 @@ void update()
 
 	ImGuiIO& io = gui_get_io();
 
-	// 鼠标移动
+	// 脢贸卤锚脪脝露炉
 	float xpos = io.MousePos.x, ypos = io.MousePos.y;
 	if (firstMouse) { lastX = xpos; lastY = ypos; firstMouse = false; }
 	float xoffset = xpos - lastX; lastX = xpos;
 	// reversed since y-coordinates go from bottom to top but z_xais form out to in
 	float yoffset = lastY - ypos; lastY = ypos;
 
-	// 粘滞
+	// 脮鲁脰脥
 	// if (io.KeysDown[GLFW_KEY_SPACE] == GLFW_PRESS) mouse_move = ++mouse_move % 3;
 	if (io.KeysDown[GLFW_KEY_Z]) mouse_move = 'z';
 	if (io.KeysDown[GLFW_KEY_X]) mouse_move = 'x';
@@ -114,11 +114,11 @@ void update()
 		if (io.KeysDown[GLFW_KEY_S]) camera_.ProcessKeyboard(BACKWARD, deltaTime);
 		if (io.KeysDown[GLFW_KEY_A]) camera_.ProcessKeyboard(LEFT, deltaTime);
 		if (io.KeysDown[GLFW_KEY_D]) camera_.ProcessKeyboard(RIGHT, deltaTime);
-		//camera_.ProcessMouseScroll(io.MouseWheel); 禁止放缩
+		//camera_.ProcessMouseScroll(io.MouseWheel); 陆没脰鹿路脜脣玫
 	}
 	else if (mouse_move == 'x')
 	{
-		// 向前滚为正，向后为后，根据速度从 -5 ~ 5
+		// 脧貌脟掳鹿枚脦陋脮媒拢卢脧貌潞贸脦陋潞贸拢卢赂霉戮脻脣脵露脠麓脫 -5 ~ 5
 		light_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * io.MouseWheel;
 		if (light_scale.x < 0.f)
 			light_scale = glm::vec3(0.1f, 0.1f, 0.1f);
@@ -175,7 +175,8 @@ struct _fay_obj_model;
 
 struct _00_create_gui
 {
-	// 加载覆盖整个视口的正方形
+	// 录脫脭脴赂虏赂脟脮没赂枚脢脫驴脷碌脛脮媒路陆脨脦
+	vertex1 v1 = { 0.f, 0.f, 0.f };
 	std::vector<vertex1> vb{ {-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0} };
 	std::vector<uint32_t> ib{ 0,1,2,0,2,3 };
 	buffer quad{ vb, ib };
@@ -241,17 +242,18 @@ struct _23_stencil_test
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
+		// TOOD锛氭敞閲?
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-		glStencilFunc(GL_ALWAYS, 1, 0xFF); // 所有的片段都应该更新模板缓冲
-		glStencilMask(0xFF); // 启用模板缓冲写入
+		glStencilFunc(GL_ALWAYS, 1, 0xFF); // 脣霉脫脨碌脛脝卢露脦露录脫娄赂脙赂眉脨脗脛拢掳氓禄潞鲁氓
+		glStencilMask(0xFF); // 脝么脫脙脛拢掳氓禄潞鲁氓脨麓脠毛
 		sd.enable();
 		sd.set_bool("draw_outlining", false);
 		sd.set_mat4("MVP", p * v * m);
 		md.draw(sd);
 		
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00); // 禁止模板缓冲的写入
+		glStencilMask(0x00); // 陆没脰鹿脛拢掳氓禄潞鲁氓碌脛脨麓脠毛
 		glDisable(GL_DEPTH_TEST);
 		sd.enable();
 		sd.set_bool("draw_outlining", true);
@@ -400,7 +402,7 @@ struct _26_cubemaps
 		glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
 		sd.enable();
 		sd.set_mat4("MV", MV);
-		sd.set_mat3("NormalMV", NormalMV);		// 失去位移属性
+		sd.set_mat3("NormalMV", NormalMV);		// 脢搂脠楼脦禄脪脝脢么脨脭
 		sd.set_mat4("MVP", p * v * m);
 		md.draw(sd);
 
@@ -482,7 +484,7 @@ struct _29_instancing
 	model rock{ Rock };
 	shader s1{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
 	shader s2{ "learngl/29_instancing.vs", "learngl/29_instancing.fs" };
-	// 使用独显运行
+	// 脢鹿脫脙露脌脧脭脭脣脨脨
 	const int amount = 100000;
 	std::vector<glm::mat4> mat4s{ amount };
 
@@ -609,8 +611,8 @@ struct _30_phong_shading
 		sd.enable();
 		sd.set_bool("blinn_phong", some_flag);
 		sd.set_mat4("MV", MV);
-		//sd.set_mat4("NorMV", NormalMV);	// 小心传输着色器变量、先保存再编译
-		sd.set_mat3("NormalMV", NormalMV);		// 失去位移属性
+		//sd.set_mat4("NorMV", NormalMV);	// 脨隆脨脛麓芦脢盲脳脜脡芦脝梅卤盲脕驴隆垄脧脠卤拢麓忙脭脵卤脿脪毛
+		sd.set_mat3("NormalMV", NormalMV);		// 脢搂脠楼脦禄脪脝脢么脨脭
 		sd.set_mat4("MVP", p * v * m);
 		sd.set_vec3("vLightPos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
 		sd.set_vec3("Lightcolor", glm::vec3(light_color.x, light_color.y, light_color.z));
@@ -648,8 +650,8 @@ struct _31_light_caster
 
 		sd.enable();
 		sd.set_mat4("MV", MV);
-		//sd.set_mat4("NorMV", NormalMV);	// 小心传输着色器变量、先保存再编译
-		sd.set_mat3("NormalMV", NormalMV);		// 失去位移属性
+		//sd.set_mat4("NorMV", NormalMV);	// 脨隆脨脛麓芦脢盲脳脜脡芦脝梅卤盲脕驴隆垄脧脠卤拢麓忙脭脵卤脿脪毛
+		sd.set_mat3("NormalMV", NormalMV);		// 脢搂脠楼脦禄脪脝脢么脨脭
 		sd.set_mat4("MVP", p * v * m);
 
 		// directlight
@@ -658,14 +660,14 @@ struct _31_light_caster
 		// pointlight
 		sd.set_vec3("pLight.pos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
 		sd.set_vec3("pLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
-		sd.set_vec3("pLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 个单位
+		sd.set_vec3("pLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 赂枚碌楼脦禄
 		// spotlight
 		sd.set_vec3("sLight.pos", camera_.Position);
 		sd.set_vec3("sLight.direct", camera_.Front);
 		sd.set_vec3("sLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
 		sd.set_vec2("sLight.cutoff", glm::vec2(
 			glm::cos(glm::radians(10.f)), glm::cos(glm::radians(15.f)) ));
-		sd.set_vec3("sLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 个单位
+		sd.set_vec3("sLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 赂枚碌楼脦禄
 		
 		sd.set_float("sa", sAmbient);
 		sd.set_float("sd", sDiffuse);
@@ -688,9 +690,9 @@ struct _32_shadow_map : public Post_Processing
 	{
 		GLfloat near_plane = 1.0f, far_plane = 512.f;
 
-		// 使用正交相机时，深度是线性的
+		// 脢鹿脫脙脮媒陆禄脧脿禄煤脢卤拢卢脡卯露脠脢脟脧脽脨脭碌脛
 		glm::mat4 lightOrtho = glm::ortho(-512.0f, 512.0f, -512.0f, 512.0f, near_plane, far_plane);
-		// 使用投影相机时，只有接近近平面的地方效果比较好
+		// 脢鹿脫脙脥露脫掳脧脿禄煤脢卤拢卢脰禄脫脨陆脫陆眉陆眉脝陆脙忙碌脛碌脴路陆脨搂鹿没卤脠陆脧潞脙
 		glm::mat4 lightProj = glm::perspective(glm::radians(120.f),
 			1.f / 1.f, 10.f, 512.f);
 		
@@ -766,7 +768,7 @@ struct _34_normal_map : public Light_Parameter
 struct _35_parallax_map : public Light_Parameter
 {
 	model md{ Box };
-	// TODO：改进方法
+	// TODO拢潞赂脛陆酶路陆路篓
 	shader sd{ "learngl/34_normal_map.vs", "learngl/35_parallax_map.fs" };
 
 	texture2d diffuse{ "textures/bricks2.jpg" };
