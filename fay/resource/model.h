@@ -2,11 +2,12 @@
 #pragma once
 #endif
 
-#ifndef FAY_RESOURCES_LOAD_MODEL_H
-#define FAY_RESOURCES_LOAD_MODEL_H
+#ifndef FAY_RESOURCE_LOAD_MODEL_H
+#define FAY_RESOURCE_LOAD_MODEL_H
 
+// TODO: #include "fay/math/geometry.h"
 #include "fay/gl/geometry.h"
-#include "fay/resources/image.h"
+#include "fay/resource/image.h"
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -90,6 +91,7 @@ class obj_model : public resource_model
 public:
 	obj_model(const std::string& filepath, third_party api = third_party::gl);
 
+	// TODO: bound3
 	std::pair<glm::vec3, glm::vec3> bbox();	// 分离出 bbox 以：不为不需要的东西付出代价 & 避免复杂的加载代码
 
 private:
@@ -130,4 +132,4 @@ private:
 
 } // namespace fay
 
-#endif // FAY_RESOURCES_LOAD_MODEL_H
+#endif // FAY_RESOURCE_LOAD_MODEL_H

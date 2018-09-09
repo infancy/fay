@@ -13,7 +13,10 @@
     <Filter Include="core">
       <UniqueIdentifier>{101d3609-14e6-4c75-b743-57530cbeac80}</UniqueIdentifier>
     </Filter>
-    <Filter Include="resouces">
+    <Filter Include="math">
+      <UniqueIdentifier>{742c1358-f6b5-4cd6-83eb-874f4c744397}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resouce">
       <UniqueIdentifier>{432ba19b-7e9c-4cb1-8227-c8600e21751d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -36,11 +39,11 @@
     <ClCompile Include="..\..\fay\gui\window.cpp">
       <Filter>gui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\resources\load_model.cpp">
-      <Filter>resouces</Filter>
+    <ClCompile Include="..\..\fay\resource\image.cpp">
+      <Filter>resouce</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\resources\image.cpp">
-      <Filter>resouces</Filter>
+    <ClCompile Include="..\..\fay\resource\model.cpp">
+      <Filter>resouce</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -83,9 +86,6 @@
     <ClInclude Include="..\..\fay\gl\framebuffer.h">
       <Filter>gl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\utility\math.h">
-      <Filter>utility</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\gl\uniform.h">
       <Filter>gl</Filter>
     </ClInclude>
@@ -94,15 +94,6 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\core\config.h">
       <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\resources\load_model.h">
-      <Filter>resouces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\resources\image.h">
-      <Filter>resouces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\resources\file.h">
-      <Filter>resouces</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\core\profiler.h">
       <Filter>core</Filter>
@@ -118,6 +109,39 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\core\parallel.hpp">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\math.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\matrix.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\simd.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\transform.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\vector.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\operators.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\algorithm.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resource\file.h">
+      <Filter>resouce</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resource\image.h">
+      <Filter>resouce</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resource\model.h">
+      <Filter>resouce</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\geometry.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

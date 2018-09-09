@@ -24,8 +24,10 @@ struct time_profiler
 {
 	typename Precision::rep count{};
 
-	template<typename Func, typename ...Args>
-	void void_call(Args&&... args)
+	template<typename Func, typename ...Args, typename R=
+		std::enable_if_t<std::is_void<typename std::function<Func>::result_type>::value, 
+		void>>
+	void call(Args&&... args)
 	{
 		auto start = std::chrono::system_clock::now();
 
@@ -34,9 +36,69 @@ struct time_profiler
 		count = (std::chrono::system_clock::now() - start).count();
 	}
 
-	template<typename Func, typename ...Args, 
-		typename R = typename std::function<Func>::result_type>
+	template<typename Func, typename ...Args, typename R =
+		std::enable_if_t<!std::is_void<typename std::function<Func>::result_type>::value,
+		typename std::function<Func>::result_type>>
 	R call(Args&&... args)
+	{
+		auto start = std::chrono::system_clock::now();
+
+		R ret = func(std::forward<Args>(args)...);
+
+		count = (std::chrono::system_clock::now() - start).count();
+
+		return ret;
+	}
+};
+
+// TOOD:SFINAE
+template<typename Func, typename Precision = std::chrono::milliseconds, 
+	bool VoidReturn = std::is_void<typename std::function<Func>::result_type>::value>
+struct time_wrapper {};
+
+template<typename Func, typename Precision>
+struct time_wrapper<Func, Precision, true>
+{
+	using R = typename std::function<Func>::result_type;
+	std::function<Func> func{};
+	typename Precision::rep count{};
+
+	time_wrapper(std::function<Func>&& func) { wrap(std::move(func)); }
+
+	void wrap(std::function<Func>&& func)
+	{
+		this->func = func;
+	}
+
+	template<typename... Args>
+	//std::enable_if_t<std::is_void_v<R>, void>
+	void operator()(Args&&... args)
+	{
+		auto start = std::chrono::system_clock::now();
+
+		func(std::forward<Args>(args)...);
+
+		count = (std::chrono::system_clock::now() - start).count();
+	}
+};
+
+template<typename Func, typename Precision>
+struct time_wrapper<Func, Precision, false>
+{
+	using R = typename std::function<Func>::result_type;
+	std::function<Func> func{};
+	typename Precision::rep count{};
+
+	time_wrapper(std::function<Func>&& func) { wrap(std::move(func)); }
+
+	void wrap(std::function<Func>&& func)
+	{
+		this->func = func;
+	}
+
+	template<typename... Args>
+	//typename std::enable_if<!std::is_void_v<R>, R>::type 
+	R operator()(Args&&... args)
 	{
 		auto start = std::chrono::system_clock::now();
 
@@ -160,46 +222,8 @@ struct time_wrapper
 // milliseconds : ∫¡√Î£¨microseconds: Œ¢√Î£¨nanoseconds : ƒ…√Î
 
 // using Msec = std::chrono::milliseconds;
-
-template<typename Func, typename Precision = std::chrono::milliseconds>
-struct time_wrapper
-{
-	using R = typename std::function<Func>::result_type;
-
-	std::function<Func> func{};
-	typename Precision::rep count{};
-
-	time_wrapper(std::function<Func>&& func) { wrap(std::move(func)); }
-
-	void wrap(std::function<Func>&& func)
-	{
-		this->func = func;
-	}
-
-	template<typename... Args>
-	//std::enable_if_t<std::is_void_v<R>, void>
-	void void_call(Args&&... args)
-	{
-		auto start = std::chrono::system_clock::now();
-
-		func(std::forward<Args>(args)...);
-
-		count = (std::chrono::system_clock::now() - start).count();
-	}
-
-	template<typename... Args>
-	//typename std::enable_if<!std::is_void_v<R>, R>::type 
-	R call(Args&&... args)
-	{
-		auto start = std::chrono::system_clock::now();
-
-		R ret = func(std::forward<Args>(args)...);
-
-		count = (std::chrono::system_clock::now() - start).count();
-
-		return ret;
-	}
-};
+// TODO : std::invoke
+// or TODO: template<typename std::function<void(Args...)>, typename Precision = std::chrono::milliseconds>
 
 //auto timeWrapper = [&](Args&&...) -> R { ... }
 

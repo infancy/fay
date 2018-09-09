@@ -2,8 +2,8 @@
 #pragma once
 #endif
 
-#ifndef FAY_RESOURCES_FILE_H
-#define FAY_RESOURCES_FILE_H
+#ifndef FAY_RESOURCE_FILE_H
+#define FAY_RESOURCE_FILE_H
 
 #include "fay/core/fay.h"
 
@@ -59,4 +59,4 @@ private:
 
 } // namespace fay
 
-#endif // FAY_RESOURCES_FILE_H
+#endif // FAY_RESOURCE_FILE_H

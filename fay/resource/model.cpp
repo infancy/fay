@@ -1,5 +1,5 @@
-#include "load_model.h"
-#include "fay/resources/file.h"
+#include "fay/resource/model.h"
+#include "fay/resource/file.h"
 #include "fay/utility/string.h"
 #include <assimp/Importer.hpp>
 

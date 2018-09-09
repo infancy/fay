@@ -5,60 +5,151 @@
 #ifndef FAY_MATH_MATRIX_H
 #define FAY_MATH_MATRIX_H
 
+#include "fay/math/vector.h"
+#include "fay/math/operators.h"
+
 namespace fay
 {
 
 /*
-union
-{
-	vec<N, vec<M, T>> vec_;
-	std::array<T, N*M> vec_;
-}
+ delete: similar to a two-dimensional array, row major order
+
+ <0>. a matrix
+
+ | m0 m1 m2 m3 |
+ | m4 m5 m6 m7 |
+
+ <1>. mat<2, 4> * vec<2>( or mat<1, 2>)
+
+ math:                     real(OpenGL):
+
+        | m0 m1 m2 m3 |
+        | m4 m5 m6 m7 |
+ | x y |
+
+ real(OpenGL):
+
+		  | x |
+		  | y |
+ | m0 m4 |
+ | m1 m5 |
+ | m2 m6 |
+ | m3 m7 |
+
+ <2>. vec<4>( or mat<4, 1>) * mat<2, 4>
+
+ math:                   real(Direct3D):
+
+				| x |
+				| y |
+				| z |
+				| w |
+ | m0 m1 m2 m3 |
+ | m4 m5 m6 m7 |
+
+ real(Direct3D):
+
+			 | m0 m4 |
+			 | m1 m5 |
+			 | m2 m6 |
+			 | m3 m7 |
+  | x y z w |
+
+ <3>. in memory they(matrix in the OpenGL and Direct3D) are same:
+
+ | m0 m1 m2 m3 |
+ | m4 m5 m6 m7 |
+
+ <4>. TODO: matrix in GLSL and HLSL are same too
+
+ | m0 m4 |
+ | m1 m5 |
+ | m2 m6 |
+ | m3 m7 |
 */
 
-template <int N_, typename T>
-struct vec final : arithmetic<vec<N_, T>, T>
+// Col: how many columns (how many elements per rows)
+// Row: how many rows    (how many elements per columns)
+template <int C, int R, typename T = float>
+struct mat final : arithmetic<mat<C, R, T>, T>
 {
-	enum { N = N_ };
-	std::array<T, N> vec_{};
-
-	vec() = default;
-	constexpr explicit vec(std::initializer_list<T> il) /*: vec_{}*/
+	enum { N = C * R };
+	union
 	{
-		assert(il.size() <= N);	// TODO: DCHECK
-		auto p0 = vec_.begin(); auto p1 = il.begin();
-		for (; p1 != il.end(); ++p0, ++p1)
-			*p0 = *p1;
-	}
-	constexpr explicit vec(const T s) { for (auto& e : vec_) e = s; }
-	constexpr explicit vec(const T p[]) { for (auto& e : vec_) e = *p++; }
+		std::array<T, N> array_{};
+		std::array<vec<R, T>, C> col_;
+	};
 
-	bool operator==(const vec<N, T>& v) const
+	using col_type = vec<R, T>;
+	using row_type = vec<C, T>;
+	using value_type             = typename std::array<T, N>::value_type;
+	using reference              = typename std::array<vec<R, T>, C>::reference;
+	using const_reference        = typename std::array<vec<R, T>, C>::const_reference;
+	using iterator               = typename std::array<T, N>::iterator;
+	using const_iterator         = typename std::array<T, N>::const_iterator;
+	using reverse_iterator       = typename std::array<T, N>::reverse_iterator;
+	using const_reverse_iterator = typename std::array<T, N>::const_reverse_iterator;
+
+	mat() = default;
+	constexpr explicit mat(std::initializer_list<T> il) /*: array_{}*/
 	{
-		auto p0 = vec_.cbegin(), p1 = v.vec_.cbegin();
-		for (; p0 != vec_.cend(); ++p0, ++p1)
-			if (!is_equal(*p0, *p1)) return false;
-		return true;
+		DCHECK(il.size() <= N);	/* TODO: DCHECK */
+		auto p = array_.begin(); auto q = il.begin();
+		for (; q != il.end(); ++p, ++q)
+			*p = *q;
 	}
-	bool operator!=(const vec<N, T>& v) const { return !operator==(v); }
+	constexpr explicit mat(const T s) { for (auto& e : array_) e = s; }
+	constexpr explicit mat(const T p[]) { for (auto& e : array_) e = *p++; }
 
-	vec<N, T> operator-() { return vec<N, T>(static_cast<T>(0)) -= *this; }
+	iterator               begin()         noexcept { return array_.begin(); }
+	const_iterator         begin()   const noexcept { return array_.begin(); }
+	iterator               end()           noexcept { return array_.end(); }
+	const_iterator         end()     const noexcept { return array_.end(); }
 
-	vec& operator+=(vec<N, T>& v, const T s) { for (auto& e : v.vec_) e += s; return v; }
+	reverse_iterator       rbegin()        noexcept { return array_.rbegin(); }
+	const_reverse_iterator rbegin()  const noexcept { return array_.rbegin(); }
+	reverse_iterator       rend()          noexcept { return array_.rend(); }
+	const_reverse_iterator rend()    const noexcept { return array_.rend(); }
 
-	vec& operator+=(vec<N, T>& v0, const vec<N, T>& v1)
-	{
-		auto p0 = v0.vec_.begin(); auto p1 = v.vec_.cbegin();
-		for (; p1 != v.vec_.cend(); ++p0, ++p1)
-			*p0 += *p1;
-		return v0;
-	}
+	const_iterator         cbegin()  const noexcept { return array_.cbegin(); }
+	const_iterator         cend()    const noexcept { return array_.cend(); }
+	const_reverse_iterator crbegin() const noexcept { return array_.crbegin(); }
+	const_reverse_iterator crend()   const noexcept { return array_.crend(); }
 
-
-	T& operator[](size_t i) { return vec_[i]; }
-	const T& operator[](size_t i) const { return vec_[i]; }
+	// WARNING: return col_[i]
+	reference       operator[](size_t i) { return col_[i]; }
+	const_reference operator[](size_t i) const { return col_[i]; }
 };
 
+// -----------------------------------------------------------------------------
+// operator functions
+
+// OpenGL style: row * row
+template <int C, int R, typename T>
+inline typename mat<C, R, T>::col_type 
+operator*(const mat<C, R, T>& m, const typename mat<C, R, T>::row_type& v)
+{
+	typename mat<C, R, T>::col_type r{};
+
+	for (int i = 0; i < R; ++i)
+		for (int j = 0; j < C; ++j)
+			r[i] += m[j][i] * v[j];
+
+	return r;
+}
+
+// Direct3D style: col * col
+template <int C, int R, typename T>
+inline typename mat<C, R, T>::row_type
+operator*(const typename mat<C, R, T>::col_type& v, const mat<C, R, T>& m)
+{
+	typename mat<C, R, T>::row_type r{};
+
+	for (int i = 0; i < C; ++i)
+		r[i] = dot(v, m[i]);
+
+	return r;
+}
 
 } // namespace fay
 

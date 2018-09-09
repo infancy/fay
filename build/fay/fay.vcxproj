@@ -25,10 +25,11 @@
     <ClCompile Include="..\..\fay\gl\texture.cpp" />
     <ClCompile Include="..\..\fay\gui\gui.cpp" />
     <ClCompile Include="..\..\fay\gui\window.cpp" />
-    <ClCompile Include="..\..\fay\resources\image.cpp" />
-    <ClCompile Include="..\..\fay\resources\load_model.cpp" />
+    <ClCompile Include="..\..\fay\resource\image.cpp" />
+    <ClCompile Include="..\..\fay\resource\model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\fay\core\algorithm.h" />
     <ClInclude Include="..\..\fay\core\config.h" />
     <ClInclude Include="..\..\fay\core\fay.h" />
     <ClInclude Include="..\..\fay\core\log.h" />
@@ -47,10 +48,16 @@
     <ClInclude Include="..\..\fay\gl\uniform.h" />
     <ClInclude Include="..\..\fay\gui\gui.h" />
     <ClInclude Include="..\..\fay\gui\window.h" />
-    <ClInclude Include="..\..\fay\resources\file.h" />
-    <ClInclude Include="..\..\fay\resources\image.h" />
-    <ClInclude Include="..\..\fay\resources\load_model.h" />
-    <ClInclude Include="..\..\fay\utility\math.h" />
+    <ClInclude Include="..\..\fay\math\geometry.h" />
+    <ClInclude Include="..\..\fay\math\math.h" />
+    <ClInclude Include="..\..\fay\math\matrix.h" />
+    <ClInclude Include="..\..\fay\math\operators.h" />
+    <ClInclude Include="..\..\fay\math\simd.h" />
+    <ClInclude Include="..\..\fay\math\transform.h" />
+    <ClInclude Include="..\..\fay\math\vector.h" />
+    <ClInclude Include="..\..\fay\resource\file.h" />
+    <ClInclude Include="..\..\fay\resource\image.h" />
+    <ClInclude Include="..\..\fay\resource\model.h" />
     <ClInclude Include="..\..\fay\utility\stencil.h" />
     <ClInclude Include="..\..\fay\utility\string.h" />
     <ClInclude Include="..\..\fay\utility\type_traits.h" />

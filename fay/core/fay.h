@@ -42,6 +42,10 @@ enum class model_type { obj, fbx, gltf, blend, unknown };
 enum class texture_type { none, diffuse, specular, ambient, emissive, height, alpha, parallax,
 	normal, shininess, opacity, displace, lightmap, reflection, cubemap, shadowmap, unknown };
 
+// math ------------------------------------------------------------------------
+
+// #define FAY_SIMD
+
 } // namespace fay
 
 #endif //FAY_CORE_FAY_H

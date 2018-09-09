@@ -2,13 +2,13 @@
 #pragma once
 #endif
 
-#ifndef FAY_RESOURCES_IMAGE_H
-#define FAY_RESOURCES_IMAGE_H
+#ifndef FAY_RESOURCE_IMAGE_H
+#define FAY_RESOURCE_IMAGE_H
 
-#include "fay/gl/gl.h"
-#include "fay/utility/math.h"
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
+#include "fay/gl/gl.h"
+#include "fay/math/math.h"
 
 namespace fay
 {
@@ -16,20 +16,20 @@ namespace fay
 class base_image
 {
 public:
-	base_image(const std::string& filepath = {}) :
-		filepath{ filepath }
+	base_image(const std::string& filepath, bool flip_vertical) :
+		filepath{ filepath }, is_flip_vertical_{ flip_vertical }
 	{
 	}
 
-	base_image(const std::string& filepath, int width, int height, int format) :
-		filepath{ filepath }, w{ width }, h{ height }, fmt{ format }
+	base_image(const std::string& filepath, int width, int height, int format, bool flip_vertical) :
+		filepath{ filepath }, w{ width }, h{ height }, fmt{ format }, is_flip_vertical_{ flip_vertical }
 	{
 	}
 
 	int width()  const { return w; }
 	int height() const { return h; }
 
-	std::string file_path()  const { return filepath; }
+	std::string file_path() const { return filepath; }
 	bool is_flip_vertical() const { return is_flip_vertical_; }
 
 	GLenum gl_format() const
@@ -49,11 +49,17 @@ public:
 		return GLformat;
 	}
 
+// protected:
+//     int& inner_width();
+//     int& inner_height();
+//     ...
+// private:
+
 protected:
 	std::string filepath;
-	bool is_flip_vertical_{ false };
+	int w{}, h{}, fmt{};
 
-	int w, h, fmt;
+	bool is_flip_vertical_{ false };
 };
 
 // -----------------------------------------------------------------------------
@@ -61,29 +67,25 @@ protected:
 class image_ptr : public base_image	// shared_image, stbImagePtr
 {
 public:
-	image_ptr(const std::string& filepath = {}, third_party thirdparty = third_party::none) :
-		base_image(filepath)
+	image_ptr(const std::string& filepath = {}, bool flip_vertical = false) :
+		base_image(filepath, flip_vertical)
 	{
-		LOG_IF(ERROR, filepath.empty()) << "image path is empty: ";
+		LOG_IF(ERROR, filepath.empty()) << "image path is empty!";
 
-		if (thirdparty == third_party::gl)
-		{
-			is_flip_vertical_ = true;
+		if (flip_vertical)
 			stbi_set_flip_vertically_on_load(true);
-		}
 
-		pixels = stbi_load(filepath.c_str(), &w, &h, &fmt, 0);
-		LOG_IF(ERROR, pixels == nullptr) << "image failed to load at path: " << filepath;
+		auto ptr = stbi_load(filepath.c_str(), &w, &h, &fmt, 0);
+		LOG_IF(ERROR, ptr == nullptr) << "image failed to load at path: " << filepath;
 		
 		// const_cast<int&>(width)  = w;  const_cast<int&>(height) = h;
-		manager.reset(pixels, [](unsigned char* pixels) { stbi_image_free(pixels); });
+		manager.reset(ptr, [](uint8_t* p) { stbi_image_free(p); });
 	}
 
-	const uint8_t* data() const { return pixels; }
+	const uint8_t* data() const { return manager.get(); }
 
 private:
-	uint8_t* pixels;
-	std::shared_ptr<unsigned char> manager;
+	std::shared_ptr<uint8_t> manager;
 };
 
 inline bool operator==(const image_ptr& left, const image_ptr& right)
@@ -92,14 +94,15 @@ inline bool operator==(const image_ptr& left, const image_ptr& right)
 }
 
 // -----------------------------------------------------------------------------
-
+/*
 class image : public base_image
 {
 public:
-	image(const std::string& filepath = {}, third_party thirdparty = third_party::none) :
-		base_image(filepath)
+	image(const std::string& filepath = {}, bool flip_vertical = false) :
+		base_image(filepath, flip_vertical)
 	{
-		LOG_IF(ERROR, filepath.empty()) << "image path is empty\n";
+		LOG_IF(ERROR, filepath.empty()) << "image path is empty!";
+
 		if (thirdparty == third_party::gl)
 		{
 			is_flip_vertical_ = true;
@@ -114,19 +117,22 @@ public:
 		stbi_image_free(ptr);
 	}
 
-	image(const std::string& filepath, int width , int height, int format, third_party thirdparty = third_party::none) :
-		base_image(filepath, width, height, format), pixels(w * h * fmt)
+	image(const std::string& filepath, int width , int height, int format, bool flip_vertical = false) :
+		base_image(filepath, width, height, format, flip_vertical), pixels(w * h * fmt)
 	{
-		pixels.clear();
+		// pixels.clear();
+		// memcpy(pixels.data(), 0, pixels.size());
 	}
 
 	uint8_t* data() { return pixels.data(); }
 
+	// s 0.0 ~ 1.0, t: 0.0 ~ 1.0
 	uint8_t& operator()(float s, float t)
 	{
 		s *= w; t *= h;
 		return operator()((size_t)s, (size_t)t);
 	}
+	// s 0 ~ w, t: 0 ~ h
 	uint8_t& operator()(size_t s, size_t t)
 	{
 		size_t x = s % w, y = t % h;
@@ -139,26 +145,28 @@ private:
 	std::vector<uint8_t> pixels;
 };
 
+// TODO
 inline bool operator==(const image& left, const image& right)
 {
 	return left.file_path() == right.file_path();
 }
-
+*/
 // -----------------------------------------------------------------------------
 
-inline bool save_jpg(std::string filename, int width, int height, int comp,
+// quality: 0 ~ 100
+inline bool save_jpg(const std::string& filename, int width, int height, int comp,
 	const uint8_t* pixel, int quality = 80)
 {
-	int r = stbi_write_jpg(filename.c_str(), 
+	int result = stbi_write_jpg(filename.c_str(), 
 		width, height, comp, pixel, quality);
-	return r == 0 ? false : true;
+	return result == 0 ? false : true;
 }
 
-inline bool save_ppm(std::string filename, int width, int height,
+inline bool save_ppm(const std::string& filename, int width, int height,
 	const uint8_t* pixel /*bool flip_vertically = false*/)
 {
 	std::ofstream ppm(filename);
-	CHECK(!ppm.fail()) << "\ncan't create file";
+	CHECK(!ppm.fail()) << "can't create file";
 
 	ppm << "P3\n" << width << " " << height << "\n255\n";
 
@@ -176,11 +184,12 @@ inline bool save_ppm(std::string filename, int width, int height,
 	return true;
 }
 
-inline bool save_pgm(std::string filename, int width, int height, 
+inline bool save_pgm(const std::string& filename, int width, int height, 
 	const uint8_t* pixel)
 {
+	// auto pgm = create_file(filename);
 	std::ofstream pgm(filename);
-	CHECK(!pgm.fail()) << "\ncan't create file";
+	CHECK(!pgm.fail()) << "can't create file";
 
 	pgm << "P2\n" << width << " " << height << "\n255\n";
 
@@ -197,4 +206,4 @@ inline bool save_pgm(std::string filename, int width, int height,
 
 } // namespace fay
 
-#endif // FAY_RESOURCES_IMAGE_H
+#endif // FAY_RESOURCE_IMAGE_H

@@ -6,6 +6,7 @@
 #define FAY_CORE_CONFIG_H
 
 #if defined(_DEBUG)
+// #elif defined(DEBUG)
 #define FAY_DEBUG
 #endif
 

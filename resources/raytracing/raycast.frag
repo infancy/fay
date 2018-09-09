@@ -28,14 +28,15 @@ const float k2 = 0.0;	// 平方项
 // ray-box intersection
 //returns a vec2 in which the x value contains the t value at the near intersection
 						//the y value contains the t value at the far intersection
-vec2 intersectCube(vec3 origin, vec3 ray, Box cube) 
+vec2 intersectCube(vec3 origin, vec3 dir, Box cube) 
 {		
-	vec3   tMin = (cube.min - origin) / ray;		
-	vec3   tMax = (cube.max - origin) / ray;		
-	vec3     t1 = min(tMin, tMax);		
-	vec3     t2 = max(tMin, tMax);
-	float tNear = max(max(t1.x, t1.y), t1.z);
-	float  tFar = min(min(t2.x, t2.y), t2.z);
+	// 计算 cube 的两个顶点到 origin 的距离
+	vec3   t1 = (cube.min - origin) / dir;		
+	vec3   t2 = (cube.max - origin) / dir;		
+	vec3   tMin = min(t1, t2);	
+	vec3   tMax = max(t1, t2);
+	float tNear = max(max(tMin.x, tMin.y), tMin.z);
+	float  tFar = min(min(tMax.x, tMax.y), tMax.z);
 	return vec2(tNear, tFar);	
 }
 
@@ -73,16 +74,20 @@ vec3 uniformlyRandomVector(float seed)
 
 // ray-triangle intesection 
 // The return value is a vec4 with
-// x -> t value at intersection.
-// y -> u texture coordinate
-// z -> v texture coordinate
+// x -> t, length form origin to intersection.
+// y -> u, texture coordinate
+// z -> v, texture coordinate
 // w -> texture map id
+// void intersectTriangle(vec3 origin, vec3 dir, int index, out vec4 data, out vec3 normal) 
 vec4 intersectTriangle(vec3 origin, vec3 dir, int index,  out vec3 normal ) 
 {
+	// 计算索引
 	ivec4 list_pos = texture(triangles_list, vec2((index+0.5)/TRIANGLE_TEXTURE_SIZE, 0.5));
+	
 	if((index+1) % 2 !=0 ) { 
 		list_pos.xyz = list_pos.zxy;
 	}  
+	// 计算三个坐标
 	vec3 v0 = texture(vertex_positions, vec2((list_pos.z + 0.5 )/VERTEX_TEXTURE_SIZE, 0.5)).xyz;
 	vec3 v1 = texture(vertex_positions, vec2((list_pos.y + 0.5 )/VERTEX_TEXTURE_SIZE, 0.5)).xyz;
 	vec3 v2 = texture(vertex_positions, vec2((list_pos.x + 0.5 )/VERTEX_TEXTURE_SIZE, 0.5)).xyz;
@@ -108,7 +113,8 @@ vec4 intersectTriangle(vec3 origin, vec3 dir, int index,  out vec3 normal )
 	if (v < 0.0 || (u + v) > 1.0)  
 		return vec4(-1,0,0,0);  
 
-	float t = dot(e2, qvec) * inv_det;
+	float length_ = dot(e2, qvec) * inv_det;
+
 	if((index+1) % 2 ==0 ) {
 		v = 1-v; 
 	} else {
@@ -116,7 +122,7 @@ vec4 intersectTriangle(vec3 origin, vec3 dir, int index,  out vec3 normal )
 	} 
 
 	normal = normalize(cross(e2,e1));
-	return vec4(t,u,v,list_pos.w);
+	return vec4(length_,u,v,list_pos.w);
 }
 
 float shadow(vec3 origin, vec3 dir ) 

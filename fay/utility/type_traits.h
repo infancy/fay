@@ -11,16 +11,19 @@ namespace fay
 {
 
 template <typename T>
-struct _is_not_void : std::true_type {};
+struct is_not_void_ : std::true_type {};
 
 template <>
-struct _is_not_void<void> : std::false_type {};
+struct is_not_void_<void> : std::false_type {};
 
 template <typename T>
-struct is_not_void : _is_not_void<std::remove_cv_t<T>> {};
+struct is_not_void : is_not_void_<std::remove_cv_t<T>> {};
 
 template <typename T>
 constexpr bool is_not_void_v = is_not_void<T>::value;
+
+template <typename R, typename... ArgTypes>
+using return_type = R;
 
 } // namespace fay
 

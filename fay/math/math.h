@@ -2,15 +2,11 @@
 #pragma once
 #endif
 
-#ifndef FAY_UTILITY_MATH_H
-#define FAY_UTILITY_MATH_H
+#ifndef FAY_MATH_MATH_H
+#define FAY_MATH_MATH_H
 
+#include "fay/core/fay.h"
 #include <limits>
-
-#if defined(FAY_IN_MSVC)
-#include <float.h>
-#include <intrin.h>
-#endif
 
 namespace fay
 {
@@ -33,15 +29,30 @@ inline float radians(float deg) { return (Pi / 180) * deg; }
 inline float degrees(float rad) { return (180 / Pi) * rad; }
 
 template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-inline T tmin(T a, T b, T c)
+inline T min(T a, T b, T c)
 {
 	return (a < b) ? (a < c ? a : c) : (b < c ? b : c);
 }
 
 template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-inline T tmax(T a, T b, T c)
+inline T max(T a, T b, T c)
 {
 	return (a > b) ? (a > c ? a : c) : (b > c ? b : c);
+}
+
+// https://stackoverflow.com/questions/17333/what-is-the-most-effective-way-for-float-and-double-comparison
+// http://realtimecollisiondetection.net/blog/?p=89
+template <typename T>
+struct is_equal_
+{
+	static constexpr T AbsoluteEpsilon = std::numeric_limits<T>::epsilon();
+	static constexpr T RelativeEpsilon = std::numeric_limits<T>::epsilon();
+};
+template <typename T>
+bool is_equal(T a, T b)
+{
+	//return fabs(a - b) <= std::max(AbsoluteEpsilon, RelativeEpsilon * std::max(fabs(a), fabs(b)) );
+	return fabs(a - b) <= is_equal_<T>::AbsoluteEpsilon * fay::max(1.f, fabs(a), fabs(b));
 }
 
 template <typename T>
@@ -62,4 +73,4 @@ inline float gamma(int n)
 
 } // namespace fay
 
-#endif // FAY_UTILITY_MATH_H
+#endif // FAY_MATH_MATH_H

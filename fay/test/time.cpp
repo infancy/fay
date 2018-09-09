@@ -19,18 +19,18 @@ struct functor
 
 void func()
 {
-	std::cout << "In function, run for ";
+	//std::cout << "In function, run for ";
 }
 
 int ifunc(int i)
 {
-	std::cout << "In function, run for ";
+	//std::cout << "In function, run for ";
 	return i;
 }
 
 void vifunc(int i)
 {
-	std::cout << i << " In function, run for ";
+	//std::cout << "In function, run for ";
 }
 /*
 TEST(profiler, time_profiler)
@@ -49,24 +49,22 @@ TEST(profiler, time_profiler)
 */
 TEST(profiler, time_wrapper)
 {
-	time_wrapper<void()> wrapper(func);
-	time_wrapper<int(int)> iwrapper(ifunc);
-	time_wrapper<void(int)> viwrapper(vifunc);
+	time_wrapper<void()> func_wrapper(func);
+	time_wrapper<int(int)> ifunc_wrapper(ifunc);
+	time_wrapper<void(int)> vifunc_wrapper(vifunc);
 
 	//std::cout << std::boolalpha;
 	//std::cout << fay::is_not_void_v<time_wrapper<void()>::R> << '\n';
 	//std::cout << fay::is_not_void_v<time_wrapper<int(int), Msec>::R> << '\n';
 	//std::cout << fay::is_not_void_v<time_wrapper<void(int)>::R> << '\n';
 
-	// std::function<void()> func = std::bind(&time_wrapper<void()>::void_call, wrapper);
+	func_wrapper();
+	std::cout << func_wrapper.count << " ms" << std::endl;
 
-	wrapper.void_call();
-	std::cout << wrapper.count << " ms" << std::endl;
+	auto i = ifunc_wrapper(1);
+	std::cout << ifunc_wrapper.count << " ms" << std::endl;
 
-	iwrapper.call(1);
-	std::cout << iwrapper.count << " ms" << std::endl;
-
-	viwrapper.void_call(1);
-	std::cout << viwrapper.count << " ms" << std::endl;
+	vifunc_wrapper(1);
+	std::cout << vifunc_wrapper.count << " ms" << std::endl;
 }
 

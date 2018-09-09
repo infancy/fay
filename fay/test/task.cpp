@@ -41,9 +41,11 @@ TEST(parallel, parallel_)
 	tbb::parallel_for_each(v.begin(), v.end(), [&ai](int& i)   { ++ai; i += ai; });
 
 	fay::parallel_for(v.begin(), v.end(), 
-		[](auto& range)	// tbb::blocked_range<decltype(v.cbegin())>&
+		[](tbb::blocked_range<decltype(v.begin())>& range)	// tbb::blocked_range<decltype(v.cbegin())>&
 	{ 
 		int num{};
+		// for (auto i = range.begin(); i != range.end(); ++i)
+		//	 num += *i;
 		for (auto i : range)
 			num += i;
 		std::cout << (std::to_string(num) + ' ');
