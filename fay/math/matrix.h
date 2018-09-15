@@ -11,65 +11,11 @@
 namespace fay
 {
 
-/*
- delete: similar to a two-dimensional array, row major order
+// if you use like m[i][j], it is similar to a two-dimensional array[C][R]
+// or when use m.begin(), m.end(), it is like a one-dimensional array[C * R]
 
- <0>. a matrix
-
- | m0 m1 m2 m3 |
- | m4 m5 m6 m7 |
-
- <1>. mat<2, 4> * vec<2>( or mat<1, 2>)
-
- math:                     real(OpenGL):
-
-        | m0 m1 m2 m3 |
-        | m4 m5 m6 m7 |
- | x y |
-
- real(OpenGL):
-
-		  | x |
-		  | y |
- | m0 m4 |
- | m1 m5 |
- | m2 m6 |
- | m3 m7 |
-
- <2>. vec<4>( or mat<4, 1>) * mat<2, 4>
-
- math:                   real(Direct3D):
-
-				| x |
-				| y |
-				| z |
-				| w |
- | m0 m1 m2 m3 |
- | m4 m5 m6 m7 |
-
- real(Direct3D):
-
-			 | m0 m4 |
-			 | m1 m5 |
-			 | m2 m6 |
-			 | m3 m7 |
-  | x y z w |
-
- <3>. in memory they(matrix in the OpenGL and Direct3D) are same:
-
- | m0 m1 m2 m3 |
- | m4 m5 m6 m7 |
-
- <4>. TODO: matrix in GLSL and HLSL are same too
-
- | m0 m4 |
- | m1 m5 |
- | m2 m6 |
- | m3 m7 |
-*/
-
-// Col: how many columns (how many elements per rows)
-// Row: how many rows    (how many elements per columns)
+// C: how many columns (how many elements per rows)
+// R: how many rows    (how many elements per columns)
 template <int C, int R, typename T = float>
 struct mat final : arithmetic<mat<C, R, T>, T>
 {
@@ -124,7 +70,20 @@ struct mat final : arithmetic<mat<C, R, T>, T>
 // -----------------------------------------------------------------------------
 // operator functions
 
-// OpenGL style: row * row
+/* row-major matrix * vector, or vector * row-major matrix
+   left-mul or right-mul is not important, it's just a convention
+
+   memory(M * V):        memory(V * M):        math(M * V):
+            | x                 | x - - -              | x
+            | y                 | y - - -              | y         
+            | z                 | z - - -              | z
+            V w                 V w - - -              V w
+   | x - - -             - - - >               - - - >
+   | y - - -             x y z w               x y z w
+   | z - - -                                   - - - -
+   V w - - -                                   - - - -
+                                               - - - -
+*/
 template <int C, int R, typename T>
 inline typename mat<C, R, T>::col_type 
 operator*(const mat<C, R, T>& m, const typename mat<C, R, T>::row_type& v)
@@ -137,8 +96,19 @@ operator*(const mat<C, R, T>& m, const typename mat<C, R, T>::row_type& v)
 
 	return r;
 }
+/* vector * column-major matrix, or column-major matrix * vector
 
-// Direct3D style: col * col
+   memory(V * M):        memory(M * V):        math(V * M):
+          - - - >               | x                   | x - - -
+          x y z w               | y                   | y - - -
+          - - - -               | z                   | z - - -
+          - - - -               V w                   V w - - -
+          - - - -        - - - >               - - - >
+   - - - >               x y z w               x y z w 
+   x y z w               - - - - 
+                         - - - -
+                         - - - -
+*/
 template <int C, int R, typename T>
 inline typename mat<C, R, T>::row_type
 operator*(const typename mat<C, R, T>::col_type& v, const mat<C, R, T>& m)
@@ -150,6 +120,8 @@ operator*(const typename mat<C, R, T>::col_type& v, const mat<C, R, T>& m)
 
 	return r;
 }
+
+
 
 } // namespace fay
 
