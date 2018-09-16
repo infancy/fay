@@ -13,8 +13,12 @@
 namespace fay
 {
 
+// vec<N, T>
+
 #define FAY_VEC_FUNCTIONS                                                         \
 using value_type             = typename std::array<T, N>::value_type;             \
+using pointer                = typename std::array<T, N>::pointer;                \
+using const_pointer          = typename std::array<T, N>::const_pointer;          \
 using reference              = typename std::array<T, N>::reference;              \
 using const_reference        = typename std::array<T, N>::const_reference;        \
 using iterator               = typename std::array<T, N>::iterator;               \
@@ -22,40 +26,40 @@ using const_iterator         = typename std::array<T, N>::const_iterator;       
 using reverse_iterator       = typename std::array<T, N>::reverse_iterator;       \
 using const_reverse_iterator = typename std::array<T, N>::const_reverse_iterator; \
                                                                                   \
-vec() = default;                                                                  \
-constexpr explicit vec(std::initializer_list<T>/*&&*/ il) /*: array_{}*/          \
+constexpr vec() = default;                                                        \
+constexpr explicit vec(const std::initializer_list<T>&/*&&*/ il) /*: a_{}*/       \
 {                                                                                 \
 	DCHECK(il.size() <= N);	/* TODO: DCHECK */                                    \
-	auto p = array_.begin(); auto q = il.begin();                                 \
+	auto p = a_.begin(); auto q = il.begin();                                     \
 	for (; q != il.end(); ++p, ++q)                                               \
 		*p = *q;                                                                  \
 }                                                                                 \
-constexpr explicit vec(const T s)   { for (auto& e : array_) e = s; }             \
-constexpr explicit vec(const T p[]) { for (auto& e : array_) e = *p++; }          \
+constexpr explicit vec(const T& s)  { for (auto& e : a_) e = s; }                 \
+constexpr explicit vec(const T* p)  { for (auto& e : a_) e = *p++; }              \
                                                                                   \
-iterator               begin()         noexcept { return array_.begin(); }        \
-const_iterator         begin()   const noexcept { return array_.begin(); }        \
-iterator               end()           noexcept { return array_.end(); }          \
-const_iterator         end()     const noexcept { return array_.end(); }          \
+iterator               begin()         noexcept { return a_.begin(); }            \
+const_iterator         begin()   const noexcept { return a_.begin(); }            \
+iterator               end()           noexcept { return a_.end(); }              \
+const_iterator         end()     const noexcept { return a_.end(); }              \
                                                                                   \
-reverse_iterator       rbegin()        noexcept { return array_.rbegin(); }       \
-const_reverse_iterator rbegin()  const noexcept { return array_.rbegin(); }       \
-reverse_iterator       rend()          noexcept { return array_.rend(); }         \
-const_reverse_iterator rend()    const noexcept { return array_.rend(); }         \
+reverse_iterator       rbegin()        noexcept { return a_.rbegin(); }           \
+const_reverse_iterator rbegin()  const noexcept { return a_.rbegin(); }           \
+reverse_iterator       rend()          noexcept { return a_.rend(); }             \
+const_reverse_iterator rend()    const noexcept { return a_.rend(); }             \
                                                                                   \
-const_iterator         cbegin()  const noexcept { return array_.cbegin(); }       \
-const_iterator         cend()    const noexcept { return array_.cend(); }         \
-const_reverse_iterator crbegin() const noexcept { return array_.crbegin(); }      \
-const_reverse_iterator crend()   const noexcept { return array_.crend(); }        \
+const_iterator         cbegin()  const noexcept { return a_.cbegin(); }           \
+const_iterator         cend()    const noexcept { return a_.cend(); }             \
+const_reverse_iterator crbegin() const noexcept { return a_.crbegin(); }          \
+const_reverse_iterator crend()   const noexcept { return a_.crend(); }            \
                                                                                   \
-reference       operator[](size_t i)       { return array_[i]; }                  \
-const_reference operator[](size_t i) const { return array_[i]; }
+reference       operator[](size_t i)       { return a_[i]; }                      \
+const_reference operator[](size_t i) const { return a_[i]; }
 
 template <size_t N_, typename T = float>
 struct vec
 {
 	enum { N = N_ };
-	std::array<T, N> array_{};
+	std::array<T, N> a_{};
 
 	FAY_VEC_FUNCTIONS
 };
@@ -66,7 +70,7 @@ struct vec<2, T>
 	enum { N = 2 };
 	union
 	{
-		std::array<T, N> array_{};
+		std::array<T, N> a_{};
 		struct { T x, y; };
 	};
 
@@ -79,7 +83,7 @@ struct vec<3, T>
 	enum { N = 3 };
 	union
 	{
-		std::array<T, N> array_{};
+		std::array<T, N> a_{};
 		struct { T x, y, z; };
 	};
 
@@ -92,7 +96,7 @@ struct vec<4, T>
 	enum { N = 4 };
 	union
 	{
-		std::array<T, N> array_{};
+		std::array<T, N> a_{};
 		struct { T x, y, z, w; };
 		//struct { T r, g, b, a; };
 		//struct { vec3 xyz; };
@@ -103,7 +107,14 @@ struct vec<4, T>
 	FAY_VEC_FUNCTIONS
 };
 
-// -----------------------------------------------------------------------------
+using vec2  = vec<2, float>;
+using vec3  = vec<3, float>;
+using vec4  = vec<4, float>;
+using vec2i = vec<2, int>;
+using vec3i = vec<3, int>;
+using vec4i = vec<4, int>;
+
+// -------------------------------------------------------------------------------------------------
 // operator functions
 
 template <size_t N, typename T>
@@ -120,34 +131,6 @@ bool operator!=(const vec<N, T>& x, const vec<N, T>& y) { return !(x == y); }
 
 template <size_t N, typename T>
 vec<N, T> operator-(const vec<N, T>& v) { vec<N, T> t; t -= v; return t; } // for NRVO
-
-#define FAY_VEC_ARITHMETIC( OP )                                                                              \
-template <size_t N, typename T, typename U>                                                                   \
-inline vec<N, T>& operator OP##=(vec<N, T>& x, const vec<N, U>& y)                                            \
-{                                                                                                             \
-	for (size_t i = 0; i < N; ++i)                                                                            \
-		x[i] OP##= y[i];                                                                                      \
-	return x;                                                                                                 \
-}                                                                                                             \
-template <size_t N, typename T, typename U>                                                                   \
-inline vec<N, T> operator OP(const vec<N, T>& x, const vec<N, U>& y) { vec<N, T> t(x); t OP##= y; return t; } \
-                                                                                                              \
-template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
-inline vec<N, T>& operator OP##=(vec<N, T>& x, const T y)          { for (auto& e : x) e OP##= y; return x; } \
-                                                                                                              \
-template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
-inline vec<N, T> operator OP(const vec<N, T>& x, const T y)          { vec<N, T> t(x); t OP##= y; return t; } \
-                                                                                                              \
-template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
-inline vec<N, T> operator OP(const T x, const vec<N, T>& y)          { vec<N, T> t(y); t OP##= x; return t; }
-
-FAY_VEC_ARITHMETIC( + )
-FAY_VEC_ARITHMETIC( - )
-FAY_VEC_ARITHMETIC( * )
-FAY_VEC_ARITHMETIC( / )
-
-#undef FAY_VEC_FUNCTIONS
-#undef FAY_VEC_ARITHMETIC
 
 /*
 template <size_t N, typename T, typename U>
@@ -168,8 +151,41 @@ template <size_t N, typename T, typename U>
 inline vec<N, T> operator +(const U& x, const vec<N, T>& y) { vec<N, T> t(y); t += x; return t; }
 */
 
-// -----------------------------------------------------------------------------
+#define FAY_VEC_ARITHMETIC( OP )                                                                              \
+template <size_t N, typename T, typename U>                                                                   \
+inline vec<N, T>& operator OP##=(vec<N, T>& x, const vec<N, U>& y)                                            \
+{                                                                                                             \
+	for (size_t i = 0; i < N; ++i)                                                                            \
+		x[i] OP##= y[i];                                                                                      \
+	return x;                                                                                                 \
+}                                                                                                             \
+template <size_t N, typename T, typename U>                                                                   \
+inline vec<N, T> operator OP(const vec<N, T>& x, const vec<N, U>& y) { vec<N, T> r(x); r OP##= y; return r; } \
+                                                                                                              \
+template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
+inline vec<N, T> operator OP(const T x, const vec<N, T>& y)          { vec<N, T> r(x); r OP##= y; return r; } \
+                                                                                                              \
+                                                                                                              \
+template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
+inline vec<N, T>& operator OP##=(vec<N, T>& x, const T y)          { for (auto& e : x) e OP##= y; return x; } \
+                                                                                                              \
+template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
+inline vec<N, T> operator OP(const vec<N, T>& x, const T y)          { vec<N, T> r(x); r OP##= y; return r; } 
+
+FAY_VEC_ARITHMETIC( + )
+FAY_VEC_ARITHMETIC( - )
+FAY_VEC_ARITHMETIC( * )
+FAY_VEC_ARITHMETIC( / )
+
+#undef FAY_VEC_FUNCTIONS
+#undef FAY_VEC_ARITHMETIC
+
+
+
+// -------------------------------------------------------------------------------------------------
 // named functions
+
+
 
 /*
 
@@ -228,8 +244,12 @@ vec<3, T>& cross(const vec<4, T>& v0, const vec<4, T>& v1)
 }
 */
 
-// -----------------------------------------------------------------------------
+
+
+// -------------------------------------------------------------------------------------------------
 // output
+
+
 
 template <size_t N, typename T> // typename = std::enable_if_t<!std::is_floating_point_v<T>, void>>
 inline std::ostream& operator<<(std::ostream& os, const vec<N, T>& v)

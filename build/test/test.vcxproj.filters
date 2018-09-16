@@ -2,6 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\fay\test\test.cpp" />
-    <ClCompile Include="..\..\fay\test\math.cpp" />
+    <ClCompile Include="..\..\fay\test\test_math.cpp" />
   </ItemGroup>
 </Project>

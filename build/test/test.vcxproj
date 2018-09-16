@@ -117,7 +117,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\fay\test\math.cpp" />
+    <ClCompile Include="..\..\fay\test\test_math.cpp" />
     <ClCompile Include="..\..\fay\test\test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

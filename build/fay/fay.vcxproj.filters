@@ -143,5 +143,11 @@
     <ClInclude Include="..\..\fay\math\geometry.h">
       <Filter>math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\fay\math\color.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\quaternion.h">
+      <Filter>math</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -48,10 +48,12 @@
     <ClInclude Include="..\..\fay\gl\uniform.h" />
     <ClInclude Include="..\..\fay\gui\gui.h" />
     <ClInclude Include="..\..\fay\gui\window.h" />
+    <ClInclude Include="..\..\fay\math\color.h" />
     <ClInclude Include="..\..\fay\math\geometry.h" />
     <ClInclude Include="..\..\fay\math\math.h" />
     <ClInclude Include="..\..\fay\math\matrix.h" />
     <ClInclude Include="..\..\fay\math\operators.h" />
+    <ClInclude Include="..\..\fay\math\quaternion.h" />
     <ClInclude Include="..\..\fay\math\simd.h" />
     <ClInclude Include="..\..\fay\math\transform.h" />
     <ClInclude Include="..\..\fay\math\vector.h" />
