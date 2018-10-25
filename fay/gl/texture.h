@@ -42,11 +42,11 @@ protected:
 class texture2d : public base_texture
 {
 public:
-	texture2d(const std::string& filepath, texture_type textype = texture_type::diffuse, bool Mipmap = true);
+	texture2d(const std::string& filepath, texture_format textype = texture_format::diffuse, bool Mipmap = true);
 	
-	texture2d(const image_ptr& img, texture_type textype = texture_type::diffuse, bool Mipmap = true);
+	texture2d(const image_ptr& img, texture_format textype = texture_format::diffuse, bool Mipmap = true);
 	
-	texture2d(GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT, texture_type textype = texture_type::diffuse);
+	texture2d(GLint filtering = GL_LINEAR, GLint wrap = GL_REPEAT, texture_format textype = texture_format::diffuse);
 
 	void create(GLint internalFormat, GLsizei width, GLsizei height,
 		GLenum format, GLenum type, const uint8_t* data, bool Mipmap = true);
@@ -54,11 +54,11 @@ public:
 	int width()  const { return w; }
 	int height() const { return h; }
 
-	texture_type type() const { return textype_; }
+	texture_format type() const { return textype_; }
 
 private:
 	int w, h;
-	texture_type textype_;
+	texture_format textype_;
 };
 
 // -----------------------------------------------------------------------------
@@ -67,12 +67,12 @@ class texture_cube : public base_texture
 {
 public:
 	// filepath + 6 * filename( right, left, top, bottom, back, front )
-	texture_cube(const std::string files[7], texture_type textype = texture_type::cubemap)
-		: base_texture(GL_TEXTURE_CUBE_MAP, GL_LINEAR, GL_CLAMP_TO_EDGE), texture_type{ textype }
+	texture_cube(const std::string files[7], texture_format textype = texture_format::cubemap)
+		: base_texture(GL_TEXTURE_CUBE_MAP, GL_LINEAR, GL_CLAMP_TO_EDGE), texture_format{ textype }
 	{
 		for (int i = 0; i < 6; ++i)
 		{
-			image_ptr img(files[0] + files[i + 1]/*, third_party::gl*/);
+			image_ptr img(files[0] + files[i + 1]/*, render_backend::gl*/);
 
 			if (i == 0)
 				format_ = img.gl_format();
@@ -84,10 +84,10 @@ public:
 		gl_check_errors();
 	}
 
-	texture_type type() const { return texture_type; }
+	texture_format type() const { return texture_format; }
 
 private:
-	texture_type texture_type;
+	texture_format texture_format;
 };
 
 // -----------------------------------------------------------------------------

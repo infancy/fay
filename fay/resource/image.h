@@ -103,7 +103,7 @@ public:
 	{
 		LOG_IF(ERROR, filepath.empty()) << "image path is empty!";
 
-		if (thirdparty == third_party::gl)
+		if (thirdparty == render_backend::gl)
 		{
 			is_flip_vertical_ = true;
 			stbi_set_flip_vertically_on_load(true);

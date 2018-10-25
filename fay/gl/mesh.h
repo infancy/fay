@@ -24,7 +24,7 @@ public:
 	}
 
 	mesh(std::vector<vertex> vertices, std::vector<uint32_t> indices,
-		std::vector<std::pair<image_ptr, texture_type>> images) : buf(vertices, indices)
+		std::vector<std::pair<image_ptr, texture_format>> images) : buf(vertices, indices)
 	{
 		for (auto& img : images)
 			textures.emplace_back(img.first, img.second);
@@ -49,7 +49,7 @@ public:
 			for (; index < type.size(); ++index)
 				if (textures[i].type() == type[index])
 					break;
-			LOG_IF(ERROR, index >= type.size()) << "texture_type failed to choose: " << i;
+			LOG_IF(ERROR, index >= type.size()) << "texture_format failed to choose: " << i;
 
 			sampler = name[index];
 			if (count[index]++ > 0)
@@ -63,7 +63,7 @@ public:
 			auto& tex = textures[i];
 
 			LOG_IF(ERROR, type_name.find(tex.type()) == type_name.end())
-				<< "texture_type failed to choose: " << i;
+				<< "texture_format failed to choose: " << i;
 
 			shader.bind_texture(type_name.at(tex.type()), i, tex);
 		}
@@ -95,14 +95,14 @@ public:
 	// texture2d_array textures;
 
 private:
-	const std::unordered_map<texture_type, std::string> type_name
+	const std::unordered_map<texture_format, std::string> type_name
 	{
-		{ texture_type::alpha,    "Alpha"    },
-		{ texture_type::ambient,  "Ambient"  },
-		{ texture_type::diffuse,  "Diffuse"  },
-		{ texture_type::specular, "Specular" },
-		{ texture_type::parallax, "Parallax" },
-		{ texture_type::emissive, "Emissive" }
+		{ texture_format::alpha,    "Alpha"    },
+		{ texture_format::ambient,  "Ambient"  },
+		{ texture_format::diffuse,  "Diffuse"  },
+		{ texture_format::specular, "Specular" },
+		{ texture_format::parallax, "Parallax" },
+		{ texture_format::emissive, "Emissive" }
 	};
 
 };

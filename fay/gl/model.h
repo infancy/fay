@@ -13,7 +13,7 @@ namespace fay
 class model
 {
 public:
-	model(const std::string& filepath, model_type model_type = model_type::obj, bool gamma = false);
+	model(const std::string& filepath, model_format model_format = model_format::obj, bool gamma = false);
 
 	// render the mesh, you need to bind texture by youself
 	void draw(GLsizei sz = 1);

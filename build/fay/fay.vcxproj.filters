@@ -7,9 +7,6 @@
     <Filter Include="utility">
       <UniqueIdentifier>{3df01228-62bc-40b5-8672-a02e864f1f0e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="gui">
-      <UniqueIdentifier>{27a71a91-026e-4c95-adc9-0fafb1b9598d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="core">
       <UniqueIdentifier>{101d3609-14e6-4c75-b743-57530cbeac80}</UniqueIdentifier>
     </Filter>
@@ -18,6 +15,18 @@
     </Filter>
     <Filter Include="resouce">
       <UniqueIdentifier>{432ba19b-7e9c-4cb1-8227-c8600e21751d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gfx">
+      <UniqueIdentifier>{e0143cce-11ed-44b4-a331-c25235e1cee4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ui">
+      <UniqueIdentifier>{cf287f00-3e12-4283-87d1-a6650c8407a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render">
+      <UniqueIdentifier>{54e06cad-b503-4da1-ba62-61db0a721fa1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app">
+      <UniqueIdentifier>{75f217f0-cee9-4d31-9c72-540706532bca}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -33,17 +42,26 @@
     <ClCompile Include="..\..\fay\gl\texture.cpp">
       <Filter>gl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\gui\gui.cpp">
-      <Filter>gui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\fay\gui\window.cpp">
-      <Filter>gui</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\fay\resource\image.cpp">
       <Filter>resouce</Filter>
     </ClCompile>
     <ClCompile Include="..\..\fay\resource\model.cpp">
       <Filter>resouce</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fay\ui\gui.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fay\ui\window.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fay\render\render.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fay\app\window.cpp">
+      <Filter>app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fay\render\device_opengl33.h">
+      <Filter>render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -65,12 +83,6 @@
     <ClInclude Include="..\..\fay\gl\texture.h">
       <Filter>gl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\gui\gui.h">
-      <Filter>gui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\gui\window.h">
-      <Filter>gui</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\utility\stencil.h">
       <Filter>utility</Filter>
     </ClInclude>
@@ -90,9 +102,6 @@
       <Filter>gl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\core\fay.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\core\config.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\core\profiler.h">
@@ -148,6 +157,45 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\math\quaternion.h">
       <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\shape.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\ui\gui.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\ui\window.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\render\render.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\render\define.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\render\device.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\app\app.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\platform.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\app\window.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\config.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\define.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\app\input.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\thread.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

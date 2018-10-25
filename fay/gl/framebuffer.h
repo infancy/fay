@@ -196,15 +196,15 @@ public:
 
 		texs_.resize(3);
 		// position color buffer
-		texs_[0] = texture2d(GL_NEAREST, GL_REPEAT, texture_type::diffuse);
+		texs_[0] = texture2d(GL_NEAREST, GL_REPEAT, texture_format::diffuse);
 		texs_[0].create(GL_RGB16F, w, h, GL_RGB, GL_FLOAT, NULL, false);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texs_[0].id(), 0);
 		// normal color buffer
-		texs_[1] = texture2d(GL_NEAREST, GL_REPEAT, texture_type::diffuse);
+		texs_[1] = texture2d(GL_NEAREST, GL_REPEAT, texture_format::diffuse);
 		texs_[1].create(GL_RGB16F, w, h, GL_RGB, GL_FLOAT, NULL, false);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, texs_[1].id(), 0);
 		// color + specular color buffer
-		texs_[2] = texture2d(GL_NEAREST, GL_REPEAT, texture_type::diffuse);
+		texs_[2] = texture2d(GL_NEAREST, GL_REPEAT, texture_format::diffuse);
 		texs_[2].create(GL_RGBA, w, h, GL_RGBA, GL_UNSIGNED_BYTE, NULL, false);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, texs_[2].id(), 0);
 			

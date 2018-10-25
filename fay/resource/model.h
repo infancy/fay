@@ -21,10 +21,10 @@ struct resource_mesh
 {
 	std::vector<Vertex>   vertices;
 	std::vector<uint32_t> indices;
-	std::vector<std::pair<image_ptr, texture_type>> images;
+	std::vector<std::pair<image_ptr, texture_format>> images;
 
 	resource_mesh(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, 
-		std::vector<std::pair<image_ptr, texture_type>>& images) :
+		std::vector<std::pair<image_ptr, texture_format>>& images) :
 		vertices{ vertices }, indices{ indices }, images{ images }
 	{}
 };
@@ -32,11 +32,11 @@ struct resource_mesh
 struct resource_model
 {
 	const std::string path;	// resources_directory
-	third_party api;
+	render_backend api;
 
 	// glm::vec3 min{}, max{};
 
-	resource_model(const std::string& filepath, third_party api);
+	resource_model(const std::string& filepath, render_backend api);
 };
 
 // load model by fay -----------------------------------------------------------
@@ -89,7 +89,7 @@ struct obj_material
 class obj_model : public resource_model
 {
 public:
-	obj_model(const std::string& filepath, third_party api = third_party::gl);
+	obj_model(const std::string& filepath, render_backend api = render_backend::gl);
 
 	// TODO: bound3
 	std::pair<glm::vec3, glm::vec3> bbox();	// 分离出 bbox 以：不为不需要的东西付出代价 & 避免复杂的加载代码
@@ -113,20 +113,20 @@ using assimp_mesh = resource_mesh<vertex5>;
 class assimp_model : public resource_model
 {
 public:
-	assimp_model(const std::string& filepath, third_party api = third_party::gl, model_type model_type = model_type::obj);
+	assimp_model(const std::string& filepath, render_backend api = render_backend::gl, model_format model_format = model_format::obj);
 
 private:
 	void process_node(aiNode* node, const aiScene* scene);
 	assimp_mesh process_mesh(aiMesh* mesh, const aiScene* scene);
 
-	std::vector<std::pair<image_ptr, texture_type>> 
-	load_images(aiMaterial* mat, aiTextureType type, texture_type textype);
+	std::vector<std::pair<image_ptr, texture_format>> 
+	load_images(aiMaterial* mat, aiTextureType type, texture_format textype);
 
 public:
 	std::vector<assimp_mesh> meshes;
 
 private:
-	model_type modeltype;
+	model_format modeltype;
 	std::unordered_map<std::string, image_ptr> images_cache;	// 保存已加载的图像，避免重复加载
 };
 

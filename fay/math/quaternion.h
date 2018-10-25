@@ -5,6 +5,8 @@
 #ifndef FAY_MATH_QUATERNION_H
 #define FAY_MATH_QUATERNION_H
 
+#include "fay/resource/file.h"
+
 namespace fay
 {
 

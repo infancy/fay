@@ -50,8 +50,9 @@ void Sync_queue<T>::get(T& val)
 
 // a half sync/half async thread pool
 
-using T = std::function<void()>;
+// using T = std::function<void()>;
 
+template<typename T>
 class sync_queue
 {
 public:
@@ -169,6 +170,9 @@ public:
 
 	~thread_pool() { stop(); }
 
+	// void async()
+	// void defer()
+	// void hybrid
 	void add(const Task& task) { queue_.put(task); }
 	void add(Task&& task)	   { queue_.put(std::forward<Task>(task)); }
 
@@ -211,7 +215,7 @@ private:
 
 private:
 	std::list<std::shared_ptr<std::thread>> threads_; //处理任务的线程组
-	sync_queue queue_; //同步队列     
+	sync_queue<Task> queue_; //同步队列     
 	std::atomic<bool> running_; //是否停止的标志
 	std::once_flag flag_;
 };

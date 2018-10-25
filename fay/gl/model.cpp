@@ -4,9 +4,9 @@
 namespace fay
 {
 
-model::model(const std::string& filepath, model_type model_type, bool gamma) : gamma_correction(gamma)
+model::model(const std::string& filepath, model_format model_format, bool gamma) : gamma_correction(gamma)
 {
-	assimp_model model(filepath, third_party::gl, model_type);
+	assimp_model model(filepath, render_backend::gl, model_format);
 	for (auto& mesh : model.meshes)
 	{
 	#ifdef _DEBUG
@@ -62,25 +62,25 @@ objmodel::objmodel(const std::string& filepath, bool gamma) : gamma_correction(g
 			<< ' ' << objmat.map_Kd << '\n';
 	#endif // _DEBUG
 
-		std::vector<std::pair<image_ptr, texture_type>> images;
+		std::vector<std::pair<image_ptr, texture_format>> images;
 
 		if (!objmat.map_Ka.empty()) images.emplace_back( 
-			image_ptr(model.path + objmat.map_Ka, true), texture_type::ambient);
+			image_ptr(model.path + objmat.map_Ka, true), texture_format::ambient);
 
 		if (!objmat.map_Kd.empty()) images.emplace_back(
-			image_ptr(model.path + objmat.map_Kd, true), texture_type::diffuse);
+			image_ptr(model.path + objmat.map_Kd, true), texture_format::diffuse);
 
 		if (!objmat.map_Ks.empty()) images.emplace_back(
-			image_ptr(model.path + objmat.map_Ks, true), texture_type::specular);
+			image_ptr(model.path + objmat.map_Ks, true), texture_format::specular);
 
 		if (!objmat.map_Ke.empty()) images.emplace_back(
-			image_ptr(model.path + objmat.map_Ke, true), texture_type::emissive);
+			image_ptr(model.path + objmat.map_Ke, true), texture_format::emissive);
 
 		if (!objmat.map_d.empty()) images.emplace_back(
-			image_ptr(model.path + objmat.map_d, true), texture_type::alpha);
+			image_ptr(model.path + objmat.map_d, true), texture_format::alpha);
 
 		if (!objmat.map_bump.empty()) images.emplace_back(
-			image_ptr(model.path + objmat.map_bump, true), texture_type::displace);
+			image_ptr(model.path + objmat.map_bump, true), texture_format::displace);
 
 		this->meshes.emplace_back(objmesh.vertices, objmesh.indices, images);
 	}

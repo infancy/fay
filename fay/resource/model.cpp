@@ -8,7 +8,7 @@
 namespace fay
 {
 
-resource_model::resource_model(const std::string& filepath, third_party api) : 
+resource_model::resource_model(const std::string& filepath, render_backend api) : 
 	path{ get_path(filepath) }, api{ api } {}
 
 // load obj model --------------------------------------------------------------
@@ -53,7 +53,7 @@ static const std::unordered_map<std::string, obj_keyword> map
 
 // boost::format
 // ÀíÂÛÉÏÒ»¸ö mesh ÓÉ 'o' ¿ªÊ¼£¬µ«Åöµ½ 'o'£¬'g'£¬'usemtl'£¬¾ÍÐÂ½¨Ò»¸ö mesh
-obj_model::obj_model(const std::string& filepath, third_party api) : resource_model(filepath, api)
+obj_model::obj_model(const std::string& filepath, render_backend api) : resource_model(filepath, api)
 {
 	// load *.obj
 	std::ifstream file(filepath);
@@ -288,7 +288,7 @@ std::vector<obj_mesh> obj_model::load_meshs(
 			}
 
 			// index
-			if (api == third_party::gl)
+			if (api == render_backend::gl)
 			{   // ´ËÊ±ÎÞÐè UV ·´×ª
 				mesh.indices.insert(mesh.indices.end(), 
 					{ index, index + 1, index + 2 });
@@ -443,12 +443,12 @@ void objMesh_transform_to_TextureDataArray(
 
 // load model by assimp --------------------------------------------------------
 
-assimp_model::assimp_model(const std::string& filepath, third_party api, model_type model_type) : 
-	resource_model(filepath, api), modeltype{ model_type }
+assimp_model::assimp_model(const std::string& filepath, render_backend api, model_format model_format) : 
+	resource_model(filepath, api), modeltype{ model_format }
 {
 	Assimp::Importer importer;
 	const aiScene* scene{};
-	if(api == third_party::gl)
+	if(api == render_backend::gl)
 		scene = importer.ReadFile(filepath,
 			aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 	else
@@ -480,7 +480,7 @@ assimp_mesh assimp_model::process_mesh(aiMesh* mesh, const aiScene* scene)
 {
 	std::vector<vertex5>  vertices;
 	std::vector<uint32_t> indices;
-	std::vector<std::pair<image_ptr, texture_type>> images;
+	std::vector<std::pair<image_ptr, texture_format>> images;
 
 	// vertices
 	for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
@@ -491,7 +491,7 @@ assimp_mesh assimp_model::process_mesh(aiMesh* mesh, const aiScene* scene)
 
 		copy(vertex.position, mesh->mVertices[i]);
 		copy(vertex.normal, mesh->mNormals[i]);
-		if(modeltype == model_type::obj)
+		if(modeltype == model_format::obj)
 		{ 
 			copy(vertex.tangent, mesh->mTangents[i]);
 			copy(vertex.bitangent, mesh->mBitangents[i]);
@@ -522,30 +522,30 @@ assimp_mesh assimp_model::process_mesh(aiMesh* mesh, const aiScene* scene)
 	// materials
 	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-	auto load_maps = [this, &images, material](aiTextureType type, texture_type textype)
+	auto load_maps = [this, &images, material](aiTextureType type, texture_format textype)
 	{
 		auto maps = load_images(material, type, textype);
 		images.insert(images.end(), maps.begin(), maps.end());
 	};
 
-	load_maps(aiTextureType_AMBIENT,  texture_type::ambient);
-	load_maps(aiTextureType_DIFFUSE,  texture_type::diffuse);
-	load_maps(aiTextureType_SPECULAR, texture_type::specular);
-	if (modeltype == model_type::obj)
-		load_maps(aiTextureType_HEIGHT,   texture_type::parallax);
+	load_maps(aiTextureType_AMBIENT,  texture_format::ambient);
+	load_maps(aiTextureType_DIFFUSE,  texture_format::diffuse);
+	load_maps(aiTextureType_SPECULAR, texture_format::specular);
+	if (modeltype == model_format::obj)
+		load_maps(aiTextureType_HEIGHT,   texture_format::parallax);
 	else
-		load_maps(aiTextureType_NORMALS,  texture_type::parallax);
+		load_maps(aiTextureType_NORMALS,  texture_format::parallax);
 	//std::cout << "\nnormals:";
-	//load_maps(aiTextureType_NORMALS,  texture_type::normals);
-	//load_maps(aiTextureType_UNKNOWN, texture_type::unknown);
+	//load_maps(aiTextureType_NORMALS,  texture_format::normals);
+	//load_maps(aiTextureType_UNKNOWN, texture_format::unknown);
 
 	return assimp_mesh(vertices, indices, images);
 }
 
-std::vector<std::pair<image_ptr, texture_type>> 
-assimp_model::load_images(aiMaterial* mat, aiTextureType type, texture_type textype)
+std::vector<std::pair<image_ptr, texture_format>> 
+assimp_model::load_images(aiMaterial* mat, aiTextureType type, texture_format textype)
 {
-	std::vector<std::pair<image_ptr, texture_type>> images;
+	std::vector<std::pair<image_ptr, texture_format>> images;
 
 	for (uint32_t i = 0; i < mat->GetTextureCount(type); ++i)
 	{

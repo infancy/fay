@@ -12,7 +12,7 @@
 namespace fay
 {
 
-static constexpr float MaxFloat = std::numeric_limits<float>::max();
+inline float MaxFloat = std::numeric_limits<float>::max();
 static constexpr float Infinity = std::numeric_limits<float>::infinity();
 
 static constexpr float MachineEpsilon = std::numeric_limits<float>::epsilon() * 0.5;
@@ -80,11 +80,13 @@ struct equal_epsilon
 	static constexpr T absolute_epsilon = std::numeric_limits<T>::epsilon();
 	static constexpr T relative_epsilon = std::numeric_limits<T>::epsilon();
 };
+
 template <typename T>
 bool is_equal(T a, T b, typename std::enable_if_t<!std::is_floating_point_v<T>>* = nullptr)
 {
 	return a == b;
 }
+
 template <typename T>
 bool is_equal(T a, T b, typename std::enable_if_t<std::is_floating_point_v<T>>* = nullptr)
 {

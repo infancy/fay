@@ -5,7 +5,8 @@
 #ifndef FAY_CORE_FAY_H
 #define FAY_CORE_FAY_H
 
-#include "fay/core/config.h"
+#include "fay/core/platform.h"
+#include "fay/core/define.h"
 
 // Global Include Files
 #include <cinttypes>
@@ -33,18 +34,7 @@
 namespace fay
 {
 
-enum class third_party { none, gl, dx, vk };
 
-// graphics --------------------------------------------------------------------
-
-enum class model_type { obj, fbx, gltf, blend, unknown };
-
-enum class texture_type { none, diffuse, specular, ambient, emissive, height, alpha, parallax,
-	normal, shininess, opacity, displace, lightmap, reflection, cubemap, shadowmap, unknown };
-
-// math ------------------------------------------------------------------------
-
-// #define FAY_SIMD
 
 } // namespace fay
 

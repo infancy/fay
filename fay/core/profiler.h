@@ -24,9 +24,8 @@ struct time_profiler
 {
 	typename Precision::rep count{};
 
-	template<typename Func, typename ...Args, typename R=
-		std::enable_if_t<std::is_void<typename std::function<Func>::result_type>::value, 
-		void>>
+	template<typename Func, typename ...Args, typename =
+		std::enable_if_t<std::is_void_v<typename std::function<Func>::result_type>, void>>
 	void call(Args&&... args)
 	{
 		auto start = std::chrono::system_clock::now();
@@ -37,7 +36,7 @@ struct time_profiler
 	}
 
 	template<typename Func, typename ...Args, typename R =
-		std::enable_if_t<!std::is_void<typename std::function<Func>::result_type>::value,
+		std::enable_if_t<!std::is_void_v<typename std::function<Func>::result_type>,
 		typename std::function<Func>::result_type>>
 	R call(Args&&... args)
 	{
@@ -53,7 +52,7 @@ struct time_profiler
 
 // TOOD:SFINAE
 template<typename Func, typename Precision = std::chrono::milliseconds, 
-	bool VoidReturn = std::is_void<typename std::function<Func>::result_type>::value>
+	bool VoidReturn = std::is_void_v<typename std::function<Func>::result_type>>
 struct time_wrapper {};
 
 template<typename Func, typename Precision>

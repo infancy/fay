@@ -22,6 +22,8 @@ struct is_not_void : is_not_void_<std::remove_cv_t<T>> {};
 template <typename T>
 constexpr bool is_not_void_v = is_not_void<T>::value;
 
+
+
 template <typename R, typename... ArgTypes>
 using return_type = R;
 
