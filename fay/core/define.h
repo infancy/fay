@@ -22,7 +22,7 @@ namespace fay
 
 enum class math_feature
 {
-	begin, none, simd, end
+	none, simd, count
 };
 
 
@@ -32,11 +32,37 @@ enum class math_feature
 
 
 
+enum class render_feature 
+{
+	//instancing,
+
+    texture_compression_dxt,
+	texture_compression_pvrtc,
+	texture_compression_atc,
+	texture_compression_etc2,
+
+	//texture_float,
+	//texture_half_float,
+
+	origin_bottom_left,
+    origin_top_left,
+
+	msaa_render_targets,
+	packed_vertex_format_10_2,
+	multiple_render_target,
+
+	//texture_three,
+	//texture_array,
+
+	count
+};
+
 enum class render_backend
 {
-	none, opengl33, opengl45, d3d11, count
+	none, opengl, opengl_dsa, d3d11, count
 };
 // TODO: FAY_ENUM_CLASS_OPERATOR( render_backend )
+
 
 
 // -------------------------------------------------------------------------------------------------
@@ -46,17 +72,16 @@ enum class render_backend
 
 enum class model_format
 {
-	begin, none, obj, fbx, gltf, blend, unknown, end
+	none, obj, fbx, gltf, blend, unknown, count
 };
 
 enum class texture_format
 {
-	begin, 
 	none,
 	diffuse, specular, ambient, emissive, height, alpha, parallax,
 	normal, shininess, opacity, displace, lightmap, reflection, cubemap, shadowmap,
 	unknown, 
-	end
+	count
 };
 
 

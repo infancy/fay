@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// TODO: form gl/ to render/, and try to don't change others
 #include "fay/gl/buffer.h"
 #include "fay/gl/framebuffer.h"
 #include "fay/gl/texture.h"

@@ -288,7 +288,7 @@ std::vector<obj_mesh> obj_model::load_meshs(
 			}
 
 			// index
-			if (api == render_backend::gl)
+			if (api == render_backend::opengl)
 			{   // ´ËÊ±ÎÞÐè UV ·´×ª
 				mesh.indices.insert(mesh.indices.end(), 
 					{ index, index + 1, index + 2 });
@@ -448,7 +448,7 @@ assimp_model::assimp_model(const std::string& filepath, render_backend api, mode
 {
 	Assimp::Importer importer;
 	const aiScene* scene{};
-	if(api == render_backend::gl)
+	if(api == render_backend::opengl)
 		scene = importer.ReadFile(filepath,
 			aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 	else
@@ -558,7 +558,7 @@ assimp_model::load_images(aiMaterial* mat, aiTextureType type, texture_format te
 			if (images_cache.find(name) == images_cache.end())
 			{
 				std::cout << "\nload image: " << (path + name);
-				image_ptr img(path + name, api);
+				image_ptr img(path + name, true);
 				images.push_back({img, textype});
 				images_cache.insert({ name, img });
 			}

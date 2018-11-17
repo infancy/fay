@@ -57,6 +57,12 @@ struct vertex3
 	glm::vec3 position{0.f};
 	glm::vec3 normal  {0.f};
 	glm::vec2 texcoord{0.f};
+
+    vertex3() {}
+    vertex3(glm::vec3 p, glm::vec3 n, glm::vec2 t) :
+        position(p), normal(n), texcoord(t)
+    {
+    }
 };
 
 struct vertex5

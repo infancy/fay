@@ -12,6 +12,8 @@
 namespace fay
 {
 
+// TODO???: return string_view(like return raw pointer)
+
 // split
 
 // e.g. "  Hello  World  " -> "World  "
@@ -20,17 +22,14 @@ std::string erase_front_word(
 {
 	// stringstream ss(str); ss >> tmp; return ss.str();
 	std::size_t begin = str.find_first_not_of(split);
-
 	if (begin == std::string::npos)
 		return "";
 
 	begin = str.find_first_of(split, begin);
-
 	if (begin == std::string::npos)
 		return "";
 
 	begin = str.find_first_not_of(split, begin);
-
 	if (begin == std::string::npos)
 		return "";
 
@@ -42,18 +41,15 @@ std::string erase_back_word(
 	const std::string& str, std::string split = " \t\f\v\n\r")
 {
 	std::size_t end = str.find_last_not_of(split);
-
 	// if (end == 0)
 	if (end == std::string::npos)
 		return "";
 
 	end = str.find_last_of(split, end);
-
 	if (end == std::string::npos)
 		return "";
 
 	end = str.find_last_not_of(split, end);
-
 	if (end == std::string::npos)
 		return "";
 

@@ -67,7 +67,7 @@ protected:
 class image_ptr : public base_image	// shared_image, stbImagePtr
 {
 public:
-	image_ptr(const std::string& filepath = {}, bool flip_vertical = false) :
+	image_ptr(const std::string& filepath = {}, bool flip_vertical = false) : // TODO: change interface
 		base_image(filepath, flip_vertical)
 	{
 		LOG_IF(ERROR, filepath.empty()) << "image path is empty!";

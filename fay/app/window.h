@@ -15,6 +15,9 @@
 namespace fay
 {
 
+// window is responsible for managing the display of the window,
+// updating user input and creating 3d graphics api context/device 
+
 struct window_desc	// TODO: merge to config?
 {
 	uint32_t width{ 1080 };
@@ -38,10 +41,14 @@ public:
 	{
 	}
 
+    // TODO
 
+    // update: update input...
+
+    // show : swap buffer...
 
 	// virtual void open() = 0;
-	virtual void close() = 0;
+	virtual bool should_close() = 0;
 	virtual void update_input() = 0;
 
 protected:
@@ -77,6 +84,13 @@ inline void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
+inline void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE); // then glfwWindowShouldClose(GLFWwindow* window) return true
+    // TODO... catch other event
+}
+
 inline void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	// TODO
@@ -98,6 +112,7 @@ inline void scroll_callback(GLFWwindow* window, double /*xoffset*/, double yoffs
 
 }
 
+// TODO: every window has it's own glfw_ctx and render_device
 class window_glfw : public window
 {
 public:
@@ -108,11 +123,11 @@ public:
 		glfwSetErrorCallback(glfw_detail::error_callback);
 		glfwInit();
 
-		if (desc_.render_backend_v == render_backend::opengl33)
+		if (desc_.render_backend_v == render_backend::opengl) // TODO: choose opengl version by itself
 		{
 			create_window_and_glcontext(3, 3);
 		}
-		else if (desc_.render_backend_v == render_backend::opengl45)
+		else if (desc_.render_backend_v == render_backend::opengl_dsa)
 		{
 			create_window_and_glcontext(4, 5);
 		}
@@ -152,10 +167,10 @@ public:
 		glfwGetCursorPos(window_, &input_.lastx, &input_.lasty);
 
 		glfwSetFramebufferSizeCallback(window_, glfw_detail::framebuffer_size_callback);
+        glfwSetKeyCallback(window_, glfw_detail::key_callback);
 		glfwSetMouseButtonCallback(window_, glfw_detail::mouse_button_callback);
 		glfwSetScrollCallback(window_, glfw_detail::scroll_callback);
 	}
-
 	~window_glfw() override
 	{
 		// Destroys the specified window and its context.
@@ -164,46 +179,25 @@ public:
 		glfwTerminate();
 	}
 
-	// TODO: broadcast(event::close_window);
-	bool should_close()
+	void update()
 	{
-		return glfwWindowShouldClose(window_);
-	}
-
-	void close() override
-	{
-		glfwSetWindowShouldClose(window_, true);	// then glfwWindowShouldClose(GLFWwindow*  window) return true
-		LOG_IF(ERROR, glfwWindowShouldClose(window_) != 0);
-	}
-
-	void update_input()
-	{
-		// Processing events will cause the window
-		// and input callbacks associated with those events to be called.
-		glfwPollEvents();
-
-		// mouse position
-		input_.lastx = input_.posx; input_.lasty = input_.posy;
-		//if (glfwGetWindowAttrib(window_, GLFW_FOCUSED))
-		glfwGetCursorPos(window_, &input_.posx, &input_.posy);
-		input_.dx = input_.posx - input_.lastx;
-		input_.dy = input_.posy - input_.lasty;
-
-		// time
-		input_.last = input_.time;
-		input_.time = glfwGetTime();
-		input_.dt = input_.time - input_.last;
-		if (input_.dt == 0.0)
-			input_.dt = 1.0 / 60.0;	// TODO: depend by screen
-
-		// TODO: keyboard
+        update_input();
 	}
 
 	// TODO:remove
-	void swapbuffers()	// don't clear framebuffer
+	void show()	// don't clear framebuffer
 	{
 		glfwSwapBuffers(window_);
+        // http://www.glfw.org/docs/latest/input_guide.html#events
+        // Event processing must be done regularly while you have any windows and is normally done each frame after buffer swapping.
+        //glfwPollEvents(); -> update input at the begin in every frame
 	}
+
+    // TODO: broadcast(event::close_window);
+    bool should_close() override
+    {
+        return glfwWindowShouldClose(window_);
+    }
 
 private:
 	// create glcontext by glfw and glad, or you want to handle it by yourself, deal with wgl, glx...?
@@ -234,6 +228,29 @@ private:
 			LOG(ERROR) << "Failed to initialize GLAD";
 		}
 	}
+
+    void update_input()
+    {
+        // Processing events will cause the window
+        // and input callbacks associated with those events to be called.
+        glfwPollEvents();
+
+        // mouse position
+        input_.lastx = input_.posx; input_.lasty = input_.posy;
+        //if (glfwGetWindowAttrib(window_, GLFW_FOCUSED))
+        glfwGetCursorPos(window_, &input_.posx, &input_.posy);
+        input_.dx = input_.posx - input_.lastx;
+        input_.dy = input_.posy - input_.lasty;
+
+        // time
+        input_.last = input_.time;
+        input_.time = glfwGetTime();
+        input_.dt = input_.time - input_.last;
+        if (input_.dt == 0.0)
+            input_.dt = 1.0 / 60.0;	// TODO: depend by screen
+
+        // TODO: keyboard
+    }
 
 	bool keydown(int key) { return (glfwGetKey(window_, key) == GLFW_PRESS); }
 

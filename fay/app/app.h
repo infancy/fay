@@ -29,14 +29,19 @@ public:
 
 
 
-	virtual void init()
+    virtual void init()
 	{
 	}
 
-	virtual void update()
-	{
+    virtual void update()
+    {
 	}
 
+    virtual void clear()
+    {
+    }
+
+	// virtual void render()
 	// virtual void close()
 
 	virtual int run()
@@ -44,17 +49,19 @@ public:
 		init_app();
 		init();	// init_user_setup
 
-		while (true)
+		while (!window_->should_close())
 		{
 			// event
-			window_->update_input();
+			window_->update();
 
 			// update
 			update();
 
 			// show
-			window_->swapbuffers();
+			window_->show();
 		}
+
+        clear();
 
 		return 0;
 	}
@@ -63,7 +70,7 @@ private:
 	void init_app()
 	{
 		// TODO: factory
-		window_ = std::make_unique<window_glfw>(desc_.window);
+		window_ = std::make_unique<window_glfw>(desc_.window);	// create window and context
 	}
 
 protected:

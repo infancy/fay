@@ -24,7 +24,7 @@ public:
 
 	uint32_t id() const { return vao; }
 	uint32_t vbo() const { return vbo_; }
-	uint32_t size() const { return isz; }
+    uint32_t size() const { return isz; }
 
 	void draw(GLsizei sz = 1);
 

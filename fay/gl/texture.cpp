@@ -53,7 +53,7 @@ void base_texture::set_border_color(std::array<GLfloat, 4> borderColor)
 texture2d::texture2d(const std::string& filepath, texture_format textype, bool Mipmap) 
 	: base_texture(GL_TEXTURE_2D, GL_LINEAR, GL_REPEAT), textype_{ textype }
 {
-	const image_ptr img(filepath, render_backend::gl);
+	const image_ptr img(filepath, true);
 
 	create(img.gl_format(), img.width(), img.height(), img.gl_format(), GL_UNSIGNED_BYTE, img.data(), Mipmap);
 }
@@ -96,7 +96,7 @@ texture2d_array::texture2d_array(std::vector<std::string> material_names, std::s
 {
 	for(int i = 0; i < material_names.size(); ++i)
 	{ 
-		const image_ptr img(path + material_names[i], render_backend::gl);	// 当前路径 + 文件名
+		const image_ptr img(path + material_names[i], true);	// 当前路径 + 文件名
 		auto format = img.gl_format();
 
 		// 首次先创建一个 2D 纹理数组

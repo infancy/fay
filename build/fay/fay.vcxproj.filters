@@ -60,7 +60,7 @@
     <ClCompile Include="..\..\fay\app\window.cpp">
       <Filter>app</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\render\device_opengl33.h">
+    <ClCompile Include="..\..\fay\render\device_opengl.cpp">
       <Filter>render</Filter>
     </ClCompile>
   </ItemGroup>
@@ -170,12 +170,6 @@
     <ClInclude Include="..\..\fay\render\render.h">
       <Filter>render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\render\define.h">
-      <Filter>render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\render\device.h">
-      <Filter>render</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\app\app.h">
       <Filter>app</Filter>
     </ClInclude>
@@ -196,6 +190,15 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\core\thread.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\render\device.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\render\native_type.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\render\define.h">
+      <Filter>render</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

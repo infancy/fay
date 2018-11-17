@@ -14,8 +14,10 @@
 #include <cstring>
 
 #include <algorithm>
+#include <array>
 #include <fstream>
 #include <iostream>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -38,4 +40,4 @@ namespace fay
 
 } // namespace fay
 
-#endif //FAY_CORE_FAY_H
+#endif // FAY_CORE_FAY_H

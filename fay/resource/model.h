@@ -6,6 +6,7 @@
 #define FAY_RESOURCE_LOAD_MODEL_H
 
 // TODO: #include "fay/math/geometry.h"
+// TODO: add : model info, save (sub)model
 #include "fay/gl/geometry.h"
 #include "fay/resource/image.h"
 
@@ -89,7 +90,7 @@ struct obj_material
 class obj_model : public resource_model
 {
 public:
-	obj_model(const std::string& filepath, render_backend api = render_backend::gl);
+	obj_model(const std::string& filepath, render_backend api = render_backend::opengl);
 
 	// TODO: bound3
 	std::pair<glm::vec3, glm::vec3> bbox();	// 分离出 bbox 以：不为不需要的东西付出代价 & 避免复杂的加载代码
@@ -113,7 +114,7 @@ using assimp_mesh = resource_mesh<vertex5>;
 class assimp_model : public resource_model
 {
 public:
-	assimp_model(const std::string& filepath, render_backend api = render_backend::gl, model_format model_format = model_format::obj);
+	assimp_model(const std::string& filepath, render_backend api = render_backend::opengl, model_format model_format = model_format::obj);
 
 private:
 	void process_node(aiNode* node, const aiScene* scene);
