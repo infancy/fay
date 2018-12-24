@@ -12,7 +12,7 @@ namespace fay //::config
 
 struct config
 {
-	render_backend render_backend_v{ render_backend::opengl };
+	render_backend_type render_backend_type_v{ render_backend_type::opengl };
 };
 
 inline config g_config_{};

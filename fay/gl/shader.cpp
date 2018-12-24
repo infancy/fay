@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include"shader.h"
 
 namespace fay

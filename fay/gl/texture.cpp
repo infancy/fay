@@ -107,7 +107,11 @@ texture2d_array::texture2d_array(std::vector<std::string> material_names, std::s
 		}
 		CHECK(format_ == format) << "texture2d_array: different format!";
 		//modify the existing texture
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, img.width(), img.height(), 1, format, GL_UNSIGNED_BYTE, img.data());
+        // w, h, 1 means the sub texture is a 2-d texture
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 
+            0, 0, i, 
+            img.width(), img.height(), 1, 
+            format, GL_UNSIGNED_BYTE, img.data());
 	}
 	gl_check_errors();
 }

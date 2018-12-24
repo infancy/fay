@@ -10,6 +10,7 @@
 namespace fay
 {
 
+// TODO: remove to __transform.h
 /*
    <-----------------------------><-----------------------------><----------------------------->
 
@@ -191,7 +192,7 @@ inline mat<4, 4, T> scale(const mat<4, 4, T>& m, const vec<3, T>& v)
    cosTheta, -sinTheta, 0, 0,
    sinTheta,  cosTheta, 0, 0,
           0,         0, 1, 0,
-		  0,         0, 0, 1,
+	  0,         0, 0, 1,
 
 */
 template<typename T>

@@ -33,11 +33,11 @@ struct resource_mesh
 struct resource_model
 {
 	const std::string path;	// resources_directory
-	render_backend api;
+	render_backend_type api;
 
 	// glm::vec3 min{}, max{};
 
-	resource_model(const std::string& filepath, render_backend api);
+	resource_model(const std::string& filepath, render_backend_type api);
 };
 
 // load model by fay -----------------------------------------------------------
@@ -90,7 +90,7 @@ struct obj_material
 class obj_model : public resource_model
 {
 public:
-	obj_model(const std::string& filepath, render_backend api = render_backend::opengl);
+	obj_model(const std::string& filepath, render_backend_type api = render_backend_type::opengl);
 
 	// TODO: bound3
 	std::pair<glm::vec3, glm::vec3> bbox();	// 分离出 bbox 以：不为不需要的东西付出代价 & 避免复杂的加载代码
@@ -114,7 +114,7 @@ using assimp_mesh = resource_mesh<vertex5>;
 class assimp_model : public resource_model
 {
 public:
-	assimp_model(const std::string& filepath, render_backend api = render_backend::opengl, model_format model_format = model_format::obj);
+	assimp_model(const std::string& filepath, render_backend_type api = render_backend_type::opengl, model_format model_format = model_format::obj);
 
 private:
 	void process_node(aiNode* node, const aiScene* scene);

@@ -34,6 +34,7 @@ inline float radians(float deg) { return (Pi / 180) * deg; }
 
 inline float degrees(float rad) { return (180 / Pi) * rad; }
 
+// TODO: min/max(......)
 template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
 inline T min(T a, T b, T c)
 {
@@ -47,14 +48,9 @@ inline T max(T a, T b, T c)
 }
 
 template <typename T>
-inline T clamp(T val, T low, T high)
+/*remove*/inline T clamp(T val, T low, T high)
 {
-	if (val < low)
-		return low;
-	else if (val > high)
-		return high;
-	else
-		return val;
+    return std::clamp(val, low, high);
 }
 
 inline float gamma(int n)

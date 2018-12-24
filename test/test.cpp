@@ -3,10 +3,37 @@
 
 GTEST_API_ int main(int argc, char **argv)
 {
-	printf("Running main() from test/test.cpp\n");
+    google::InitGoogleLogging(argv[0]);
+
+    char filter[] = "--gtest_filter=memory.*";
+    argv[argc++] = filter;
+    //testing::GTEST_FLAG(filter) = "utility.*";
 	testing::InitGoogleTest(&argc, argv);
-	google::InitGoogleLogging(argv[0]);
 	auto result = RUN_ALL_TESTS();
 	getchar();
 	return result;
 }
+
+/*
+test_template.cpp:
+
+
+
+#include <gtest/gtest.h>
+
+#include "fay/core/fay.h"
+#include
+
+using namespace std;
+using namespace fay;
+
+// -------------------------------------------------------------------------------------------------
+
+TEST(test_case, test_name)
+{
+    ASSERT_TRUE(expr);
+}
+
+
+
+*/

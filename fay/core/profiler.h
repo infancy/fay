@@ -10,9 +10,8 @@
 #include <chrono>
 #include <functional>
 #include <type_traits>
-#include <boost/core/enable_if.hpp>
 
-#include "fay/utility/type_traits.h"
+#include "fay/core/type.h"
 
 namespace fay
 {

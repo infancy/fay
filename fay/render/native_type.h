@@ -10,7 +10,7 @@
 
 #include "fay/render/define.h"
 
-namespace fay::render
+namespace fay
 {
 
 struct native_type
@@ -28,6 +28,7 @@ auto enum_class_hash = [] (auto k)
 */
 
 // TODO: move to core/..
+// TODO: underlying_type_t
 struct enum_class_hash
 {
     template <typename T>
@@ -40,7 +41,7 @@ struct enum_class_hash
 template <typename Key, typename T>
 using enum_class_map = std::unordered_map<Key, T, enum_class_hash>;
 
-
+// enum_cast
 
 const inline enum_class_map<resource_usage, native_type>
 resource_usage_map
@@ -69,10 +70,20 @@ texture_type_map
 	//{ texture_type::texture_array_data, { 0, 0 } },
 };
 
+const inline enum_class_map<render_target, native_type>
+render_target_map
+{
+    { render_target::none,          { GL_NONE, 0 } },
+    { render_target::color,         { GL_COLOR_ATTACHMENT0, 0 } },
+    { render_target::depth,         { GL_DEPTH_ATTACHMENT, 0 } },
+    { render_target::stencil,       { GL_STENCIL_ATTACHMENT, 0 } },
+    { render_target::depth_stencil, { GL_DEPTH_STENCIL_ATTACHMENT, 0 } },
+};
+
 const inline enum_class_map<filter_mode, native_type>
 filter_mode_map
 {
-    { filter_mode::anisotropy,             { 0,                         D3D11_FILTER_ANISOTROPIC } },
+    { filter_mode::anisotropy,             { GL_NONE,                   D3D11_FILTER_ANISOTROPIC } },
     { filter_mode::nearest,                { GL_NEAREST,                0 } },
     { filter_mode::linear,                 { GL_LINEAR,                 0 } },
     { filter_mode::nearest_mipmap_nearest, { GL_NEAREST_MIPMAP_NEAREST, 0 } },
@@ -121,9 +132,9 @@ primitive_type_map
 const inline enum_class_map<cull_mode, native_type>
 cull_mode_map
 {
-	{ cull_mode::none,  { 0, D3D11_CULL_NONE } },
-	{ cull_mode::front, { 0, D3D11_CULL_FRONT } },
-	{ cull_mode::back,  { 0, D3D11_CULL_BACK } },
+	{ cull_mode::none,  { GL_NONE,  D3D11_CULL_NONE } },
+	{ cull_mode::front, { GL_FRONT, D3D11_CULL_FRONT } },
+	{ cull_mode::back,  { GL_BACK,  D3D11_CULL_BACK } },
 };
 
 const inline enum_class_map<blend_factor, native_type>
@@ -171,17 +182,17 @@ stencil_op_map
 	{ stencil_op::decr_wrap,  { GL_DECR_WRAP, D3D11_STENCIL_OP_DECR } },
 };
 
-const inline enum_class_map<compare_func, native_type>
-compare_func_map
+const inline enum_class_map<compare_op, native_type>
+compare_op_map
 {
-    { compare_func::never,         { GL_NEVER,    D3D11_COMPARISON_NEVER } },
-    { compare_func::less,          { GL_LESS,     D3D11_COMPARISON_LESS } },
-    { compare_func::less_equal,    { GL_LEQUAL,   D3D11_COMPARISON_LESS_EQUAL } },
-    { compare_func::equal,         { GL_EQUAL,    D3D11_COMPARISON_EQUAL } },
-    { compare_func::not_equal,     { GL_NOTEQUAL, D3D11_COMPARISON_NOT_EQUAL } },
-    { compare_func::greater,       { GL_GREATER,  D3D11_COMPARISON_GREATER } },
-    { compare_func::greater_equal, { GL_GEQUAL,   D3D11_COMPARISON_GREATER_EQUAL } },
-    { compare_func::always,        { GL_ALWAYS,   D3D11_COMPARISON_ALWAYS } },
+    { compare_op::never,         { GL_NEVER,    D3D11_COMPARISON_NEVER } },
+    { compare_op::less,          { GL_LESS,     D3D11_COMPARISON_LESS } },
+    { compare_op::less_equal,    { GL_LEQUAL,   D3D11_COMPARISON_LESS_EQUAL } },
+    { compare_op::equal,         { GL_EQUAL,    D3D11_COMPARISON_EQUAL } },
+    { compare_op::not_equal,     { GL_NOTEQUAL, D3D11_COMPARISON_NOT_EQUAL } },
+    { compare_op::greater,       { GL_GREATER,  D3D11_COMPARISON_GREATER } },
+    { compare_op::greater_equal, { GL_GEQUAL,   D3D11_COMPARISON_GREATER_EQUAL } },
+    { compare_op::always,        { GL_ALWAYS,   D3D11_COMPARISON_ALWAYS } },
 };
 
 
@@ -220,6 +231,25 @@ attribute_format_map
 
     //{ uint10_x2, {1, 4} },
 };
+
+inline bool is_compressed_pixel_format(pixel_format fmt) 
+{
+    switch (fmt) 
+    {
+        case pixel_format::dxt1:
+        case pixel_format::dxt3:
+        case pixel_format::dxt5:
+        case pixel_format::pvrtc2_rgb:
+        case pixel_format::pvrtc4_rgb:
+        case pixel_format::pvrtc2_rgba:
+        case pixel_format::pvrtc4_rgba:
+        case pixel_format::etc2_rgb8:
+        case pixel_format::etc2_srgb8:
+            return true;
+        default:
+            return false;
+    }
+}
 
 } // namespace fay
 

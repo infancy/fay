@@ -1,6 +1,6 @@
+#include "fay/core/string.h"
 #include "fay/resource/model.h"
 #include "fay/resource/file.h"
-#include "fay/utility/string.h"
 #include <assimp/Importer.hpp>
 
 // using namespace std;
@@ -8,7 +8,7 @@
 namespace fay
 {
 
-resource_model::resource_model(const std::string& filepath, render_backend api) : 
+resource_model::resource_model(const std::string& filepath, render_backend_type api) : 
 	path{ get_path(filepath) }, api{ api } {}
 
 // load obj model --------------------------------------------------------------
@@ -51,9 +51,9 @@ static const std::unordered_map<std::string, obj_keyword> map
 	{ "map_Bump", obj_keyword::map_bump },
 };
 
-// boost::format
+// TODO: boost::format
 // ÀíÂÛÉÏÒ»¸ö mesh ÓÉ 'o' ¿ªÊ¼£¬µ«Åöµ½ 'o'£¬'g'£¬'usemtl'£¬¾ÍÐÂ½¨Ò»¸ö mesh
-obj_model::obj_model(const std::string& filepath, render_backend api) : resource_model(filepath, api)
+obj_model::obj_model(const std::string& filepath, render_backend_type api) : resource_model(filepath, api)
 {
 	// load *.obj
 	std::ifstream file(filepath);
@@ -288,7 +288,7 @@ std::vector<obj_mesh> obj_model::load_meshs(
 			}
 
 			// index
-			if (api == render_backend::opengl)
+			if (api == render_backend_type::opengl)
 			{   // ´ËÊ±ÎÞÐè UV ·´×ª
 				mesh.indices.insert(mesh.indices.end(), 
 					{ index, index + 1, index + 2 });
@@ -443,12 +443,12 @@ void objMesh_transform_to_TextureDataArray(
 
 // load model by assimp --------------------------------------------------------
 
-assimp_model::assimp_model(const std::string& filepath, render_backend api, model_format model_format) : 
+assimp_model::assimp_model(const std::string& filepath, render_backend_type api, model_format model_format) : 
 	resource_model(filepath, api), modeltype{ model_format }
 {
 	Assimp::Importer importer;
 	const aiScene* scene{};
-	if(api == render_backend::opengl)
+	if(api == render_backend_type::opengl)
 		scene = importer.ReadFile(filepath,
 			aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 	else

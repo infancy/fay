@@ -72,7 +72,7 @@ public:
 	{
 		for (int i = 0; i < 6; ++i)
 		{
-			image_ptr img(files[0] + files[i + 1]/*, render_backend::gl*/);
+			image_ptr img(files[0] + files[i + 1]/*, render_backend_type::gl*/);
 
 			if (i == 0)
 				format_ = img.gl_format();
@@ -141,7 +141,8 @@ public:
 		for (auto& data : datas)
 			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 
 				0, 0, i, 
-				data.size(), 1, 1, format, type, data.data());
+				data.size(), 1, 1, 
+                format, type, data.data());
 
 		gl_check_errors();
 	}

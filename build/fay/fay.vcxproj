@@ -24,10 +24,9 @@
     <ClCompile Include="..\..\fay\gl\model.cpp" />
     <ClCompile Include="..\..\fay\gl\shader.cpp" />
     <ClCompile Include="..\..\fay\gl\texture.cpp" />
+    <ClCompile Include="..\..\fay\render\device.cpp" />
     <ClCompile Include="..\..\fay\render\render.cpp" />
-    <ClCompile Include="..\..\fay\render\device_opengl.cpp" />
-    <ClCompile Include="..\..\fay\resource\image.cpp" />
-    <ClCompile Include="..\..\fay\resource\model.cpp" />
+    <ClCompile Include="..\..\fay\render\backend_opengl.cpp" />
     <ClCompile Include="..\..\fay\ui\gui.cpp" />
     <ClCompile Include="..\..\fay\ui\window.cpp" />
   </ItemGroup>
@@ -38,13 +37,22 @@
     <ClInclude Include="..\..\fay\core\algorithm.h" />
     <ClInclude Include="..\..\fay\core\config.h" />
     <ClInclude Include="..\..\fay\core\define.h" />
+    <ClInclude Include="..\..\fay\core\memory.h" />
     <ClInclude Include="..\..\fay\core\platform.h" />
     <ClInclude Include="..\..\fay\core\fay.h" />
     <ClInclude Include="..\..\fay\core\log.h" />
     <ClInclude Include="..\..\fay\core\parallel.hpp" />
     <ClInclude Include="..\..\fay\core\profiler.h" />
+    <ClInclude Include="..\..\fay\core\range.h" />
+    <ClInclude Include="..\..\fay\core\string.h" />
     <ClInclude Include="..\..\fay\core\thread.h" />
     <ClInclude Include="..\..\fay\core\thread_pool.hpp" />
+    <ClInclude Include="..\..\fay\core\time.h" />
+    <ClInclude Include="..\..\fay\core\type.h" />
+    <ClInclude Include="..\..\fay\core\utility.h" />
+    <ClInclude Include="..\..\fay\gfx\renderer.h" />
+    <ClInclude Include="..\..\fay\gfx\render_graph.h" />
+    <ClInclude Include="..\..\fay\gfx\render_queue.h" />
     <ClInclude Include="..\..\fay\gl\buffer.h" />
     <ClInclude Include="..\..\fay\gl\camera.h" />
     <ClInclude Include="..\..\fay\gl\framebuffer.h" />
@@ -65,18 +73,20 @@
     <ClInclude Include="..\..\fay\math\simd.h" />
     <ClInclude Include="..\..\fay\math\transform.h" />
     <ClInclude Include="..\..\fay\math\vector.h" />
+    <ClInclude Include="..\..\fay\misc\stencil.h" />
+    <ClInclude Include="..\..\fay\render\backend.h" />
     <ClInclude Include="..\..\fay\render\define.h" />
     <ClInclude Include="..\..\fay\render\device.h" />
     <ClInclude Include="..\..\fay\render\native_type.h" />
+    <ClInclude Include="..\..\fay\render\pool.h" />
     <ClInclude Include="..\..\fay\render\render.h" />
+    <ClInclude Include="..\..\fay\render\shader.h" />
+    <ClInclude Include="..\..\fay\resource\define.h" />
     <ClInclude Include="..\..\fay\resource\file.h" />
     <ClInclude Include="..\..\fay\resource\image.h" />
     <ClInclude Include="..\..\fay\resource\model.h" />
     <ClInclude Include="..\..\fay\ui\gui.h" />
     <ClInclude Include="..\..\fay\ui\window.h" />
-    <ClInclude Include="..\..\fay\utility\stencil.h" />
-    <ClInclude Include="..\..\fay\utility\string.h" />
-    <ClInclude Include="..\..\fay\utility\type_traits.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

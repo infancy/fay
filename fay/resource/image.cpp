@@ -1,0 +1,1 @@
+#include "fay/resource/image.h"

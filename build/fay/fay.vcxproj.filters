@@ -4,9 +4,6 @@
     <Filter Include="gl">
       <UniqueIdentifier>{e0d17724-8d72-47f6-92ba-4edc1f7c27ad}</UniqueIdentifier>
     </Filter>
-    <Filter Include="utility">
-      <UniqueIdentifier>{3df01228-62bc-40b5-8672-a02e864f1f0e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="core">
       <UniqueIdentifier>{101d3609-14e6-4c75-b743-57530cbeac80}</UniqueIdentifier>
     </Filter>
@@ -28,6 +25,9 @@
     <Filter Include="app">
       <UniqueIdentifier>{75f217f0-cee9-4d31-9c72-540706532bca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="misc">
+      <UniqueIdentifier>{e340ea27-1f3c-4784-8c1e-b8796ed7257a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\fay\gl\buffer.cpp">
@@ -42,12 +42,6 @@
     <ClCompile Include="..\..\fay\gl\texture.cpp">
       <Filter>gl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\resource\image.cpp">
-      <Filter>resouce</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\fay\resource\model.cpp">
-      <Filter>resouce</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\fay\ui\gui.cpp">
       <Filter>ui</Filter>
     </ClCompile>
@@ -60,7 +54,10 @@
     <ClCompile Include="..\..\fay\app\window.cpp">
       <Filter>app</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\render\device_opengl.cpp">
+    <ClCompile Include="..\..\fay\render\backend_opengl.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fay\render\device.cpp">
       <Filter>render</Filter>
     </ClCompile>
   </ItemGroup>
@@ -83,17 +80,8 @@
     <ClInclude Include="..\..\fay\gl\texture.h">
       <Filter>gl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\utility\stencil.h">
-      <Filter>utility</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\gl\gl.h">
       <Filter>gl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\utility\string.h">
-      <Filter>utility</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\utility\type_traits.h">
-      <Filter>utility</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\gl\framebuffer.h">
       <Filter>gl</Filter>
@@ -199,6 +187,48 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\render\define.h">
       <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\render_graph.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\render_queue.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\renderer.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\time.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\string.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\misc\stencil.h">
+      <Filter>misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\range.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\utility.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\render\pool.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\render\backend.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\memory.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\type.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\render\shader.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resource\define.h">
+      <Filter>resouce</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

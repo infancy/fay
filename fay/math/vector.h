@@ -27,39 +27,39 @@ using reverse_iterator       = typename std::array<T, N>::reverse_iterator;     
 using const_reverse_iterator = typename std::array<T, N>::const_reverse_iterator; \
                                                                                   \
 constexpr vec() = default;                                                        \
-constexpr explicit vec(const std::initializer_list<T>&/*&&*/ il) /*: a{}*/        \
+constexpr explicit vec(const std::initializer_list<T>&/*&&*/ il) /*: a_{}*/       \
 {                                                                                 \
 	DCHECK(il.size() <= N);	/* TODO: DCHECK */                                    \
-	auto p = a.begin(); auto q = il.begin();                                      \
+	auto p = a_.begin(); auto q = il.begin();                                     \
 	for (; q != il.end(); ++p, ++q)                                               \
 		*p = *q;                                                                  \
 }                                                                                 \
-constexpr explicit vec(const T& s)  { for (auto& e : a) e = s; }                  \
-constexpr explicit vec(const T* p)  { for (auto& e : a) e = *p++; }               \
+constexpr explicit vec(const T& s)  { for (auto& e : a_) e = s; }                 \
+constexpr explicit vec(const T* p)  { for (auto& e : a_) e = *p++; }              \
                                                                                   \
-iterator               begin()         noexcept { return a.begin(); }             \
-const_iterator         begin()   const noexcept { return a.begin(); }             \
-iterator               end()           noexcept { return a.end(); }               \
-const_iterator         end()     const noexcept { return a.end(); }               \
+iterator               begin()         noexcept { return a_.begin(); }            \
+const_iterator         begin()   const noexcept { return a_.begin(); }            \
+iterator               end()           noexcept { return a_.end(); }              \
+const_iterator         end()     const noexcept { return a_.end(); }              \
                                                                                   \
-reverse_iterator       rbegin()        noexcept { return a.rbegin(); }            \
-const_reverse_iterator rbegin()  const noexcept { return a.rbegin(); }            \
-reverse_iterator       rend()          noexcept { return a.rend(); }              \
-const_reverse_iterator rend()    const noexcept { return a.rend(); }              \
+reverse_iterator       rbegin()        noexcept { return a_.rbegin(); }           \
+const_reverse_iterator rbegin()  const noexcept { return a_.rbegin(); }           \
+reverse_iterator       rend()          noexcept { return a_.rend(); }             \
+const_reverse_iterator rend()    const noexcept { return a_.rend(); }             \
                                                                                   \
-const_iterator         cbegin()  const noexcept { return a.cbegin(); }            \
-const_iterator         cend()    const noexcept { return a.cend(); }              \
-const_reverse_iterator crbegin() const noexcept { return a.crbegin(); }           \
-const_reverse_iterator crend()   const noexcept { return a.crend(); }             \
+const_iterator         cbegin()  const noexcept { return a_.cbegin(); }           \
+const_iterator         cend()    const noexcept { return a_.cend(); }             \
+const_reverse_iterator crbegin() const noexcept { return a_.crbegin(); }          \
+const_reverse_iterator crend()   const noexcept { return a_.crend(); }            \
                                                                                   \
-reference       operator[](size_t i)       { return a[i]; }                       \
-const_reference operator[](size_t i) const { return a[i]; }
+reference       operator[](size_t i)       { return a_[i]; }                      \
+const_reference operator[](size_t i) const { return a_[i]; }
 
 template <size_t N_, typename T = float>
 struct vec
 {
 	enum { N = N_ };
-	std::array<T, N> a{};
+	std::array<T, N> a_{};
 
 	FAY_VEC_FUNCTIONS
 };
@@ -70,7 +70,7 @@ struct vec<2, T>
 	enum { N = 2 };
 	union
 	{
-		std::array<T, N> a{};
+		std::array<T, N> a_{};
 		struct { T x, y; };
 	};
 
@@ -83,8 +83,9 @@ struct vec<3, T>
 	enum { N = 3 };
 	union
 	{
-		std::array<T, N> a{};
+		std::array<T, N> a_{};
 		struct { T x, y, z; };
+        struct { T r, g, b; };
 	};
 
 	FAY_VEC_FUNCTIONS
@@ -96,9 +97,9 @@ struct vec<4, T>
 	enum { N = 4 };
 	union
 	{
-		std::array<T, N> a{};
+		std::array<T, N> a_{};
 		struct { T x, y, z, w; };
-		//struct { T r, g, b, a; };
+		struct { T r, g, b, a; };
 		//struct { vec3 xyz; };
 		//struct { vec3 rgb; };
 		//struct { vec2 xy; vec2 zw; };
@@ -126,6 +127,9 @@ bool operator==(const vec<N, T>& x, const vec<N, T>& y)
 			return false;
 	return true;
 }
+// TODO
+// template <size_t N>
+// bool operator==(const vec<N, float>& x, const vec<N, float>& y)
 template <size_t N, typename T>
 bool operator!=(const vec<N, T>& x, const vec<N, T>& y) { return !(x == y); }
 

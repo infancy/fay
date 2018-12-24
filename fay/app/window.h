@@ -25,7 +25,7 @@ struct window_desc	// TODO: merge to config?
 	std::string title{ "test" };
 
 	cursor_mode cursor_mode_v{ cursor_mode::hidden };
-	render_backend render_backend_v{ g_config.render_backend_v };
+	render_backend_type render_backend_type_v{ g_config.render_backend_type_v };
 	uint32_t MSAA{ 1 };	// if MSAA > 1, open MSAA
 };
 
@@ -36,10 +36,9 @@ public:
 	window(const window_desc& desc) : desc_{ desc }
 	{
 	}
+    virtual ~window() = default;
 
-	virtual ~window()
-	{
-	}
+    virtual void* native_handle() { return nullptr; }
 
     // TODO
 
@@ -123,11 +122,11 @@ public:
 		glfwSetErrorCallback(glfw_detail::error_callback);
 		glfwInit();
 
-		if (desc_.render_backend_v == render_backend::opengl) // TODO: choose opengl version by itself
+		if (desc_.render_backend_type_v == render_backend_type::opengl) // TODO: choose opengl version by itself
 		{
 			create_window_and_glcontext(3, 3);
 		}
-		else if (desc_.render_backend_v == render_backend::opengl_dsa)
+		else if (desc_.render_backend_type_v == render_backend_type::opengl_dsa)
 		{
 			create_window_and_glcontext(4, 5);
 		}
@@ -178,6 +177,11 @@ public:
 		// clearing all previously allocated GLFW resources.
 		glfwTerminate();
 	}
+
+    void* native_handle() override
+    {
+        return window_;
+    }
 
 	void update()
 	{

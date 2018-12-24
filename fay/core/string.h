@@ -2,8 +2,8 @@
 #pragma once
 #endif
 
-#ifndef FAY_UTILITY_STRING_H
-#define FAY_UTILITY_STRING_H
+#ifndef FAY_CORE_STRING_H
+#define FAY_CORE_STRING_H
 
 #include <cctype>
 
@@ -12,9 +12,12 @@
 namespace fay
 {
 
-// TODO???: return string_view(like return raw pointer)
+// TODO: strings : string + vector<string_view>
 
 // split
+
+// TODO???: return string_view(like return raw pointer)
+
 
 // e.g. "  Hello  World  " -> "World  "
 std::string erase_front_word(
@@ -73,4 +76,4 @@ std::string erase_white_spaces(
 
 } // namespace fay
 
-#endif // FAY_UTILITY_STRING_H
+#endif // FAY_CORE_STRING_H

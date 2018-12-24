@@ -6,7 +6,7 @@ namespace fay
 
 model::model(const std::string& filepath, model_format model_format, bool gamma) : gamma_correction(gamma)
 {
-	assimp_model model(filepath, render_backend::opengl, model_format);
+	assimp_model model(filepath, render_backend_type::opengl, model_format);
 	for (auto& mesh : model.meshes)
 	{
 	#ifdef _DEBUG

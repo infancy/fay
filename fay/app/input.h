@@ -23,7 +23,7 @@ struct single_input
 	double time, last, dt;
 
 	// mouse
-	double posx, posy;
+	double posx, posy; // TODO: rename x, y
 	double lastx, lasty;
 	double dx, dy, wheel;
 
@@ -33,8 +33,9 @@ struct single_input
 	bool key_q, key_w;
 };
 
-inline single_input input_{};
-inline const single_input& input{ input_ };
+// TODO: remove it
+inline single_input input_{}; // only be modified by the window
+const inline single_input& input{ input_ };
 
 /*
 inline single_input input2_{};

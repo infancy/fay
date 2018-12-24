@@ -5,160 +5,185 @@
 #ifndef FAY_RESOURCE_IMAGE_H
 #define FAY_RESOURCE_IMAGE_H
 
+#include <fstream>
+
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
+
+#include "fay/core/define.h"
 #include "fay/gl/gl.h"
 #include "fay/math/math.h"
 
 namespace fay
 {
 
-class base_image
+// class base_image
+
+class image_view
 {
 public:
-	base_image(const std::string& filepath, bool flip_vertical) :
-		filepath{ filepath }, is_flip_vertical_{ flip_vertical }
-	{
-	}
+    image_view(const std::string& filepath, bool flip_vertical = false) : // TODO: change interface
+        filepath_{ filepath }, is_flip_vertical_{ flip_vertical }
+    {
+        LOG_IF(ERROR, filepath.empty()) << "image path is empty!";
 
-	base_image(const std::string& filepath, int width, int height, int format, bool flip_vertical) :
-		filepath{ filepath }, w{ width }, h{ height }, fmt{ format }, is_flip_vertical_{ flip_vertical }
-	{
-	}
+        if (flip_vertical)
+            stbi_set_flip_vertically_on_load(true);
 
-	int width()  const { return w; }
-	int height() const { return h; }
+        auto ptr = stbi_load(filepath.c_str(), &w_, &h_, &stride_, 0);
+        LOG_IF(ERROR, ptr == nullptr) << "image failed to load at path: " << filepath;
 
-	std::string file_path() const { return filepath; }
+        fmt_ = pixel_format_(stride_);
+        // const_cast<int&>(width)  = w_;  const_cast<int&>(height) = h_;
+        manager_.reset(ptr, [](uint8_t* p) { stbi_image_free(p); });
+    }
+
+    std::string_view filepath() const { return filepath_; }
+    /*remove*/std::string file_path() const { return filepath_; }
+
+	int width()  const { return w_; }
+	int height() const { return h_; }
+    int stride() const { return stride_; }
+    pixel_format format() const { return fmt_; }
 	bool is_flip_vertical() const { return is_flip_vertical_; }
 
-	GLenum gl_format() const
+    /*remove*/GLenum gl_format() const
 	{
 		GLenum GLformat{};
 
-		switch (fmt)
+		switch (fmt_)
 		{
-		case 1: GLformat = GL_RED;	  break;	// grey
-		case 2:	GLformat = GL_RG32UI; break;	// grey&alpha
-		case 3: GLformat = GL_RGB;	  break;
-		case 4: GLformat = GL_RGBA;	  break;
+		case pixel_format::r8:    GLformat = GL_RED;	break;	// grey
+		case pixel_format::rg8:	  GLformat = GL_RG32UI; break;	// grey&alpha
+		case pixel_format::rgb8:  GLformat = GL_RGB;	break;
+		case pixel_format::rgba8: GLformat = GL_RGBA;	break;
 		default:
-			LOG(ERROR) << "format failed to choose" << filepath; break;
+			LOG(ERROR) << "format failed to choose" << filepath_; break;
 		}
 
 		return GLformat;
 	}
 
-// protected:
-//     int& inner_width();
-//     int& inner_height();
-//     ...
-// private:
-
-protected:
-	std::string filepath;
-	int w{}, h{}, fmt{};
-
-	bool is_flip_vertical_{ false };
-};
-
-// -----------------------------------------------------------------------------
-
-class image_ptr : public base_image	// shared_image, stbImagePtr
-{
-public:
-	image_ptr(const std::string& filepath = {}, bool flip_vertical = false) : // TODO: change interface
-		base_image(filepath, flip_vertical)
-	{
-		LOG_IF(ERROR, filepath.empty()) << "image path is empty!";
-
-		if (flip_vertical)
-			stbi_set_flip_vertically_on_load(true);
-
-		auto ptr = stbi_load(filepath.c_str(), &w, &h, &fmt, 0);
-		LOG_IF(ERROR, ptr == nullptr) << "image failed to load at path: " << filepath;
-		
-		// const_cast<int&>(width)  = w;  const_cast<int&>(height) = h;
-		manager.reset(ptr, [](uint8_t* p) { stbi_image_free(p); });
-	}
-
-	const uint8_t* data() const { return manager.get(); }
+    const uint8_t* data() const { return manager_.get(); }
 
 private:
-	std::shared_ptr<uint8_t> manager;
+    pixel_format pixel_format_(int fmt) const
+    {
+        switch (fmt)
+        {
+            // TODO: let's true???
+            case 1: return pixel_format::r8;	// grey
+            case 2:	return pixel_format::rg8;	// grey&alpha
+            case 3: return pixel_format::rgb8;
+            case 4: return pixel_format::rgba8;
+            default:
+                LOG(ERROR) << "shouldn't be here" << filepath_;
+                return pixel_format::none;
+        }
+    }
+
+protected:
+	std::string filepath_;
+
+    int w_{}, h_{}, stride_{};
+    pixel_format fmt_{};
+	bool is_flip_vertical_{ false };
+
+    std::shared_ptr<uint8_t> manager_;
 };
 
-inline bool operator==(const image_ptr& left, const image_ptr& right)
+inline bool operator==(const image_view& left, const image_view& right)
 {
-	return left.file_path() == right.file_path();
+    return left.filepath() == right.filepath();
 }
 
 // -----------------------------------------------------------------------------
-/*
-class image : public base_image
+
+/*remove*/class image_ptr : public image_view	// shared_image, stbImagePtr
 {
 public:
-	image(const std::string& filepath = {}, bool flip_vertical = false) :
-		base_image(filepath, flip_vertical)
+    image_ptr() = default;
+    using image_view::image_view;
+};
+
+/*remove*/inline bool operator==(const image_ptr& left, const image_ptr& right)
+{
+    return left.filepath() == right.filepath();
+}
+
+// -----------------------------------------------------------------------------
+
+/*
+template<size_t N>
+class image
+{
+public:
+	image(const image_view& iv)
 	{
-		LOG_IF(ERROR, filepath.empty()) << "image path is empty!";
 
-		if (thirdparty == render_backend::gl)
-		{
-			is_flip_vertical_ = true;
-			stbi_set_flip_vertically_on_load(true);
-		}
-
-		uint8_t* ptr = stbi_load(filepath.c_str(), &w, &h, &fmt, 0);
-		LOG_IF(ERROR, ptr == nullptr) << "image failed to load at path: " << filepath;
-
-		pixels = std::vector<uint8_t>(ptr, ptr + w * h * fmt);	// TODO
-
-		stbi_image_free(ptr);
+        w_ = iv.width();
+        h_ = iv.height();
+        stride_ = iv.stride();
+        fmt_ = iv.format();
+		pixels_ = std::vector<uint8_t>(iv.data(), iv.data() + w_ * h_ * stride_);
 	}
 
-	image(const std::string& filepath, int width , int height, int format, bool flip_vertical = false) :
-		base_image(filepath, width, height, format, flip_vertical), pixels(w * h * fmt)
+	image(int width , int height, pixel_format format)
 	{
 		// pixels.clear();
 		// memcpy(pixels.data(), 0, pixels.size());
+        pixels_ = std::vector<uint8_t>(w_ * h_ * stride_);	// TODO
 	}
 
-	uint8_t* data() { return pixels.data(); }
+    int width()  const { return w_; }
+    int height() const { return h_; }
+    pixel_format format() const { return fmt_; }
+
+	uint8_t*       data()       { return pixels_.data(); }
+    const uint8_t* data() const { return pixels_.data(); }
 
 	// s 0.0 ~ 1.0, t: 0.0 ~ 1.0
 	uint8_t& operator()(float s, float t)
 	{
-		s *= w; t *= h;
+		s *= w_; t *= h_;
 		return operator()((size_t)s, (size_t)t);
 	}
-	// s 0 ~ w, t: 0 ~ h
+	// s 0 ~ w_, t: 0 ~ h_
 	uint8_t& operator()(size_t s, size_t t)
 	{
-		size_t x = s % w, y = t % h;
-		if (x < 0) x += w;
-		if (y < 0) y += h;
-		return pixels[y * w + x];
+		size_t x = s % w_, y = t % h_;
+		if (x < 0) x += w_;
+		if (y < 0) y += h_;
+		return pixels_[y * w_ + x];
 	}
 
+    bool save(const std::string& savename)
+    {
+        save_jpg(savename, w_, h_, stride_, nullptr);
+    }
+
 private:
-	std::vector<uint8_t> pixels;
+    uint32_t w_{}, h_{}, stride_;
+    pixel_format fmt_{};
+	std::vector<uint8_t> pixels_;
 };
 
 // TODO
+
 inline bool operator==(const image& left, const image& right)
 {
-	return left.file_path() == right.file_path();
+    return left.file_path() == right.file_path();
 }
 */
+
 // -----------------------------------------------------------------------------
 
 // quality: 0 ~ 100
-inline bool save_jpg(const std::string& filename, int width, int height, int comp,
+inline bool save_jpg(const std::string& filename, int width, int height, int format,
 	const uint8_t* pixel, int quality = 80)
 {
 	int result = stbi_write_jpg(filename.c_str(), 
-		width, height, comp, pixel, quality);
+		width, height, format, pixel, quality);
 	return result == 0 ? false : true;
 }
 

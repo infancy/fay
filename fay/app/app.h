@@ -7,6 +7,7 @@
 
 #include "fay/app/window.h"
 #include "fay/core/fay.h"
+#include "fay/render/device.h"
 
 namespace fay
 {
@@ -14,6 +15,7 @@ namespace fay
 struct app_desc
 {
 	window_desc window{};
+    render_desc render{};
 };
 
 class app	// : protected app_desc
@@ -27,11 +29,9 @@ public:
 	{
 	}
 
-
-
-    virtual void init()
-	{
-	}
+    virtual void setup()
+    {
+    }
 
     virtual void update()
     {
@@ -46,9 +46,9 @@ public:
 
 	virtual int run()
 	{
-		init_app();
-		init();	// init_user_setup
+		init_app(); // setup_app();
 
+        setup();
 		while (!window_->should_close())
 		{
 			// event
@@ -60,7 +60,6 @@ public:
 			// show
 			window_->show();
 		}
-
         clear();
 
 		return 0;
@@ -71,11 +70,31 @@ private:
 	{
 		// TODO: factory
 		window_ = std::make_unique<window_glfw>(desc_.window);	// create window and context
+
+        switch (desc_.render.render_backend_type)
+        {
+            case render_backend_type::opengl:
+            case render_backend_type::opengl_dsa:
+
+                desc_.render.glfw_window = window_->native_handle();
+                break;
+
+            case render_backend_type::d3d11:
+            default:
+
+                LOG(ERROR) << "error";
+                break;
+        }
+
+        render = std::make_unique<render_device>(desc_.render);
 	}
+
+public:
+    render_device_ptr render;
 
 protected:
 	app_desc desc_;
-	std::unique_ptr<window_glfw> window_;
+	std::unique_ptr<window_glfw> window_; // TODO: std::unique_ptr<window>
 };
 
 class app_manager

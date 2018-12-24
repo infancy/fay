@@ -57,22 +57,53 @@ enum class render_feature
 	count
 };
 
-enum class render_backend
+enum class render_backend_type
 {
 	none, opengl, opengl_dsa, d3d11, count
 };
-// TODO: FAY_ENUM_CLASS_OPERATOR( render_backend )
+// TODO: FAY_ENUM_CLASS_OPERATOR( render_backend_type )
 
 
 
 // -------------------------------------------------------------------------------------------------
 // resource
 
-
-
-enum class model_format
+enum class pixel_format
 {
-	none, obj, fbx, gltf, blend, unknown, count
+    none,
+
+    rgba32f,
+    rgba16f,
+
+    rgba8,
+    rgba4,
+
+    rgb10_a2,
+    rgb5_a1,
+
+    rgb8,
+    rgb565,
+
+    rg8,
+
+    r32f, // float
+    r16f,
+    r8,   // byte
+
+    depth,
+    depthstencil,
+
+    dxt1,
+    dxt3,
+    dxt5,
+
+    pvrtc2_rgb,
+    pvrtc4_rgb,
+    pvrtc2_rgba,
+    pvrtc4_rgba,
+
+    etc2_rgb8,
+    etc2_srgb8,
 };
 
 enum class texture_format
@@ -84,7 +115,10 @@ enum class texture_format
 	count
 };
 
-
+enum class model_format
+{
+    none, obj, fbx, gltf, blend, unknown, count
+};
 
 } // namespace fay
 
