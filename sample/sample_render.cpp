@@ -1,6 +1,7 @@
 #include "fay/app/app.h"
 #include "fay/core/config.h"
 #include "fay/core/fay.h"
+#include "fay/render/shader.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -98,20 +99,16 @@ public:
         auto triangle_vb = render->create(bd);
         auto triangle_ib = render->create(id);
 
-
-
-        fay::shader_desc sd; {
-            sd.name = "shd";
-            sd.vs = R"(
+        auto vs_code = R"(
                 #version 330 core
-                layout (location = 0) in vec3 aPos;
+                layout (location = 0) in vec3 mPos;
 
                 void main()
                 {
-                   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+                   gl_Position = vec4(mPos.x, mPos.y, mPos.z, 1.0);
                 }
             )";
-            sd.fs = R"(
+        auto fs_code = R"(
                 #version 330 core
                 out vec4 FragColor;
 
@@ -133,10 +130,8 @@ public:
                    //FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
                 }
             )";
-
-            sd.layout = { { fay::attribute_usage::position, fay::attribute_format::float3 } };
-            sd.uniform_blocks = { { "color", sizeof(render_paras) } };
-        }
+        fay::shader_desc sd = fay::scan_shader_program(vs_code, fs_code, true);
+        sd.name = "shd"; //todo
         auto shd_id = render->create(sd);
 
         fay::pipeline_desc pd; 

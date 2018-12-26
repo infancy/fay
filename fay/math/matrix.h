@@ -17,6 +17,8 @@ namespace fay
 // or when use m.begin(), m.end(), it is like a one-dimensional array[C * R]
 
 // WARNNING: just think of mat<C, R, float> as a two-dimensional array, like float m[C][R];
+// TODO???: row, col
+// TODO???: Horizontal, Vertical
 template <size_t C, size_t R, typename T = float>
 struct mat
 {
@@ -166,13 +168,31 @@ FAY_MAT_ARITHMETIC_U(/)
            | v                              | v                          | m - - -
            | v                              | v                          | m - - - 
            V v                              V v                          V m - - -
-   - - - >                        | m - - -                      - - - >
+                                  | m - - -                      - - - >
    m m m m                        | m - - -                      v v v v
    - - - -                        | m - - -
    - - - -                        V m - - -
    - - - -
 
    the "real result" is same to "math result"
+   <-----------------------------><-----------------------------><----------------------------->
+   row-major matrix * row-major matrix
+
+   math:                          memory:                        real:
+
+   $ C = A * B $                  $ C = A * B $                  $ C = A * B $
+
+		   | b b b b                      | b b b b                      | b b b b
+		   | - - - -                      | - - - -                      | - - - -
+		   | - - - -                      | - - - -                      | - - - -
+		   V - - - -                      V - - - -                      V - - - -                                            
+   - - - >                        - - - >                        - - - >
+   a a a a                        a - - -                        a a a a
+   - - - -                        a - - -                        - - - -
+   - - - -                        a - - -                        - - - -
+   - - - -                        a - - -                        - - - -
+
+   e.g. : 
 
    <-----------------------------><-----------------------------><----------------------------->
    vector * column-major matrix
@@ -188,23 +208,23 @@ FAY_MAT_ARITHMETIC_U(/)
 																 - - - -
 																 - - - -
    the "real result" is same to "math result"
-
    <-----------------------------><-----------------------------><----------------------------->
-   row-major matrix * column-major matrix
+   column-major matrix * column-major matrix
 
    math:                          memory:                        real:
 
    $ C = A * B $                  $ C^T = A^T * B^T $            $ C^T = B^T * A^T $
 
-		   | b - - -                        - - - >                      | a - - -
-		   | b - - -                        b b b b                      | a - - -
-		   | b - - -                        - - - -                      | a - - -
-		   V b - - -                        - - - -                      V a - - -
-   - - - >                                  - - - -              - - - >
-   a a a a                        | a - - -                      b b b b
-   - - - -                        | a - - -                      - - - -
-   - - - -                        | a - - -                      - - - -
-   - - - -                        V a - - -                      - - - -
+                                            - - - >
+           | b b b b                        b - - -                      | a - - -
+           | - - - -                        b - - -                      | a - - -
+           | - - - -                        b - - -                      | a - - -
+           V - - - -                        b - - -                      V a - - -
+   - - - >                                                       - - - >
+   a a a a                        | a - - -                      b - - -
+   - - - -                        | a - - -                      b - - -
+   - - - -                        | a - - -                      b - - -
+   - - - -                        V a - - -                      b - - -
 
    e.g. : in math: m24 = m23 * m34, in memory: m42 = m32 * m43, in real: m42 = m43 * m32,
    anyway, the "real result" is transpose of math's

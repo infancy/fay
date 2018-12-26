@@ -5,7 +5,7 @@ GTEST_API_ int main(int argc, char **argv)
 {
     google::InitGoogleLogging(argv[0]);
 
-    char filter[] = "--gtest_filter=memory.*";
+    char filter[] = "--gtest_filter=render.*";
     argv[argc++] = filter;
     //testing::GTEST_FLAG(filter) = "utility.*";
 	testing::InitGoogleTest(&argc, argv);

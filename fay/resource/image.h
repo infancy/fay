@@ -18,8 +18,9 @@ namespace fay
 {
 
 // class base_image
+// struct image_context
 
-class image_view
+class image_view // : image_context WARNNING: don't inherited from image_context
 {
 public:
     image_view(const std::string& filepath, bool flip_vertical = false) : // TODO: change interface
@@ -174,6 +175,11 @@ inline bool operator==(const image& left, const image& right)
 {
     return left.file_path() == right.file_path();
 }
+
+class shared_image
+{
+
+};
 */
 
 // -----------------------------------------------------------------------------

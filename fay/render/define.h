@@ -18,16 +18,16 @@ namespace fay
 
 // enum { ... };
 // TODO: const_t, const32_t, constant...
-constexpr inline uint32_t InvalidId               = 0;
-constexpr inline uint32_t Num_inflight_frames      = 2;
+constexpr inline uint32_t InvalidId              = 0;
+constexpr inline uint32_t NumInflightFrames      = 2;
 constexpr inline uint32_t MaxColorAttachments    = 4;
-constexpr inline uint32_t Max_shader_stages        = 3;
-constexpr inline uint32_t Pass_max_buffers         = 4;
-constexpr inline uint32_t Pass_max_textures        = 12;
-constexpr inline uint32_t Max_shaderstage_uniforms = 4;	// uniform_blocks
-constexpr inline uint32_t Max_uniform_members      = 16;
+constexpr inline uint32_t MaxShaderStages        = 3;
+constexpr inline uint32_t PassMaxBuffers         = 4;
+constexpr inline uint32_t PassMaxTextures        = 12;
+constexpr inline uint32_t MaxShaderstageUniforms = 4;	// uniform_blocks
+constexpr inline uint32_t MaxUniformMembers      = 16;
 constexpr inline uint32_t MaxVertexAttributes    = 16;
-constexpr inline uint32_t MaxMipmaps              = 16;
+constexpr inline uint32_t MaxMipmaps             = 16;
 constexpr inline uint32_t MaxTextureArrayLayers  = 128;
 
 #define FAY_ENUM_CLASS_OPERATORS(Enum)                                                                                        \
@@ -88,6 +88,7 @@ enum class buffer_type
 
 enum class /*vertex_*/attribute_usage
 {
+    // position2d,
     position, 
     normal,
 
@@ -106,6 +107,9 @@ enum class /*vertex_*/attribute_usage
     texcoord1,
     texcoord2,
     texcoord3,
+
+    // instance
+    model_matrix,
 
     unknown0,
     unknown1,
@@ -201,11 +205,40 @@ enum class shader_type
 enum class uniform_type
 {
 	invalid,
-	float1,
-	float2,
-	float3,
-	float4,
+
+    bvec1, // bool
+    bvec2,
+    bvec3,
+    bvec4,
+
+    ivec1, // int
+    ivec2,
+    ivec3,
+    ivec4,
+
+    uvec1, // uint
+    uvec2,
+    uvec3,
+    uvec4,
+
+    vec1, // float
+    vec2,
+    vec3,
+    vec4,
+    mat2,
+    mat3,
 	mat4,
+    mat2x2,
+    mat2x3,
+    mat2x4,
+    mat3x2,
+    mat3x3,
+    mat3x4,
+    mat4x2,
+    mat4x3,
+    mat4x4,
+
+    // double
 };
 
 // pipeline enum
@@ -495,6 +528,28 @@ struct shader_desc
     {
         std::string name{};
         uint32_t size{}; // byte_size
+        std::vector<uniform_type> types;
+
+        bool operator==(const uniform_block& that) const
+        {
+            return
+                (name == that.name) &&
+                (size == that.size) &&
+                (types == that.types);
+        }
+    };
+
+    struct sampler
+    {
+        std::string name{};
+        texture_type type{};
+
+        bool operator==(const sampler& that) const
+        {
+            return
+                (name == that.name) &&
+                (type == that.type);
+        }
     };
 
     std::string name{ "defult" };
@@ -503,13 +558,15 @@ struct shader_desc
     std::string gs{};
     std::string fs{};
 
-    vertex_layout layout {}; // TODO: auto generate it
+    std::vector<std::string> vertex_names{};
+    vertex_layout layout {};
+    // std::vector<uniform> uniforms;
     std::vector<uniform_block> uniform_blocks;
 
      // TODO: uniform
 
-    std::vector<std::string> vs_samplers{};
-    std::vector<std::string> fs_samplers{};
+    std::vector<sampler> vs_samplers{};
+    std::vector<sampler> fs_samplers{};
 };
 
 /*

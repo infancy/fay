@@ -2,10 +2,12 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\test\test.cpp" />
-    <ClCompile Include="..\..\test\math.cpp" />
     <ClCompile Include="..\..\test\core_utility.cpp" />
     <ClCompile Include="..\..\test\core_range.cpp" />
-    <ClCompile Include="..\..\test\core_memory.cpp" />
     <ClCompile Include="..\..\test\core_type.cpp" />
+    <ClCompile Include="..\..\test\core_string.cpp" />
+    <ClCompile Include="..\..\test\core_memory.cpp" />
+    <ClCompile Include="..\..\test\math_math.cpp" />
+    <ClCompile Include="..\..\test\render_render.cpp" />
   </ItemGroup>
 </Project>

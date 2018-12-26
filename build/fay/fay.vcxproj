@@ -44,6 +44,7 @@
     <ClInclude Include="..\..\fay\core\parallel.hpp" />
     <ClInclude Include="..\..\fay\core\profiler.h" />
     <ClInclude Include="..\..\fay\core\range.h" />
+    <ClInclude Include="..\..\fay\core\reflection.h" />
     <ClInclude Include="..\..\fay\core\string.h" />
     <ClInclude Include="..\..\fay\core\thread.h" />
     <ClInclude Include="..\..\fay\core\thread_pool.hpp" />
@@ -83,6 +84,7 @@
     <ClInclude Include="..\..\fay\render\shader.h" />
     <ClInclude Include="..\..\fay\resource\define.h" />
     <ClInclude Include="..\..\fay\resource\file.h" />
+    <ClInclude Include="..\..\fay\resource\text.h" />
     <ClInclude Include="..\..\fay\resource\image.h" />
     <ClInclude Include="..\..\fay\resource\model.h" />
     <ClInclude Include="..\..\fay\ui\gui.h" />

@@ -46,6 +46,11 @@ inline void deallocate(void* ptr) //, size_t count)
 
 // inline auto memory_deleter = [](void* ptr) { ::operator delete(ptr); };
 
+// TODO
+// is_standard_layout 
+// is_trivial
+
+
 // TODO: shared_memory
 // template<typename D = allocator>
 class memory

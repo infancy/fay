@@ -201,7 +201,7 @@ compare_op_map
 
 
 
-struct attribute_detail
+struct attribute_detail // rename: attribute_num_bytesize
 {
     uint32_t size;
     uint32_t byte;

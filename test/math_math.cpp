@@ -1,4 +1,4 @@
-#include <iostream>
+#include <glm/glm.hpp>
 #include <gtest/gtest.h>
 
 #include "fay/core/profiler.h"
@@ -175,4 +175,75 @@ TEST(math, matrix_multiply)
 	ASSERT_EQ(rb == mat4x3(16), true);
 	ASSERT_EQ(rc == mat3x4(16), true);
 	ASSERT_EQ(rd == mat4x4(16), true);
+}
+
+// -------------------------------------------------------------------------------------------------
+// glm
+
+TEST(math, glm_compare_fay)
+{
+    glm::vec2 v2(2);
+    glm::vec3 v3(2);
+    glm::vec4 v4(2);
+
+    glm::mat2x3 m23(2);
+    glm::mat3x2 m32(2);
+    glm::mat3x3 m33(2);
+    glm::mat3x4 m34(2);
+    glm::mat4x3 m43(2);
+
+    glm::vec3 r1 = v3 * m33;
+    glm::vec3 r2 = m33 * v3;
+    glm::vec3 r3 = m34 * v4; // m34 * v41
+    glm::vec4 r4 = m34 * v3; // v13 * m34
+    glm::vec3 r5 = v4 * m34; // v14 * m34 => m34 * v41 => m31(v3)
+
+    ASSERT_EQ(r1 == glm::vec3(4), true);
+    ASSERT_EQ(r2 == glm::vec3(4), true);
+    ASSERT_EQ(r3 == glm::vec3(4), true);
+    ASSERT_EQ(r4 == glm::vec4(4), true);
+    ASSERT_EQ(r5 == glm::vec3(4), true);
+}
+
+TEST(math, glm_benchmark)
+{
+    glm::vec3 v3(2);
+    glm::vec4 v4(2);
+
+    glm::mat3x3 m33(2);
+    glm::mat3x4 m34(2);
+    glm::mat4x3 m43(2);
+    glm::mat4x4 m44(2);
+
+    glm::vec3 r1 = v3 * m33;
+    glm::vec3 r2 = m33 * v3;
+    glm::vec3 r3 = m34 * v4;  // m34 * v41
+    glm::vec4 r4 = m34 * v3; // v13 * m34
+    glm::vec4 r5 = v4 * m44;
+    glm::vec4 r6 = m44 * v4;
+
+    ASSERT_EQ(r1 == glm::vec3(4), true);
+    ASSERT_EQ(r2 == glm::vec3(4), true);
+    ASSERT_EQ(r3 == glm::vec3(4), true);
+    ASSERT_EQ(r4 == glm::vec4(4), true);
+    ASSERT_EQ(r5 == glm::vec4(4), true);
+    ASSERT_EQ(r6 == glm::vec4(4), true);
+
+    glm::mat4x3 r7 = m33 * m43; // m33 * m43
+    glm::mat3x4 r8 = m34 * m33;
+    glm::mat3x3 r9 = m43 * m34;
+    glm::mat4x4 ra = m43 * m34;
+
+    glm::mat4x3 rb = m43 * m44;
+    glm::mat3x4 rc = m44 * m34;
+    glm::mat4x4 rd = m44 * m44;
+
+    ASSERT_EQ(r7 == glm::mat4x3(12), true);
+    ASSERT_EQ(r8 == glm::mat3x4(12), true);
+    ASSERT_EQ(r9 == glm::mat3x3(16), true);
+    ASSERT_EQ(ra == glm::mat4x4(12), true);
+
+    ASSERT_EQ(rb == glm::mat4x3(16), true);
+    ASSERT_EQ(rc == glm::mat3x4(16), true);
+    ASSERT_EQ(rd == glm::mat4x4(16), true);
 }

@@ -133,13 +133,13 @@ void render_device::bind_buffer(const buffer_id id, const std::vector<attribute_
             {
                 return attr.usage == usage;
             });
-            DCHECK(idx0.has_value()) << "invaild uniform_block";
+            DCHECK(idx0.has_value()) << "invaild vertex attribute";
 
             auto idx1 = index(shd_layout, [usage](const vertex_attribute& attr)
             {
                 return attr.usage == usage;
             });
-            DCHECK(idx1.has_value()) << "invaild uniform_block";
+            DCHECK(idx1.has_value()) << "invaild vertex attribute";
 
             DCHECK(buf_layout[idx0.value()] == shd_layout[idx1.value()]) << "not same vertex attribute";
 

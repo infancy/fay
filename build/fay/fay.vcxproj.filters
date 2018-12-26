@@ -128,9 +128,6 @@
     <ClInclude Include="..\..\fay\core\algorithm.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\resource\file.h">
-      <Filter>resouce</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\resource\image.h">
       <Filter>resouce</Filter>
     </ClInclude>
@@ -228,6 +225,15 @@
       <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\resource\define.h">
+      <Filter>resouce</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\reflection.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resource\text.h">
+      <Filter>resouce</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resource\file.h">
       <Filter>resouce</Filter>
     </ClInclude>
   </ItemGroup>

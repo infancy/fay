@@ -256,31 +256,34 @@ private:
             return (ub.name == name) && ub.size == size;
         });
         DCHECK(idx.has_value()) << "invaild uniform_block";
+        DCHECK(idx.value() < ctx_.shd.uniform_blocks.size());
+        DCHECK(size == ctx_.shd.uniform_blocks[idx.value()].size) << "input unifrom block size isn't match to shader";
 
         backend_->bind_uniform(idx.value(), data, size);
     }
 
-    void bind_texture(const texture_id id, uint32_t tex_unit, const std::string& sampler)
+    void bind_texture(const texture_id id, uint32_t tex_unit, const std::string& sampler_name) //const shader_desc::sampler& sampler)
     {
         DCHECK(query_valid(id)) << "invalid id";
         DCHECK(
-            any_of(ctx_.shd.fs_samplers, std::equal_to{}, sampler) || 
-            any_of(ctx_.shd.vs_samplers, std::equal_to{}, sampler));
+            any_of(ctx_.shd.fs_samplers, [sampler_name](auto&& sampler) { return sampler.name == sampler_name; }) ||
+            any_of(ctx_.shd.vs_samplers, [sampler_name](auto&& sampler) { return sampler.name == sampler_name; }));
 
-        backend_->bind_texture(id, tex_unit, sampler);
+        backend_->bind_texture(id, tex_unit, sampler_name);
     }
 
     void bind_texture(const std::vector<texture_id>& textures)
     {
         const auto& texs = textures;
-        const auto& samplers = ctx_.shd.vs_samplers;
+        const auto& samplers = ctx_.shd.fs_samplers;
+        //WARNNING: not vs_samplers. const auto& samplers = ctx_.shd.vs_samplers;
         DCHECK(texs.size() <= samplers.size()) << "too many textures";
 
         // TODO: check texs[i] and samplers[i] is matching
 
         // TODO: WARNNING
         for (auto i : range(texs.size()))
-            bind_texture(texs[i], ctx_.tex_unit++, samplers[i]);
+            bind_texture(texs[i], ctx_.tex_unit++, samplers[i].name);
     }
 
     void bind_index(const buffer_id id)
