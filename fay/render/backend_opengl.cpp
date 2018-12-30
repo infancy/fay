@@ -320,6 +320,7 @@ namespace backend_opengl_type
         GLenum type;
         GLenum usage;
 
+        // remove
         GLenum internal_format, external_format, external_type;
 
         GLenum min_filter;
@@ -338,8 +339,7 @@ namespace backend_opengl_type
 
         // # then assign others
         GLuint tbo{};
-
-        // if used as msaa framebuffer
+        // if used as depth_stencil target or msaa color target
         GLuint rbo{};
 
         texture() = default;
@@ -714,10 +714,10 @@ public:
             // WARNNING: data or data3d, only one is available
             if (is_compressed)
                 glCompressedTexImage3D(tex.type, 0, in_fmt,
-                    desc.width, desc.height, desc.depth, 0, desc.size, desc.data3d); // TODO: even data3d is nullptr, it is not problem.
+                    desc.width, desc.height, desc.depth, 0, desc.size, desc.data.front()); // TODO: even data3d is nullptr, it is not problem.
             else
                 glTexImage3D(tex.type, 0, in_fmt,
-                    desc.width, desc.height, desc.depth, 0, ex_fmt, ex_type, desc.data3d);
+                    desc.width, desc.height, desc.depth, 0, ex_fmt, ex_type, desc.data.front());
 
             if (!desc.data.empty())
                 update(pid, nullptr); // TODO
@@ -862,7 +862,7 @@ public:
             LOG(ERROR) << "Framebuffer completeness check failed!\n";
         }
 
-        // if ues MSAA, create MSAA resolve framebuffers to read data from tex.rbo to tex.tbo
+        // if ues MSAA, create MSAA resolve framebuffers to read data from tex.msaa_rbo to tex.tbo
         if (render_desc_.anti_aliasing == anti_aliasing::MSAA)
         {
             for (int i = 0; i < rts.size(); ++i)

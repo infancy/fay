@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fay", "build\fay\fay.vcxproj", "{B93773F7-60E4-429C-90EE-6DE03A620113}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "build\test\test.vcxproj", "{62A188DD-2295-4610-9F3D-07BC831642F6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B93773F7-60E4-429C-90EE-6DE03A620113} = {B93773F7-60E4-429C-90EE-6DE03A620113}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_render", "build\sample_render\sample_render.vcxproj", "{C0513795-29B1-40B9-9C63-63AC3EE5F9E9}"
 	ProjectSection(ProjectDependencies) = postProject

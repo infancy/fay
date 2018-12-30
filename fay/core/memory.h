@@ -10,20 +10,6 @@ namespace fay
 // memory block
 
 /*
-// allocate & deallocate
-    pointer allocate(size_t count)
-    {	// allocate array of count elements
-        if (count > max_size())
-            throw std::length_error("allocator<T>::allocate(size_t n)"
-                " 'n' exceeds maximum supported size");
-        return static_cast<pointer>(::operator new(count * sizeof(T)));
-    }
-
-    void deallocate(pointer ptr, size_t count)
-    {
-        ::operator delete(ptr);
-    }
-
     // construct & destroy
     template<class U, class... Args>
     void construct(const U* ptr, Args&&... args)
@@ -38,6 +24,17 @@ namespace fay
         ptr->~U();
     }
 */
+
+// allocate count * sizeof(T) bytes
+template<typename T>
+inline T* allocate(size_t count)
+{	// allocate array of count elements
+    DCHECK(count > 0) <<
+        "allocate(size_t n): 'count' is 0";
+    DCHECK(count < (static_cast<size_t>(-1) / sizeof(T))) <<
+        "allocate(size_t n): 'count' exceeds maximum supported size";
+    return static_cast<T*>(::operator new(count * sizeof(T)));
+}
 
 inline void deallocate(void* ptr) //, size_t count)
 {
@@ -60,7 +57,9 @@ public:
     // TODO: byte*
     memory(const uint8_t* data, uint32_t size)
     {
-        uint8_t* dst = static_cast<uint8_t*>(::operator new(size));
+        DCHECK((data != nullptr) && (size > 0));
+
+        uint8_t* dst = allocate<uint8_t>(size);
         std::memcpy(dst, data, size); // WARNNING: memcmp???
 
         size_ = size; // WARNNING: you forget it!!!
@@ -68,13 +67,22 @@ public:
     }
     memory(const memory& mem)
     {
-        memory tmp(mem.data(), mem.size());
-        std::swap(tmp, *this);
+        // construct(this, mem.data(), mem.size());
+
+        // TODO: better way
+        if (mem.size() > 0)
+        {
+            memory tmp(mem.data(), mem.size());
+            std::swap(tmp, *this);
+        }
     }
     memory& operator=(const memory& mem)
     {
-        memory tmp(mem.data(), mem.size());
-        std::swap(tmp, *this); // std::swap(std::move(tmp), *this);
+        if (mem.size() > 0)
+        {
+            memory tmp(mem.data(), mem.size());
+            std::swap(tmp, *this); // std::swap(std::move(tmp), *this);
+        }
         return *this;
     }
     memory(memory&& mem) = default;

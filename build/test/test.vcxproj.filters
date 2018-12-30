@@ -8,6 +8,7 @@
     <ClCompile Include="..\..\test\core_string.cpp" />
     <ClCompile Include="..\..\test\core_memory.cpp" />
     <ClCompile Include="..\..\test\math_math.cpp" />
-    <ClCompile Include="..\..\test\render_render.cpp" />
+    <ClCompile Include="..\..\test\test_render.cpp" />
+    <ClCompile Include="..\..\test\test_resource.cpp" />
   </ItemGroup>
 </Project>

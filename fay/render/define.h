@@ -472,8 +472,7 @@ struct texture_desc
     pixel_format pixel_format{}; // rename: format
 
     uint32_t                 size{}; // used for compressed texture
-    std::vector<const void*> data/*2ds*/{};
-    const void*              data3d{ nullptr }; // for texture_array and texture_three, if 'data' is empty, read 'data3d'(all data in one ptr)
+    std::vector<const void*> data{};
 
     texture_type type{};
 	resource_usage usage{ resource_usage::immutable };
@@ -493,7 +492,7 @@ struct texture_desc
     float max_lod{ 1000.f }; // max_float
 
     render_target as_render_target{ render_target::none }; // used as render target or depth_stencil target is depended by pixel_format
-    uint32_t rt_sample_count{}; // only used when texture is used as render_target or depth_stencil target
+    uint32_t rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target
 
     texture_desc() = default;
     texture_desc(texture_type type)

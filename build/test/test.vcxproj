@@ -24,7 +24,8 @@
     <ClCompile Include="..\..\test\core_utility.cpp" />
     <ClCompile Include="..\..\test\core_range.cpp" />
     <ClCompile Include="..\..\test\core_string.cpp" />
-    <ClCompile Include="..\..\test\render_render.cpp" />
+    <ClCompile Include="..\..\test\test_render.cpp" />
+    <ClCompile Include="..\..\test\test_resource.cpp" />
     <ClCompile Include="..\..\test\test.cpp" />
     <ClCompile Include="..\..\test\math_math.cpp" />
   </ItemGroup>

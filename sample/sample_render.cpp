@@ -1,16 +1,34 @@
-#include "fay/app/app.h"
-#include "fay/core/config.h"
-#include "fay/core/fay.h"
-#include "fay/render/shader.h"
+#include <iostream>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <iostream>
+#include "fay/app/app.h"
+#include "fay/core/config.h"
+#include "fay/core/fay.h"
+#include "fay/render/device.h"
+#include "fay/render/shader.h"
+#include "fay/resource/image.h"
+
 
 #define glcheck_errors() CHECK(glGetError() == GL_NO_ERROR)
 
-fay::render_desc render_desc;
+fay::texture_id create_2d(fay::render_device_ptr& device, const std::string& name, const fay::image& img)
+{
+    fay::texture_desc desc;
+
+    desc.name = name;
+    desc.width = img.width();
+    desc.height = img.height();
+    desc.pixel_format = img.format();
+
+    desc.size = img.size() * img.channel();
+    desc.data = { img.data() };
+
+    desc.type = fay::texture_type::two;
+
+    return device->create(desc);
+}
 
 class clear : public fay::app
 {
@@ -51,7 +69,7 @@ public:
     {
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
-        float triangles[] = {
+        float lines[] = {
             -0.3f,  0.9f, 0.0f,
              0.3f,  0.9f, 0.0f,
              0.3f, -0.9f, 0.0f,
@@ -63,7 +81,7 @@ public:
             bd0.name = "line_stripe_vb";
             bd0.size = 6;// sizeof(vertices);
             bd0.stride = 12; // TODO: do it by helper functions;
-            bd0.data = triangles;
+            bd0.data = lines;
             bd0.type = fay::buffer_type::vertex;
 
             bd0.layout = { {fay::attribute_usage::position, fay::attribute_format::float3} };
@@ -73,10 +91,10 @@ public:
 
 
         float vertices[] = {
-             0.6f,  0.45f, 0.0f,  // right top
-             0.6f, -0.45f, 0.0f,  // right bottom
-            -0.6f, -0.45f, 0.0f,  // left bottom
-            -0.6f,  0.45f, 0.0f   // left top
+             0.6f,  0.45f, 0.0f,   1.f, 1.f, // right top
+             0.6f, -0.45f, 0.0f,   1.f, 0.f, // right bottom
+            -0.6f, -0.45f, 0.0f,   0.f, 0.f, // left bottom
+            -0.6f,  0.45f, 0.0f,   0.f, 1.f, // left top
         };
         unsigned int indices[] = {  // note that we start from 0!
             0, 1, 3,  // first Triangle
@@ -85,11 +103,15 @@ public:
         fay::buffer_desc bd; {
             bd.name = "triangle_vb";
             bd.size = 4;// sizeof(vertices);
-            bd.stride = 12; // TODO: do it by helper functions;
+            bd.stride = 20; // TODO: do it by helper functions;
             bd.data = vertices;
             bd.type = fay::buffer_type::vertex;
 
-            bd.layout = { {fay::attribute_usage::position, fay::attribute_format::float3} };
+            bd.layout = 
+            { 
+                {fay::attribute_usage::position,  fay::attribute_format::float3},
+                {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
+            };
         }
         fay::buffer_desc id(fay::buffer_type::index); {
             id.name = "triangle_ib";
@@ -99,18 +121,28 @@ public:
         auto triangle_vb = render->create(bd);
         auto triangle_ib = render->create(id);
 
+        fay::image img("texture/awesomeface.png", true);
+        auto triangle_tbo = create_2d(this->render, "hello", img);
+
         auto vs_code = R"(
                 #version 330 core
                 layout (location = 0) in vec3 mPos;
+                layout (location = 1) in vec2 mTex;
+
+                out vec2 vTex;
 
                 void main()
                 {
                    gl_Position = vec4(mPos.x, mPos.y, mPos.z, 1.0);
+                   vTex = mTex;   
                 }
             )";
         auto fs_code = R"(
                 #version 330 core
+                in vec2 vTex;
                 out vec4 FragColor;
+
+                uniform sampler2D Diffuse;
 
                 layout (std140) uniform color
                 {
@@ -123,9 +155,9 @@ public:
                 void main()
                 {
                    if(flag == 1)
-                       FragColor = a;
+                       FragColor = texture(Diffuse, vTex);
                    else
-                       FragColor = b;
+                       FragColor = texture(Diffuse, vTex);
 
                    //FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
                 }
@@ -148,7 +180,6 @@ public:
         }
         auto pipe2_id = render->create(pd);
 
-        render_paras paras;
         paras.a = { 1.f, 0.f, 0.f, 1.f };
         paras.b = { 0.f, 1.f, 0.f, 1.f };
 
@@ -159,12 +190,13 @@ public:
                 .apply_shader(shd_id)
                 .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
 
-                .apply_pipeline(pipe_id)
-                .bind_vertex(line_strip_vb)
-                .bind_uniform("flag", 1)
-                .draw()
+                //.apply_pipeline(pipe_id)
+                //.bind_vertex(line_strip_vb)
+                //.bind_uniform("flag", 1)
+                //.draw()
 
                 .apply_pipeline(pipe2_id)
+                .bind_texture({ triangle_tbo })
                 .bind_index(triangle_ib)
                 .bind_vertex(triangle_vb)
                 .bind_uniform("flag", 0)
@@ -185,111 +217,16 @@ public:
     {
        // render->draw(pass1);
        // render->draw(pass2);
+        auto cmds = pass1;
         render->submit(pass1);
         render->execute();
     }
 
     fay::buffer_id buf_id;
+
+    render_paras paras;
     fay::command_list pass1, pass2;
 };
-
-/*
-fay::app_desc texture_desc;
-class texture : public fay::app
-{
-public:
-    // using fay::app;
-    texture(const fay::app_desc& desc) : fay::app(desc)
-    {
-        desc_.window.title = "texture";
-    }
-
-    void init() override
-    {
-        render = fay::create_device_opengl(fay::g_config);
-
-        // set up vertex data (and buffer(s)) and configure vertex attributes
-        // ------------------------------------------------------------------
-        float vertices[] = {
-             0.5f,  0.5f, 0.0f,  // top right
-             0.5f, -0.5f, 0.0f,  // bottom right
-            -0.5f, -0.5f, 0.0f,  // bottom left
-            -0.5f,  0.5f, 0.0f   // top left
-        };
-        unsigned int indices[] = {  // note that we start from 0!
-            0, 1, 3,  // first Triangle
-            1, 2, 3   // second Triangle
-        };
-
-        fay::buffer_desc bd; {
-            bd.size = 4;// sizeof(vertices);
-            bd.stride = 12; // TODO: do it by helper functions;
-            bd.data = vertices;
-            bd.type = fay::buffer_type::vertex;
-
-            bd.layout = { {fay::attribute_usage::position, fay::attribute_format::float3} };
-        }
-        auto vertex_id = render->create(bd);
-
-        fay::buffer_desc bd2; {
-            bd2.size = 6;
-            bd2.data = indices;
-        }
-        auto index_id = render->create(bd2);
-
-        fay::shader_desc sd; {
-            sd.vs = R"(
-                #version 330 core
-                layout (location = 0) in vec3 aPos;
-                void main()
-                {
-                   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-                }
-            )";
-            sd.fs = R"(
-                #version 330 core
-                out vec4 FragColor;
-                void main()
-                {
-                   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-                }
-            )";
-        }
-        auto shd_id = render->create(sd);
-
-        fay::pipeline_desc pd; {
-            pd.primitive_type = fay::primitive_type::line_strip;
-        }
-        auto pipe_id = render->create(pd);
-
-        fay::pass_desc default_pass; {
-           // default_pass.index = index_id;
-            default_pass.buffers[0] = vertex_id;
-            default_pass.shd_id = shd_id;
-            default_pass.pipe_id = pipe_id;
-        }
-        pass = default_pass;
-
-        // uncomment this call to draw in wireframe polygons.
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
-
-    void update() override
-    {
-        render->draw(pass);
-    }
-
-    void clear() override
-    {
-
-    }
-
-    fay::pass_desc pass;
-    fay_device_ptr render{};
-};
-*/
-
-
 
 int main(int argc, char** argv)
 {

@@ -20,14 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\fay\app\window.cpp" />
-    <ClCompile Include="..\..\fay\gl\buffer.cpp" />
-    <ClCompile Include="..\..\fay\gl\model.cpp" />
-    <ClCompile Include="..\..\fay\gl\shader.cpp" />
-    <ClCompile Include="..\..\fay\gl\texture.cpp" />
     <ClCompile Include="..\..\fay\render\device.cpp" />
     <ClCompile Include="..\..\fay\render\render.cpp" />
     <ClCompile Include="..\..\fay\render\backend_opengl.cpp" />
-    <ClCompile Include="..\..\fay\ui\gui.cpp" />
+    <ClCompile Include="..\..\fay\resource\image.cpp" />
     <ClCompile Include="..\..\fay\ui\window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -54,16 +50,6 @@
     <ClInclude Include="..\..\fay\gfx\renderer.h" />
     <ClInclude Include="..\..\fay\gfx\render_graph.h" />
     <ClInclude Include="..\..\fay\gfx\render_queue.h" />
-    <ClInclude Include="..\..\fay\gl\buffer.h" />
-    <ClInclude Include="..\..\fay\gl\camera.h" />
-    <ClInclude Include="..\..\fay\gl\framebuffer.h" />
-    <ClInclude Include="..\..\fay\gl\gl.h" />
-    <ClInclude Include="..\..\fay\gl\mesh.h" />
-    <ClInclude Include="..\..\fay\gl\model.h" />
-    <ClInclude Include="..\..\fay\gl\geometry.h" />
-    <ClInclude Include="..\..\fay\gl\shader.h" />
-    <ClInclude Include="..\..\fay\gl\texture.h" />
-    <ClInclude Include="..\..\fay\gl\uniform.h" />
     <ClInclude Include="..\..\fay\math\color.h" />
     <ClInclude Include="..\..\fay\math\geometry.h" />
     <ClInclude Include="..\..\fay\math\math.h" />
@@ -86,8 +72,6 @@
     <ClInclude Include="..\..\fay\resource\file.h" />
     <ClInclude Include="..\..\fay\resource\text.h" />
     <ClInclude Include="..\..\fay\resource\image.h" />
-    <ClInclude Include="..\..\fay\resource\model.h" />
-    <ClInclude Include="..\..\fay\ui\gui.h" />
     <ClInclude Include="..\..\fay\ui\window.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
