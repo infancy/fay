@@ -1159,10 +1159,10 @@ public:
 
             // TODO: Simplified way
             glColorMask(
-                is_set(pipe.blend_write_mask, blend_mask::red),
-                is_set(pipe.blend_write_mask, blend_mask::green),
-                is_set(pipe.blend_write_mask, blend_mask::blue),
-                is_set(pipe.blend_write_mask, blend_mask::alpha));
+                enum_have(pipe.blend_write_mask, blend_mask::red),
+                enum_have(pipe.blend_write_mask, blend_mask::green),
+                enum_have(pipe.blend_write_mask, blend_mask::blue),
+                enum_have(pipe.blend_write_mask, blend_mask::alpha));
 
             glcheck_errors();
         }

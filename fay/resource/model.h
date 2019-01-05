@@ -16,18 +16,15 @@
 namespace fay
 {
 
+// model_loader, scene_loader
+
 // template<tynename vertex>
 template<typename Vertex>
 struct resource_mesh
 {
 	std::vector<Vertex>   vertices;
 	std::vector<uint32_t> indices;
-	std::vector<std::pair<image_ptr, texture_format>> images;
-
-	resource_mesh(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, 
-		std::vector<std::pair<image_ptr, texture_format>>& images) :
-		vertices{ vertices }, indices{ indices }, images{ images }
-	{}
+	std::vector<std::pair<image, texture_format>> images;
 };
 
 struct resource_model
@@ -37,7 +34,8 @@ struct resource_model
 
 	// glm::vec3 min{}, max{};
 
-	resource_model(const std::string& filepath, render_backend_type api);
+	resource_model(const std::string& filepath, render_backend_type api) :
+        path{ get_directory(filepath) }, api{ api } {}
 };
 
 // load model by fay -----------------------------------------------------------
@@ -120,7 +118,7 @@ private:
 	void process_node(aiNode* node, const aiScene* scene);
 	assimp_mesh process_mesh(aiMesh* mesh, const aiScene* scene);
 
-	std::vector<std::pair<image_ptr, texture_format>> 
+	std::vector<std::pair<image, texture_format>> 
 	load_images(aiMaterial* mat, aiTextureType type, texture_format textype);
 
 public:
@@ -128,7 +126,7 @@ public:
 
 private:
 	model_format modeltype;
-	std::unordered_map<std::string, image_ptr> images_cache;	// 保存已加载的图像，避免重复加载
+	std::unordered_map<std::string, image> images_cache;	// 保存已加载的图像，避免重复加载
 };
 
 } // namespace fay

@@ -5,7 +5,7 @@ GTEST_API_ int main(int argc, char **argv)
 {
     google::InitGoogleLogging(argv[0]);
 
-    char filter[] = "--gtest_filter=resource.*";
+    char filter[] = "--gtest_filter=ecs.*";
     argv[argc++] = filter;
     //testing::GTEST_FLAG(filter) = "utility.*";
 	testing::InitGoogleTest(&argc, argv);

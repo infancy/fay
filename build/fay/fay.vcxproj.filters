@@ -45,6 +45,9 @@
     <ClCompile Include="..\..\fay\resource\image.cpp">
       <Filter>resouce</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\fay\core\ecs.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\core\fay.h">
@@ -184,6 +187,30 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\resource\file.h">
       <Filter>resouce</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\renderable.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\bounds.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\resource\model.h">
+      <Filter>resouce</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\gfx_scene.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\app\scene.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\ecs.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\hash.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\enum.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -9,6 +9,7 @@
 
 #include "glm/glm.hpp"
 
+#include "fay/core/enum.h"
 #include "fay/core/define.h"
 #include "fay/core/fay.h"
 #include "fay/core/memory.h"
@@ -29,14 +30,6 @@ constexpr inline uint32_t MaxUniformMembers      = 16;
 constexpr inline uint32_t MaxVertexAttributes    = 16;
 constexpr inline uint32_t MaxMipmaps             = 16;
 constexpr inline uint32_t MaxTextureArrayLayers  = 128;
-
-#define FAY_ENUM_CLASS_OPERATORS(Enum)                                                                                        \
-inline Enum  operator~(const Enum a)               { return static_cast<Enum>(~static_cast<int>(a)); }                        \
-inline Enum  operator&(const Enum a, const Enum b) { return static_cast<Enum>( static_cast<int>(a) & static_cast<int>(b) ); } \
-inline Enum  operator|(const Enum a, const Enum b) { return static_cast<Enum>( static_cast<int>(a) | static_cast<int>(b) ); } \
-inline Enum& operator|=(Enum& a, const Enum b) { a = a | b; return a; };                                                      \
-inline Enum& operator&=(Enum& a, const Enum b) { a = a & b; return a; };                                                      \
-inline bool is_set(const Enum val, const Enum flag) { return (val & flag) != (Enum)0; }
 
 // -------------------------------------------------------------------------------------------------
 // render features

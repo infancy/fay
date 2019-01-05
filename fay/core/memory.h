@@ -7,24 +7,6 @@
 namespace fay
 {
 
-// memory block
-
-/*
-    // construct & destroy
-    template<class U, class... Args>
-    void construct(const U* ptr, Args&&... args)
-    {	// new((void*)U) U{args}, construct U(Args...) at ptr
-        ::new(const_cast<void*>(static_cast<const volatile void*>(ptr)))
-            U{std::forward<Args>(args)...};
-    }
-
-    template<class U>
-    void destroy(const U* ptr)
-    {
-        ptr->~U();
-    }
-*/
-
 // allocate count * sizeof(T) bytes
 template<typename T>
 inline T* allocate(size_t count)
@@ -41,13 +23,26 @@ inline void deallocate(void* ptr) //, size_t count)
     ::operator delete(ptr);
 }
 
+template<typename T, typename... Args>
+void construct(const T* ptr, Args&&... args)
+{	// new((void*)U) U{args}, construct U(Args...) at ptr
+    ::new(const_cast<void*>(static_cast<const volatile void*>(ptr)))
+        T{ std::forward<Args>(args)... };
+}
+
+template<typename T>
+void destruct(const T* ptr)
+{
+    ptr->~T();
+}
+
 // inline auto memory_deleter = [](void* ptr) { ::operator delete(ptr); };
 
 // TODO
 // is_standard_layout 
 // is_trivial
 
-
+// rename: memory_block
 // TODO: shared_memory
 // template<typename D = allocator>
 class memory

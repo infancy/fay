@@ -12,6 +12,7 @@
 namespace fay
 {
 
+constexpr inline float MinFloat = std::numeric_limits<float>::min();
 constexpr inline float MaxFloat = std::numeric_limits<float>::max();
 constexpr inline float Infinity = std::numeric_limits<float>::infinity();
 
