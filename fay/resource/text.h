@@ -10,7 +10,7 @@
 namespace fay
 {
 
-std::ifstream load_text(const std::string& filepath)
+inline std::ifstream load_text(const std::string& filepath)
 {
 	std::ifstream file(filepath);
 	CHECK(!file.fail()) << "can't open the file: " << filepath;

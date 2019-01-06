@@ -25,12 +25,14 @@
     <ClCompile Include="..\..\fay\render\render.cpp" />
     <ClCompile Include="..\..\fay\render\backend_opengl.cpp" />
     <ClCompile Include="..\..\fay\resource\image.cpp" />
+    <ClCompile Include="..\..\fay\resource\model_obj.cpp" />
     <ClCompile Include="..\..\fay\ui\window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\app\app.h" />
     <ClInclude Include="..\..\fay\app\input.h" />
     <ClInclude Include="..\..\fay\app\scene.h" />
+    <ClInclude Include="..\..\fay\app\utility.h" />
     <ClInclude Include="..\..\fay\app\window.h" />
     <ClInclude Include="..\..\fay\core\algorithm.h" />
     <ClInclude Include="..\..\fay\core\config.h" />
@@ -52,7 +54,10 @@
     <ClInclude Include="..\..\fay\core\time.h" />
     <ClInclude Include="..\..\fay\core\type.h" />
     <ClInclude Include="..\..\fay\core\utility.h" />
+    <ClInclude Include="..\..\fay\gfx\camera.h" />
     <ClInclude Include="..\..\fay\gfx\gfx_scene.h" />
+    <ClInclude Include="..\..\fay\gfx\material.h" />
+    <ClInclude Include="..\..\fay\gfx\mesh.h" />
     <ClInclude Include="..\..\fay\gfx\renderable.h" />
     <ClInclude Include="..\..\fay\gfx\renderer.h" />
     <ClInclude Include="..\..\fay\gfx\render_graph.h" />

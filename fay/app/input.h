@@ -25,11 +25,12 @@ struct single_input
 	// mouse
 	double posx, posy; // TODO: rename x, y
 	double lastx, lasty;
-	double dx, dy, wheel;
+	double dx, dy, wheel; // mouse move
 
-	bool left, middle, right;
+	bool left_down, middle_down, right_down; // mouse down
 
 	// keyboard
+    std::array<bool, 256> key{};
 	bool key_q, key_w;
 };
 

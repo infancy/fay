@@ -36,7 +36,7 @@ public:
 
     uint32_t width()   const { return width_; }
     uint32_t height()  const { return height_; }
-    uint32_t size()    const { return width_ * height_; } // TODO: real need it???
+    uint32_t size()    const { return width_ * height_; } // WARNNING: pixel nums, not byte nums
 
     uint32_t channel() const { return channel_; }
     pixel_format format() const { return fmt_; }
@@ -66,8 +66,8 @@ class image : public image_context
 {
 public:
     image() = default;
-    image(const image& that) = delete;
-    image& operator=(const image& that) = delete;
+    image(const image& that) = default;// = delete;
+    image& operator=(const image& that) = default;// = delete;
     image(image&& temp) = default;
     image& operator=(image&& temp) = default;
     ~image() = default;
@@ -135,7 +135,7 @@ public:
         return pixels_[y * w_ + x];
     }
     */
-
+    bool empty() const { return pixels_.empty(); }
     bool is_load_from_file() const { return is_load_from_file_; }
 
     glm::u8vec1& gray(size_t s, size_t t) { return *(reinterpret_cast<glm::u8vec1*>(pixel(s, t, 1))); }

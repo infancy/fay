@@ -1,13 +1,69 @@
 ﻿#include "fay/core/string.h"
-#include "fay/resource/model.h"
+#include "fay/render/define.h"
 #include "fay/resource/file.h"
-
-// using namespace std;
+#include "fay/resource/model.h"
+#include "fay/resource/text.h"
 
 namespace fay
 {
 
-// load obj model --------------------------------------------------------------
+struct vertex3
+{
+    glm::vec3 position{};
+    glm::vec3 normal{};
+    glm::vec2 texcoord{};
+
+    vertex3(glm::vec3 p, glm::vec3 n, glm::vec2 t) :
+        position(p),
+        normal(n),
+        texcoord(t)
+    {
+    }
+};
+
+struct obj_mesh
+{
+    std::string name{};
+    std::string mat_name{};
+    int smoothing_group{};
+
+    std::vector<vertex3>  vertices{};
+    std::vector<uint32_t> indices{};
+};
+
+struct obj_material
+{
+    std::string name{};
+
+    size_t index_{}; // the Nth material
+
+    float Ns, Ni, d, Tr, Tf;
+    int illum;
+    glm::vec3 Ka{};
+    glm::vec3 Kd{};
+    glm::vec3 Ks{};
+    glm::vec3 Ke{};
+
+    // static constexpr int nMap = 6;
+    std::string map_Ka, map_Kd, map_Ks, map_Ke, map_d, map_bump;
+    // std::vector<uint32_t> sub_indices;
+    // int offset;
+    // int count;
+
+    // obj_material() { memset(this, 0, sizeof(obj_material)); }
+};
+
+enum class obj_keyword
+{
+    dummy,
+    comment, // '#'
+    v, vn, vt,
+    o, g, s, f,
+    mtllib, usemtl, newmtl,
+    Ns, Ni, d, Tr, Tf, illum,
+    Ka, Kd, Ks, Ke,
+    map_Ka, map_Kd, map_Ks, map_Ke, map_d, map_bump
+};
 
 static const std::unordered_map<std::string, obj_keyword> map
 {
@@ -43,22 +99,79 @@ static const std::unordered_map<std::string, obj_keyword> map
     { "map_Ks", obj_keyword::map_Ks },
     { "map_Ke", obj_keyword::map_Ke },
     { "map_d", obj_keyword::map_d },
+    { "bump", obj_keyword::map_bump },
     { "map_bump", obj_keyword::map_bump },
     { "map_Bump", obj_keyword::map_bump },
+
+    { "alpha_test", obj_keyword::dummy },
 };
+
+static image convert_to_metallic_roughness(const std::string& directory, const std::string& ambient, const std::string& specular, bool flip_vertical = false)
+{
+    image ambi;
+    image spec;
+    image mr;
+
+    if ((ambient.size() > 0) && (specular.size() > 0))
+    {
+        ambi = image(directory + ambient, flip_vertical);
+        spec = image(directory + specular, flip_vertical);
+
+        DCHECK((ambi.width() == spec.width()) && (ambi.height() == spec.height()));
+
+        mr = image(ambi.width(), ambi.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 }); // pixel_format::rgba8 with ahpha = 0
+    }
+    else if (ambient.size() > 0)
+    {
+        ambi = image(directory + ambient, flip_vertical);
+        mr = image(ambi.width(), ambi.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 });
+    }
+    else if (specular.size() > 0)
+    {
+        spec = image(directory + specular, flip_vertical);
+        mr = image(spec.width(), spec.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 });
+    }
+
+    // maigc way to convert
+    
+    if (!ambi.empty())
+    {
+        auto src = ambi.data();
+        auto dst = mr.data();
+        for (uint32_t i = 0; i < mr.width() * mr.height(); ++i, dst += mr.channel(), src += ambi.channel())
+            dst[2] = src[0]; // metallic, dst.b = src.r;
+    }
+
+    if (!spec.empty())
+    {
+        auto src = spec.data();
+        auto dst = mr.data();
+        for (uint32_t i = 0; i < mr.width() * mr.height(); ++i, dst += mr.channel(), src += spec.channel())
+            dst[1] = src[0]; // roughness, dst.g = src.r;
+    }
+    
+    return std::move(mr);
+}
+
+static std::vector<obj_mesh> load_meshs(const std::string& firstline, std::ifstream& file, bool face_winding_ccw);
+
+static std::unordered_map<std::string, obj_material> load_materials(const std::string& directory, const std::string& filename);
 
 // TODO: boost::format
 // ÀíÂÛÉÏÒ»¸ö mesh ÓÉ 'o' ¿ªÊ¼£¬µ«Åöµ½ 'o'£¬'g'£¬'usemtl'£¬¾ÍÐÂ½¨Ò»¸ö mesh
 obj_model::obj_model(const std::string& filepath, render_backend_type api) : resource_model(filepath, api)
 {
+    bool flip_vertical = (api == render_backend_type::opengl);
+    bool face_winding_ccw = (api == render_backend_type::opengl); // TODO
+    auto directory = get_directory(filepath);
+
     // load *.obj
-    std::ifstream file(filepath);
-    CHECK(!file.fail()) << "can't open the file: " << filepath;
+    auto file = load_text(filepath);
 
     std::cout << "loading the file: " << filepath << '\n';
 
-    std::unordered_map<std::string, obj_material> materials;
-    std::vector<obj_mesh> submeshes;
+    std::unordered_map<std::string, obj_material> objmaterials;
+    std::vector<obj_mesh> submeshes; // TODO: remove
     std::vector<obj_mesh> objmeshes;
 
     while (!file.eof())
@@ -81,14 +194,14 @@ obj_model::obj_model(const std::string& filepath, render_backend_type api) : res
                 break;
 
             case obj_keyword::mtllib:
-                // std::fstream mtl("*.mtl");
-                materials = load_materials(erase_front_word(line));
+                // parse *.mtl
+                objmaterials = load_materials(directory, erase_front_word(line));
                 break;
 
             case obj_keyword::o:
             case obj_keyword::v:
                 // CHECK(!line.empty()) << "can't parser the line: " << line;
-                submeshes = load_meshs(line, file);
+                submeshes = load_meshs(line, file, face_winding_ccw);
                 objmeshes.insert(objmeshes.end(), submeshes.begin(), submeshes.end());
                 break;
 
@@ -98,29 +211,75 @@ obj_model::obj_model(const std::string& filepath, render_backend_type api) : res
         }
     }
 
-    for (auto& mesh : objmeshes)
-        meshes.push_back({ std::move(mesh), materials[mesh.mat_name] });
-        // std::move(materials[mesh.mat_name]) });
+    // convert obj_mesh, obj_mat to resource_mesh, mat
+
+    materials_.reserve(objmaterials.size());
+    meshes_.reserve(objmeshes.size());
+
+    size_t mat_index{};
+    for (auto& [mat_name, objmat] : objmaterials)
+    {
+        objmat.index_ = mat_index++;
+
+        resource_material mat;
+
+        mat.name = objmat.name;
+        mat.uniform_base_color = objmat.Kd;
+
+        DCHECK(!objmat.map_Kd.empty());
+
+        mat.base_color = image(directory + objmat.map_Kd, flip_vertical); // base_color with alpha_mask
+        
+        if(!objmat.map_bump.empty())
+            mat.normal = image(directory + objmat.map_bump, flip_vertical);
+
+        mat.metallic_roughness = convert_to_metallic_roughness(directory, objmat.map_Ka, objmat.map_Ks, flip_vertical);
+
+        materials_.push_back(std::move(mat));
+    }
+
+    for (auto& objmesh : objmeshes)
+    {
+        resource_mesh mesh;
+
+        mesh.name = objmesh.name;
+
+        mesh.size = objmesh.vertices.size();
+        mesh.layout = vertex_layout{
+            {fay::attribute_usage::position,  fay::attribute_format::float3},
+            {fay::attribute_usage::normal,    fay::attribute_format::float3},
+            {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
+        };
+        size_t byte_size = mesh.size * 32; // magic number
+        mesh.vertices.reserve(byte_size);
+        mesh.vertices.resize(byte_size);
+        std::memcpy(mesh.vertices.data(), objmesh.vertices.data(), byte_size);
+
+        mesh.indices = objmesh.indices;
+        mesh.material_index = objmaterials[objmesh.mat_name].index_;
+
+        meshes_.push_back(std::move(mesh));
+    }
 }
 
-std::vector<obj_mesh> obj_model::load_meshs(
-    const std::string& firstline, std::ifstream& file)
+static std::vector<obj_mesh> load_meshs(const std::string& firstline, std::ifstream& file, bool face_winding_ccw) // face_winding, Counter-ClockWise order in gl
 {
     std::vector<obj_mesh> submeshes;
 
     obj_mesh mesh;
     std::string cur_mesh_name;
 
-    // TODO: explain
-    // std::vector<glm::vec3> positions{ 0 };
+    // v, vn, vt
+    // in obj model, index starting from 1, like "f 1/1/1 2/2/1 3/3/1 4/4/1"
     std::vector<glm::vec3> positions(1, glm::vec3());
     std::vector<glm::vec3> normals(1, glm::vec3());
-    std::vector<glm::vec3> texcoords(1, glm::vec3());
+    std::vector<glm::vec3> texcoords(1, glm::vec3()); // TODO:??? vec2
 
-    // int nPositions{}, nNormals{}, nTexcoods{};
+    // int num;
 
     glm::vec3 v{};	// value
 
+    // TODO: get_xyz and return vec3(not cache it)
     auto get_xyz = [&v](std::istringstream& iss) { iss >> v.x >> v.y >> v.z; };
 
     auto add_and_clear = [&submeshes](obj_mesh& mesh)
@@ -159,7 +318,7 @@ std::vector<obj_mesh> obj_model::load_meshs(
         switch (map.at(token))	// operator[] only for nonconstant 
         {
         // TODO: v、vn、vt、f......
-        // TODO: 简化 case f
+        // TODO: simplify case f
             case obj_keyword::comment:
 
                 std::cout << "obj file comment: " << line << '\n';
@@ -186,6 +345,7 @@ std::vector<obj_mesh> obj_model::load_meshs(
             case obj_keyword::o:	// firstline
             case obj_keyword::g:
 
+                // a new submesh
                 add_and_clear(mesh);
                 iss >> cur_mesh_name;
                 mesh.name = cur_mesh_name;
@@ -219,7 +379,7 @@ std::vector<obj_mesh> obj_model::load_meshs(
 
                 glm::ivec4 p{}, t{}, n{};	// index
 
-                int count = 3;	// ÈôÒ»¸ö face ÓÐËÄ¸ö¶¥µã£¬ÔòÐèÒª²ð·Ö
+                int count = 3;	// vertex count of face, 3(triangle) or 4(rectangle)
                 if (num_of_char(line, ' ') == 4)
                     count = 4;
 
@@ -266,16 +426,16 @@ std::vector<obj_mesh> obj_model::load_meshs(
                 deal_with_negative_index(t, texcoords.size());
                 deal_with_negative_index(n, normals.size());
 
-
                 // vertex
                 glm::vec3 pos, nor, tex;
-                // uint32_t index = mesh.vertices.size() - 1;
+                // index, starts from 0
                 uint32_t index = mesh.vertices.size();
 
                 for (int i = 0; i < count; ++i)
-                {	// access container[0] is ok
+                {	// why access container[0] is ok???
+                    // TODO: can't access container[0].
                     DCHECK(0 <= p[i] && p[i] < positions.size()) << "vector out of range: " << p[i];
-                    DCHECK(0 <= n[i] && n[i] < normals.size()) << "vector out of range: " << n[i];
+                    DCHECK(0 <= n[i] && n[i] < normals.size())   << "vector out of range: " << n[i];
                     DCHECK(0 <= t[i] && t[i] < texcoords.size()) << "vector out of range: " << t[i];
                     pos = positions[p[i]];
                     nor = normals[n[i]];
@@ -284,22 +444,23 @@ std::vector<obj_mesh> obj_model::load_meshs(
                 }
 
                 // index
-                if (api == render_backend_type::opengl)
-                {   // ´ËÊ±ÎÞÐè UV ·´×ª
+                if (face_winding_ccw)
+                {
                     mesh.indices.insert(mesh.indices.end(),
                         { index, index + 1, index + 2 });
 
                     if (count == 4)
                         mesh.indices.insert(mesh.indices.end(),
                             { index + 2, index + 3, index });
-                    /*
+                }
+                else
+                {
                     mesh.indices.insert(mesh.indices.end(),
                         { index + 2, index + 1, index });
 
                     if (count == 4)
                         mesh.indices.insert(mesh.indices.end(),
                             { index, index + 3, index + 2 });
-                    */
                 }
 
                 break;
@@ -315,11 +476,10 @@ std::vector<obj_mesh> obj_model::load_meshs(
     return std::move(submeshes);
 }
 
-std::unordered_map<std::string, obj_material>
-obj_model::load_materials(const std::string& filepath)
+static std::unordered_map<std::string, obj_material> load_materials(const std::string& directory, const std::string& filename)
 {
     // load *.mtl
-    auto file = load_file(this->path + filepath);
+    auto file = load_text(directory + filename);
     std::unordered_map<std::string, obj_material> materials;
     obj_material mat;
 
@@ -330,7 +490,7 @@ obj_model::load_materials(const std::string& filepath)
     auto add_and_clear = [&materials](obj_material& mat)
     {
         if (!mat.name.empty())
-        {	// ±ÜÃâ¼ÓÈë¿ÕµÄ material
+        {
             materials.insert({ mat.name, std::move(mat) });
             mat = obj_material(); // clear
         }
@@ -379,6 +539,7 @@ obj_model::load_materials(const std::string& filepath)
             case obj_keyword::map_d: iss >> mat.map_d;  break;
             case obj_keyword::map_bump: iss >> mat.map_bump; break;
 
+            case obj_keyword::dummy:
             default:
                 LOG(ERROR) << "can't parser the token: " << token;
                 break;
@@ -389,7 +550,6 @@ obj_model::load_materials(const std::string& filepath)
     return std::move(materials);
 }
 
-// ½«Î»ÖÃ¡¢Ë÷Òý×ª»»³ÉÎÆÀíÊý¾Ý
 /*
 void objMesh_transform_to_TextureDataArray(
     std::vector<obj_mesh>& meshes,

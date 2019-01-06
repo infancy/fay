@@ -46,6 +46,8 @@ public:
 
     // show : swap buffer...
 
+    // clear
+
 	// virtual void open() = 0;
 	virtual bool should_close() = 0;
 	virtual void update_input() = 0;
@@ -88,19 +90,21 @@ inline void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE); // then glfwWindowShouldClose(GLFWwindow* window) return true
     // TODO... catch other event
+    //else if (action == GLFW_PRESS)
+    //    input_.key = key;
 }
 
 inline void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	// TODO
-	input_.left = input_.middle = input_.right = false;
+	input_.left_down = input_.middle_down = input_.right_down = false;
 
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		input_.left = true;
+		input_.left_down = true;
 	else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		input_.middle = true;
+		input_.middle_down = true;
 	else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-		input_.right = true;
+		input_.right_down = true;
 }
 
 inline void scroll_callback(GLFWwindow* window, double /*xoffset*/, double yoffset)
@@ -253,7 +257,24 @@ private:
         if (input_.dt == 0.0)
             input_.dt = 1.0 / 60.0;	// TODO: depend by screen
 
-        // TODO: keyboard
+        // keyboard
+        // do it by keyboard_cb
+        input_.key = {};
+
+        if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
+            input_.key['w'] = true; //input_.key == 'w';
+        /*else*/if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
+            input_.key['s'] = true;
+        if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
+            input_.key['a'] = true;
+        if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS)
+            input_.key['d'] = true;
+        if (glfwGetKey(window_, GLFW_KEY_Z) == GLFW_PRESS)
+            input_.key['z'] = true;
+        if (glfwGetKey(window_, GLFW_KEY_X) == GLFW_PRESS)
+            input_.key['x'] = true;
+        if (glfwGetKey(window_, GLFW_KEY_C) == GLFW_PRESS)
+            input_.key['c'] = true;
     }
 
 	bool keydown(int key) { return (glfwGetKey(window_, key) == GLFW_PRESS); }

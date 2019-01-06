@@ -88,8 +88,8 @@ enum class /*vertex_*/attribute_usage
     tangent,
     bitangent,
 
-    indices,
-    weights,
+    bone_index,
+    bone_weight,
 
     color0,
     color1,
@@ -414,6 +414,8 @@ private:
     std::vector<vertex_attribute> attrs{};
 };
 */
+
+// TODO: layout.stride();
 using vertex_layout = std::vector<vertex_attribute>;
 
 // vertex buffer, index buffer, instance buffer
@@ -432,7 +434,7 @@ struct buffer_desc
     vertex_layout layout{};
 
     // only used for instance buffer
-    // instance buffer update update data per instance(or more), instead of updating it per vertex.
+    // instance buffer update data per instance(or more), instead of updating it per vertex.
     uint32_t instance_rate{};
 
     buffer_desc() = default;

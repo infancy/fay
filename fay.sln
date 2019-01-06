@@ -16,6 +16,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_render", "build\samp
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_gfx", "build\sample_gfx\sample_gfx.vcxproj", "{86C03669-A359-4D5F-8953-C209B653D2A1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B93773F7-60E4-429C-90EE-6DE03A620113} = {B93773F7-60E4-429C-90EE-6DE03A620113}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

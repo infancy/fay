@@ -48,6 +48,9 @@
     <ClCompile Include="..\..\fay\core\ecs.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\fay\resource\model_obj.cpp">
+      <Filter>resouce</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\core\fay.h">
@@ -211,6 +214,18 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\core\enum.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\material.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\mesh.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\app\utility.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\camera.h">
+      <Filter>gfx</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
