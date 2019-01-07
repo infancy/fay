@@ -32,7 +32,7 @@ struct resource_material
     image occlusion;
     image emissive;
 
-    glm::vec3 uniform_base_color{ 1.f };
+    glm::vec4 uniform_base_color{ 1.f };
     glm::vec3 uniform_emissive_color{ 0.f };
     float uniform_metallic = 1.f;
     float uniform_roughness = 1.f;
@@ -52,7 +52,7 @@ struct resource_mesh
     vertex_layout layout;
 
     std::vector<uint32_t> indices;
-    primitive_type primitive_type{ primitive_type::triangles };
+    primitive_type primitive_{ primitive_type::triangles };
 
     // material
     uint32_t material_index{};

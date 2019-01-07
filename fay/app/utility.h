@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include "fay/app/app.h"
+#include "fay/app/scene.h"
 #include "fay/core/config.h"
 #include "fay/core/fay.h"
 #include "fay/gfx/camera.h"

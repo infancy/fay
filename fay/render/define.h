@@ -146,6 +146,20 @@ enum class texture_type
 	//array_data
 };
 
+enum class texture_usage
+{
+    base_color,
+    normal,
+    metallic_roughness,
+    occlusion,
+    emissive, 
+    
+    unknown0,
+    unknown1,
+    unknown2,
+    unknown3,
+};
+
 enum class render_target
 {
     none,
@@ -470,7 +484,8 @@ struct texture_desc
     std::vector<const void*> data{};
 
     texture_type type{};
-	resource_usage usage{ resource_usage::immutable };
+    texture_usage _usage{}; // TODO: rename
+	resource_usage usage{ resource_usage::immutable }; // update_rate rate
     // resource_state state{ resource_state::empty };
 
     filter_mode min_filter{ filter_mode::linear };
@@ -767,6 +782,7 @@ enum class command_type
     bind_index,
     bind_buffer, 
     bind_named_texture,
+    bind_texture_unit,
     bind_textures,
     bind_uniform,
     bind_uniform_block,
@@ -920,6 +936,16 @@ public:
     {
         auto& cmd = add_command(command_type::bind_named_texture);
         cmd.tex_ = id;
+        cmd.str_ = sampler;
+
+        return *this;
+    }
+    // TODO: how to solve it
+    command_list& bind_texture_unit(const texture_id id, uint32_t tex_unit, const std::string sampler)
+    {
+        auto& cmd = add_command(command_type::bind_texture_unit);
+        cmd.tex_ = id;
+        cmd.uint_ = tex_unit;
         cmd.str_ = sampler;
 
         return *this;

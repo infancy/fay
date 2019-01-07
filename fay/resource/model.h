@@ -39,8 +39,8 @@ public:
 
     bounds3 bounds() { return bounds3(); }
 
-    std::vector<resource_mesh> meshes() { return meshes_; }
-    std::vector<resource_material> materials() { return materials_; }
+    const std::vector<resource_mesh>& meshes() const { return meshes_; }
+    const std::vector<resource_material>& materials() const { return materials_; }
 
 private:
 	std::vector<resource_mesh> meshes_;

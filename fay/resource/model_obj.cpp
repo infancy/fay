@@ -224,7 +224,7 @@ obj_model::obj_model(const std::string& filepath, render_backend_type api) : res
         resource_material mat;
 
         mat.name = objmat.name;
-        mat.uniform_base_color = objmat.Kd;
+        mat.uniform_base_color = glm::vec4{ objmat.Kd, 1.f }; // objmat.Tr
 
         DCHECK(!objmat.map_Kd.empty());
 

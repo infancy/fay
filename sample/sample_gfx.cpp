@@ -14,7 +14,7 @@ const std::string silly_dancing = "object/silly_dancing.fbx";
 const std::string nierautomata_2b = "object/nierautomata_2b/scene.gltf";
 const std::string ftm_sketchfab = "object/ftm/ftm_sketchfab.blend";
 const std::string Nier_2b_ik_rigged = "object/Nier_2b_ik_rigged/scene.gltf";
-const std::string sponza = "object/sponza/sponza.obj";
+const std::string Sponza = "object/sponza/sponza.obj";
 
 const unsigned int Width = 1080;
 const unsigned int Height = 720;
@@ -52,7 +52,7 @@ struct render_paras
 void update_io(const fay::single_input& io = fay::input)
 {
     currentFrame = glfwGetTime();
-    deltaTime = (currentFrame - lastFrame) * 10;
+    deltaTime = (currentFrame - lastFrame) * 4;
     lastFrame = currentFrame;
     
     float xpos = io.posx, ypos = io.posy;
@@ -130,90 +130,11 @@ public:
 
     void setup() override
     {
-        //fay::obj_model obj(sponza);
-        //for (auto& mat : obj.materials())
-        //{
-        //    if (!mat.metallic_roughness.empty())
-        //        mat.metallic_roughness.save("test/" + mat.name);
-        //}
+        std::string name;
+        std::cin >> name;
+        scene_ = fay::scene_manager().load_scene(render, "object/" + name);
 
-        float vertices[] = {
-             0.6f,  0.45f, 0.0f, 0.6f,  0.45f, 0.0f,  1.f, 1.f, // right top
-             0.6f, -0.45f, 0.0f, 0.6f,  0.45f, 0.0f,  1.f, 0.f, // right bottom
-            -0.6f, -0.45f, 0.0f, 0.6f,  0.45f, 0.0f,  0.f, 0.f, // left bottom
-            -0.6f,  0.45f, 0.0f, 0.6f,  0.45f, 0.0f,  0.f, 1.f, // left top
-        };
-        unsigned int indices[] = {  // note that we start from 0!
-            0, 1, 3,  // first Triangle
-            1, 2, 3   // second Triangle
-        };
-        fay::buffer_desc bd; {
-            bd.name = "triangle_vb";
-            bd.size = 4;// sizeof(vertices);
-            bd.stride = 32; // TODO: do it by helper functions;
-            bd.data = vertices;
-            bd.type = fay::buffer_type::vertex;
-
-            bd.layout =
-            {
-                {fay::attribute_usage::position,  fay::attribute_format::float3},
-                {fay::attribute_usage::normal,  fay::attribute_format::float3},
-                {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
-            };
-        }
-        fay::buffer_desc id(fay::buffer_type::index); {
-            id.name = "triangle_ib";
-            id.size = 6;
-            id.data = indices;
-        }
-        auto triangle_vb = render->create(bd);
-        auto triangle_ib = render->create(id);
-
-        fay::image img("texture/awesomeface.png", true);
-        auto triangle_tbo = create_2d(this->render, "hello", img);
-
-        auto vs_code = R"(
-                #version 330 core
-                layout (location = 0) in vec3 mPos;
-                layout (location = 1) in vec3 mNor;
-                layout (location = 2) in vec2 mTex;
-
-                out vec2 vTex;
-
-                uniform mat4 MVP;
-
-                void main()
-                {
-                   vTex = mTex;   
-                   gl_Position = MVP * vec4(mPos, 1.0);
-                }
-            )";
-        auto fs_code = R"(
-                #version 330 core
-                in vec2 vTex;
-                out vec4 FragColor;
-
-                uniform sampler2D Diffuse;
-
-                layout (std140) uniform color
-                {
-                    vec4 a;
-                    vec4 b;
-                };
-                
-                uniform int flag;
-
-                void main()
-                {
-                   if(flag == 1)
-                       FragColor = texture(Diffuse, vTex);
-                   else
-                       FragColor = texture(Diffuse, vTex);
-
-                   //FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-                }
-            )";
-        fay::shader_desc sd = fay::scan_shader_program(vs_code, fs_code, true);
+        fay::shader_desc sd = fay::scan_shader_program("gfx/model.vs", "gfx/model.fs", false);
         sd.name = "shd"; //todo
         auto shd_id = render->create(sd);
 
@@ -221,8 +142,10 @@ public:
         {
             pd.name = "triangles";
             pd.primitive_type = fay::primitive_type::triangles;
+            pd.face_winding = fay::face_winding::ccw;
+            pd.depth_compare_op = fay::compare_op::less;
         }
-        auto pipe2_id = render->create(pd);
+        auto pipe_id = render->create(pd);
 
         paras.a = { 1.f, 0.f, 0.f, 1.f };
         paras.b = { 0.f, 1.f, 0.f, 1.f };
@@ -232,17 +155,7 @@ public:
             .clear_frame()
             .apply_shader(shd_id)
             .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
-
-            //.apply_pipeline(pipe_id)
-            //.bind_vertex(line_strip_vb)
-            //.bind_uniform("flag", 1)
-            //.draw()
-
-            .apply_pipeline(pipe2_id)
-            .bind_texture({ triangle_tbo })
-            .bind_index(triangle_ib)
-            .bind_vertex(triangle_vb);
-            
+            .apply_pipeline(pipe_id);
     }
 
     void update() override
@@ -258,12 +171,16 @@ public:
 
         auto cmds = pass1;
         cmds.bind_uniform("MVP", MVP)
-            .bind_uniform("flag", 0)
-            .draw_index()
-            .end_frame();
+            .bind_uniform("flag", 0);
+
+        scene_.flush_to(cmds);
+        cmds.end_frame();
+
         render->submit(cmds);
         render->execute();
     }
+
+    fay::scene scene_;
 
     fay::buffer_id buf_id;
 

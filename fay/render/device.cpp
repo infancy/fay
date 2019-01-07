@@ -27,6 +27,7 @@ render_device::render_device(const render_desc& desc)
     context_.name = desc.name;
     context_.type = desc.render_backend_type;
 
+    // TODO: create other with "id=0"
     ctx_.pipe_id = create(pipeline_desc());
     ctx_.pipe = desc_[ctx_.pipe_id];
     // make device have a old_pipe
@@ -43,10 +44,11 @@ void render_device::apply_pipeline(const pipeline_id id)
     DCHECK(query_valid(id)) << "invalid id";
 
     // !!!!!!!!!!!!!!!!!!!!
+    // TODO: how to deal with "command_list_ctx clear every new frame and pipe_id is assigned 0"
     if (ctx_.pipe_id == id)
         return;
 
-    const auto& old = ctx_.pipe;
+    const auto old = ctx_.pipe; // const auto& old = ctx_.pipe;
     ctx_.pipe_id = id;
     ctx_.pipe = desc_[ctx_.pipe_id];
     const auto& now = ctx_.pipe;
@@ -174,7 +176,10 @@ void render_device::execute_command_list(const command_list& cmds)
 
     // TOCHECK
 
+    // TODO: better way
     ctx_ = {};
+    ctx_.pipe_id = pipeline_id(1);
+    ctx_.pipe = desc_[ctx_.pipe_id];
 
     for (const auto& cmd : cs)
         execute_command(cmd);
@@ -247,6 +252,11 @@ void render_device::execute_command(const command& cmd)
         case command_type::bind_named_texture:
 
             bind_texture(cmd.tex_, ctx_.tex_unit++, cmd.str_);
+            break;
+
+        case command_type::bind_texture_unit:
+
+            bind_texture(cmd.tex_, cmd.uint_, cmd.str_);
             break;
 
         case command_type::bind_textures:

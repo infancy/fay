@@ -969,7 +969,7 @@ public:
         glcheck_errors();
 
         // log info
-        bool print_log = true;
+        bool print_log = false;
         if (print_log)
         {
             std::cout << "\nrender backend: opengl\n\n";
