@@ -35,10 +35,6 @@ struct CComponent : component
 {
     FAY_COMPONENT_TYPE_HASH(CComponent)
 
-        CComponent(int v)
-        : v(v)
-    {
-    }
     int v;
 };
 
@@ -68,7 +64,9 @@ TEST(ecs, ecs)
     auto eb = pool.create_entity();
     eb->create_component<AComponent>(11);
     eb->create_component<BComponent>(21);
-    eb->create_component<CComponent>(31);
+    eb->create_component<CComponent>();
+    auto ccomp = eb->get_component<CComponent>();
+    ccomp->v = 31;
 
     ASSERT_TRUE(group_ab.size() == 2 && group_ba.size() == 2);
     std::abs(get<0>(group_ab[0])->v - get<0>(group_ab[1])->v) == 1;

@@ -140,9 +140,6 @@
     <ClInclude Include="..\..\fay\render\define.h">
       <Filter>render</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\gfx\render_graph.h">
-      <Filter>gfx</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\gfx\render_queue.h">
       <Filter>gfx</Filter>
     </ClInclude>
@@ -226,6 +223,15 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\gfx\camera.h">
       <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\serialize.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\frame_graph.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\app\components.h">
+      <Filter>app</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

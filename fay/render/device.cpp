@@ -5,8 +5,6 @@
 namespace fay
 {
 
-render_backend_ptr create_backend_opengl(const render_desc& desc);
-
 render_device::render_device(const render_desc& desc)
 {
     switch (desc.render_backend_type)

@@ -126,13 +126,19 @@ public:
     gfx(const fay::app_desc& desc) : fay::app(desc)
     {
         desc_.window.title = "gfx";
+
+        //scene_ = std::make_unique<fay::scene>(render.get());
     }
 
     void setup() override
     {
+        scene_ = std::make_unique<fay::scene>(render.get());
+        gfx_ = scene_->graphics_scene_proxy();
+
         std::string name;
         std::cin >> name;
-        scene_ = fay::scene_manager().load_scene(render, "object/" + name);
+
+        scene_->add_model("object/" + name);
 
         fay::shader_desc sd = fay::scan_shader_program("gfx/model.vs", "gfx/model.fs", false);
         sd.name = "shd"; //todo
@@ -173,14 +179,25 @@ public:
         cmds.bind_uniform("MVP", MVP)
             .bind_uniform("flag", 0);
 
-        scene_.flush_to(cmds);
+        /*
+        // submit, 
+    void flush_to(command_list& cmd)
+    {
+        for (auto& mesh : render_list)
+            mesh->render(cmd);
+    }
+        */
+        for (auto& comps : *gfx_.renderables)
+            std::get<1>(comps)->renderable->render(cmds);
+
         cmds.end_frame();
 
         render->submit(cmds);
         render->execute();
     }
 
-    fay::scene scene_;
+    fay::scene_ptr scene_;
+    fay::graphics_scene gfx_;
 
     fay::buffer_id buf_id;
 

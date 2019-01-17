@@ -29,7 +29,7 @@ private:
     renderable_desc renderable_desc_{};
 };
 
-using renderable_sptr = std::shared_ptr<renderable>;
+FAY_SHARED_PTR(renderable)
 
 } // namespace fay
   

@@ -22,6 +22,26 @@ enum class resource_location
 // TODO: serialization
 // camera_desc
 
+// All in assimp, not glTF???
+// glTF???: "meshes" -> "models", "primitives" -> "meshes"
+
+struct resource_scene
+{
+    std::string name;
+
+    std::vector<size_t> nodes;
+};
+
+struct resource_node
+{
+    std::string name;
+    glm::mat4 transform{ 1.f };
+
+    std::vector<size_t> meshes; // submesh in glTF
+
+    std::vector<size_t> children;
+};
+
 struct resource_material
 {
     std::string name{};
@@ -59,14 +79,6 @@ struct resource_mesh
     bool has_material{ true };
 
     bounds3 bounds_;
-};
-
-struct resource_node
-{
-    std::vector<uint32_t> meshes;
-    glm::mat4 transform{ 1.f };
-
-    std::vector<uint32_t> children;
 };
 
 } // namespace fay

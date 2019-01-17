@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_CORE_FAY_H
-#define FAY_CORE_FAY_H
 
 #include "fay/core/platform.h"
 #include "fay/core/define.h"
@@ -39,11 +34,17 @@
 #pragma warning(disable : 4201)  // nonstandard extension used : nameless struct/union
 #endif
 
+#define FAY_UNIQUE_PTR( type ) \
+using type##_ptr       = std::unique_ptr<type>; \
+using const_##type##_ptr = std::unique_ptr<const type>;
+
+#define FAY_SHARED_PTR( type ) \
+using type##_sp = std::shared_ptr<type>; \
+using type##_wp = std::weak_ptr<type>; \
+using const_##type##_sp = std::shared_ptr<const type>; \
+using const_##type##_wp = std::weak_ptr<const type>;
+
 namespace fay
 {
 
-
-
 } // namespace fay
-
-#endif // FAY_CORE_FAY_H

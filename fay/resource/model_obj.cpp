@@ -1,4 +1,5 @@
-﻿#include "fay/core/string.h"
+﻿#include "fay/core/fay.h"
+#include "fay/core/string.h"
 #include "fay/render/define.h"
 #include "fay/resource/file.h"
 #include "fay/resource/model.h"
@@ -7,13 +8,27 @@
 namespace fay
 {
 
-struct vertex3
+class obj_model : public resource_model
+{
+public:
+    obj_model(const std::string& filepath, render_backend_type api);
+
+private:
+
+};
+
+resource_model_ptr create_model_obj(const std::string& filepath, render_backend_type api)
+{
+    return std::make_unique<obj_model>(filepath, api);
+}
+
+struct obj_vertex
 {
     glm::vec3 position{};
     glm::vec3 normal{};
     glm::vec2 texcoord{};
 
-    vertex3(glm::vec3 p, glm::vec3 n, glm::vec2 t) :
+    obj_vertex(glm::vec3 p, glm::vec3 n, glm::vec2 t) :
         position(p),
         normal(n),
         texcoord(t)
@@ -27,7 +42,7 @@ struct obj_mesh
     std::string mat_name{};
     int smoothing_group{};
 
-    std::vector<vertex3>  vertices{};
+    std::vector<obj_vertex>  vertices{};
     std::vector<uint32_t> indices{};
 };
 
@@ -35,7 +50,7 @@ struct obj_material
 {
     std::string name{};
 
-    size_t index_{}; // the Nth material
+    size_t index_{}; // the Nth material, it's only used when converting
 
     float Ns, Ni, d, Tr, Tf;
     int illum;
@@ -58,14 +73,14 @@ enum class obj_keyword
     dummy,
     comment, // '#'
     v, vn, vt,
-    o, g, s, f,
+    o, g, s, f, // TODO: object, group, smooth, face
     mtllib, usemtl, newmtl,
     Ns, Ni, d, Tr, Tf, illum,
     Ka, Kd, Ks, Ke,
     map_Ka, map_Kd, map_Ks, map_Ke, map_d, map_bump
 };
 
-static const std::unordered_map<std::string, obj_keyword> map
+static const std::unordered_map<std::string, obj_keyword> keyword
 {
     { "#", obj_keyword::comment },
 
@@ -98,67 +113,22 @@ static const std::unordered_map<std::string, obj_keyword> map
     { "map_Kd", obj_keyword::map_Kd },
     { "map_Ks", obj_keyword::map_Ks },
     { "map_Ke", obj_keyword::map_Ke },
-    { "map_d", obj_keyword::map_d },
-    { "bump", obj_keyword::map_bump },
+    { "map_d",  obj_keyword::map_d },
+
+    { "bump",     obj_keyword::map_bump },
     { "map_bump", obj_keyword::map_bump },
     { "map_Bump", obj_keyword::map_bump },
 
     { "alpha_test", obj_keyword::dummy },
 };
 
-static image convert_to_metallic_roughness(const std::string& directory, const std::string& ambient, const std::string& specular, bool flip_vertical = false)
-{
-    image ambi;
-    image spec;
-    image mr;
-
-    if ((ambient.size() > 0) && (specular.size() > 0))
-    {
-        ambi = image(directory + ambient, flip_vertical);
-        spec = image(directory + specular, flip_vertical);
-
-        DCHECK((ambi.width() == spec.width()) && (ambi.height() == spec.height()));
-
-        mr = image(ambi.width(), ambi.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 }); // pixel_format::rgba8 with ahpha = 0
-    }
-    else if (ambient.size() > 0)
-    {
-        ambi = image(directory + ambient, flip_vertical);
-        mr = image(ambi.width(), ambi.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 });
-    }
-    else if (specular.size() > 0)
-    {
-        spec = image(directory + specular, flip_vertical);
-        mr = image(spec.width(), spec.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 });
-    }
-
-    // maigc way to convert
-    
-    if (!ambi.empty())
-    {
-        auto src = ambi.data();
-        auto dst = mr.data();
-        for (uint32_t i = 0; i < mr.width() * mr.height(); ++i, dst += mr.channel(), src += ambi.channel())
-            dst[2] = src[0]; // metallic, dst.b = src.r;
-    }
-
-    if (!spec.empty())
-    {
-        auto src = spec.data();
-        auto dst = mr.data();
-        for (uint32_t i = 0; i < mr.width() * mr.height(); ++i, dst += mr.channel(), src += spec.channel())
-            dst[1] = src[0]; // roughness, dst.g = src.r;
-    }
-    
-    return std::move(mr);
-}
+static image convert_to_metallic_roughness(const std::string& directory, const std::string& ambient, const std::string& specular, bool flip_vertical = false);
 
 static std::vector<obj_mesh> load_meshs(const std::string& firstline, std::ifstream& file, bool face_winding_ccw);
 
 static std::unordered_map<std::string, obj_material> load_materials(const std::string& directory, const std::string& filename);
 
 // TODO: boost::format
-// ÀíÂÛÉÏÒ»¸ö mesh ÓÉ 'o' ¿ªÊ¼£¬µ«Åöµ½ 'o'£¬'g'£¬'usemtl'£¬¾ÍÐÂ½¨Ò»¸ö mesh
 obj_model::obj_model(const std::string& filepath, render_backend_type api) : resource_model(filepath, api)
 {
     bool flip_vertical = (api == render_backend_type::opengl);
@@ -185,9 +155,9 @@ obj_model::obj_model(const std::string& filepath, render_backend_type api) : res
         std::string token;
         iss >> token;
 
-        CHECK(map.find(token) != map.end()) << "can't parser the token: " << token;
+        CHECK(keyword.find(token) != keyword.end()) << "can't parser the token: " << token;
 
-        switch (map.at(token))	// operator[] only for nonconstant 
+        switch (keyword.at(token))	// operator[] only for nonconstant 
         {
             case obj_keyword::comment:
                 std::cout << "obj file comment: " << line << '\n';
@@ -260,6 +230,67 @@ obj_model::obj_model(const std::string& filepath, render_backend_type api) : res
 
         meshes_.push_back(std::move(mesh));
     }
+
+    // set scenes, nodes
+    //default_scene_.name = get_filename(filepath);
+    //default_scene_.nodes.push_back(0);
+    //scenes_.push_back(default_scene_);
+
+    nodes_.resize(meshes_.size());
+    for (auto i : range(meshes_.size()))
+        nodes_[i].meshes.push_back(i);
+
+    root_node_.children.resize(nodes_.size());
+    std::iota(root_node_.children.begin(), root_node_.children.end(), 1);
+
+    nodes_.insert(nodes_.begin(), root_node_);
+}
+
+static image convert_to_metallic_roughness(const std::string& directory, const std::string& ambient, const std::string& specular, bool flip_vertical)
+{
+    image ambi;
+    image spec;
+    image mr;
+
+    if ((ambient.size() > 0) && (specular.size() > 0))
+    {
+        ambi = image(directory + ambient, flip_vertical);
+        spec = image(directory + specular, flip_vertical);
+
+        DCHECK((ambi.width() == spec.width()) && (ambi.height() == spec.height()));
+
+        mr = image(ambi.width(), ambi.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 }); // pixel_format::rgba8 with ahpha = 0
+    }
+    else if (ambient.size() > 0)
+    {
+        ambi = image(directory + ambient, flip_vertical);
+        mr = image(ambi.width(), ambi.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 });
+    }
+    else if (specular.size() > 0)
+    {
+        spec = image(directory + specular, flip_vertical);
+        mr = image(spec.width(), spec.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 });
+    }
+
+    // maigc way to convert
+
+    if (!ambi.empty())
+    {
+        auto src = ambi.data();
+        auto dst = mr.data();
+        for (uint32_t i = 0; i < mr.width() * mr.height(); ++i, dst += mr.channel(), src += ambi.channel())
+            dst[2] = src[0]; // metallic, dst.b = src.r;
+    }
+
+    if (!spec.empty())
+    {
+        auto src = spec.data();
+        auto dst = mr.data();
+        for (uint32_t i = 0; i < mr.width() * mr.height(); ++i, dst += mr.channel(), src += spec.channel())
+            dst[1] = src[0]; // roughness, dst.g = src.r;
+    }
+
+    return std::move(mr);
 }
 
 static std::vector<obj_mesh> load_meshs(const std::string& firstline, std::ifstream& file, bool face_winding_ccw) // face_winding, Counter-ClockWise order in gl
@@ -313,9 +344,9 @@ static std::vector<obj_mesh> load_meshs(const std::string& firstline, std::ifstr
         std::string token;
         iss >> token;
 
-        CHECK(map.find(token) != map.end()) << "can't parser the token: " << token;
+        CHECK(keyword.find(token) != keyword.end()) << "can't parser the token: " << token;
 
-        switch (map.at(token))	// operator[] only for nonconstant 
+        switch (keyword.at(token))	// operator[] only for nonconstant 
         {
         // TODO: v、vn、vt、f......
         // TODO: simplify case f
@@ -507,9 +538,9 @@ static std::unordered_map<std::string, obj_material> load_materials(const std::s
         std::string token;
         iss >> token;
 
-        CHECK(map.find(token) != map.end()) << "can't parser the token: " << token;
+        CHECK(keyword.find(token) != keyword.end()) << "can't parser the token: " << token;
 
-        switch (map.at(token))	// operator[] only for nonconstant 
+        switch (keyword.at(token))	// operator[] only for nonconstant 
         {
             case obj_keyword::comment:
                 std::cout << "mtl file comment: " << line << '\n';

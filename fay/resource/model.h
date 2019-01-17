@@ -19,34 +19,54 @@ class resource_model
 {
 public:
 	resource_model(const std::string& filepath, render_backend_type api) :
-        directory_{ get_directory(filepath) }, api{ api } {}
+        dir_{ get_directory(filepath) }, api_{ api } {}
 
-    std::string directory() const { return directory_; }
+    // std::string directory() const { return directory_; }
 
-private:
-    const std::string directory_;
-    // resources_directory
-    render_backend_type api;
+    //! 
+    virtual resource_node root_node() { return root_node_; }
 
-    // glm::vec3 min{}, max{};
+    const std::vector<resource_node>& nodes() const { return nodes_; }
 
-};
-
-class obj_model : public resource_model
-{
-public:
-	obj_model(const std::string& filepath, render_backend_type api = render_backend_type::opengl);
-
-    bounds3 bounds() { return bounds3(); }
+    // bounds3 bounds() { return bounds3(); }
 
     const std::vector<resource_mesh>& meshes() const { return meshes_; }
     const std::vector<resource_material>& materials() const { return materials_; }
 
 private:
-	std::vector<resource_mesh> meshes_;
-    std::vector<resource_material> materials_;
+
+protected:
+    const std::string dir_; // resources_directory
+    render_backend_type api_{};
+
+    // glm::vec3 min{}, max{};
+    resource_node root_node_{};
     std::vector<resource_node> nodes_;
+
+    std::vector<resource_mesh> meshes_; // all submeshes in glTF
+    std::vector<resource_material> materials_;
 };
+
+using resource_model_ptr = std::unique_ptr<resource_model>;
+
+// deprecated
+resource_model_ptr create_model_obj(const std::string& filepath, render_backend_type api);
+
+inline resource_model_ptr create_resource_model(const std::string& filepath, render_backend_type api = render_backend_type::opengl)
+{
+    //if (auto type = get_filetype(filepath); (type == "gltf") || (type == "glb"))
+    //{
+    //    return create_model_obj(filepath, api);
+    //}
+    if (get_filetype(filepath) == "obj")
+    {
+        return create_model_obj(filepath, api);
+    }
+    else
+    {
+        return {};
+    }
+}
 
 // std::vector<mesh> create_meshes(const obj_model& obj);
 
@@ -71,6 +91,40 @@ public:
 private:
     model_format modeltype;
     std::unordered_map<std::string, image> images_cache;	// 保存已加载的图像，避免重复加载
+};
+
+class resource_scene
+{
+public:
+    resource_model(const std::string& filepath, render_backend_type api) :
+        dir_{ get_directory(filepath) }, api_{ api } {}
+
+    // std::string directory() const { return directory_; }
+
+    //!
+    virtual resource_scene default_scene() { return default_scene_; }
+
+    const std::vector<resource_scene>& scenes() const { return scenes_; }
+    const std::vector<resource_node>& nodes() const { return nodes_; }
+
+    // bounds3 bounds() { return bounds3(); }
+
+    const std::vector<resource_mesh>& meshes() const { return meshes_; }
+    const std::vector<resource_material>& materials() const { return materials_; }
+
+private:
+
+protected:
+    const std::string dir_; // resources_directory
+    render_backend_type api_{};
+
+    // glm::vec3 min{}, max{};
+    resource_scene default_scene_{};
+    std::vector<resource_scene> scenes_;
+    std::vector<resource_node> nodes_;
+
+    std::vector<resource_mesh> meshes_; // all submeshes in glTF
+    std::vector<resource_material> materials_;
 };
 */
 

@@ -76,6 +76,7 @@ class entity_pool;
 class entity // : std::enable_shared_from_this<entity>
 {
 public:
+    entity() = default;
 
     entity(entity_pool* pool, uint64_t hash)
         : pool_(pool), hash_(hash)
@@ -336,6 +337,7 @@ private:
     // std::vector<entity*> entities_;
 
     // TODO: ptr_container
+    // TODO: remove it, manage component by entity itself.
     std::vector<std::unique_ptr<component>> components_;
     std::vector<entity_ptr> entities_;
     uint64_t cookie{};

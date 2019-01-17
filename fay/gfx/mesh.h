@@ -12,7 +12,7 @@ namespace fay
 class static_mesh : public renderable
 {
 public:
-    static_mesh(fay::render_device_ptr& device, const resource_mesh& res, material_sptr mat)
+    static_mesh(fay::render_device* device, const resource_mesh& res, material_sp mat)
     {
         name_ = res.name;
 
@@ -26,13 +26,14 @@ public:
 
             bd.layout = res.layout;
         }
+        vbo = device->create(bd);
+
         fay::buffer_desc id(fay::buffer_type::index); 
         {
             id.name = res.name + "_ibo";
             id.size = res.indices.size();
             id.data = res.indices.data();
         }
-        vbo = device->create(bd);
         ibo = device->create(id);
 
         primitive_ = res.primitive_;
@@ -43,7 +44,7 @@ public:
     {
         // TODO: shader, pipeline
         cmd
-            .bind_texture_unit(mat_->textures[0], 0, "Diffuse")
+            .bind_texture_unit(mat_->textures[0], 0, "Diffuse") // TODO: "Diffuse" -> index in fragment shader
             .bind_index(ibo)
             .bind_vertex(vbo)
             .draw_index();
@@ -64,8 +65,35 @@ protected:
 
     primitive_type primitive_;
 
-    material_sptr mat_; // todo: csptr
+    material_sp mat_; // todo: csptr
+};
 
+class array_mesh : public renderable
+{
+public:
+    array_mesh() = default;
+
+    array_mesh(const std::vector<renderable_sp>& list, std::vector<size_t> indices = {})
+    {
+        if (indices.empty())
+        {
+            list_ = list;
+        }
+        else
+        {
+            for (auto index : indices)
+                list_.push_back(list[index]);
+        }
+    }
+
+    void render(command_list& cmd) override
+    {
+        for (auto& renderable : list_)
+            renderable->render(cmd);
+    }
+
+private:
+    std::vector<renderable_sp> list_;
 };
 
 } // namespace fay

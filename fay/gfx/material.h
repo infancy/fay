@@ -13,7 +13,7 @@ namespace fay
 
 struct material // : std::enabled_shared_from_this<material>
 {
-    material(fay::render_device_ptr& device, const resource_material& res)
+    material(fay::render_device* device, const resource_material& res)
     {
         name = res.name;
 
@@ -36,7 +36,7 @@ struct material // : std::enabled_shared_from_this<material>
         //shader_variant = res.bandlimited_pixel ? 1 : 0;
     }
 
-    texture_id create_2d_(render_device_ptr& device, const std::string& name, texture_usage usage, const image& img)
+    texture_id create_2d_(render_device* device, const std::string& name, texture_usage usage, const image& img)
     {
         fay::texture_desc desc;
 
@@ -73,6 +73,6 @@ struct material // : std::enabled_shared_from_this<material>
     bool needs_emissive = false;
 };
 
-using material_sptr = std::shared_ptr<material>;
+FAY_SHARED_PTR(material)
 
 } // namespace fay

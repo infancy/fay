@@ -76,4 +76,6 @@ protected:
 
 using render_backend_ptr = std::unique_ptr<render_backend>;
 
+render_backend_ptr create_backend_opengl(const render_desc& desc);
+
 } // namespace fay

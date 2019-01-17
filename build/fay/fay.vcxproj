@@ -30,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\app\app.h" />
+    <ClInclude Include="..\..\fay\app\components.h" />
     <ClInclude Include="..\..\fay\app\input.h" />
     <ClInclude Include="..\..\fay\app\scene.h" />
     <ClInclude Include="..\..\fay\app\utility.h" />
@@ -41,6 +42,7 @@
     <ClInclude Include="..\..\fay\core\enum.h" />
     <ClInclude Include="..\..\fay\core\hash.h" />
     <ClInclude Include="..\..\fay\core\memory.h" />
+    <ClInclude Include="..\..\fay\core\serialize.h" />
     <ClInclude Include="..\..\fay\core\platform.h" />
     <ClInclude Include="..\..\fay\core\fay.h" />
     <ClInclude Include="..\..\fay\core\log.h" />
@@ -60,7 +62,7 @@
     <ClInclude Include="..\..\fay\gfx\mesh.h" />
     <ClInclude Include="..\..\fay\gfx\renderable.h" />
     <ClInclude Include="..\..\fay\gfx\renderer.h" />
-    <ClInclude Include="..\..\fay\gfx\render_graph.h" />
+    <ClInclude Include="..\..\fay\gfx\frame_graph.h" />
     <ClInclude Include="..\..\fay\gfx\render_queue.h" />
     <ClInclude Include="..\..\fay\math\bounds.h" />
     <ClInclude Include="..\..\fay\math\color.h" />
