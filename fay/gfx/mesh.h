@@ -20,7 +20,7 @@ public:
         {
             bd.name = res.name + "_vbo";
             bd.size = res.size; // rename: num
-            bd.stride = 32; // TODO: do it by helper functions;
+            bd.stride = 56; // TODO: do it by helper functions;
             bd.data = res.vertices.data();
             bd.type = buffer_type::vertex;
 

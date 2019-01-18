@@ -136,9 +136,9 @@ public:
         gfx_ = scene_->graphics_scene_proxy();
 
         std::string name;
-        //std::cin >> name;
+        std::cin >> name;
 
-        scene_->add_model("object/box/box.obj");//" + name);
+        scene_->add_model("object/" + name);
 
         fay::shader_desc sd = fay::scan_shader_program("gfx/model.vs", "gfx/model.fs", false);
         sd.name = "shd"; //todo
