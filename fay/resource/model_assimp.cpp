@@ -189,9 +189,10 @@ void model_assimp::convert(resource_mesh& mesh, const aiMesh* aiMesh)
         {fay::attribute_usage::tangent,   fay::attribute_format::float3},
         {fay::attribute_usage::bitangent, fay::attribute_format::float3},
     };
+    DCHECK(mesh.layout.stride() == 56);
 
     mesh.size = aiMesh->mNumVertices;
-    size_t byte_size = mesh.size * 56; // magic number
+    size_t byte_size = mesh.size * mesh.layout.stride(); // magic number
     mesh.vertices.reserve(byte_size);
     mesh.vertices.resize(byte_size);
     std::memcpy(mesh.vertices.data(), vertices.data(), byte_size);

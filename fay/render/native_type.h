@@ -8,6 +8,7 @@
 #include <d3d11.h>
 #include "glad/glad.h"
 
+#include "fay/core/enum.h"
 #include "fay/render/define.h"
 
 namespace fay
@@ -18,30 +19,6 @@ struct native_type
 	GLenum opengl;
 	int d3d11;
 };
-
-/*
-auto enum_class_hash = [] (auto k)
-{
-    // return static_cast<std::underlying_type_t<Key>>(k);
-    return static_cast<std::size_t>(k);
-};
-*/
-
-// TODO: move to core/..
-// TODO: underlying_type_t
-struct enum_class_hash
-{
-    template <typename T>
-    std::size_t operator()(T t) const
-    {
-        return static_cast<std::size_t>(t);
-    }
-};
-
-template <typename Key, typename T>
-using enum_class_map = std::unordered_map<Key, T, enum_class_hash>;
-
-// enum_cast
 
 const inline enum_class_map<resource_usage, native_type>
 resource_usage_map
@@ -198,39 +175,6 @@ compare_op_map
 
 // =================================================================================================
 // format
-
-
-
-struct attribute_detail // rename: attribute_num_bytesize
-{
-    uint32_t size;
-    uint32_t byte;
-};
-
-// nums, bytes of attribute_format
-const inline enum_class_map<attribute_format, attribute_detail>
-attribute_format_map
-{
-    { attribute_format::float1,  {1,  4} },
-    { attribute_format::float2,  {2,  8} },
-    { attribute_format::float3,  {3, 12} },
-    { attribute_format::float4,  {4, 16} },
-    { attribute_format::floatx,  {1,  4} },
-
-    { attribute_format::byte4,   {4, 4} },
-    { attribute_format::byte4x,  {4, 4} },
-
-    { attribute_format::ubyte4,  {4, 4} },
-    { attribute_format::ubyte4x, {4, 4} },
-
-    { attribute_format::short2,  {2, 4} },
-    { attribute_format::short2x, {2, 4} },
-
-    { attribute_format::short4,  {4, 8} },
-    { attribute_format::short4x, {4, 8} },
-
-    //{ uint10_x2, {1, 4} },
-};
 
 inline bool is_compressed_pixel_format(pixel_format fmt) 
 {

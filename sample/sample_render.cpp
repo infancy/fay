@@ -6,10 +6,11 @@
 #include "fay/app/app.h"
 #include "fay/core/config.h"
 #include "fay/core/fay.h"
+#include "fay/gfx/mesh.h"
 #include "fay/render/device.h"
 #include "fay/render/shader.h"
 #include "fay/resource/image.h"
-
+#include "fay/resource/model.h"
 
 #define glcheck_errors() CHECK(glGetError() == GL_NO_ERROR)
 
@@ -28,6 +29,11 @@ fay::texture_id create_2d(fay::render_device_ptr& device, const std::string& nam
     desc.type = fay::texture_type::two;
 
     return device->create(desc);
+}
+
+fay::array_mesh create_array_mesh(fay::resource_model model)
+{
+
 }
 
 class clear : public fay::app
@@ -227,6 +233,10 @@ public:
     render_paras paras;
     fay::command_list pass1, pass2;
 };
+
+// shadow, defer_render
+
+// extern class shadow shadow_app;
 
 int main(int argc, char** argv)
 {

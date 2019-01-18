@@ -77,6 +77,7 @@
     <ClInclude Include="..\..\fay\math\simd.h" />
     <ClInclude Include="..\..\fay\math\transform.h" />
     <ClInclude Include="..\..\fay\math\vector.h" />
+    <ClInclude Include="..\..\fay\misc\extends.h" />
     <ClInclude Include="..\..\fay\misc\stencil.h" />
     <ClInclude Include="..\..\fay\render\backend.h" />
     <ClInclude Include="..\..\fay\render\define.h" />

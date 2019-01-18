@@ -390,6 +390,7 @@ FAY_RENDER_TYPE_ID(frame)
 
 #undef FAY_RENDER_TYPE_ID
 
+// a matrix instance : { fay::attribute_usage::instance_matrix,  fay::attribute_format::floatx, 16 }
 struct vertex_attribute
 {
     attribute_usage  usage;
@@ -408,6 +409,38 @@ struct vertex_attribute
     {
         return usage == va.usage && format == va.format && num == va.num;
     }
+};
+
+struct attribute_detail // rename: attribute_num_bytesize
+{
+    // TODO: size_t
+    uint32_t num;
+    uint32_t size; // num * sizeof(T)
+};
+
+// nums, bytes of attribute_format
+const inline enum_class_map<attribute_format, attribute_detail>
+attribute_format_map
+{
+    { attribute_format::float1,  {1,  4} },
+    { attribute_format::float2,  {2,  8} },
+    { attribute_format::float3,  {3, 12} },
+    { attribute_format::float4,  {4, 16} },
+    { attribute_format::floatx,  {1,  4} },
+
+    { attribute_format::byte4,   {4, 4} },
+    { attribute_format::byte4x,  {4, 4} },
+
+    { attribute_format::ubyte4,  {4, 4} },
+    { attribute_format::ubyte4x, {4, 4} },
+
+    { attribute_format::short2,  {2, 4} },
+    { attribute_format::short2x, {2, 4} },
+
+    { attribute_format::short4,  {4, 8} },
+    { attribute_format::short4x, {4, 8} },
+
+    //{ uint10_x2, {1, 4} },
 };
 
 /*
@@ -429,8 +462,25 @@ private:
 };
 */
 
-// TODO: layout.stride();
-using vertex_layout = std::vector<vertex_attribute>;
+// TODO: better way
+class vertex_layout : public std::vector<vertex_attribute> //extends_sequence<std::vector<vertex_attribute>>
+{
+public:
+    //using extends_sequence<std::vector<vertex_attribute>>::extends_sequence;
+    using std::vector<vertex_attribute>::vector;
+
+    size_t stride() const
+    {
+        size_t size{};
+
+        for (auto& attr : *this)
+        {
+            size += attribute_format_map.at(attr.format).size;
+        }
+
+        return size;
+    }
+};
 
 // vertex buffer, index buffer, instance buffer
 struct buffer_desc
@@ -448,7 +498,8 @@ struct buffer_desc
     vertex_layout layout{};
 
     // only used for instance buffer
-    // instance buffer update data per instance(or more), instead of updating it per vertex.
+    // instance buffer update data per instance(or more), instead of updating per vertex.
+    // TODO: remove it
     uint32_t instance_rate{};
 
     buffer_desc() = default;

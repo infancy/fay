@@ -217,7 +217,9 @@ obj_model::obj_model(const std::string& filepath, render_backend_type api) : res
             {fay::attribute_usage::normal,    fay::attribute_format::float3},
             {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
         };
-        size_t byte_size = mesh.size * 32; // magic number
+        DCHECK(mesh.layout.stride() == 32);
+
+        size_t byte_size = mesh.size * mesh.layout.stride();
         mesh.vertices.reserve(byte_size);
         mesh.vertices.resize(byte_size);
         std::memcpy(mesh.vertices.data(), objmesh.vertices.data(), byte_size);
