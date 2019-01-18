@@ -17,20 +17,17 @@ struct material // : std::enabled_shared_from_this<material>
     {
         name = res.name;
 
-        DCHECK(!res.base_color.empty());
-
-        textures[0] = create_2d_(device, name + "_base_color", texture_usage::base_color, res.base_color);
-
-        if (!res.normal.empty())             textures[1] = create_2d_(device, name + "_normal",             texture_usage::normal,             res.normal);
+        if (!res.albedo.empty())             textures[0] = create_2d_(device, name + "_base_color",         texture_usage::albedo,             res.albedo);
         if (!res.metallic_roughness.empty()) textures[2] = create_2d_(device, name + "_metallic_roughness", texture_usage::metallic_roughness, res.metallic_roughness);
+        if (!res.normal.empty())             textures[1] = create_2d_(device, name + "_normal",             texture_usage::normal,             res.normal);
         if (!res.occlusion.empty())          textures[3] = create_2d_(device, name + "_occlusion",          texture_usage::occlusion,          res.occlusion);
         if (!res.emissive.empty())           textures[4] = create_2d_(device, name + "_emissive",           texture_usage::emissive,           res.emissive);
 
-        base_color = res.uniform_base_color;
-        emissive = res.uniform_emissive_color;
-        metallic = res.uniform_metallic;
-        roughness = res.uniform_roughness;
-        normal_scale = res.normal_scale;
+        albedo = res.albedo_factor;
+        emissive = res.emissive_factor;
+        metallic = res.metallic_factor;
+        roughness = res.roughness_factor;
+        normal = res.normal_factor;
         //pipeline = res.pipeline;
         two_sided = res.two_sided;
         //shader_variant = res.bandlimited_pixel ? 1 : 0;
@@ -61,11 +58,11 @@ struct material // : std::enabled_shared_from_this<material>
 
     std::array<texture_id, 5> textures{};
 
-    glm::vec4 base_color{ 1.f };
+    glm::vec4 albedo{ 1.f };
     glm::vec3 emissive{ 0.f };
-    float metallic = 1.0f;
-    float roughness = 1.0f;
-    float normal_scale = 1.0f;
+    float metallic = 1.f;
+    float roughness = 1.f;
+    float normal = 1.f;
 
     uint32_t shader_variant = 0;
     //DrawPipeline pipeline = DrawPipeline::Opaque;

@@ -209,6 +209,8 @@ private:
     bool is_load_from_file_{};
 };
 
+FAY_SHARED_PTR(image)
+
 /* This probably doesn't useful.
 class image_view : public image_context // WARNNING: don't inherited from image_context
 {

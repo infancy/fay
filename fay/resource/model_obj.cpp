@@ -122,8 +122,6 @@ static const std::unordered_map<std::string, obj_keyword> keyword
     { "alpha_test", obj_keyword::dummy },
 };
 
-static image convert_to_metallic_roughness(const std::string& directory, const std::string& ambient, const std::string& specular, bool flip_vertical = false);
-
 static std::vector<obj_mesh> load_meshs(const std::string& firstline, std::ifstream& file, bool face_winding_ccw);
 
 static std::unordered_map<std::string, obj_material> load_materials(const std::string& directory, const std::string& filename);
@@ -194,16 +192,15 @@ obj_model::obj_model(const std::string& filepath, render_backend_type api) : res
         resource_material mat;
 
         mat.name = objmat.name;
-        mat.uniform_base_color = glm::vec4{ objmat.Kd, 1.f }; // objmat.Tr
+        mat.albedo_factor = glm::vec4{ objmat.Kd, 1.f }; // objmat.Tr
 
-        DCHECK(!objmat.map_Kd.empty());
-
-        mat.base_color = image(directory + objmat.map_Kd, flip_vertical); // base_color with alpha_mask
+        if (!objmat.map_Kd.empty());
+            mat.albedo = image(directory + objmat.map_Kd, flip_vertical); // base_color with alpha_mask
         
-        if(!objmat.map_bump.empty())
-            mat.normal = image(directory + objmat.map_bump, flip_vertical);
-
         mat.metallic_roughness = convert_to_metallic_roughness(directory, objmat.map_Ka, objmat.map_Ks, flip_vertical);
+
+        if (!objmat.map_bump.empty())
+            mat.normal = image(directory + objmat.map_bump, flip_vertical);
 
         materials_.push_back(std::move(mat));
     }
@@ -244,53 +241,6 @@ obj_model::obj_model(const std::string& filepath, render_backend_type api) : res
     std::iota(root_node_.children.begin(), root_node_.children.end(), 1);
 
     nodes_.insert(nodes_.begin(), root_node_);
-}
-
-static image convert_to_metallic_roughness(const std::string& directory, const std::string& ambient, const std::string& specular, bool flip_vertical)
-{
-    image ambi;
-    image spec;
-    image mr;
-
-    if ((ambient.size() > 0) && (specular.size() > 0))
-    {
-        ambi = image(directory + ambient, flip_vertical);
-        spec = image(directory + specular, flip_vertical);
-
-        DCHECK((ambi.width() == spec.width()) && (ambi.height() == spec.height()));
-
-        mr = image(ambi.width(), ambi.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 }); // pixel_format::rgba8 with ahpha = 0
-    }
-    else if (ambient.size() > 0)
-    {
-        ambi = image(directory + ambient, flip_vertical);
-        mr = image(ambi.width(), ambi.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 });
-    }
-    else if (specular.size() > 0)
-    {
-        spec = image(directory + specular, flip_vertical);
-        mr = image(spec.width(), spec.height(), pixel_format::rgb8, glm::u8vec4{ 0, 255, 0, 0 });
-    }
-
-    // maigc way to convert
-
-    if (!ambi.empty())
-    {
-        auto src = ambi.data();
-        auto dst = mr.data();
-        for (uint32_t i = 0; i < mr.width() * mr.height(); ++i, dst += mr.channel(), src += ambi.channel())
-            dst[2] = src[0]; // metallic, dst.b = src.r;
-    }
-
-    if (!spec.empty())
-    {
-        auto src = spec.data();
-        auto dst = mr.data();
-        for (uint32_t i = 0; i < mr.width() * mr.height(); ++i, dst += mr.channel(), src += spec.channel())
-            dst[1] = src[0]; // roughness, dst.g = src.r;
-    }
-
-    return std::move(mr);
 }
 
 static std::vector<obj_mesh> load_meshs(const std::string& firstline, std::ifstream& file, bool face_winding_ccw) // face_winding, Counter-ClockWise order in gl

@@ -34,30 +34,32 @@ struct resource_scene
 
 struct resource_node
 {
-    std::string name;
+    std::string name{};
     glm::mat4 transform{ 1.f };
 
-    std::vector<size_t> meshes; // submesh in glTF
+    std::vector<size_t> meshes{}; // submesh in glTF
 
-    std::vector<size_t> children;
+    std::vector<size_t> children{};
 };
 
 struct resource_material
 {
     std::string name{};
 
-    image base_color;
-    image normal;
+    image albedo; // use alpha channel as specular
     image metallic_roughness;
+    image normal;
     image occlusion;
     image emissive;
 
-    glm::vec4 uniform_base_color{ 1.f };
-    glm::vec3 uniform_emissive_color{ 0.f };
-    float uniform_metallic = 1.f;
-    float uniform_roughness = 1.f;
-    float normal_scale = 1.f;
+    glm::vec4 albedo_factor{ 1.f };
+    float metallic_factor = 1.f;
+    float roughness_factor = 1.f;
+
+    float normal_factor = 1.f;
+    glm::vec3 emissive_factor{ 0.f };
     //DrawPipeline pipeline = DrawPipeline::Opaque;
+    bool transparent = false;
     bool two_sided = true; // if have alpha channel, or ...
     bool bandlimited_pixel = true; // if is HDR, false
 };

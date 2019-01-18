@@ -25,6 +25,8 @@
     <ClCompile Include="..\..\fay\render\render.cpp" />
     <ClCompile Include="..\..\fay\render\backend_opengl.cpp" />
     <ClCompile Include="..\..\fay\resource\image.cpp" />
+    <ClCompile Include="..\..\fay\resource\model.cpp" />
+    <ClCompile Include="..\..\fay\resource\model_assimp.cpp" />
     <ClCompile Include="..\..\fay\resource\model_obj.cpp" />
     <ClCompile Include="..\..\fay\ui\window.cpp" />
   </ItemGroup>

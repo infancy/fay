@@ -136,9 +136,9 @@ public:
         gfx_ = scene_->graphics_scene_proxy();
 
         std::string name;
-        std::cin >> name;
+        //std::cin >> name;
 
-        scene_->add_model("object/" + name);
+        scene_->add_model("object/box/box.obj");//" + name);
 
         fay::shader_desc sd = fay::scan_shader_program("gfx/model.vs", "gfx/model.fs", false);
         sd.name = "shd"; //todo
@@ -149,6 +149,7 @@ public:
             pd.name = "triangles";
             pd.primitive_type = fay::primitive_type::triangles;
             pd.face_winding = fay::face_winding::ccw;
+            pd.cull_mode = fay::cull_mode::none;
             pd.depth_compare_op = fay::compare_op::less;
         }
         auto pipe_id = render->create(pd);

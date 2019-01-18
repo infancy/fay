@@ -1,8 +1,5 @@
 #pragma once
 
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
 #include "fay/math/bounds.h"
 #include "fay/resource/define.h"
 #include "fay/resource/file.h"
@@ -18,10 +15,7 @@ namespace fay
 class resource_model
 {
 public:
-	resource_model(const std::string& filepath, render_backend_type api) :
-        dir_{ get_directory(filepath) }, api_{ api } {}
-
-    // std::string directory() const { return directory_; }
+    resource_model(const std::string& filepath, render_backend_type api);
 
     //! 
     virtual resource_node root_node() { return root_node_; }
@@ -33,10 +27,17 @@ public:
     const std::vector<resource_mesh>& meshes() const { return meshes_; }
     const std::vector<resource_material>& materials() const { return materials_; }
 
-private:
+protected:
+    std::string directory() const;
+
+    model_format format() const;
+
+    bool need_flip_image() const;
 
 protected:
+    const std::string filepath_;
     const std::string dir_; // resources_directory
+    model_format fmt_{};
     render_backend_type api_{};
 
     // glm::vec3 min{}, max{};
@@ -49,8 +50,12 @@ protected:
 
 using resource_model_ptr = std::unique_ptr<resource_model>;
 
+image convert_to_metallic_roughness(const std::string& directory, const std::string& ambient, const std::string& specular, bool flip_vertical);
+
 // deprecated
 resource_model_ptr create_model_obj(const std::string& filepath, render_backend_type api);
+
+resource_model_ptr create_model_assimp(const std::string& filepath, render_backend_type api);
 
 inline resource_model_ptr create_resource_model(const std::string& filepath, render_backend_type api = render_backend_type::opengl)
 {
@@ -58,40 +63,10 @@ inline resource_model_ptr create_resource_model(const std::string& filepath, ren
     //{
     //    return create_model_obj(filepath, api);
     //}
-    if (get_filetype(filepath) == "obj")
-    {
-        return create_model_obj(filepath, api);
-    }
-    else
-    {
-        return {};
-    }
+    return create_model_assimp(filepath, api);
 }
 
-// std::vector<mesh> create_meshes(const obj_model& obj);
-
 /*
-using assimp_mesh = resource_mesh<vertex5>;
-
-class assimp_model : public resource_model
-{
-public:
-    assimp_model(const std::string& filepath, render_backend_type api = render_backend_type::opengl, model_format model_format = model_format::obj);
-
-private:
-    void process_node(aiNode* node, const aiScene* scene);
-    assimp_mesh process_mesh(aiMesh* mesh, const aiScene* scene);
-
-    std::vector<std::pair<image, texture_format>>
-    load_images(aiMaterial* mat, aiTextureType type, texture_format textype);
-
-public:
-    std::vector<assimp_mesh> meshes;
-
-private:
-    model_format modeltype;
-    std::unordered_map<std::string, image> images_cache;	// 保存已加载的图像，避免重复加载
-};
 
 class resource_scene
 {
