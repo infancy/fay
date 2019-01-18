@@ -182,27 +182,16 @@ void model_assimp::convert(resource_mesh& mesh, const aiMesh* aiMesh)
 	// convert
     mesh.name = aiMesh->mName.C_Str();
 
-    if (format() == model_format::obj)
-    {
-        mesh.layout = vertex_layout{
-            {fay::attribute_usage::position,  fay::attribute_format::float3},
-            {fay::attribute_usage::normal,    fay::attribute_format::float3},
-            {fay::attribute_usage::texcoord0, fay::attribute_format::float2},
-            {fay::attribute_usage::tangent,   fay::attribute_format::float3},
-            {fay::attribute_usage::bitangent, fay::attribute_format::float3},
-        };
-    }
-    else
-    {
-        mesh.layout = vertex_layout{
-            {fay::attribute_usage::position,  fay::attribute_format::float3},
-            {fay::attribute_usage::normal,    fay::attribute_format::float3},
-            {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
-        };
-    }
+    mesh.layout = vertex_layout{
+        {fay::attribute_usage::position,  fay::attribute_format::float3},
+        {fay::attribute_usage::normal,    fay::attribute_format::float3},
+        {fay::attribute_usage::texcoord0, fay::attribute_format::float2},
+        {fay::attribute_usage::tangent,   fay::attribute_format::float3},
+        {fay::attribute_usage::bitangent, fay::attribute_format::float3},
+    };
 
     mesh.size = aiMesh->mNumVertices;
-    size_t byte_size = (format() == model_format::obj) ? (mesh.size * 56) : (mesh.size * 32); // magic number
+    size_t byte_size = mesh.size * 56; // magic number
     mesh.vertices.reserve(byte_size);
     mesh.vertices.resize(byte_size);
     std::memcpy(mesh.vertices.data(), vertices.data(), byte_size);

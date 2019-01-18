@@ -177,8 +177,7 @@ public:
         MVP = projection * view * model;
 
         auto cmds = pass1;
-        cmds.bind_uniform("MVP", MVP)
-            .bind_uniform("flag", 0);
+        cmds.bind_uniform("MVP", MVP);
 
         /*
         // submit, 

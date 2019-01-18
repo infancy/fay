@@ -43,8 +43,14 @@ public:
     void render(command_list& cmd) override
     {
         // TODO: shader, pipeline
+
+        bool bAlbedo = mat_->textures[0].value > 0;
+
+        if (bAlbedo)
+            cmd.bind_texture_unit(mat_->textures[0], 0, "Diffuse"); // TODO: "Diffuse" -> index in fragment shader
+
         cmd
-            .bind_texture_unit(mat_->textures[0], 0, "Diffuse") // TODO: "Diffuse" -> index in fragment shader
+            .bind_uniform("bAlbedo", bAlbedo)
             .bind_index(ibo)
             .bind_vertex(vbo)
             .draw_index();
