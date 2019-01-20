@@ -11,7 +11,7 @@
 
 SAMPLE_RENDER_APP_DECL(clear)
 SAMPLE_RENDER_APP_DECL(triangle)
-SAMPLE_RENDER_APP_DECL(post_proc)
+SAMPLE_RENDER_APP_DECL(post_processing)
 
 int main(int argc, char** argv)
 {

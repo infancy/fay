@@ -530,7 +530,7 @@ struct texture_desc
 
 	uint32_t width{};
 	uint32_t height{};
-    uint32_t depth{}; // layers
+    uint32_t depth{}; // layers, used in texture3d or texture_array
     pixel_format pixel_format{}; // rename: format
 
     uint32_t                 size{}; // used for compressed texture

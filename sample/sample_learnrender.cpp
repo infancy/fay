@@ -23,7 +23,7 @@ using namespace fay;
 
 // -----------------------------------------------------------------------------
 
-// ·Ö±æÂÊ
+// Â·Ã–Â±Ã¦Ã‚ÃŠ
 const unsigned int Width = 1080;
 const unsigned int Height = 720;
 
@@ -62,13 +62,13 @@ glm::vec3 lightPosition = glm::vec3(0, 10, 0); //objectspace light position
 float light_speed = 2.f;
 glm::vec3 light_scale(0.5f, 0.5f, 0.5f);
 
-// Êó±êÒÆ¶¯ÉèÖÃÓëäÖÈ¾ÉèÖÃ
+// ÃŠÃ³Â±ÃªÃ’Ã†Â¶Â¯Ã‰Ã¨Ã–ÃƒÃ“Ã«Ã¤Ã–ÃˆÂ¾Ã‰Ã¨Ã–Ãƒ
 bool some_flag = false;
 char mouse_move = 'z';
 int render_state = 1;
 
 // GUI
-//background color£¬»á×Ô¶¯×ª»¯Îª 0.f~1.f µÄ¸¡µãÊý
+//background colorÂ£Â¬Â»Ã¡Ã—Ã”Â¶Â¯Ã—ÂªÂ»Â¯ÃŽÂª 0.f~1.f ÂµÃ„Â¸Â¡ÂµÃ£ÃŠÃ½
 static ImVec4 clear_color = ImColor(0, 0, 0);
 static ImVec4 light_color = ImColor(255, 255, 255);
 static int samples_PerPixel = 1;
@@ -85,14 +85,14 @@ void update()
 
 	ImGuiIO& io = gui_get_io();
 
-	// Êó±êÒÆ¶¯
+	// ÃŠÃ³Â±ÃªÃ’Ã†Â¶Â¯
 	float xpos = io.MousePos.x, ypos = io.MousePos.y;
 	if (firstMouse) { lastX = xpos; lastY = ypos; firstMouse = false; }
 	float xoffset = xpos - lastX; lastX = xpos;
 	// reversed since y-coordinates go from bottom to top but z_xais form out to in
 	float yoffset = lastY - ypos; lastY = ypos;
 
-	// Õ³ÖÍ
+	// Ã•Â³Ã–Ã
 	// if (io.KeysDown[GLFW_KEY_SPACE] == GLFW_PRESS) mouse_move = ++mouse_move % 3;
 	if (io.KeysDown[GLFW_KEY_Z]) mouse_move = 'z';
 	if (io.KeysDown[GLFW_KEY_X]) mouse_move = 'x';
@@ -115,11 +115,11 @@ void update()
 		if (io.KeysDown[GLFW_KEY_S]) camera_.ProcessKeyboard(BACKWARD, deltaTime);
 		if (io.KeysDown[GLFW_KEY_A]) camera_.ProcessKeyboard(LEFT, deltaTime);
 		if (io.KeysDown[GLFW_KEY_D]) camera_.ProcessKeyboard(RIGHT, deltaTime);
-		//camera_.ProcessMouseScroll(io.MouseWheel); ½ûÖ¹·ÅËõ
+		//camera_.ProcessMouseScroll(io.MouseWheel); Â½Ã»Ã–Â¹Â·Ã…Ã‹Ãµ
 	}
 	else if (mouse_move == 'x')
 	{
-		// ÏòÇ°¹öÎªÕý£¬ÏòºóÎªºó£¬¸ù¾ÝËÙ¶È´Ó -5 ~ 5
+		// ÃÃ²Ã‡Â°Â¹Ã¶ÃŽÂªÃ•Ã½Â£Â¬ÃÃ²ÂºÃ³ÃŽÂªÂºÃ³Â£Â¬Â¸Ã¹Â¾ÃÃ‹Ã™Â¶ÃˆÂ´Ã“ -5 ~ 5
 		light_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * io.MouseWheel;
 		if (light_scale.x < 0.f)
 			light_scale = glm::vec3(0.1f, 0.1f, 0.1f);
@@ -176,7 +176,7 @@ struct _fay_obj_model;
 
 struct _00_create_gui
 {
-	// ¼ÓÔØ¸²¸ÇÕû¸öÊÓ¿ÚµÄÕý·½ÐÎ
+	// Â¼Ã“Ã”Ã˜Â¸Â²Â¸Ã‡Ã•Ã»Â¸Ã¶ÃŠÃ“Â¿ÃšÂµÃ„Ã•Ã½Â·Â½ÃÃŽ
 	vertex1 v1 = { 0.f, 0.f, 0.f };
 	std::vector<vertex1> vb{ {-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0} };
 	std::vector<uint32_t> ib{ 0,1,2,0,2,3 };
@@ -243,18 +243,18 @@ struct _23_stencil_test
 
 	void draw(glm::mat4& p, glm::mat4& v, glm::mat4& m)
 	{
-		// TOOD：注�?
+		// TOODï¼šæ³¨é‡?
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-		glStencilFunc(GL_ALWAYS, 1, 0xFF); // ËùÓÐµÄÆ¬¶Î¶¼Ó¦¸Ã¸üÐÂÄ£°å»º³å
-		glStencilMask(0xFF); // ÆôÓÃÄ£°å»º³åÐ´Èë
+		glStencilFunc(GL_ALWAYS, 1, 0xFF); // Ã‹Ã¹Ã“ÃÂµÃ„Ã†Â¬Â¶ÃŽÂ¶Â¼Ã“Â¦Â¸ÃƒÂ¸Ã¼ÃÃ‚Ã„Â£Â°Ã¥Â»ÂºÂ³Ã¥
+		glStencilMask(0xFF); // Ã†Ã´Ã“ÃƒÃ„Â£Â°Ã¥Â»ÂºÂ³Ã¥ÃÂ´ÃˆÃ«
 		sd.enable();
 		sd.set_bool("draw_outlining", false);
 		sd.set_mat4("MVP", p * v * m);
 		md.draw(sd);
 		
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00); // ½ûÖ¹Ä£°å»º³åµÄÐ´Èë
+		glStencilMask(0x00); // Â½Ã»Ã–Â¹Ã„Â£Â°Ã¥Â»ÂºÂ³Ã¥ÂµÃ„ÃÂ´ÃˆÃ«
 		glDisable(GL_DEPTH_TEST);
 		sd.enable();
 		sd.set_bool("draw_outlining", true);
@@ -403,7 +403,7 @@ struct _26_cubemaps
 		glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
 		sd.enable();
 		sd.set_mat4("MV", MV);
-		sd.set_mat3("NormalMV", NormalMV);		// Ê§È¥Î»ÒÆÊôÐÔ
+		sd.set_mat3("NormalMV", NormalMV);		// ÃŠÂ§ÃˆÂ¥ÃŽÂ»Ã’Ã†ÃŠÃ´ÃÃ”
 		sd.set_mat4("MVP", p * v * m);
 		md.draw(sd);
 
@@ -481,11 +481,13 @@ struct _28_geometry_shader
 
 struct _29_instancing
 {
-	model planet{ Planet };
-	model rock{ Rock };
+	model planet{ Planet }; // center, not important
 	shader s1{ "learngl/21_load_model.vs", "learngl/21_load_model.fs" };
+
+
+	model rock{ Rock };
 	shader s2{ "learngl/29_instancing.vs", "learngl/29_instancing.fs" };
-	// Ê¹ÓÃ¶ÀÏÔÔËÐÐ
+	// ÃŠÂ¹Ã“ÃƒÂ¶Ã€ÃÃ”Ã”Ã‹ÃÃ
 	const int amount = 100000;
 	std::vector<glm::mat4> mat4s{ amount };
 
@@ -527,8 +529,10 @@ struct _29_instancing
 
 		for (unsigned int i = 0; i < rock.meshes.size(); ++i)
 		{
-			glBindVertexArray(rock.meshes[i].buf.id());
+			// glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+			glBindVertexArray(rock.meshes[i].buf.id()); // bind vao, but vao still bind it's vbo, rather than instanceVBO
 
+			// but those vertexAttri bind to instanceVBO, so when read data of vertexAttri3456, opengl will read form instanceVBO
 			GLsizei vec4Size = sizeof(glm::vec4);
 			glEnableVertexAttribArray(3);
 			glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
@@ -612,8 +616,8 @@ struct _30_phong_shading
 		sd.enable();
 		sd.set_bool("blinn_phong", some_flag);
 		sd.set_mat4("MV", MV);
-		//sd.set_mat4("NorMV", NormalMV);	// Ð¡ÐÄ´«Êä×ÅÉ«Æ÷±äÁ¿¡¢ÏÈ±£´æÔÙ±àÒë
-		sd.set_mat3("NormalMV", NormalMV);		// Ê§È¥Î»ÒÆÊôÐÔ
+		//sd.set_mat4("NorMV", NormalMV);	// ÃÂ¡ÃÃ„Â´Â«ÃŠÃ¤Ã—Ã…Ã‰Â«Ã†Ã·Â±Ã¤ÃÂ¿Â¡Â¢ÃÃˆÂ±Â£Â´Ã¦Ã”Ã™Â±Ã Ã’Ã«
+		sd.set_mat3("NormalMV", NormalMV);		// ÃŠÂ§ÃˆÂ¥ÃŽÂ»Ã’Ã†ÃŠÃ´ÃÃ”
 		sd.set_mat4("MVP", p * v * m);
 		sd.set_vec3("vLightPos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
 		sd.set_vec3("Lightcolor", glm::vec3(light_color.x, light_color.y, light_color.z));
@@ -651,8 +655,8 @@ struct _31_light_caster
 
 		sd.enable();
 		sd.set_mat4("MV", MV);
-		//sd.set_mat4("NorMV", NormalMV);	// Ð¡ÐÄ´«Êä×ÅÉ«Æ÷±äÁ¿¡¢ÏÈ±£´æÔÙ±àÒë
-		sd.set_mat3("NormalMV", NormalMV);		// Ê§È¥Î»ÒÆÊôÐÔ
+		//sd.set_mat4("NorMV", NormalMV);	// ÃÂ¡ÃÃ„Â´Â«ÃŠÃ¤Ã—Ã…Ã‰Â«Ã†Ã·Â±Ã¤ÃÂ¿Â¡Â¢ÃÃˆÂ±Â£Â´Ã¦Ã”Ã™Â±Ã Ã’Ã«
+		sd.set_mat3("NormalMV", NormalMV);		// ÃŠÂ§ÃˆÂ¥ÃŽÂ»Ã’Ã†ÃŠÃ´ÃÃ”
 		sd.set_mat4("MVP", p * v * m);
 
 		// directlight
@@ -661,14 +665,14 @@ struct _31_light_caster
 		// pointlight
 		sd.set_vec3("pLight.pos", glm::vec3(v * glm::vec4(lightPosition, 1.f)));
 		sd.set_vec3("pLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
-		sd.set_vec3("pLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 ¸öµ¥Î»
+		sd.set_vec3("pLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 Â¸Ã¶ÂµÂ¥ÃŽÂ»
 		// spotlight
 		sd.set_vec3("sLight.pos", camera_.Position);
 		sd.set_vec3("sLight.direct", camera_.Front);
 		sd.set_vec3("sLight.color", glm::vec3(light_color.x, light_color.y, light_color.z));
 		sd.set_vec2("sLight.cutoff", glm::vec2(
 			glm::cos(glm::radians(10.f)), glm::cos(glm::radians(15.f)) ));
-		sd.set_vec3("sLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 ¸öµ¥Î»
+		sd.set_vec3("sLight.falloff", glm::vec3(1.0, 0.022, 0.0019));	// 100 Â¸Ã¶ÂµÂ¥ÃŽÂ»
 		
 		sd.set_float("sa", sAmbient);
 		sd.set_float("sd", sDiffuse);
@@ -691,9 +695,9 @@ struct _32_shadow_map : public Post_Processing
 	{
 		GLfloat near_plane = 1.0f, far_plane = 512.f;
 
-		// Ê¹ÓÃÕý½»Ïà»úÊ±£¬Éî¶ÈÊÇÏßÐÔµÄ
+		// ÃŠÂ¹Ã“ÃƒÃ•Ã½Â½Â»ÃÃ Â»ÃºÃŠÂ±Â£Â¬Ã‰Ã®Â¶ÃˆÃŠÃ‡ÃÃŸÃÃ”ÂµÃ„
 		glm::mat4 lightOrtho = glm::ortho(-512.0f, 512.0f, -512.0f, 512.0f, near_plane, far_plane);
-		// Ê¹ÓÃÍ¶Ó°Ïà»úÊ±£¬Ö»ÓÐ½Ó½ü½üÆ½ÃæµÄµØ·½Ð§¹û±È½ÏºÃ
+		// ÃŠÂ¹Ã“ÃƒÃÂ¶Ã“Â°ÃÃ Â»ÃºÃŠÂ±Â£Â¬Ã–Â»Ã“ÃÂ½Ã“Â½Ã¼Â½Ã¼Ã†Â½ÃƒÃ¦ÂµÃ„ÂµÃ˜Â·Â½ÃÂ§Â¹Ã»Â±ÃˆÂ½ÃÂºÃƒ
 		glm::mat4 lightProj = glm::perspective(glm::radians(120.f),
 			1.f / 1.f, 10.f, 512.f);
 		
@@ -769,7 +773,7 @@ struct _34_normal_map : public Light_Parameter
 struct _35_parallax_map : public Light_Parameter
 {
 	model md{ Box };
-	// TODO£º¸Ä½ø·½·¨
+	// TODOÂ£ÂºÂ¸Ã„Â½Ã¸Â·Â½Â·Â¨
 	shader sd{ "learngl/34_normal_map.vs", "learngl/35_parallax_map.fs" };
 
 	texture2d diffuse{ "textures/bricks2.jpg" };

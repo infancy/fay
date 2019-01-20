@@ -27,6 +27,20 @@ inline buffer_sp create_buffer_sp(render_device* device, const buffer_desc desc)
 
 // inline app_desc global_desc;
 
+inline renderable_sp create_raw_renderable(const std::string& model_path, render_device* device)
+{
+    auto model = create_resource_model(model_path, device->type());
+
+    std::vector<renderable_sp> mesh_list;
+
+    for (const auto& mesh : model->meshes())
+    {
+        mesh_list.emplace_back(std::make_shared<raw_mesh>(device, mesh));
+    }
+
+    return std::make_shared<array_mesh>(mesh_list);
+}
+
 inline std::vector<renderable_sp> create_renderables(const resource_model& model, render_device* device)
 {
     std::vector<material_sp> material_list;
@@ -54,10 +68,10 @@ inline std::vector<renderable_sp> create_renderables(const std::string& model_pa
 inline renderable_sp create_single_renderable(const std::string& model_path, render_device* device)
 {
     auto meshes = create_renderables(model_path, device);
-    std::make_shared<array_mesh>(meshes);
+    return std::make_shared<array_mesh>(meshes);
 }
 
-
+// -------------------------------------------------------------------------------------------------
 
 inline texture_id create_2d(render_device_ptr& device, const std::string& name, const image& img)
 {
@@ -76,4 +90,38 @@ inline texture_id create_2d(render_device_ptr& device, const std::string& name, 
     return device->create(desc);
 }
 
+// -------------------------------------------------------------------------------------------------
+
+/*
+inline std::tuple<frame_id, texture_id, texture_id> create_frame(render_device_ptr& device, const std::string& name, size_t width, size_t height)
+{
+    texture_desc desc;
+
+    desc.name = name;
+    desc.width = width;
+    desc.height = height;
+    desc.size = width * height * 4; // byte size
+    desc.data = { nullptr };
+    desc.type = texture_type::two;
+
+    desc.as_render_target = render_target::color;
+    desc.pixel_format = pixel_format::rgba8;
+    auto color_id = device->create(desc);
+
+    desc.as_render_target = render_target::depth_stencil;
+    desc.pixel_format = pixel_format::depthstencil; // TODO: depth_stencil;
+    auto ds_id = device->create(desc);
+
+    frame_desc fd;
+    fd.name = name;
+    fd.width = width;
+    fd.height = height;
+    fd.render_targets = { { color_id, 0, 0 } };
+    fd.depth_stencil = { ds_id, 0, 0 };
+    auto frm_id = device->create(fd);
+
+    return { frm_id, color_id, ds_id };
+}
+
+*/
 } // namespace fay

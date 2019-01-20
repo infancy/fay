@@ -171,7 +171,7 @@ public:
                 //.draw()
 
                 .apply_pipeline(pipe2_id)
-                .bind_texture({ triangle_tbo })
+                .bind_textures({ triangle_tbo })
                 .bind_index(triangle_ib)
                 .bind_vertex(triangle_vb)
                 .bind_uniform("flag", 0)
@@ -203,109 +203,35 @@ public:
     fay::command_list pass1, pass2;
 };
 
-class post_proc : public fay::app
+class post_processing : public fay::app
 {
 public:
     // using fay::app;
-    post_proc(const fay::app_desc& desc) : fay::app(desc)
+    post_processing(const fay::app_desc& desc) : fay::app(desc)
     {
         desc_.window.title = "post_proc";
     }
 
     void setup() override
     {
-        // set up vertex data (and buffer(s)) and configure vertex attributes
-        // ------------------------------------------------------------------
-        float lines[] = {
-            -0.3f,  0.9f, 0.0f,
-             0.3f,  0.9f, 0.0f,
-             0.3f, -0.9f, 0.0f,
-             0.3f, -0.9f, 0.0f,
-            -0.3f, -0.9f, 0.0f,
-            -0.3f,  0.9f, 0.0f,
-        };
-        fay::buffer_desc bd0; {
-            bd0.name = "line_stripe_vb";
-            bd0.size = 6;// sizeof(vertices);
-            bd0.stride = 12; // TODO: do it by helper functions;
-            bd0.data = lines;
-            bd0.type = fay::buffer_type::vertex;
-
-            bd0.layout = { {fay::attribute_usage::position, fay::attribute_format::float3} };
-        }
-        auto line_strip_vb = render->create(bd0);
-
-
-
-        float vertices[] = {
-             0.6f,  0.45f, 0.0f,   1.f, 1.f, // right top
-             0.6f, -0.45f, 0.0f,   1.f, 0.f, // right bottom
-            -0.6f, -0.45f, 0.0f,   0.f, 0.f, // left bottom
-            -0.6f,  0.45f, 0.0f,   0.f, 1.f, // left top
-        };
-        unsigned int indices[] = {  // note that we start from 0!
-            0, 1, 3,  // first Triangle
-            1, 2, 3   // second Triangle
-        };
-        fay::buffer_desc bd; {
-            bd.name = "triangle_vb";
-            bd.size = 4;// sizeof(vertices);
-            bd.stride = 20; // TODO: do it by helper functions;
-            bd.data = vertices;
-            bd.type = fay::buffer_type::vertex;
-
-            bd.layout =
-            {
-                {fay::attribute_usage::position,  fay::attribute_format::float3},
-                {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
-            };
-        }
-        fay::buffer_desc id(fay::buffer_type::index); {
-            id.name = "triangle_ib";
-            id.size = 6;
-            id.data = indices;
-        }
-        auto triangle_vb = render->create(bd);
-        auto triangle_ib = render->create(id);
+        mesh = fay::create_raw_renderable("object/box/box.obj", render.get());
 
         fay::image img("texture/awesomeface.png", true);
-        auto triangle_tbo = create_2d(this->render, "hello", img);
+        tex_id = create_2d(this->render, "hello", img);
 
-        fay::shader_desc sd = fay::scan_shader_program("gfx/default.vs", "gfx/default.fs", false);
+        fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs", false);
         sd.name = "shd"; //todo
-        auto shd_id = render->create(sd);
+        shd_id = render->create(sd);
 
         fay::pipeline_desc pd;
         {
             pd.name = "triangles";
             pd.primitive_type = fay::primitive_type::triangles;
         }
-        auto pipe2_id = render->create(pd);
+        pipe_id = render->create(pd);
 
         paras.a = { 1.f, 0.f, 0.f, 1.f };
         paras.b = { 0.f, 1.f, 0.f, 1.f };
-
-        {
-            pass1
-                .begin_default_frame()
-                .clear_frame()
-                .apply_shader(shd_id)
-                .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
-
-                //.apply_pipeline(pipe_id)
-                //.bind_vertex(line_strip_vb)
-                //.bind_uniform("flag", 1)
-                //.draw()
-
-                .apply_pipeline(pipe2_id)
-                .bind_texture({ triangle_tbo })
-                .bind_index(triangle_ib)
-                .bind_vertex(triangle_vb)
-                .bind_uniform("flag", 0)
-                .draw_index()
-
-                .end_frame();
-        }
 
         // render->submit(pass1);
         // render->submit(pass2);
@@ -319,12 +245,29 @@ public:
     {
        // render->draw(pass1);
        // render->draw(pass2);
-        auto cmds = pass1;
+
+        pass1
+            .begin_default_frame()
+            .clear_frame()
+            .apply_pipeline(pipe_id)
+            .apply_shader(shd_id)
+            .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
+            .bind_uniform("bAlbedo", true)
+            .bind_textures({ tex_id });
+
+        mesh->render(pass1);
+
+        pass1
+            .end_frame();
+
         render->submit(pass1);
         render->execute();
     }
 
-    fay::buffer_id buf_id;
+    fay::renderable_sp mesh;
+    fay::shader_id shd_id;
+    fay::pipeline_id pipe_id;
+    fay::texture_id tex_id;
 
     render_paras paras;
     fay::command_list pass1, pass2;
@@ -332,4 +275,4 @@ public:
 
 SAMPLE_RENDER_APP_IMPL(clear)
 SAMPLE_RENDER_APP_IMPL(triangle)
-SAMPLE_RENDER_APP_IMPL(post_proc)
+SAMPLE_RENDER_APP_IMPL(post_processing)

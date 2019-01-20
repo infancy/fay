@@ -158,13 +158,14 @@ void render_device::execute_command_list(const command_list& cmds)
 {
     const auto& cs = cmds.commands_();
 
-    DCHECK(cs.size() >= 2);
+    DCHECK(cs.size() > 2);
+
     DCHECK(
         ((cs.front().type_ == command_type::begin_default_frame) || (cs.front().type_ == command_type::begin_frame)) &&
         (cs.back().type_ == command_type::end_frame))
         << "first cmd must be begin_xx_frame and last cmd must be end_frame";
 
-    DCHECK((cs.size() > 2) && std::none_of(++cs.cbegin(), --cs.cend(), [](const command& cmd) 
+    DCHECK(std::none_of(++cs.cbegin(), --cs.cend(), [](const command& cmd) 
     {
         return 
             (cmd.type_ == command_type::begin_default_frame) ||
