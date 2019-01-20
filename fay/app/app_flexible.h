@@ -92,6 +92,38 @@ inline texture_id create_2d(render_device_ptr& device, const std::string& name, 
 
 // -------------------------------------------------------------------------------------------------
 
+inline std::tuple<frame_id, texture_id> create_depth_frame(render_device* device, const std::string& name, size_t width, size_t height)
+{
+    texture_desc desc;
+
+    fay::image img("texture/container2.png", true);
+
+    desc.name = name;
+    desc.width = width;
+    desc.height = height;
+    desc.size = width * height * 4; // byte size
+    desc.data = { img.data() };
+    desc.type = texture_type::two;
+
+    desc.min_filter = filter_mode::nearest;
+    desc.max_filter = filter_mode::nearest;
+    desc.wrap_u = wrap_mode::clamp_to_edge;
+    desc.wrap_v = wrap_mode::clamp_to_edge;
+
+    desc.as_render_target = render_target::depth;
+    desc.pixel_format = pixel_format::r32f; // float
+    auto ds_id = device->create(desc);
+
+    frame_desc fd;
+    fd.name = name;
+    fd.width = width;
+    fd.height = height;
+    fd.depth_stencil = { ds_id, 0, 0 };
+    auto frm_id = device->create(fd);
+
+    return { frm_id, ds_id };
+}
+
 inline std::tuple<frame_id, texture_id, texture_id> create_frame(render_device* device, const std::string& name, size_t width, size_t height)
 {
     texture_desc desc;

@@ -12,6 +12,7 @@
 SAMPLE_RENDER_APP_DECL(clear)
 SAMPLE_RENDER_APP_DECL(triangle)
 SAMPLE_RENDER_APP_DECL(post_processing)
+SAMPLE_RENDER_APP_DECL(shadow_map)
 
 int main(int argc, char** argv)
 {
@@ -26,6 +27,6 @@ int main(int argc, char** argv)
     {
         //
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(post_processing, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(shadow_map, desc);
     return app_->run();
 }

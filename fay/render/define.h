@@ -649,7 +649,7 @@ struct pipeline_desc
 
 	// rasterization state
     cull_mode cull_mode{ cull_mode::back };
-    face_winding face_winding{ face_winding::cw };
+    face_winding face_winding{ face_winding::ccw };
 
 	bool alpha_to_coverage_enabled { false };
 	int rasteriza_sample_count     { 1 }; // if sc > 1, use multisample
@@ -685,7 +685,7 @@ struct pipeline_desc
     };
 
     bool depth_enabled{ true }; // depth_mask_write_enabled
-    compare_op depth_compare_op{ compare_op::always };
+    compare_op depth_compare_op{ compare_op::less_equal };
 
     bool stencil_enabled{ true }; // WARNNING: default open stencil
 
