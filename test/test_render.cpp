@@ -25,6 +25,12 @@ TEST(render, pool)
     ASSERT_FALSE(pool.have(buffer_id(1)));
 }
 
+// TODO: headless, render_init
+TEST(render, resource_id)
+{
+    
+}
+
 static std::string test_vs = R"(
 #version 330 core
 layout (location = 0) in vec3 mPos;

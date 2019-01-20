@@ -202,11 +202,13 @@ enum class cube_face
 
 // shader enum
 
-enum class shader_type
+enum class shader_stage
 {
 	vertex,
 	geometry,
 	fragment,
+
+    mesh,
 };
 
 enum class uniform_type
@@ -620,13 +622,18 @@ struct shader_desc
 
     std::vector<std::string> vertex_names{};
     vertex_layout layout {};
+
+    // TODO: uniform
     // std::vector<uniform> uniforms;
+
     std::vector<uniform_block> uniform_blocks;
 
-     // TODO: uniform
-
-    std::vector<sampler> vs_samplers{};
-    std::vector<sampler> fs_samplers{};
+    // TODO: std::span_view
+    size_t vs_samplers_sz{};
+    size_t fs_samplers_sz{};
+    std::vector<sampler> samplers{};
+    //std::vector<sampler> vs_samplers{};
+    //std::vector<sampler> fs_samplers{};
 };
 
 /*
@@ -833,7 +840,6 @@ enum class command_type
     bind_index,
     bind_buffer, 
     bind_named_texture,
-    bind_texture_unit,
     bind_textures,
     bind_uniform,
     bind_uniform_block,
@@ -904,16 +910,18 @@ public:
     command_list() {}
     command_list(std::string name) : name_(std::move(name)) {}
 
-    command_list& begin_default_frame(/*uint32_t x, uint32_t y, uint32_t w, uint32_t h*/)
-    {
-        add_command(command_type::begin_default_frame);
+    // -------------------------------------------------------------------------------------------------
 
-        return *this;
-    }
     command_list& begin_frame(frame_id id)
     {
         auto& cmd = add_command(command_type::begin_frame);
         cmd.frm_ = id;
+
+        return *this;
+    }
+    command_list& begin_default_frame(/*uint32_t x, uint32_t y, uint32_t w, uint32_t h*/)
+    {
+        add_command(command_type::begin_default_frame);
 
         return *this;
     }
@@ -950,6 +958,15 @@ public:
 
         return *this;
     }
+
+    command_list& clear_frame()
+    {
+        clear_color();
+        clear_depth();
+        clear_stencil();
+
+        return *this;
+    }
     
     // WARNNING: fay use top_left as origin(rather then bottom_left in opengl)
     command_list& set_viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
@@ -983,6 +1000,18 @@ public:
     }
     //command_list& apply_state(const shader_id id, const pipeline_id id);
 
+    command_list& begin_default(const pipeline_id pipe_id, const shader_id shd_id)
+    {
+        begin_default_frame();
+        clear_frame();
+        apply_pipeline(pipe_id);
+        apply_shader(shd_id);
+
+        return *this;
+    }
+
+    // -------------------------------------------------------------------------------------------------
+
     command_list& bind_texture(const texture_id id, const std::string sampler)
     {
         auto& cmd = add_command(command_type::bind_named_texture);
@@ -991,23 +1020,28 @@ public:
 
         return *this;
     }
-    // TODO: how to solve it
-    command_list& bind_texture_unit(const texture_id id, uint32_t tex_unit, const std::string sampler)
+
+    // !!! you could write device->bind_textures(0, "xxx"); device will ignore this cmd if id is 0.
+    command_list& try_bind_texture(const texture_id id, const std::string sampler)
     {
-        auto& cmd = add_command(command_type::bind_texture_unit);
-        cmd.tex_ = id;
-        cmd.uint_ = tex_unit;
-        cmd.str_ = sampler;
+        if (id)
+            bind_texture(id, sampler);
 
         return *this;
     }
-    command_list& bind_texture(std::vector<texture_id> textures) // WARNNING: only bind all textures to **fragment shader**
+
+    // !!! default bind all textures to **fragment shader**
+    // !!! you could write device->bind_textures({id0, id1, 0, id3, 0, id5}); device will ignore 0.
+    command_list& bind_textures(std::vector<texture_id> textures, shader_stage stage = shader_stage::fragment)
     {
         auto& cmd = add_command(command_type::bind_textures);
         cmd.texs_ = std::move(textures);
+        cmd.uint_ = enum_cast(stage);
 
         return *this;
     }
+
+    // -------------------------------------------------------------------------------------------------
 
     command_list& bind_index(const buffer_id id)
     {
@@ -1023,6 +1057,8 @@ public:
     // WARNNING: if attrs is {}, it will use all attrs of buffer
     command_list& bind_vertex(const buffer_id id, std::vector<attribute_usage> attrs = {}) {   return bind_buffer(id, attrs, 0); }
     command_list& bind_instance(const buffer_id id, std::vector<attribute_usage> attrs = {}) { return bind_buffer(id, attrs, 1); }
+
+
 
     command_list& bind_uniform(std::string name, command::uniform uniform)
     {
@@ -1069,28 +1105,6 @@ public:
     // command_list& draw_indexed_indirect();
     // command_list& compute();
     // command_list& blit(frame_id f1, frame_id f2); // transfer
-
-
-
-    command_list& clear_frame()
-    {
-        clear_color();
-        clear_depth();
-        clear_stencil();
-
-        return *this;
-    }
-    command_list& begin_default(const pipeline_id pipe_id, const shader_id shd_id)
-    {
-        begin_default_frame();
-        clear_frame();
-        apply_pipeline(pipe_id);
-        apply_shader(shd_id);
-
-        return *this;
-    }
-
-
 
     /* const */std::string_view name() const { return name_; }
     const std::vector<command>& commands_() const { return cmds_; }

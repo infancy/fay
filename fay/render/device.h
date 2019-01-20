@@ -262,35 +262,63 @@ private:
         backend_->bind_uniform(idx.value(), data, size);
     }
 
-    void bind_texture(const texture_id id, uint32_t tex_unit, const std::string& sampler_name) //const shader_desc::sampler& sampler)
+    void bind_texture(const texture_id id, const std::string& sampler_name) //const shader_desc::sampler& sampler)
     {
-        DCHECK(query_valid(id)) << "invalid id";
-        DCHECK(
-            any_of(ctx_.shd.fs_samplers, [sampler_name](auto&& sampler) { return sampler.name == sampler_name; }) ||
-            any_of(ctx_.shd.vs_samplers, [sampler_name](auto&& sampler) { return sampler.name == sampler_name; }));
+        DCHECK(query_valid(id)) << "invalid texture id";
 
-        backend_->bind_texture(id, tex_unit, sampler_name);
+        auto idx = index(ctx_.shd.samplers, [sampler_name](auto&& sampler) { return sampler.name == sampler_name; });
+
+        DCHECK(idx.has_value()) << "unknown texture sampler";
+        DCHECK(ctx_.shd.samplers[idx.value()].type == desc_[id].type) << "texture's type and sampler's isn't matching";
+
+        backend_->bind_texture(id, idx.value(), sampler_name); // !!!: use index of sampler in vector as index of tex_unit
     }
 
-    void bind_texture(const std::vector<texture_id>& textures)
+    void bind_textures(const std::vector<texture_id>& textures, shader_stage stage)
     {
+        size_t stage_samplers_sz{};
+        size_t stage_samplers_start{};
+        switch (stage)
+        {
+            case fay::shader_stage::vertex:
+
+                stage_samplers_sz = ctx_.shd.vs_samplers_sz;
+                stage_samplers_start = 0;
+                break;
+
+            case fay::shader_stage::geometry:
+                break;
+
+            case fay::shader_stage::fragment:
+
+                stage_samplers_sz = ctx_.shd.fs_samplers_sz;
+                stage_samplers_start = ctx_.shd.vs_samplers_sz; // !!!
+                break;
+
+            case fay::shader_stage::mesh:
+                break;
+
+            default:
+                break;
+        }
+
         const auto& texs = textures;
-        const auto& samplers = ctx_.shd.fs_samplers;
-        //WARNNING: not vs_samplers. const auto& samplers = ctx_.shd.vs_samplers;
-        DCHECK(texs.size() <= samplers.size()) << "too many textures";
+        const auto& samplers = ctx_.shd.samplers;
 
-        // TODO: check texs[i] and samplers[i] is matching
+        DCHECK(texs.size() <= stage_samplers_sz) << "too many textures";
 
-        // TODO: WARNNING
         for (auto i : range(texs.size()))
-            bind_texture(texs[i], ctx_.tex_unit++, samplers[i].name);
+        {
+            if(texs[i])
+                bind_texture(texs[i], samplers[stage_samplers_start + i].name);
+        }
     }
 
     void bind_index(const buffer_id id)
     {
         DCHECK(query_valid(id)) << "invalid id";
 
-        ctx_.index_count = desc_[id].size; // WARNNING: ???
+        ctx_.index_count = desc_[id].size; // ???: cache
         backend_->bind_index(id);
     }
     void bind_buffer(const buffer_id id, const std::vector<attribute_usage>& attrs, uint32_t instance_rate);
@@ -332,7 +360,6 @@ private:
 
     struct command_list_context
     {
-        uint32_t tex_unit{};
         uint32_t vertex_count{};
         uint32_t index_count{};
 

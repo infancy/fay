@@ -88,12 +88,14 @@ cube_face_map
     { cube_face::neg_z, { GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0 } },
 };
 
-const inline enum_class_map<shader_type, native_type>
+const inline enum_class_map<shader_stage, native_type>
 shader_type_map
 {
-	{ shader_type::vertex,   { GL_VERTEX_SHADER, 0 } },
-	{ shader_type::geometry, { GL_GEOMETRY_SHADER, 0 } },
-	{ shader_type::fragment, { GL_FRAGMENT_SHADER, 0 } },
+	{ shader_stage::vertex,   { GL_VERTEX_SHADER, 0 } },
+	{ shader_stage::geometry, { GL_GEOMETRY_SHADER, 0 } },
+	{ shader_stage::fragment, { GL_FRAGMENT_SHADER, 0 } },
+
+    { shader_stage::mesh,     { 0, 0 } },
 };
 
 const inline enum_class_map<primitive_type, native_type>

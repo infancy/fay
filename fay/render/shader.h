@@ -9,7 +9,7 @@
 namespace fay
 {
 
-// skip '//'
+// TODO:skip '//'
 
 const inline std::unordered_map<std::string_view, vertex_attribute> shader_vertex_map =
 {
@@ -65,19 +65,19 @@ const inline std::unordered_map<std::string_view, uniform_type_size> shader_unif
     { "vec4",   { uniform_type::vec4, 16 } },
 
     { "mat2",   { uniform_type::mat2, 16 } },
-    { "mat3",   { uniform_type::mat3, 48 } },
+    { "mat3",   { uniform_type::mat3, 48 } }, // !!!
     { "mat4",   { uniform_type::mat4, 64 } },
 
     { "mat2x2", { uniform_type::mat2x2, 16 } },
-    { "mat2x3", { uniform_type::mat2x3, 32 } }, // ???
+    { "mat2x3", { uniform_type::mat2x3, 32 } }, // !!!
     { "mat2x4", { uniform_type::mat2x4, 32 } },
 
     { "mat3x2", { uniform_type::mat3x2, 24 } },
-    { "mat3x3", { uniform_type::mat3x3, 48 } }, // ???
+    { "mat3x3", { uniform_type::mat3x3, 48 } }, // !!!
     { "mat3x4", { uniform_type::mat3x4, 48 } },
 
     { "mat4x2", { uniform_type::mat4x2, 32 } },
-    { "mat4x3", { uniform_type::mat4x3, 64 } }, // ???
+    { "mat4x3", { uniform_type::mat4x3, 64 } }, // !!!
     { "mat4x4", { uniform_type::mat4x4, 64 } },
 };
 
@@ -296,11 +296,17 @@ inline shader_desc shader_merge_context(std::vector<shader_context>&& ctxs)
 
     desc.vertex_names = ctxs.front().entry_names;
     desc.layout = ctxs.front().entry_layout;
-    desc.vs_samplers = ctxs.front().samplers;
-    desc.fs_samplers = ctxs.back().samplers;
+    desc.vs_samplers_sz = ctxs.front().samplers.size();
+    desc.fs_samplers_sz = ctxs.back().samplers.size();
 
     for (auto& ctx : ctxs)
+    {
+        // WARNNING: Need to erase the same samplers?
+        // vs_samplers + gs_samplers + fs_samplers
+        desc.samplers.insert(desc.samplers.end(), ctx.samplers.begin(), ctx.samplers.end());
+
         desc.uniform_blocks.insert(desc.uniform_blocks.end(), ctx.uniform_blocks.begin(), ctx.uniform_blocks.end());
+    }
 
     // uniforms
 
@@ -355,12 +361,8 @@ inline shader_desc scan_shader_program(std::string vs, std::string fs, bool buil
     for (const auto& ub : desc.uniform_blocks)
         std::cout << ub.name << '\n';
 
-    std::cout << "\nvs samplers:\n";
-    for (const auto& sampler : desc.vs_samplers)
-        std::cout << sampler.name << '\n';
-
-    std::cout << "\nfs samplers:\n";
-    for (const auto& sampler : desc.fs_samplers)
+    std::cout << "\n samplers:\n";
+    for (const auto& sampler : desc.samplers)
         std::cout << sampler.name << '\n';
 
     return desc;

@@ -170,7 +170,7 @@ void render_device::execute_command_list(const command_list& cmds)
             (cmd.type_ == command_type::begin_default_frame) ||
             (cmd.type_ == command_type::begin_frame) ||
             (cmd.type_ == command_type::end_frame);
-    })) << "cmd in the middle can't be begin_xx_frame or end_frame";
+    })) << "cmds in the middle can't be begin_xx_frame or end_frame";
 
     // TOCHECK
 
@@ -249,17 +249,12 @@ void render_device::execute_command(const command& cmd)
 
         case command_type::bind_named_texture:
 
-            bind_texture(cmd.tex_, ctx_.tex_unit++, cmd.str_);
-            break;
-
-        case command_type::bind_texture_unit:
-
-            bind_texture(cmd.tex_, cmd.uint_, cmd.str_);
+            bind_texture(cmd.tex_, cmd.str_);
             break;
 
         case command_type::bind_textures:
 
-            bind_texture(cmd.texs_);
+            bind_textures(cmd.texs_, static_cast<shader_stage>(cmd.uint_));
             break;
 
         case command_type::bind_uniform:

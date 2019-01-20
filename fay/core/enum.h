@@ -16,7 +16,7 @@ struct enum_class_hash
     template <typename T>
     constexpr auto operator()(T t) const
     {
-        return static_cast<typename std::underlying_type_t<T>>(t);
+        return static_cast<std::underlying_type_t<T>>(t);
     }
 };
 
@@ -31,10 +31,11 @@ inline Enum& operator|=(Enum& a, const Enum b) { a = a | b; return a; };        
 inline Enum& operator&=(Enum& a, const Enum b) { a = a & b; return a; };                                                      \
 inline bool enum_have(const Enum group, const Enum value) { return (group & value) != (Enum)0; }
 
+// TODO:
 template <typename T>
-constexpr typename std::underlying_type<T>::type enum_cast(T x)
+constexpr std::underlying_type_t<T> enum_cast(T x)
 {
-    return static_cast<typename std::underlying_type_t<T>>(x);
+    return static_cast<std::underlying_type_t<T>>(x);
 }
 
 } // namespace fay

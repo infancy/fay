@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fay/app/components.h"
+#include "fay/app/app_flexible.h"
 #include "fay/core/ecs.h"
 #include "fay/core/fay.h"
 #include "fay/gfx/renderable.h"
@@ -81,24 +82,12 @@ public:
     }
     // scene load_scene(render_device_ptr& device, const std::string& filename)
 
-    node_wp add_model(const std::string& filepath, node* node = nullptr)
+    node_wp add_model(const std::string& model_path, node* node = nullptr)
     {
-        auto model = create_resource_model(filepath, device_->type());
+        auto model = create_resource_model(model_path, device_->type());
+        auto meshes = create_renderables(*model, device_);
 
-        std::vector<material_sp> material_list;
-        std::vector<renderable_sp> mesh_list;
-
-        for (const auto& mat : model->materials())
-        {
-            material_list.emplace_back(std::make_shared<material>(device_, mat));
-        }
-
-        for (const auto& mesh : model->meshes())
-        {
-            mesh_list.emplace_back(std::make_shared<static_mesh>(device_, mesh, material_list[mesh.material_index]));
-        }
-
-        auto model_root = build_tree(model->root_node(), model->nodes(), mesh_list);
+        auto model_root = build_tree(model->root_node(), model->nodes(), meshes);
 
         if (node)
             node->add_children(model_root);
