@@ -1,5 +1,6 @@
 #include "fay/app/app_flexible.h"
 
+#include "fay/render/define.h"
 #include "sample_render_app.h"
 
 //fay::app_desc clear_desc = global_desc;
@@ -216,6 +217,39 @@ public:
     {
         mesh = fay::create_raw_renderable("object/box/box.obj", render.get());
 
+
+        float vertices[] = {
+             0.6f,  0.45f, 0.0f,   1.f, 1.f, // right top
+             0.6f, -0.45f, 0.0f,   1.f, 0.f, // right bottom
+            -0.6f, -0.45f, 0.0f,   0.f, 0.f, // left bottom
+            -0.6f,  0.45f, 0.0f,   0.f, 1.f, // left top
+        };
+        unsigned int indices[] = {  // note that we start from 0!
+            0, 1, 3,  // first Triangle
+            1, 2, 3   // second Triangle
+        };
+        fay::buffer_desc bd; {
+            bd.name = "triangle_vb";
+            bd.size = 4;// sizeof(vertices);
+            bd.stride = 20; // TODO: do it by helper functions;
+            bd.data = vertices;
+            bd.type = fay::buffer_type::vertex;
+
+            bd.layout =
+            {
+                {fay::attribute_usage::position,  fay::attribute_format::float3},
+                {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
+            };
+        }
+        fay::buffer_desc id(fay::buffer_type::index); {
+            id.name = "triangle_ib";
+            id.size = 6;
+            id.data = indices;
+        }
+        triangle_vb = render->create(bd);
+        triangle_ib = render->create(id);
+
+
         fay::image img("texture/awesomeface.png", true);
         tex_id = create_2d(this->render, "hello", img);
 
@@ -227,8 +261,15 @@ public:
         {
             pd.name = "triangles";
             pd.primitive_type = fay::primitive_type::triangles;
+            pd.face_winding = fay::face_winding::ccw;
         }
         pipe_id = render->create(pd);
+
+        auto frame = fay::create_frame(render.get(), "offscreen_frm", 512, 512);
+
+        offscreen_frm_id = std::get<0>(frame);
+        offscreen_tex_id = std::get<1>(frame);
+        offscreen_ds_id  = std::get<2>(frame);
 
         paras.a = { 1.f, 0.f, 0.f, 1.f };
         paras.b = { 0.f, 1.f, 0.f, 1.f };
@@ -243,34 +284,69 @@ public:
 
     void update() override
     {
-       // render->draw(pass1);
-       // render->draw(pass2);
+        misc.update_io();
+        glm::mat4 view = misc.camera_.GetViewMatrix();
+        glm::mat4 projection = glm::perspective(glm::radians(misc.camera_.Zoom),
+            (float)misc.Width / (float)misc.Height, 0.1f, 10000.0f);
 
+        // draw
+        glm::mat4 model(1.f);
+        auto MVP = projection * view * model;
+
+        fay::command_list pass1, pass2;
+        
         pass1
+            .begin_frame(offscreen_frm_id)
+            .clear_color({1.f, 0.f, 0.f, 1.f})
+            .clear_depth()
+            .clear_stencil()
+            .apply_pipeline(pipe_id)
+            .apply_shader(shd_id)
+            .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
+            .bind_uniform("MVP", MVP)
+            .bind_uniform("bAlbedo", true)
+            .bind_textures({ tex_id });
+
+        mesh->render(pass1);
+        pass1.end_frame();
+
+
+
+        pass2
             .begin_default_frame()
             .clear_frame()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
             .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
+            .bind_uniform("MVP", MVP)
             .bind_uniform("bAlbedo", true)
-            .bind_textures({ tex_id });
+            .bind_textures({ offscreen_tex_id });
 
-        mesh->render(pass1);
-
-        pass1
-            .end_frame();
+        mesh->render(pass2);
+        pass2.end_frame();
 
         render->submit(pass1);
+        render->submit(pass2);
         render->execute();
     }
 
+    fay::render_misc misc;
+
     fay::renderable_sp mesh;
+
+    fay::buffer_id triangle_vb;
+    fay::buffer_id triangle_ib;
+
     fay::shader_id shd_id;
     fay::pipeline_id pipe_id;
     fay::texture_id tex_id;
 
+    fay::texture_id offscreen_tex_id;
+    fay::texture_id offscreen_ds_id;
+    fay::frame_id offscreen_frm_id;
+
     render_paras paras;
-    fay::command_list pass1, pass2;
+    //fay::command_list pass1, pass2;
 };
 
 SAMPLE_RENDER_APP_IMPL(clear)

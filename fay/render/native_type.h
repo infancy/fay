@@ -178,7 +178,7 @@ compare_op_map
 // =================================================================================================
 // format
 
-inline bool is_compressed_pixel_format(pixel_format fmt) 
+constexpr inline bool is_compressed_pixel_format(pixel_format fmt) 
 {
     switch (fmt) 
     {
@@ -191,6 +191,18 @@ inline bool is_compressed_pixel_format(pixel_format fmt)
         case pixel_format::pvrtc4_rgba:
         case pixel_format::etc2_rgb8:
         case pixel_format::etc2_srgb8:
+            return true;
+        default:
+            return false;
+    }
+}
+
+constexpr inline bool is_dpeth_stencil_pixel_format(pixel_format fmt)
+{
+    switch (fmt)
+    {
+        case pixel_format::depth:
+        case pixel_format::depthstencil:
             return true;
         default:
             return false;

@@ -26,6 +26,6 @@ int main(int argc, char** argv)
     {
         //
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(triangle, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(post_processing, desc);
     return app_->run();
 }

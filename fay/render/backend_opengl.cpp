@@ -336,13 +336,17 @@ namespace backend_opengl_type
         float min_lod;
         float max_lod;
 
+
         GLenum render_target;
         uint32_t rt_sample_count;
 
         // # then assign others
         GLuint tbo{};
+        // if use MSAA
+        GLuint msaa_rbo{};
+
         // if used as depth_stencil target or msaa color target
-        GLuint rbo{};
+        GLuint ds_rbo{};
 
         texture() = default;
         texture(const texture_desc& desc)
@@ -668,78 +672,105 @@ public:
         texture_id pid = pool_.insert(desc); // id in the pool
         texture& tex = pool_[pid];
 
-        glGenTextures(1, &tex.tbo);
-        glBindTexture(tex.type, tex.tbo);
-
-        if (tex.type != GL_TEXTURE_2D_MULTISAMPLE)
+        if (!is_dpeth_stencil_pixel_format(desc.pixel_format))
         {
-            glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, tex.min_filter);
-            glTexParameteri(tex.type, GL_TEXTURE_MAG_FILTER, tex.max_filter);
-            // glTexParameteri(tex.type, GL_TEXTURE_MAX_ANISOTROPY_EXT, tex.max_anisotropy);
+            glGenTextures(1, &tex.tbo);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(tex.type, tex.tbo);
 
-            glTexParameteri(tex.type, GL_TEXTURE_WRAP_S, tex.wrap_u);
-            glTexParameteri(tex.type, GL_TEXTURE_WRAP_T, tex.wrap_v);
-            if(tex.type == GL_TEXTURE_3D)
-            // if (tex.type == GL_PROXY_TEXTURE_3D || tex.type == GL_TEXTURE_CUBE_MAP)
-                glTexParameteri(tex.type, GL_TEXTURE_WRAP_R, tex.wrap_w);
-
-            //glTexParameterf(tex.type, GL_TEXTURE_MIN_LOD, std::clamp(tex.min_lod, 0.f, 1000.f));
-            //glTexParameterf(tex.type, GL_TEXTURE_MAX_LOD, std::clamp(tex.max_lod, 0.f, 1000.f));
-        }
-        else
-        {
-            // TODO...
-        }
-        glcheck_errors();
-
-        bool is_compressed = is_compressed_pixel_format(desc.pixel_format);
-        auto [in_fmt, ex_fmt, ex_type] = gl_pixel_format(desc.pixel_format);
-
-        if (tex.type == GL_TEXTURE_2D || tex.type == GL_TEXTURE_CUBE_MAP)
-        {
-            uint32_t nums = tex.type == GL_TEXTURE_2D ? 1 : 6;
-
-            for (uint32_t i = 0; i < nums; ++i)
+            if (tex.type != GL_TEXTURE_2D_MULTISAMPLE)
             {
-                GLenum target = tex.type == GL_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
-                
+                glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, tex.min_filter);
+                glTexParameteri(tex.type, GL_TEXTURE_MAG_FILTER, tex.max_filter);
+                // glTexParameteri(tex.type, GL_TEXTURE_MAX_ANISOTROPY_EXT, tex.max_anisotropy);
+
+                glTexParameteri(tex.type, GL_TEXTURE_WRAP_S, tex.wrap_u);
+                glTexParameteri(tex.type, GL_TEXTURE_WRAP_T, tex.wrap_v);
+                if (tex.type == GL_TEXTURE_3D)
+                // if (tex.type == GL_PROXY_TEXTURE_3D || tex.type == GL_TEXTURE_CUBE_MAP)
+                    glTexParameteri(tex.type, GL_TEXTURE_WRAP_R, tex.wrap_w);
+
+                //glTexParameterf(tex.type, GL_TEXTURE_MIN_LOD, std::clamp(tex.min_lod, 0.f, 1000.f));
+                //glTexParameterf(tex.type, GL_TEXTURE_MAX_LOD, std::clamp(tex.max_lod, 0.f, 1000.f));
+            }
+            else
+            {
+                // TODO...
+            }
+            glcheck_errors();
+
+            bool is_compressed = is_compressed_pixel_format(desc.pixel_format);
+            auto[in_fmt, ex_fmt, ex_type] = gl_pixel_format(desc.pixel_format);
+
+            if (tex.type == GL_TEXTURE_2D || tex.type == GL_TEXTURE_CUBE_MAP)
+            {
+                uint32_t nums = tex.type == GL_TEXTURE_2D ? 1 : 6;
+
+                for (uint32_t i = 0; i < nums; ++i)
+                {
+                    GLenum target = tex.type == GL_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
+
+                    if (is_compressed)
+                        glCompressedTexImage2D(target, 0, in_fmt,
+                            desc.width, desc.height, 0, desc.size, desc.data[i]); // TODO: even data is nullptr, it is not problem.
+                    else
+                        glTexImage2D(target, 0, in_fmt,
+                            desc.width, desc.height, 0, ex_fmt, ex_type, desc.data[i]);
+                }
+            }
+            else if (tex.type == GL_TEXTURE_2D_ARRAY || tex.type == GL_TEXTURE_3D)
+            {
+                // WARNNING: data or data3d, only one is available
                 if (is_compressed)
-                    glCompressedTexImage2D(target, 0, in_fmt,
-                        desc.width, desc.height, 0, desc.size, desc.data[i]); // TODO: even data is nullptr, it is not problem.
+                    glCompressedTexImage3D(tex.type, 0, in_fmt,
+                        desc.width, desc.height, desc.depth, 0, desc.size, desc.data.front()); // TODO: even data3d is nullptr, it is not problem.
                 else
-                    glTexImage2D(target, 0, in_fmt,
-                        desc.width, desc.height, 0, ex_fmt, ex_type, desc.data[i]);
+                    glTexImage3D(tex.type, 0, in_fmt,
+                        desc.width, desc.height, desc.depth, 0, ex_fmt, ex_type, desc.data.front());
+
+                if (!desc.data.empty())
+                    update(pid, nullptr); // TODO
+            }
+            else
+            {
+                LOG(ERROR) << "shouldn't be here";
+            }
+            glcheck_errors();
+
+            // TODO: koi, generate mipmap by itself.
+            if (desc.mipmap)
+            {
+                glGenerateMipmap(tex.type);
+                glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            }
+            glcheck_errors();
+
+            if ((desc.as_render_target == render_target::color) &&
+                (render_desc_.anti_aliasing == anti_aliasing::MSAA))
+            {
+                glGenRenderbuffers(1, &tex.msaa_rbo);
+                glBindRenderbuffer(GL_RENDERBUFFER, tex.msaa_rbo);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, tex.rt_sample_count, 
+                    pixel_internal_format(desc.pixel_format), tex.width, tex.height);
             }
         }
-        else if (tex.type == GL_TEXTURE_2D_ARRAY || tex.type == GL_TEXTURE_3D)
+        else // depth_stencil
         {
-            // WARNNING: data or data3d, only one is available
-            if (is_compressed)
-                glCompressedTexImage3D(tex.type, 0, in_fmt,
-                    desc.width, desc.height, desc.depth, 0, desc.size, desc.data.front()); // TODO: even data3d is nullptr, it is not problem.
+            glGenRenderbuffers(1, &tex.ds_rbo);
+            glBindRenderbuffer(GL_RENDERBUFFER, tex.ds_rbo);
+            
+            // TODO : GL_DEPTH24_STENCIL8
+            //GLenum gl_depth_format = _sg_gl_depth_attachment_format(img->pixel_format);
+
+            if (render_desc_.anti_aliasing == anti_aliasing::MSAA)
+            {
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, tex.rt_sample_count, GL_DEPTH24_STENCIL8, tex.width, tex.height);
+            }
             else
-                glTexImage3D(tex.type, 0, in_fmt,
-                    desc.width, desc.height, desc.depth, 0, ex_fmt, ex_type, desc.data.front());
-
-            if (!desc.data.empty())
-                update(pid, nullptr); // TODO
+            {
+                glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, tex.width, tex.height);
+            }
         }
-        else
-        {
-            LOG(ERROR) << "shouldn't be here";
-        }
-        glcheck_errors();
-
-        // TODO: koi, generate mipmap by itself.
-        if (desc.mipmap)
-        {
-            glGenerateMipmap(tex.type);
-            glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        }
-        glcheck_errors();
-
-        // used by depth_stencil ???
-        // TODO: glGenRenderbuffers(...)
 
         glcheck_errors();
         return pid;
@@ -805,7 +836,7 @@ public:
         {
             const auto& tex = pool_[frm.depth_stencil.tex_pid];
 
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, tex.render_target, GL_RENDERBUFFER, tex.rbo);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, tex.render_target, GL_RENDERBUFFER, tex.ds_rbo);
         }
 
         // render target
@@ -834,32 +865,26 @@ public:
 
         const auto& rts = frm.render_targets;
 
-        if (render_desc_.anti_aliasing == anti_aliasing::MSAA)
-        { // attach msaa render buffer
-            for(int i = 0; i < rts.size(); ++i)
-            {
-                const auto& attach = rts[i];
-                const auto& tex = pool_[attach.tex_pid];
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER, tex.rbo);
-            }
-
-            // below: create MSAA resolve framebuffers to read data from tex.rbo to tex.tbo
-        }
-        else
+        if (!(render_desc_.anti_aliasing == anti_aliasing::MSAA))
         { // attach texture
             for (int i = 0; i < rts.size(); ++i)
             {
                 bind_render_target_to_texture(i, rts[i]);
             }
         }
+        else
+        { // attach msaa render buffer
+            for (int i = 0; i < rts.size(); ++i)
+            {
+                const auto& attach = rts[i];
+                const auto& tex = pool_[attach.tex_pid];
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_RENDERBUFFER, tex.msaa_rbo);
+            }
 
-        // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-        unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-        DCHECK(rts.size() < 4);
-        glDrawBuffers(rts.size(), attachments);
-
+            // below: create MSAA resolve framebuffers to read data from tex.rbo to tex.tbo
+        }        
         // check if framebuffer is complete
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) 
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
             LOG(ERROR) << "Framebuffer completeness check failed!\n";
         }
@@ -919,7 +944,6 @@ public:
     {
         ctx_ = command_list_context{}; // stateless
 
-
         glcheck_errors();
 
         // clear_state
@@ -929,6 +953,12 @@ public:
             ctx_.is_offscreen = true;
             ctx_.frm = pool_[id];
             glBindFramebuffer(GL_FRAMEBUFFER, ctx_.frm.fbo);
+
+            // TODO!!!
+            // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
+            unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+            DCHECK(ctx_.frm.render_targets.size() < 4);
+            glDrawBuffers(ctx_.frm.render_targets.size(), attachments);
         }
         else // default frame
         {
@@ -971,13 +1001,11 @@ public:
         glcheck_errors();
 
         // log info
-        bool print_log = false;
-        if (print_log)
-        {
-            std::cout << "\nrender backend: opengl\n\n";
-            std::cout << log0_.rdbuf();
-            std::cout << '\n';
-        }
+    #ifdef FAY_DEBUG_
+        std::cout << "\nrender backend: opengl\n\n";
+        std::cout << log0_.rdbuf();
+        std::cout << '\n';
+    #endif // FAY_DEBUG
 
         log0_.clear();
     }
