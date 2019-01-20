@@ -1485,8 +1485,8 @@ private:
             {
                 glGetShaderInfoLog(id, max_length, NULL, error_info);
                 LOG(ERROR) 
-                    << "ERROR::SHADER_COMPILATION_ERROR" << "\n"
-                    << "name: " << shader_name << " type: " << name[type] << "error: \n"
+                    << "\nERROR::SHADER_COMPILATION_ERROR"
+                    << "name: " << shader_name << "\ntype: " << name[type] << "\nerror: \n"
                     << error_info;
             }
         }
@@ -1497,8 +1497,8 @@ private:
             {
                 glGetProgramInfoLog(id, max_length, NULL, error_info);
                 LOG(ERROR) 
-                    << "ERROR::PROGRAM_LINKING_ERROR" << "\n"
-                    << "name: " << shader_name << " type: " << "PROGRAM" << "error: \n"
+                    << "\nERROR::PROGRAM_LINKING_ERROR"
+                    << "\nname: " << shader_name << "\ntype: " << "PROGRAM" << "\nerror: \n"
                     << error_info;
             }
         }

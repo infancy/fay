@@ -119,6 +119,7 @@ void render_device::bind_buffer(const buffer_id id, const std::vector<attribute_
 
         for (auto i : range(num))
         {
+            // TODO: check
             attrs_[i] = i;
             slots_[i] = i;
         }

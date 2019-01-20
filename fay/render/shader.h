@@ -276,7 +276,7 @@ inline shader_context shader_extracting_context(std::stringstream& stream)
                 LOG(ERROR) << "shouldn't be here";
             }
         }
-        else if (have(vs, "main")) // goto: return
+        else if (have(vs, "(")) // goto: return
         {
             break;
         }

@@ -128,7 +128,7 @@ public:
 
 		if (desc_.render_backend_type_v == render_backend_type::opengl) // TODO: choose opengl version by itself
 		{
-			create_window_and_glcontext(4, 3);
+			create_window_and_glcontext(3, 3);
 		}
 		else if (desc_.render_backend_type_v == render_backend_type::opengl_dsa)
 		{
