@@ -224,9 +224,6 @@
     <ClInclude Include="..\..\fay\gfx\mesh.h">
       <Filter>gfx</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\app\utility.h">
-      <Filter>app</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\gfx\camera.h">
       <Filter>gfx</Filter>
     </ClInclude>
@@ -241,6 +238,9 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\misc\extends.h">
       <Filter>misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\app\app_flexible.h">
+      <Filter>app</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

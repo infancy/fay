@@ -35,7 +35,7 @@
     <ClInclude Include="..\..\fay\app\components.h" />
     <ClInclude Include="..\..\fay\app\input.h" />
     <ClInclude Include="..\..\fay\app\scene.h" />
-    <ClInclude Include="..\..\fay\app\utility.h" />
+    <ClInclude Include="..\..\fay\app\app_flexible.h" />
     <ClInclude Include="..\..\fay\app\window.h" />
     <ClInclude Include="..\..\fay\core\algorithm.h" />
     <ClInclude Include="..\..\fay\core\config.h" />

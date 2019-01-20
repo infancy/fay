@@ -296,9 +296,11 @@ namespace backend_opengl_type
                     a.type = vertex_attribute_gl::attribute_type(da.format);
                     a.normalized = vertex_attribute_gl::need_normalized(da.format);
 
+                    // TODO
                     auto[sz, byte] = attribute_format_map.at(da.format);
                     a.size = sz * da.num;
                     a.offset = (GLvoid*)offset;
+
                     offset += byte * da.num; // e.g. {..., floatx, 8} -> size: 1 * 8, offset: 4 * 8
                 }
             }
@@ -922,13 +924,13 @@ public:
 
         // clear_state
 
-        if (id.value != 0) // not default frame, offscreen render
+        if (id.value != 0) // offscreen frame
         {
             ctx_.is_offscreen = true;
             ctx_.frm = pool_[id];
             glBindFramebuffer(GL_FRAMEBUFFER, ctx_.frm.fbo);
         }
-        else
+        else // default frame
         {
             ctx_.is_offscreen = false;
             glBindFramebuffer(GL_FRAMEBUFFER, 0);

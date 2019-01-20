@@ -4,10 +4,10 @@
 #include <GLFW/glfw3.h>
 
 #include "fay/app/app.h"
-#include "fay/app/scene.h"
 #include "fay/core/config.h"
 #include "fay/core/fay.h"
 #include "fay/gfx/camera.h"
+#include "fay/gfx/mesh.h"
 #include "fay/render/device.h"
 #include "fay/render/shader.h"
 #include "fay/resource/image.h"
@@ -15,7 +15,9 @@
 
 #define glcheck_errors() CHECK(glGetError() == GL_NO_ERROR)
 
-fay::texture_id create_2d(fay::render_device_ptr& device, const std::string& name, const fay::image& img)
+inline fay::app_desc global_desc;
+
+inline fay::texture_id create_2d(fay::render_device_ptr& device, const std::string& name, const fay::image& img)
 {
     fay::texture_desc desc;
 
@@ -30,4 +32,9 @@ fay::texture_id create_2d(fay::render_device_ptr& device, const std::string& nam
     desc.type = fay::texture_type::two;
 
     return device->create(desc);
+}
+
+inline fay::array_mesh create_array_mesh(fay::resource_model model)
+{
+
 }

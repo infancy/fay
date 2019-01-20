@@ -1,4 +1,5 @@
-#include "fay/app/utility.h"
+#include "fay/app/app_flexible.h"
+#include "fay/app/scene.h"
 
 // model
 const std::string Nier_2b = "object/Nier_2b/2b.obj";
