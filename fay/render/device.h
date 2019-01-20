@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_RENDER_DEVICE_H
-#define FAY_RENDER_DEVICE_H
 
 #include "fay/core/config.h"
 #include "fay/core/fay.h"
@@ -389,5 +384,3 @@ private:
 using render_device_ptr = std::unique_ptr<render_device>;
 
 } // namespace fay
-
-#endif // FAY_RENDER_DEVICE_H

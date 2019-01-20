@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_RENDER_DEFINE_H
-#define FAY_RENDER_DEFINE_H
 
 #include <variant>
 
@@ -421,7 +416,7 @@ struct attribute_detail // rename: attribute_num_bytesize
 };
 
 // nums, bytes of attribute_format
-const inline enum_class_map<attribute_format, attribute_detail>
+const /*inline*/ static enum_class_map<attribute_format, attribute_detail>
 attribute_format_map
 {
     { attribute_format::float1,  {1,  4} },
@@ -1134,5 +1129,3 @@ private:
 };
 
 } // namespace fay
-
-#endif // FAY_RENDER_DEFINE_H

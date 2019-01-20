@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_RENDER_NATIVE_TYPE_H
-#define FAY_RENDER_NATIVE_TYPE_H
 
 #include <d3d11.h>
 #include "glad/glad.h"
@@ -197,7 +192,7 @@ constexpr inline bool is_compressed_pixel_format(pixel_format fmt)
     }
 }
 
-constexpr inline bool is_dpeth_stencil_pixel_format(pixel_format fmt)
+constexpr /*inline*/ static bool is_dpeth_stencil_pixel_format(pixel_format fmt)
 {
     switch (fmt)
     {
@@ -210,5 +205,3 @@ constexpr inline bool is_dpeth_stencil_pixel_format(pixel_format fmt)
 }
 
 } // namespace fay
-
-#endif // FAY_RENDER_NATIVE_TYPE_H
