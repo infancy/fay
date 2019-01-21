@@ -52,6 +52,11 @@ namespace backend_opengl_func
             case pixel_format::rgba16f:
                 return GL_RGBA16F;
 
+            case pixel_format::rgb32f:
+                return GL_RGB32F;
+            case pixel_format::rgb16f:
+                return GL_RGB16F;
+
             case pixel_format::rgba8:
                 return GL_RGBA8;
             case pixel_format::rgba4:
@@ -112,6 +117,8 @@ namespace backend_opengl_func
             case pixel_format::rgb10_a2:
             case pixel_format::rgb5_a1:
                 return GL_RGBA;
+            case pixel_format::rgb32f:
+            case pixel_format::rgb16f:
             case pixel_format::rgb8:
             case pixel_format::rgb565:
                 return GL_RGB;
@@ -146,9 +153,11 @@ namespace backend_opengl_func
         switch (fmt)
         {
             case pixel_format::rgba32f:
+            case pixel_format::rgb32f:
             case pixel_format::r32f:
                 return GL_FLOAT;
             case pixel_format::rgba16f:
+            case pixel_format::rgb16f:
             case pixel_format::r16f:
                 return GL_HALF_FLOAT;
             case pixel_format::rgba8:

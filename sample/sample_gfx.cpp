@@ -19,7 +19,7 @@ public:
         std::string name;
         //std::cin >> name;
 
-        scene_->add_model("object/box/box.obj");// + name);
+        scene_->add_model("object/Rei/Rei.obj");// + name);
 
         fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs", false);
         sd.name = "shd"; //todo

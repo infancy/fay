@@ -75,6 +75,9 @@ enum class pixel_format
     rgba32f,
     rgba16f,
 
+    rgb32f,
+    rgb16f,
+
     rgba8,
     rgba4,
 

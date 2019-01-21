@@ -286,6 +286,7 @@ public:
     fay::render_misc misc;
 
     fay::renderable_sp mesh;
+    fay::renderable_sp mesh2;
 
     fay::buffer_id vbo;
     fay::buffer_id ibo;
@@ -422,7 +423,178 @@ public:
     fay::pipeline_id shadow_pipe_id;
 };
 
+class defer_rendering : public post_processing
+{
+public:
+    // using fay::app;
+    defer_rendering(const fay::app_desc& desc) : post_processing(desc)
+    {
+        desc_.window.title = "post_proc";
+
+
+    }
+
+    std::vector<glm::vec3> objectPositions;
+    const unsigned int NR_LIGHTS = 32;
+    std::vector<glm::vec3> lightPositions;
+    std::vector<glm::vec3> lightColors;
+
+    void setup() override
+    {
+        objectPositions.push_back(glm::vec3(-3.0, -3.0, -3.0));
+        objectPositions.push_back(glm::vec3(0.0, -3.0, -3.0));
+        objectPositions.push_back(glm::vec3(3.0, -3.0, -3.0));
+        objectPositions.push_back(glm::vec3(-3.0, -3.0, 0.0));
+        objectPositions.push_back(glm::vec3(0.0, -3.0, 0.0));
+        objectPositions.push_back(glm::vec3(3.0, -3.0, 0.0));
+        objectPositions.push_back(glm::vec3(-3.0, -3.0, 3.0));
+        objectPositions.push_back(glm::vec3(0.0, -3.0, 3.0));
+        objectPositions.push_back(glm::vec3(3.0, -3.0, 3.0));
+
+        srand(glfwGetTime());
+        for (unsigned int i = 0; i < NR_LIGHTS; i++)
+        {
+            // calculate slightly random offsets
+            float xPos = ((rand() % 100) / 100.0) * 6.0 - 3.0;
+            float yPos = ((rand() % 100) / 100.0) * 6.0 - 4.0;
+            float zPos = ((rand() % 100) / 100.0) * 6.0 - 3.0;
+            lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
+            // also calculate random color
+            float rColor = ((rand() % 100) / 200.0f) + 0.5; // between 0.5 and 1.0
+            float gColor = ((rand() % 100) / 200.0f) + 0.5; // between 0.5 and 1.0
+            float bColor = ((rand() % 100) / 200.0f) + 0.5; // between 0.5 and 1.0
+            lightColors.push_back(glm::vec3(rColor, gColor, bColor));
+        }
+
+        mesh  = fay::create_single_renderable(fay::Rei, render.get());
+        mesh2 = fay::create_raw_renderable(fay::Box, render.get());
+
+        // quad
+        std::vector<glm::ivec3> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
+        std::vector<uint32_t> ib{ 0,1,2,2,3,0 };
+
+        {
+            fay::image img("texture/awesomeface.png", true);
+            tex_id = create_2d(this->render, "hello", img);
+        }
+
+        {
+            fay::shader_desc sd = fay::scan_shader_program("gfx/30_phong_shading.vs", "gfx/38_g_buffer.fs", false);
+            sd.name = "shd"; //todo
+            shd_id = render->create(sd);
+        }
+
+        {
+            //fay::shader_desc sd2 = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.vs", false);
+            fay::shader_desc sd2 = fay::scan_shader_program("gfx/post_processing.vs", "gfx/38_deferred_shading.fs", false);
+            sd2.name = "shd2"; //todo
+            shd_id2 = render->create(sd2);
+        }
+
+        {
+            fay::pipeline_desc pd;
+            {
+                pd.name = "shadow_pipe";
+                pd.cull_mode = fay::cull_mode::none;
+            }
+            pipe_id = render->create(pd);
+        }
+        {
+            fay::pipeline_desc pd;
+            {
+                pd.name = "pipe2";
+                pd.cull_mode = fay::cull_mode::none;
+            }
+            pipe_id2 = render->create(pd);
+        }
+
+        auto frame = fay::create_Gbuffer(render.get(), "offscreen_frm", 1024, 1024);
+
+        offscreen_frm_id  = std::get<0>(frame);
+        offscreen_tex_id  = std::get<1>(frame);
+        offscreen_tex_id2 = std::get<2>(frame);
+        offscreen_tex_id3 = std::get<3>(frame);
+        offscreen_ds_id   = std::get<4>(frame);
+
+        misc.camera_ = fay::camera{ glm::vec3{ 0, 0, 1.5 } };
+    }
+
+    void update() override
+    {
+
+        misc.update_io();
+        glm::mat4 view = misc.camera_.GetViewMatrix();
+        glm::mat4 proj = glm::perspective(glm::radians(misc.camera_.Zoom),
+            (float)misc.Width / (float)misc.Height, 0.1f, 10000.0f);
+
+        glm::mat4 model(10.f);
+        auto MVP = proj * view * model;
+
+        fay::command_list pass1, pass2;
+
+        // depth map
+        pass1
+            .begin_frame(offscreen_frm_id)
+            .clear_frame()
+            .apply_pipeline(pipe_id)
+            .apply_shader(shd_id);
+        for (unsigned int i = 0; i < objectPositions.size(); i++)
+        {
+            //glm::mat4 objectmodel = glm::mat4(50);
+            glm::mat4 objectmodel = glm::mat4(1);
+            objectmodel = glm::translate(objectmodel, objectPositions[i]);
+            objectmodel = glm::scale(objectmodel, glm::vec3(5.f));
+
+            glm::mat4 MV = view * objectmodel;
+            glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
+
+            pass1
+                .bind_uniform("MV", MV)
+                .bind_uniform("NormalMV", NormalMV)
+                .bind_uniform("MVP", proj * MV);
+
+            mesh->render(pass1);
+        }
+        pass1.end_frame();
+
+        pass2
+            .begin_default_frame()
+            .clear_frame()
+            .apply_pipeline(pipe_id2)
+            .apply_shader(shd_id2)
+            //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
+            .bind_texture(offscreen_tex_id, "gPosition") // TODO
+            .bind_texture(offscreen_tex_id2, "gNormal")
+            .bind_texture(offscreen_tex_id3, "gAlbedoSpec")
+            .bind_uniform("MVP", MVP)
+            .bind_uniform("viewPos", misc.camera_.Position);
+
+        for (unsigned int i = 0; i < lightPositions.size(); i++)
+        {
+            // update attenuation parameters and calculate radius
+            const float constant = 1.0; // note that we don't send this to the shader, we assume it is always 1.0 (in our case)
+            const float linear = 0.7;
+            const float quadratic = 1.8;
+
+            pass2
+                .bind_uniform("lights[" + std::to_string(i) + "].Position", lightPositions[i])
+                .bind_uniform("lights[" + std::to_string(i) + "].Color", lightColors[i])
+                .bind_uniform("lights[" + std::to_string(i) + "].Linear", linear)
+                .bind_uniform("lights[" + std::to_string(i) + "].Quadratic", quadratic);
+        }
+        mesh2->render(pass2);
+        pass2.end_frame();
+
+        render->submit(pass1);
+        render->submit(pass2);
+        render->execute();
+    }
+
+    fay::pipeline_id shadow_pipe_id;
+};
+
 SAMPLE_RENDER_APP_IMPL(clear)
 SAMPLE_RENDER_APP_IMPL(triangle)
 SAMPLE_RENDER_APP_IMPL(post_processing)
 SAMPLE_RENDER_APP_IMPL(shadow_map)
+SAMPLE_RENDER_APP_IMPL(defer_rendering)

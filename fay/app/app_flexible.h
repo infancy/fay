@@ -105,8 +105,8 @@ inline std::tuple<frame_id, texture_id, texture_id> create_depth_frame(render_de
 
     desc.min_filter = filter_mode::nearest;
     desc.max_filter = filter_mode::nearest;
-    desc.wrap_u = wrap_mode::clamp_to_edge;
-    desc.wrap_v = wrap_mode::clamp_to_edge;
+    desc.wrap_u = wrap_mode::repeat;
+    desc.wrap_v = wrap_mode::repeat;
 
     desc.as_render_target = render_target::color;
     desc.pixel_format = pixel_format::rgba8;
@@ -157,6 +157,51 @@ inline std::tuple<frame_id, texture_id, texture_id> create_frame(render_device* 
     auto frm_id = device->create(fd);
 
     return { frm_id, color_id, ds_id };
+}
+
+inline std::tuple<frame_id, texture_id, texture_id, texture_id, texture_id> create_Gbuffer(render_device* device, const std::string& name, size_t width, size_t height)
+{
+    texture_desc desc;
+
+    fay::image img("texture/container2.png", true);
+
+    desc.name = name;
+    desc.width = width;
+    desc.height = height;
+    desc.size = width * height * 4; // byte size
+    desc.data = { nullptr };
+    desc.type = texture_type::two;
+
+    desc.min_filter = filter_mode::nearest;
+    desc.max_filter = filter_mode::nearest;
+    desc.wrap_u = wrap_mode::repeat;
+    desc.wrap_v = wrap_mode::repeat;
+
+    desc.as_render_target = render_target::color;
+    desc.pixel_format = pixel_format::rgb32f;
+    auto color_id = device->create(desc);
+
+    desc.as_render_target = render_target::color;
+    desc.pixel_format = pixel_format::rgb32f;
+    auto color_id2 = device->create(desc);
+
+    desc.as_render_target = render_target::color;
+    desc.pixel_format = pixel_format::rgba8;
+    auto color_id3 = device->create(desc);
+
+    desc.as_render_target = render_target::depth_stencil;
+    desc.pixel_format = pixel_format::depthstencil; // TODO: depth_stencil;
+    auto ds_id = device->create(desc);
+
+    frame_desc fd;
+    fd.name = name;
+    fd.width = width;
+    fd.height = height;
+    fd.render_targets = { { color_id, 0, 0 }, { color_id2, 0, 0 }, { color_id3, 0, 0 } };
+    fd.depth_stencil = { ds_id, 0, 0 };
+    auto frm_id = device->create(fd);
+
+    return { frm_id, color_id, color_id2, color_id3, ds_id };
 }
 
 // -------------------------------------------------------------------------------------------------

@@ -11,12 +11,6 @@ namespace fay // ::render
 // ---------------------------------------
 // helper functions
 
-// return true if pixel format is a compressed format
-bool is_compressed_pixel_format(pixel_format fmt) 
-{
-	return true;
-}
-
 // ---------------------------------------
 // forward
 
