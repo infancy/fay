@@ -276,3 +276,4 @@ __pycache__/
 /resource/test
 /resource/skybox
 /resource/object
+/resource/nsight_profiler.cfg

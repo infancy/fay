@@ -1,5 +1,5 @@
 #include <assimp/Importer.hpp>
-//#include <assimp/pbrmaterial.h>
+#include <assimp/pbrmaterial.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
@@ -204,59 +204,48 @@ void model_assimp::convert(resource_mesh& mesh, const aiMesh* aiMesh)
 
 void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
 {
-    aiString ai_name;
-    aiColor4D ai_albedo(0.f, 0.f, 0.f, 0.f);
-    float ai_opacity = 1.f;
-    aiColor4D ai_metallic(0.f, 0.f, 0.f, 0.f);
-    aiColor4D ai_roughness(0.f, 0.f, 0.f, 0.f);
     //float ai_shininess = 1.f;
-    aiColor4D ai_emissive(0.f, 0.f, 0.f, 0.f);
-    int ai_two_sided = 0;
-    float ai_alpha_test = 0;
 
-    if (AI_SUCCESS == aiGetMaterialString(aiMtl, AI_MATKEY_NAME, &ai_name))
+    if (aiString ai_name; AI_SUCCESS == aiGetMaterialString(aiMtl, AI_MATKEY_NAME, &ai_name))
     {
         mtl.name = ai_name.C_Str();
     }
 
-    /*
-    if (format() == model_format::gltf)
+    if (aiColor4D ai_albedo(0.f, 0.f, 0.f, 0.f); format() == model_format::gltf)
     {
         if (AI_SUCCESS == aiGetMaterialColor(aiMtl, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, &ai_albedo))
         {
-            albedo = Color4ToFloat3(ai_albedo);
-            opacity = ai_albedo.a;
+            mtl.albedo_factor = glm::vec4(ai_albedo.r, ai_albedo.g, ai_albedo.b, ai_albedo.a);
         }
     }
     else
-    */
     {
         if (AI_SUCCESS == aiGetMaterialColor(aiMtl, AI_MATKEY_COLOR_DIFFUSE, &ai_albedo))
         {
             mtl.albedo_factor = glm::vec4(ai_albedo.r, ai_albedo.g, ai_albedo.b, ai_albedo.a);
         }
-        if (AI_SUCCESS == aiGetMaterialFloat(aiMtl, AI_MATKEY_OPACITY, &ai_opacity))
+        if (float ai_opacity = 1.f; AI_SUCCESS == aiGetMaterialFloat(aiMtl, AI_MATKEY_OPACITY, &ai_opacity))
         {
             mtl.albedo_factor.a = ai_opacity;
         }
     }
-
-    /*
+    
     if (format() == model_format::gltf)
     {
-        if (AI_SUCCESS == aiGetMaterialFloat(aiMtl, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, &ai_metallic))
+        if (AI_SUCCESS == aiGetMaterialFloat(aiMtl, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, &mtl.roughness_factor))
         {
-            metalness = ai_metallic;
+            LOG(WARNING);
         }
-        if (AI_SUCCESS == aiGetMaterialFloat(aiMtl, AI_MATKEY_SHININESS, &ai_shininess))
+        if (AI_SUCCESS == aiGetMaterialFloat(aiMtl, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, &mtl.roughness_factor))
         {
-            shininess = ai_shininess;
+            LOG(WARNING);
         }
-        shininess = MathLib::clamp(shininess, 1.0f, MAX_SHININESS);
     }
     else
-    */
     {
+        aiColor4D ai_metallic(0.f, 0.f, 0.f, 0.f);
+        aiColor4D ai_roughness(0.f, 0.f, 0.f, 0.f);
+
         // magic trick
         // error: stack around the variable 'ai_roughness' was corrupted
         // if (AI_SUCCESS == aiGetMaterialFloat(aiMtl, AI_MATKEY_COLOR_AMBIENT, &ai_roughness))
@@ -270,7 +259,7 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
         }
     }
 
-    if (AI_SUCCESS == aiGetMaterialColor(aiMtl, AI_MATKEY_COLOR_EMISSIVE, &ai_emissive))
+    if (aiColor4D ai_emissive(0.f, 0.f, 0.f, 0.f); AI_SUCCESS == aiGetMaterialColor(aiMtl, AI_MATKEY_COLOR_EMISSIVE, &ai_emissive))
     {
         mtl.emissive_factor = glm::vec4(ai_emissive.r, ai_emissive.g, ai_emissive.b, ai_emissive.a);
     }
@@ -280,7 +269,7 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
         mtl.transparent = true;
     }
 
-    if (AI_SUCCESS == aiGetMaterialInteger(aiMtl, AI_MATKEY_TWOSIDED, &ai_two_sided))
+    if (int ai_two_sided = 0; AI_SUCCESS == aiGetMaterialInteger(aiMtl, AI_MATKEY_TWOSIDED, &ai_two_sided))
     {
         mtl.two_sided = ai_two_sided ? true : false;
     }
@@ -289,44 +278,46 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
     // load image
 
 
-    auto try_load_image = [aiMtl, dir = directory(), flip = need_flip_image()](aiTextureType type, image& img)
+    // generally speaking, 'type_query' and 'type_get' is same
+    auto try_load_image = [aiMtl, dir = directory(), flip = need_flip_image()](
+        image& img, aiTextureType type_query, aiTextureType type_get = aiTextureType_NONE, unsigned int index = 0)
     {
-        auto count = aiGetMaterialTextureCount(aiMtl, aiTextureType_DIFFUSE);
-        if (count > 0)
+        if (type_get == aiTextureType_NONE)
+            type_get = type_query;
+
+        auto count = aiGetMaterialTextureCount(aiMtl, type_query);
+        if (count > index)
         {
             aiString image_location;
-            aiGetMaterialTexture(aiMtl, aiTextureType_DIFFUSE, 0, &image_location, 0, 0, 0, 0, 0, 0);
+            aiGetMaterialTexture(aiMtl, type_get, index, &image_location, 0, 0, 0, 0, 0, 0);
 
             img = image(dir + image_location.C_Str(), flip);
         }
     };
 
-    try_load_image(aiTextureType_DIFFUSE, mtl.albedo);
-
-    /*
     if (format() == model_format::gltf)
     {
-        count = aiGetMaterialTextureCount(aiMtl, aiTextureType_UNKNOWN);
+        try_load_image(mtl.albedo, aiTextureType_DIFFUSE, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE);
+    }
+    else
+    {
+        try_load_image(mtl.albedo, aiTextureType_DIFFUSE);
+    }
+
+    if (format() == model_format::gltf)
+    {
+        auto count = aiGetMaterialTextureCount(aiMtl, aiTextureType_UNKNOWN);
         if (count > 0)
         {
-            aiGetMaterialTexture(aiMtl, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &image_location, 0, 0, 0, 0, 0, 0);
+            try_load_image(mtl.metallic_roughness, aiTextureType_UNKNOWN, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE);
 
-            mtl.tex_names[RenderMaterial::TS_Glossiness] = image_location.C_Str();
         }
         else
         {
-            count = aiGetMaterialTextureCount(aiMtl, aiTextureType_SHININESS);
-            if (count > 0)
-            {
-                aiString image_location;
-                aiGetMaterialTexture(aiMtl, aiTextureType_SHININESS, 0, &image_location, 0, 0, 0, 0, 0, 0);
-
-                mtl.tex_names[RenderMaterial::TS_Glossiness] = image_location.C_Str();
-            }
+            try_load_image(mtl.metallic_roughness, aiTextureType_SHININESS);
         }
     }
     else
-    */
     {
         aiString ambi_loc; 
         aiString spec_loc;
@@ -344,11 +335,11 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
     }
     
     if (format() == model_format::obj)
-        try_load_image(aiTextureType_HEIGHT, mtl.normal);
+        try_load_image(mtl.normal, aiTextureType_HEIGHT);
     else
-        try_load_image(aiTextureType_NORMALS, mtl.normal);
+        try_load_image(mtl.normal, aiTextureType_NORMALS);
 
-    try_load_image(aiTextureType_EMISSIVE, mtl.emissive);
+    try_load_image(mtl.emissive, aiTextureType_EMISSIVE);
 }
 
 } // namespace fay

@@ -466,7 +466,7 @@ public:
             lightColors.push_back(glm::vec3(rColor, gColor, bColor));
         }
 
-        mesh  = fay::create_single_renderable(fay::Rei, render.get());
+        mesh  = fay::create_single_renderable(fay::nierautomata_2b, render.get());
         mesh2 = fay::create_raw_renderable(fay::Box, render.get());
 
         // quad

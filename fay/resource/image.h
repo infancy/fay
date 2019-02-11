@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_RESOURCE_IMAGE_H
-#define FAY_RESOURCE_IMAGE_H
 
 #include <fstream>
 
@@ -23,7 +18,7 @@ enum class color_space
     sRGB
 };
 
-// WARNNING: use "user_directory/filename" is useful, don't add file type like ".png", ".jpg".
+// WARNNING: use "user_directory/filename" is enough, don't add file type like ".png", ".jpg".
 bool save_image(const std::string& file_path_name, int width, int height, int format, bool flip_vertically,
     const uint8_t* pixel, int quality = 80);
 
@@ -286,5 +281,3 @@ inline bool operator==(const image_view& left, const image_view& right)
 */
 
 } // namespace fay
-
-#endif // FAY_RESOURCE_IMAGE_H
