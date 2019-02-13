@@ -310,7 +310,6 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
         if (count > 0)
         {
             try_load_image(mtl.metallic_roughness, aiTextureType_UNKNOWN, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE);
-
         }
         else
         {
@@ -325,11 +324,11 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
         auto spec_num = aiGetMaterialTextureCount(aiMtl, aiTextureType_SPECULAR);
         if (ambi_num > 0)
         {
-            aiGetMaterialTexture(aiMtl, aiTextureType_DIFFUSE, 0, &ambi_loc, 0, 0, 0, 0, 0, 0);
+            aiGetMaterialTexture(aiMtl, aiTextureType_AMBIENT, 0, &ambi_loc, 0, 0, 0, 0, 0, 0);
         }
         if (spec_num > 0)
         {
-            aiGetMaterialTexture(aiMtl, aiTextureType_DIFFUSE, 0, &spec_loc, 0, 0, 0, 0, 0, 0);
+            aiGetMaterialTexture(aiMtl, aiTextureType_SPECULAR, 0, &spec_loc, 0, 0, 0, 0, 0, 0);
         }
         mtl.metallic_roughness = convert_to_metallic_roughness(directory(), std::string(ambi_loc.C_Str()), std::string(spec_loc.C_Str()), need_flip_image());
     }

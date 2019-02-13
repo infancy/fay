@@ -194,7 +194,7 @@ obj_model::obj_model(const std::string& filepath, render_backend_type api) : res
         mat.name = objmat.name;
         mat.albedo_factor = glm::vec4{ objmat.Kd, 1.f }; // objmat.Tr
 
-        if (!objmat.map_Kd.empty());
+        if (!objmat.map_Kd.empty()) // ;
             mat.albedo = image(directory + objmat.map_Kd, flip_vertical); // base_color with alpha_mask
         
         mat.metallic_roughness = convert_to_metallic_roughness(directory, objmat.map_Ka, objmat.map_Ks, flip_vertical);

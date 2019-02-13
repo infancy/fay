@@ -204,11 +204,88 @@ public:
     fay::command_list pass1, pass2;
 };
 
-class post_processing : public fay::app
+class light : public fay::renderable
+{
+public:
+    void setup(fay::render_device* device)
+    {
+        light_mesh = fay::create_raw_renderable(fay::Box, device);
+
+        fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs");
+        sd.name = "light_shd";
+        light_shd_id = device->create(sd);
+
+        fay::pipeline_desc pd;
+        {
+            pd.name = "light_pipe";
+            pd.stencil_enabled = false;
+
+            light_pipe_id = device->create(pd);
+        }
+    }
+
+    void update(glm::mat4 VP, glm::vec3 lightPosition)
+    {
+        glm::mat4 model = glm::mat4(1.f);
+        model = glm::translate(model, lightPosition);
+
+        this->MVP = VP * model;
+    }
+
+    void render(fay::command_list& cmd) override
+    {
+        cmd
+            .apply_pipeline(light_pipe_id)
+            .apply_shader(light_shd_id)
+            .bind_uniform("MVP", MVP)
+            .bind_uniform("bAlbedo", false)
+            .draw(light_mesh.get());
+    }
+
+private:
+    fay::renderable_sp light_mesh;
+    fay::shader_id light_shd_id;
+    fay::pipeline_id light_pipe_id;
+
+    glm::mat4 MVP;
+
+};
+
+class two_passes
+{
+public:
+    fay::render_data misc;
+    light light_mesh;
+
+    fay::buffer_id vbo;
+    fay::buffer_id ibo;
+
+    fay::renderable_sp mesh;
+    fay::texture_id tex_id;
+    fay::shader_id shd_id;
+    fay::pipeline_id pipe_id;
+
+    fay::texture_id offscreen_tex_id;
+    fay::texture_id offscreen_tex_id2;
+    fay::texture_id offscreen_tex_id3;
+    fay::texture_id offscreen_ds_id;
+    fay::frame_id offscreen_frm_id;
+
+    fay::renderable_sp mesh2;
+    fay::texture_id tex_id2;
+    fay::shader_id shd_id2;
+    fay::pipeline_id pipe_id2;
+
+    render_paras paras;
+    //fay::command_list pass1, pass2;
+};
+
+// post_processing
+class offscreen : public fay::app, public two_passes
 {
 public:
     // using fay::app;
-    post_processing(const fay::app_desc& desc) : fay::app(desc)
+    offscreen(const fay::app_desc& desc) : fay::app(desc)
     {
         desc_.window.title = "post_proc";
     }
@@ -220,7 +297,7 @@ public:
         fay::image img("texture/awesomeface.png", true);
         tex_id = create_2d(this->render, "hello", img);
 
-        fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs", false);
+        fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs");
         sd.name = "shd"; //todo
         shd_id = render->create(sd);
 
@@ -234,7 +311,7 @@ public:
 
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
-        offscreen_ds_id  = std::get<2>(frame);
+        offscreen_ds_id = std::get<2>(frame);
     }
 
     void update() override
@@ -249,10 +326,10 @@ public:
         auto MVP = projection * view * model;
 
         fay::command_list pass1, pass2;
-        
+
         pass1
             .begin_frame(offscreen_frm_id)
-            .clear_color({1.f, 0.f, 0.f, 1.f})
+            .clear_color({ 1.f, 0.f, 0.f, 1.f })
             .clear_depth()
             .clear_stencil()
             .apply_pipeline(pipe_id)
@@ -260,10 +337,9 @@ public:
             .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
             .bind_uniform("MVP", MVP)
             .bind_uniform("bAlbedo", true)
-            .bind_textures({ tex_id });
-
-        mesh->render(pass1);
-        pass1.end_frame();
+            .bind_textures({ tex_id })
+            .draw(mesh.get())
+            .end_frame();
 
         pass2
             .begin_default_frame()
@@ -273,54 +349,27 @@ public:
             .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
             .bind_uniform("MVP", MVP)
             .bind_uniform("bAlbedo", true)
-            .bind_textures({ offscreen_tex_id });
+            .bind_textures({ offscreen_tex_id })
+            .draw(mesh.get())
+            .end_frame();
 
-        mesh->render(pass2);
-        pass2.end_frame();
-
-        render->submit(pass1);
-        render->submit(pass2);
-        render->execute();
+        render->execute({ pass1, pass2});
     }
-
-    fay::render_misc misc;
-
-    fay::renderable_sp mesh;
-    fay::renderable_sp mesh2;
-
-    fay::buffer_id vbo;
-    fay::buffer_id ibo;
-
-    fay::texture_id tex_id;
-    fay::texture_id tex_id2;
-
-    fay::shader_id shd_id;
-    fay::pipeline_id pipe_id;
-
-    fay::shader_id shd_id2;
-    fay::pipeline_id pipe_id2;
-
-    fay::texture_id offscreen_tex_id;
-    fay::texture_id offscreen_tex_id2;
-    fay::texture_id offscreen_tex_id3;
-    fay::texture_id offscreen_ds_id;
-    fay::frame_id offscreen_frm_id;
-
-    render_paras paras;
-    //fay::command_list pass1, pass2;
 };
 
-class shadow_map : public post_processing
+class shadow_map : public fay::app, public two_passes
 {
 public:
     // using fay::app;
-    shadow_map(const fay::app_desc& desc) : post_processing(desc)
+    shadow_map(const fay::app_desc& desc) : fay::app(desc)
     {
-        desc_.window.title = "post_proc";
+        desc_.window.title = "shadow_map";
     }
 
     void setup() override
     {
+        light_mesh.setup(render.get());
+
         mesh = fay::create_raw_renderable(fay::Blocks, render.get());
 
         {
@@ -359,7 +408,7 @@ public:
             pipe_id2 = render->create(pd);
         }
 
-        auto frame = fay::create_depth_frame(render.get(), "offscreen_frm", 1024, 1024);
+        auto frame = fay::create_depth_frame("depth_frm", 1024, 1024, render.get());
 
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
@@ -373,6 +422,7 @@ public:
         glm::mat4 proj = glm::perspective(glm::radians(misc.camera_.Zoom),
             (float)misc.Width / (float)misc.Height, 0.1f, 10000.0f);
 
+        light_mesh.update(proj * view, misc.lightPosition);
         glm::mat4 model(1.f);
         auto MVP = proj * view * model;
 
@@ -389,20 +439,17 @@ public:
         // depth map
         pass1
             .begin_frame(offscreen_frm_id)
-            //.clear_color({ 1.f, 0.f, 0.f, 1.f })
+            .clear_color({ 1.f, 0.f, 0.f, 1.f }) // rgb32f
             .clear_depth()
+            .clear_stencil()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
-            .bind_uniform("MVP", lightSpace * model);
-
-        mesh->render(pass1);
-        pass1.end_frame();
+            .bind_uniform("MVP", lightSpace * model)
+            .draw(mesh.get())
+            .end_frame();
 
         pass2
-            .begin_default_frame()
-            .clear_frame()
-            .apply_pipeline(pipe_id2)
-            .apply_shader(shd_id2)
+            .begin_default(pipe_id2, shd_id2)
             //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
             .bind_uniform("Proj", proj)
             .bind_uniform("View", view)
@@ -410,24 +457,20 @@ public:
             .bind_uniform("LightSpace", lightSpace)
             .bind_uniform("LightPos", misc.lightPosition)
             .bind_uniform("ViewPos", misc.camera_.Position)
-            .bind_textures({ tex_id, offscreen_ds_id });
+            .bind_textures({ tex_id, offscreen_ds_id })
+            .draw(mesh.get())
+            .draw(&light_mesh) // with it's state
+            .end_frame();
 
-        mesh->render(pass2);
-        pass2.end_frame();
-
-        render->submit(pass1);
-        render->submit(pass2);
-        render->execute();
+        render->execute({ pass1, pass2 });
     }
-
-    fay::pipeline_id shadow_pipe_id;
 };
 
-class defer_rendering : public post_processing
+class defer_rendering : public fay::app, public two_passes
 {
 public:
     // using fay::app;
-    defer_rendering(const fay::app_desc& desc) : post_processing(desc)
+    defer_rendering(const fay::app_desc& desc) : fay::app(desc)
     {
         desc_.window.title = "post_proc";
 
@@ -466,7 +509,7 @@ public:
             lightColors.push_back(glm::vec3(rColor, gColor, bColor));
         }
 
-        mesh  = fay::create_single_renderable(fay::nierautomata_2b, render.get());
+        mesh  = fay::create_renderable(fay::nierautomata_2b, render.get());
         mesh2 = fay::create_raw_renderable(fay::Box, render.get());
 
         // quad
@@ -486,7 +529,7 @@ public:
 
         {
             //fay::shader_desc sd2 = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.vs", false);
-            fay::shader_desc sd2 = fay::scan_shader_program("gfx/post_processing.vs", "gfx/38_deferred_shading.fs", false);
+            fay::shader_desc sd2 = fay::scan_shader_program("gfx/two_passes.vs", "gfx/38_deferred_shading.fs", false);
             sd2.name = "shd2"; //todo
             shd_id2 = render->create(sd2);
         }
@@ -585,16 +628,12 @@ public:
         mesh2->render(pass2);
         pass2.end_frame();
 
-        render->submit(pass1);
-        render->submit(pass2);
-        render->execute();
+        render->execute({ pass1, pass2 });
     }
-
-    fay::pipeline_id shadow_pipe_id;
 };
 
 SAMPLE_RENDER_APP_IMPL(clear)
 SAMPLE_RENDER_APP_IMPL(triangle)
-SAMPLE_RENDER_APP_IMPL(post_processing)
+SAMPLE_RENDER_APP_IMPL(offscreen)
 SAMPLE_RENDER_APP_IMPL(shadow_map)
 SAMPLE_RENDER_APP_IMPL(defer_rendering)

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\fay\app\window.cpp" />
     <ClCompile Include="..\..\fay\core\ecs.cpp" />
+    <ClCompile Include="..\..\fay\render\define.cpp" />
     <ClCompile Include="..\..\fay\render\device.cpp" />
     <ClCompile Include="..\..\fay\render\render.cpp" />
     <ClCompile Include="..\..\fay\render\backend_opengl.cpp" />

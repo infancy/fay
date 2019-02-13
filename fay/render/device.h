@@ -107,6 +107,12 @@ public:
         execute();
     }
 
+    void execute(std::vector<command_list> cmds_list)
+    {
+        command_queue_ = std::move(cmds_list); // WARNING: clear all cmds before submit.
+        execute();
+    }
+
     void submit(command_list cmds)
     {
         command_queue_.emplace_back(cmds);

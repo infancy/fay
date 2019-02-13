@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_CORE_PLATFORM_H
-#define FAY_CORE_PLATFORM_H
 
 #if defined(_DEBUG)
 // #elif defined(DEBUG)
@@ -38,7 +33,13 @@
 // platform features
 
 #if defined(FAY_IN_LINUX) || defined(FAY_IN_WINDOWS)
-#define FAY_HAVE_MALLOC_H
+	#define FAY_HAVE_MALLOC_H
+#endif
+
+#if defined(FAY_IN_WINDOWS)
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
 #endif
 
 #if defined(FAY_IN_MSVC)
@@ -50,8 +51,6 @@
 	#define FAY_THREAD_LOCAL __thread
 	#define FAY_NO_VTABLE
 #endif
-
-#endif // FAY_CORE_PLATFORM_H
 
 
 

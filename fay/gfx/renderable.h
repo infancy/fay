@@ -22,11 +22,11 @@ public:
 
     renderable_desc desc()
     {
-        return renderable_desc_;
+        return desc_;
     }
 
 private:
-    renderable_desc renderable_desc_{};
+    renderable_desc desc_{};
 };
 
 FAY_SHARED_PTR(renderable)

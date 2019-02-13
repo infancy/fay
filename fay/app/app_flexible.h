@@ -25,6 +25,10 @@ inline buffer_sp create_buffer_sp(render_device* device, const buffer_desc desc)
 
 #define glcheck_errors() CHECK(glGetError() == GL_NO_ERROR)
 
+
+
+// -------------------------------------------------------------------------------------------------
+
 // inline app_desc global_desc;
 
 inline renderable_sp create_raw_renderable(const std::string& model_path, render_device* device)
@@ -65,7 +69,7 @@ inline std::vector<renderable_sp> create_renderables(const std::string& model_pa
     return create_renderables(*model, device);
 }
 
-inline renderable_sp create_single_renderable(const std::string& model_path, render_device* device)
+inline renderable_sp create_renderable(const std::string& model_path, render_device* device)
 {
     auto meshes = create_renderables(model_path, device);
     return std::make_shared<array_mesh>(meshes);
@@ -92,14 +96,13 @@ inline texture_id create_2d(render_device_ptr& device, const std::string& name, 
 
 // -------------------------------------------------------------------------------------------------
 
-inline std::tuple<frame_id, texture_id, texture_id> create_depth_frame(render_device* device, const std::string& name, size_t width, size_t height)
+inline std::tuple<frame_id, texture_id, texture_id> create_depth_frame(const std::string& name, size_t width, size_t height, render_device* device)
 {
     texture_desc desc;
 
     desc.name = name;
     desc.width = width;
     desc.height = height;
-    desc.size = width * height * 4; // byte size
     desc.data = { nullptr };
     desc.type = texture_type::two;
 
@@ -107,19 +110,24 @@ inline std::tuple<frame_id, texture_id, texture_id> create_depth_frame(render_de
     desc.max_filter = filter_mode::nearest;
     desc.wrap_u = wrap_mode::repeat;
     desc.wrap_v = wrap_mode::repeat;
+    desc.mipmap = false;
 
     desc.as_render_target = render_target::color;
-    desc.pixel_format = pixel_format::rgba8;
+    desc.pixel_format = pixel_format::rgba32f; // for debug
+    desc.size = width * height * 16; // byte size
     auto color_id = device->create(desc);
 
     desc.as_render_target = render_target::depth;
     desc.pixel_format = pixel_format::r32f; // float
+    desc.size = width * height * 4; // byte size
     auto ds_id = device->create(desc);
 
     frame_desc fd;
     fd.name = name;
     fd.width = width;
     fd.height = height;
+
+    // TODO: depth frame doesn't need color frame
     fd.render_targets = { { color_id, 0, 0 } };
     fd.depth_stencil = { ds_id, 0, 0 };
     auto frm_id = device->create(fd);
@@ -139,6 +147,7 @@ inline std::tuple<frame_id, texture_id, texture_id> create_frame(render_device* 
     desc.size = width * height * 4; // byte size
     desc.data = { img.data() };
     desc.type = texture_type::two;
+    desc.mipmap = false;
 
     desc.as_render_target = render_target::color;
     desc.pixel_format = pixel_format::rgba8;
@@ -176,6 +185,7 @@ inline std::tuple<frame_id, texture_id, texture_id, texture_id, texture_id> crea
     desc.max_filter = filter_mode::nearest;
     desc.wrap_u = wrap_mode::repeat;
     desc.wrap_v = wrap_mode::repeat;
+    desc.mipmap = false;
 
     desc.as_render_target = render_target::color;
     desc.pixel_format = pixel_format::rgb32f;
@@ -221,9 +231,10 @@ const inline std::string nierautomata_2b = "object/nierautomata_2b/scene.gltf";
 const inline std::string ftm_sketchfab = "object/ftm/ftm_sketchfab.blend";
 const inline std::string Nier_2b_ik_rigged = "object/Nier_2b_ik_rigged/scene.gltf";
 const inline std::string Sponza = "object/sponza/sponza.obj";
+const inline std::string LightBulb = "object/LightBulb/LightBulb.obj";
 
 // model
-struct render_misc
+struct render_data
 {
     const unsigned int Width = 1080;
     const unsigned int Height = 720;
@@ -237,13 +248,13 @@ struct render_misc
     glm::vec3 model_scale{1.f};
 
     // camera_
-    fay::camera camera_{glm::vec3{ 0, 0, 10 }};
+    fay::camera camera_{glm::vec3{ 0, 20, 50 }};
     float lastX = Width / 2.0f;
     float lastY = Height / 2.0f;
     bool firstMouse = true;
 
     //light 
-    glm::vec3 lightPosition = glm::vec3(15, 15, 0); //objectspace light position
+    glm::vec3 lightPosition = glm::vec3(15, 25, 0); // world space light position
     float light_speed = 2.f;
     glm::vec3 light_scale{ 0.5f, 0.5f, 0.5f };
 

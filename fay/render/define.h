@@ -686,8 +686,8 @@ struct pipeline_desc
 
     bool depth_enabled{ true }; // depth_mask_write_enabled
     compare_op depth_compare_op{ compare_op::less_equal };
-
-    bool stencil_enabled{ true }; // WARNNING: default open stencil
+    
+    bool stencil_enabled{ true }; // WARNNING: default open stencil // TODO: def close it
 
     stencil_state stencil_front{ };
     stencil_state stencil_back{ };
@@ -894,6 +894,9 @@ struct command // command/encoder
     low level api: command buffer/list
 */
 
+class renderable;
+class material;
+
 // TODO: rebuild(not reuse it)
 class command_list
 {
@@ -1096,6 +1099,18 @@ public:
 
         return *this;
     }
+
+    /*
+    template<typename Renderable>
+    command_list& draw(Renderable* renderable)
+    {
+        renderable->render(*this);
+
+        return *this;
+    }
+    */
+    command_list& draw(renderable* renderable);
+
     // command_list& draw_indirect();
     // command_list& draw_indexed_indirect();
     // command_list& compute();

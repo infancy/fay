@@ -57,6 +57,9 @@
     <ClCompile Include="..\..\fay\resource\model.cpp">
       <Filter>resouce</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\fay\render\define.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\core\fay.h">
