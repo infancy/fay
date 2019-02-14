@@ -7,6 +7,7 @@
 namespace fay
 {
 
+// remove
 struct AComponent : component
 {
     FAY_COMPONENT_TYPE_HASH(AComponent)
@@ -29,6 +30,7 @@ struct renderable_component : component
 {
     FAY_COMPONENT_TYPE_HASH(renderable_component)
 
+    // TODO: replace sp with raw_ptr???
     renderable_sp renderable{};
 };
 

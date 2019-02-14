@@ -319,7 +319,7 @@ public:
         misc.update_io();
         glm::mat4 view = misc.camera_.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(misc.camera_.Zoom),
-            (float)misc.Width / (float)misc.Height, 0.1f, 10000.0f);
+            (float)desc_.window.width / desc_.window.height, 0.1f, 10000.0f);
 
         // draw
         glm::mat4 model(1.f);
@@ -420,7 +420,7 @@ public:
         misc.update_io();
         glm::mat4 view = misc.camera_.GetViewMatrix();
         glm::mat4 proj = glm::perspective(glm::radians(misc.camera_.Zoom),
-            (float)misc.Width / (float)misc.Height, 0.1f, 10000.0f);
+            (float)desc_.window.width / desc_.window.height, 0.1f, 10000.0f);
 
         light_mesh.update(proj * view, misc.lightPosition);
         glm::mat4 model(1.f);
@@ -568,7 +568,7 @@ public:
         misc.update_io();
         glm::mat4 view = misc.camera_.GetViewMatrix();
         glm::mat4 proj = glm::perspective(glm::radians(misc.camera_.Zoom),
-            (float)misc.Width / (float)misc.Height, 0.1f, 10000.0f);
+            (float)desc_.window.width / desc_.window.height, 0.1f, 10000.0f);
 
         glm::mat4 model(10.f);
         auto MVP = proj * view * model;

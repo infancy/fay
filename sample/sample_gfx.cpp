@@ -78,7 +78,7 @@ public:
         render->execute();
     }
 
-    fay::render_misc misc;
+    fay::render_data misc;
 
     fay::scene_ptr scene_;
     fay::graphics_scene gfx_;

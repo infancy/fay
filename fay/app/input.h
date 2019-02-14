@@ -20,17 +20,17 @@ enum class cursor_mode
 struct single_input
 {
 	// time
-	double time, last, dt;
+    double this_time, last_time, delta_time;
 
 	// mouse
-	double posx, posy; // TODO: rename x, y
+    double x, y;
 	double lastx, lasty;
 	double dx, dy, wheel; // mouse move
 
 	bool left_down, middle_down, right_down; // mouse down
 
 	// keyboard
-    std::array<bool, 256> key{};
+    std::array<bool, 256> key; // {};
 	bool key_q, key_w;
 };
 

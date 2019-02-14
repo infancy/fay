@@ -173,6 +173,10 @@ public:
         glfwSetKeyCallback(window_, glfw_detail::key_callback);
 		glfwSetMouseButtonCallback(window_, glfw_detail::mouse_button_callback);
 		glfwSetScrollCallback(window_, glfw_detail::scroll_callback);
+
+        // init input
+        input_.this_time = glfwGetTime();
+        glfwGetCursorPos(window_, &input_.x, &input_.y);
 	}
 	~window_glfw() override
 	{
@@ -243,22 +247,24 @@ private:
         // and input callbacks associated with those events to be called.
         glfwPollEvents();
 
-        // mouse position
-        input_.lastx = input_.posx; input_.lasty = input_.posy;
-        //if (glfwGetWindowAttrib(window_, GLFW_FOCUSED))
-        glfwGetCursorPos(window_, &input_.posx, &input_.posy);
-        input_.dx = input_.posx - input_.lastx;
-        input_.dy = input_.posy - input_.lasty;
-
         // time
-        input_.last = input_.time;
-        input_.time = glfwGetTime();
-        input_.dt = input_.time - input_.last;
-        if (input_.dt == 0.0)
-            input_.dt = 1.0 / 60.0;	// TODO: depend by screen
+        // TODO: improve
+        input_.last_time = input_.this_time;
+        input_.this_time = glfwGetTime();
+        input_.delta_time = input_.this_time - input_.last_time;
+        if (input_.delta_time == 0.0)
+            input_.delta_time = 1.0 / 60.0;	// TODO: depend by screen
+
+        // mouse
+        input_.lastx = input_.x; input_.lasty = input_.y;
+        //if (glfwGetWindowAttrib(window_, GLFW_FOCUSED))
+        glfwGetCursorPos(window_, &input_.x, &input_.y);
+        input_.dx = input_.x - input_.lastx;
+        // reversed since y-coordinates go from bottom to top but z_xais form out to in
+        input_.dy = input_.lasty - input_.y;
 
         // keyboard
-        // do it by keyboard_cb
+        // TODO: do it by keyboard_cb
         input_.key = {};
 
         if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)

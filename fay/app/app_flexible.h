@@ -217,40 +217,32 @@ inline std::tuple<frame_id, texture_id, texture_id, texture_id, texture_id> crea
 // -------------------------------------------------------------------------------------------------
 // IO
 
-const inline std::string Nier_2b = "object/Nier_2b/2b.obj";
-const inline std::string Box = "object/box/box.obj";
-const inline std::string Blocks = "object/blocks/blocks.obj";
-const inline std::string Rei = "object/Rei/Rei.obj";
-const inline std::string CornellBox = "object/CornellBox/CornellBox.obj";
-const inline std::string Planet = "object/planet/planet.obj";
-const inline std::string Rock = "object/rock/rock.obj";
-const inline std::string Fairy = "object/fairy/fairy.obj";
-const inline std::string Nanosuit = "object/nanosuit/nanosuit.obj";
-const inline std::string silly_dancing = "object/silly_dancing.fbx";
-const inline std::string nierautomata_2b = "object/nierautomata_2b/scene.gltf";
-const inline std::string ftm_sketchfab = "object/ftm/ftm_sketchfab.blend";
-const inline std::string Nier_2b_ik_rigged = "object/Nier_2b_ik_rigged/scene.gltf";
-const inline std::string Sponza = "object/sponza/sponza.obj";
-const inline std::string LightBulb = "object/LightBulb/LightBulb.obj";
+const inline std::string Nier_2b           = "model/Nier_2b/2b.obj";
+const inline std::string Box               = "model/box/box.obj";
+const inline std::string Blocks            = "model/blocks/blocks.obj";
+const inline std::string Rei               = "model/Rei/Rei.obj";
+const inline std::string CornellBox        = "model/CornellBox/CornellBox.obj";
+const inline std::string Planet            = "model/planet/planet.obj";
+const inline std::string Rock              = "model/rock/rock.obj";
+const inline std::string Fairy             = "model/fairy/fairy.obj";
+const inline std::string Nanosuit          = "model/nanosuit/nanosuit.obj";
+const inline std::string silly_dancing     = "model/silly_dancing.fbx";
+const inline std::string nierautomata_2b   = "model/nierautomata_2b/scene.gltf";
+const inline std::string ftm_sketchfab     = "model/ftm/ftm_sketchfab.blend";
+const inline std::string Nier_2b_ik_rigged = "model/Nier_2b_ik_rigged/scene.gltf";
+const inline std::string Sponza            = "model/sponza/sponza.obj";
+const inline std::string LightBulb         = "model/LightBulb/LightBulb.obj";
 
 // model
 struct render_data
 {
-    const unsigned int Width = 1080;
-    const unsigned int Height = 720;
-
-    // timing
-    float currentFrame = 0.f;
-    float deltaTime = 0.f;
-    float lastFrame = 0.f;
-
     // model
     glm::vec3 model_scale{1.f};
 
     // camera_
     fay::camera camera_{glm::vec3{ 0, 20, 50 }};
-    float lastX = Width / 2.0f;
-    float lastY = Height / 2.0f;
+    //float lastX = Width / 2.0f;
+    //float lastY = Height / 2.0f;
     bool firstMouse = true;
 
     //light 
@@ -265,17 +257,7 @@ struct render_data
 
     void update_io(const fay::single_input& io = fay::input)
     {
-        currentFrame = glfwGetTime();
-        deltaTime = (currentFrame - lastFrame) * 4;
-        lastFrame = currentFrame;
-
-        float xpos = io.posx, ypos = io.posy;
-        if (firstMouse) { lastX = xpos; lastY = ypos; firstMouse = false; }
-        float xoffset = xpos - lastX; lastX = xpos;
-        // reversed since y-coordinates go from bottom to top but z_xais form out to in
-        float yoffset = lastY - ypos; lastY = ypos;
-
-        // TODO: io[z], io.x
+        // TODO: io['z'], io.x
         if (io.key[' ']) mouse_move = ++mouse_move % 3;
         if (io.key['z']) mouse_move = 'z';
         if (io.key['x']) mouse_move = 'x';
@@ -283,26 +265,12 @@ struct render_data
 
         if (mouse_move == 'z')
         {
-            if (model_scale.x <= 1.f)
-                model_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * glm::vec3(io.wheel);
-            else
-                model_scale -= glm::vec3(1.f, 1.f, 1.f) * glm::vec3(io.wheel);
-
-            if (model_scale.x < 0.f)
-                model_scale = glm::vec3(0.1f, 0.1f, 0.1f);
-            else if (model_scale.x > 10.f)
-                model_scale = glm::vec3(10.f, 10.f, 10.f);
-
-            camera_.ProcessMouseMovement(xoffset, yoffset);
-            if (io.key['w']) camera_.ProcessKeyboard(fay::FORWARD, deltaTime);
-            if (io.key['s']) camera_.ProcessKeyboard(fay::BACKWARD, deltaTime);
-            if (io.key['a']) camera_.ProcessKeyboard(fay::LEFT, deltaTime);
-            if (io.key['d']) camera_.ProcessKeyboard(fay::RIGHT, deltaTime);
-            //camera_.ProcessMouseScroll(io.wheel); 
+            // camera
+            camera_.on_input_event(io);
         }
         else if (mouse_move == 'x')
         {
-
+            // light
             light_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * glm::vec3(io.wheel);
             if (light_scale.x < 0.f)
                 light_scale = glm::vec3(0.1f, 0.1f, 0.1f);
@@ -315,16 +283,29 @@ struct render_data
             else if (light_speed >= 10.f)
                 light_speed = 10.f;
 
-            if (io.key['w']) lightPosition.z -= deltaTime * light_speed;
-            if (io.key['s']) lightPosition.z += deltaTime * light_speed;
-            if (io.key['a']) lightPosition.x -= deltaTime * light_speed;
-            if (io.key['d']) lightPosition.x += deltaTime * light_speed;
-            if (io.left_down) lightPosition.y += deltaTime * light_speed;
-            if (io.right_down) lightPosition.y -= deltaTime * light_speed;
+            if (io.key['w']) lightPosition.z -= io.delta_time * light_speed;
+            if (io.key['s']) lightPosition.z += io.delta_time * light_speed;
+            if (io.key['a']) lightPosition.x -= io.delta_time * light_speed;
+            if (io.key['d']) lightPosition.x += io.delta_time * light_speed;
+            if (io.left_down) lightPosition.y += io.delta_time * light_speed;
+            if (io.right_down) lightPosition.y -= io.delta_time * light_speed;
 
             // if (io.MouseDown[2]) clear_color = ImColor(255, 255, 255);
         }
         else if (mouse_move == 'c')
+        {
+            // model
+            if (model_scale.x <= 1.f)
+                model_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * glm::vec3(io.wheel);
+            else
+                model_scale -= glm::vec3(1.f, 1.f, 1.f) * glm::vec3(io.wheel);
+
+            if (model_scale.x < 0.f)
+                model_scale = glm::vec3(0.1f, 0.1f, 0.1f);
+            else if (model_scale.x > 10.f)
+                model_scale = glm::vec3(10.f, 10.f, 10.f);
+        }
+        else if (mouse_move == 'v')
         {
             // GUI
         }

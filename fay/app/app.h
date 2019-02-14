@@ -85,7 +85,6 @@ private:
                 LOG(ERROR) << "error";
                 break;
         }
-
         render = std::make_unique<render_device>(desc_.render);
 	}
 

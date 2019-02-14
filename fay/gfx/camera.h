@@ -128,6 +128,21 @@ public:
 			Zoom = ZOOM;
 	}
 
+    bool on_input_event(const fay::single_input& io)
+    {
+        // if(active)
+        ProcessMouseMovement(io.dx, io.dy);
+        
+        if (io.key['w']) ProcessKeyboard(fay::FORWARD, io.delta_time);
+        if (io.key['s']) ProcessKeyboard(fay::BACKWARD, io.delta_time);
+        if (io.key['a']) ProcessKeyboard(fay::LEFT, io.delta_time);
+        if (io.key['d']) ProcessKeyboard(fay::RIGHT, io.delta_time);
+        
+        //ProcessMouseScroll(io.wheel);
+
+        return true;
+    }
+
 private:
 	// Calculates the front vector from the camera's (updated) Eular Angles
 	void updateCameraVectors()
