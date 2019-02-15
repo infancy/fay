@@ -22,16 +22,22 @@ struct single_input
 	// time
     double this_time, last_time, delta_time;
 
-	// mouse
+	// mouse position
     double x, y;
 	double lastx, lasty;
-	double dx, dy, wheel; // mouse move
+    double dx, dy;
 
+    // mouse button
+    double wheel;
 	bool left_down, middle_down, right_down; // mouse down
 
 	// keyboard
     std::array<bool, 256> key; // {};
-	bool key_q, key_w;
+
+    bool operator[](char ch) const
+    {
+        return key[ch];
+    }
 };
 
 // TODO: remove it

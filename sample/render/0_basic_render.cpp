@@ -9,16 +9,16 @@
 class clear : public fay::app
 {
 public:
-    clear(const fay::app_desc& desc) : fay::app(desc)
+    clear(const fay::app_desc& _desc) : fay::app(_desc)
     {
-        desc_.window.title = "clear";
+        desc.window.title = "clear";
     }
 
     void setup() override
     {
     }
 
-    void update() override
+    void render() override
     {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -36,9 +36,9 @@ class triangle : public fay::app
 {
 public:
     // using fay::app;
-    triangle(const fay::app_desc& desc) : fay::app(desc)
+    triangle(const fay::app_desc& _desc) : fay::app(_desc)
     {
-        desc_.window.title = "triangle";
+        desc.window.title = "triangle";
     }
 
     void setup() override
@@ -62,7 +62,7 @@ public:
 
             bd0.layout = { {fay::attribute_usage::position, fay::attribute_format::float3} };
         }
-        auto line_strip_vb = render->create(bd0);
+        auto line_strip_vb = device->create(bd0);
 
 
 
@@ -94,11 +94,11 @@ public:
             id.size = 6;
             id.data = indices;
         }
-        auto triangle_vb = render->create(bd);
-        auto triangle_ib = render->create(id);
+        auto triangle_vb = device->create(bd);
+        auto triangle_ib = device->create(id);
 
         fay::image img("texture/awesomeface.png", true);
-        auto triangle_tbo = create_2d(this->render, "hello", img);
+        auto triangle_tbo = create_2d(this->device, "hello", img);
 
         auto vs_code = R"(
                 #version 330 core
@@ -140,7 +140,7 @@ public:
             )";
         fay::shader_desc sd = fay::scan_shader_program(vs_code, fs_code, true);
         sd.name = "shd"; //todo
-        auto shd_id = render->create(sd);
+        auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
 
@@ -148,13 +148,13 @@ public:
             pd.name = "line_strip";
             pd.primitive_type = fay::primitive_type::line_strip;
         }
-        auto pipe_id = render->create(pd);
+        auto pipe_id = device->create(pd);
 
         {
             pd.name = "triangles";
             pd.primitive_type = fay::primitive_type::triangles;
         }
-        auto pipe2_id = render->create(pd);
+        auto pipe2_id = device->create(pd);
 
         paras.a = { 1.f, 0.f, 0.f, 1.f };
         paras.b = { 0.f, 1.f, 0.f, 1.f };
@@ -181,21 +181,21 @@ public:
                 .end_frame();
         }
 
-        // render->submit(pass1);
-        // render->submit(pass2);
+        // device->submit(pass1);
+        // device->submit(pass2);
         // device->complie(pass);
 
         // uncomment this call to draw in wireframe polygons.
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
 
-    void update() override
+    void render() override
     {
-       // render->draw(pass1);
-       // render->draw(pass2);
+       // device->draw(pass1);
+       // device->draw(pass2);
         auto cmds = pass1;
-        render->submit(pass1);
-        render->execute();
+        device->submit(pass1);
+        device->execute();
     }
 
     fay::buffer_id buf_id;
@@ -204,58 +204,16 @@ public:
     fay::command_list pass1, pass2;
 };
 
-class light : public fay::renderable
+class two_passes : public fay::app
 {
 public:
-    void setup(fay::render_device* device)
-    {
-        light_mesh = fay::create_raw_renderable(fay::Box, device);
+    fay::camera camera{ glm::vec3{ 0, 20, 50 } };
+    fay::camera camera2{ glm::vec3{ 0, 20, 50 } };
 
-        fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs");
-        sd.name = "light_shd";
-        light_shd_id = device->create(sd);
+    fay::light light;
 
-        fay::pipeline_desc pd;
-        {
-            pd.name = "light_pipe";
-            pd.stencil_enabled = false;
-
-            light_pipe_id = device->create(pd);
-        }
-    }
-
-    void update(glm::mat4 VP, glm::vec3 lightPosition)
-    {
-        glm::mat4 model = glm::mat4(1.f);
-        model = glm::translate(model, lightPosition);
-
-        this->MVP = VP * model;
-    }
-
-    void render(fay::command_list& cmd) override
-    {
-        cmd
-            .apply_pipeline(light_pipe_id)
-            .apply_shader(light_shd_id)
-            .bind_uniform("MVP", MVP)
-            .bind_uniform("bAlbedo", false)
-            .draw(light_mesh.get());
-    }
-
-private:
-    fay::renderable_sp light_mesh;
-    fay::shader_id light_shd_id;
-    fay::pipeline_id light_pipe_id;
-
-    glm::mat4 MVP;
-
-};
-
-class two_passes
-{
-public:
-    fay::render_data misc;
-    light light_mesh;
+    fay::transform transform;
+    fay::transform transform2;
 
     fay::buffer_id vbo;
     fay::buffer_id ibo;
@@ -278,52 +236,65 @@ public:
 
     render_paras paras;
     //fay::command_list pass1, pass2;
+
+    using fay::app::app;
+
+    void add_update_items()
+    {
+        add_update_items_(
+            { &camera, &camera2 },
+            { &light },
+            { &transform, &transform2 }
+        );
+    }
 };
 
 // post_processing
-class offscreen : public fay::app, public two_passes
+class offscreen : public two_passes
 {
 public:
     // using fay::app;
-    offscreen(const fay::app_desc& desc) : fay::app(desc)
+    offscreen(const fay::app_desc& _desc) : two_passes(_desc)
     {
-        desc_.window.title = "post_proc";
+        desc.window.title = "post_proc";
     }
 
     void setup() override
     {
-        mesh = fay::create_raw_renderable("object/box/box.obj", render.get());
+        add_update_items();
+
+        mesh = fay::create_raw_renderable("object/box/box.obj", device.get());
 
         fay::image img("texture/awesomeface.png", true);
-        tex_id = create_2d(this->render, "hello", img);
+        tex_id = create_2d(this->device, "hello", img);
 
         fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs");
         sd.name = "shd"; //todo
-        shd_id = render->create(sd);
+        shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
         {
             pd.name = "triangles";
         }
-        pipe_id = render->create(pd);
+        pipe_id = device->create(pd);
 
-        auto frame = fay::create_frame(render.get(), "offscreen_frm", 512, 512);
+        auto frame = fay::create_frame(device.get(), "offscreen_frm", 512, 512);
 
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
         offscreen_ds_id = std::get<2>(frame);
     }
 
-    void update() override
+    void render() override
     {
-        misc.update_io();
-        glm::mat4 view = misc.camera_.GetViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(misc.camera_.Zoom),
-            (float)desc_.window.width / desc_.window.height, 0.1f, 10000.0f);
+        glm::mat4 view = camera.view_matrix();
+
+        // move to camera
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
+            (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 
         // draw
-        glm::mat4 model(1.f);
-        auto MVP = projection * view * model;
+        auto MVP = projection * view * transform.model_matrix();
 
         fay::command_list pass1, pass2;
 
@@ -353,41 +324,43 @@ public:
             .draw(mesh.get())
             .end_frame();
 
-        render->execute({ pass1, pass2});
+        device->execute({ pass1, pass2});
     }
 };
 
-class shadow_map : public fay::app, public two_passes
+class shadow_map : public two_passes
 {
 public:
     // using fay::app;
-    shadow_map(const fay::app_desc& desc) : fay::app(desc)
+    shadow_map(const fay::app_desc& _desc) : two_passes(_desc)
     {
-        desc_.window.title = "shadow_map";
+        desc.window.title = "shadow_map";
     }
 
     void setup() override
     {
-        light_mesh.setup(render.get());
+        add_update_items();
 
-        mesh = fay::create_raw_renderable(fay::Blocks, render.get());
+        //light_mesh.setup(device.get());
+
+        mesh = fay::create_raw_renderable(fay::Blocks, device.get());
 
         {
             fay::image img("texture/awesomeface.png", true);
-            tex_id = create_2d(this->render, "hello", img);
+            tex_id = create_2d(this->device, "hello", img);
         }
 
         {
             fay::shader_desc sd = fay::scan_shader_program("gfx/32_shadow_map.vs", "gfx/32_shadow_map.fs", false);
             sd.name = "shd"; //todo
-            shd_id = render->create(sd);
+            shd_id = device->create(sd);
         }
 
         {
             //fay::shader_desc sd2 = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.vs", false);
             fay::shader_desc sd2 = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs", false);
             sd2.name = "shd2"; //todo
-            shd_id2 = render->create(sd2);
+            shd_id2 = device->create(sd2);
         }
 
         {
@@ -397,7 +370,7 @@ public:
                 pd.cull_mode = fay::cull_mode::front;
                 pd.stencil_enabled = false;
             }
-            pipe_id = render->create(pd);
+            pipe_id = device->create(pd);
         }
         {
             fay::pipeline_desc pd;
@@ -405,26 +378,23 @@ public:
                 pd.name = "pipe2";
                 pd.cull_mode = fay::cull_mode::none;
             }
-            pipe_id2 = render->create(pd);
+            pipe_id2 = device->create(pd);
         }
 
-        auto frame = fay::create_depth_frame("depth_frm", 1024, 1024, render.get());
+        auto frame = fay::create_depth_frame("depth_frm", 1024, 1024, device.get());
 
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
         offscreen_ds_id  = std::get<2>(frame);
     }
 
-    void update() override
+    void render() override
     {
-        misc.update_io();
-        glm::mat4 view = misc.camera_.GetViewMatrix();
-        glm::mat4 proj = glm::perspective(glm::radians(misc.camera_.Zoom),
-            (float)desc_.window.width / desc_.window.height, 0.1f, 10000.0f);
+        glm::mat4 view = camera.view_matrix();
+        glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom),
+            (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 
-        light_mesh.update(proj * view, misc.lightPosition);
-        glm::mat4 model(1.f);
-        auto MVP = proj * view * model;
+        //light_mesh.render(proj * view, misc.lightPosition);
 
         fay::command_list pass1, pass2;
 
@@ -433,7 +403,7 @@ public:
         glm::mat4 lightProj = glm::perspective(glm::radians(120.f),
             1.f / 1.f, 10.f, 1024.f);
         glm::mat4 lightView = glm::lookAt(
-            misc.lightPosition, glm::vec3(0.0f), glm::vec3(-1.f, 1.f, 0.f));
+            light.position(), glm::vec3(0.0f), glm::vec3(-1.f, 1.f, 0.f));
         glm::mat4 lightSpace = lightProj * lightView;
 
         // depth map
@@ -444,7 +414,7 @@ public:
             .clear_stencil()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
-            .bind_uniform("MVP", lightSpace * model)
+            .bind_uniform("MVP", lightSpace * light.model_matrix())
             .draw(mesh.get())
             .end_frame();
 
@@ -453,26 +423,26 @@ public:
             //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
             .bind_uniform("Proj", proj)
             .bind_uniform("View", view)
-            .bind_uniform("Model", model)
+            .bind_uniform("Model", transform.model_matrix())
             .bind_uniform("LightSpace", lightSpace)
-            .bind_uniform("LightPos", misc.lightPosition)
-            .bind_uniform("ViewPos", misc.camera_.Position)
+            .bind_uniform("LightPos", light.position())
+            .bind_uniform("ViewPos", camera.Position)
             .bind_textures({ tex_id, offscreen_ds_id })
             .draw(mesh.get())
-            .draw(&light_mesh) // with it's state
+            //.draw(&light_mesh) // with it's state
             .end_frame();
 
-        render->execute({ pass1, pass2 });
+        device->execute({ pass1, pass2 });
     }
 };
 
-class defer_rendering : public fay::app, public two_passes
+class defer_rendering : public two_passes
 {
 public:
     // using fay::app;
-    defer_rendering(const fay::app_desc& desc) : fay::app(desc)
+    defer_rendering(const fay::app_desc& _desc) : two_passes(_desc)
     {
-        desc_.window.title = "post_proc";
+        desc.window.title = "post_proc";
 
 
     }
@@ -484,6 +454,8 @@ public:
 
     void setup() override
     {
+        add_update_items();
+
         objectPositions.push_back(glm::vec3(-3.0, -3.0, -3.0));
         objectPositions.push_back(glm::vec3(0.0, -3.0, -3.0));
         objectPositions.push_back(glm::vec3(3.0, -3.0, -3.0));
@@ -509,8 +481,8 @@ public:
             lightColors.push_back(glm::vec3(rColor, gColor, bColor));
         }
 
-        mesh  = fay::create_renderable(fay::nierautomata_2b, render.get());
-        mesh2 = fay::create_raw_renderable(fay::Box, render.get());
+        mesh  = fay::create_renderable(fay::nierautomata_2b, device.get());
+        mesh2 = fay::create_raw_renderable(fay::Box, device.get());
 
         // quad
         std::vector<glm::ivec3> vb{ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 1, 0 },{ 0, 1, 0 } };
@@ -518,20 +490,20 @@ public:
 
         {
             fay::image img("texture/awesomeface.png", true);
-            tex_id = create_2d(this->render, "hello", img);
+            tex_id = create_2d(this->device, "hello", img);
         }
 
         {
             fay::shader_desc sd = fay::scan_shader_program("gfx/30_phong_shading.vs", "gfx/38_g_buffer.fs", false);
             sd.name = "shd"; //todo
-            shd_id = render->create(sd);
+            shd_id = device->create(sd);
         }
 
         {
             //fay::shader_desc sd2 = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.vs", false);
             fay::shader_desc sd2 = fay::scan_shader_program("gfx/two_passes.vs", "gfx/38_deferred_shading.fs", false);
             sd2.name = "shd2"; //todo
-            shd_id2 = render->create(sd2);
+            shd_id2 = device->create(sd2);
         }
 
         {
@@ -540,7 +512,7 @@ public:
                 pd.name = "shadow_pipe";
                 pd.cull_mode = fay::cull_mode::none;
             }
-            pipe_id = render->create(pd);
+            pipe_id = device->create(pd);
         }
         {
             fay::pipeline_desc pd;
@@ -548,10 +520,10 @@ public:
                 pd.name = "pipe2";
                 pd.cull_mode = fay::cull_mode::none;
             }
-            pipe_id2 = render->create(pd);
+            pipe_id2 = device->create(pd);
         }
 
-        auto frame = fay::create_Gbuffer(render.get(), "offscreen_frm", 1024, 1024);
+        auto frame = fay::create_Gbuffer(device.get(), "offscreen_frm", 1024, 1024);
 
         offscreen_frm_id  = std::get<0>(frame);
         offscreen_tex_id  = std::get<1>(frame);
@@ -559,19 +531,16 @@ public:
         offscreen_tex_id3 = std::get<3>(frame);
         offscreen_ds_id   = std::get<4>(frame);
 
-        misc.camera_ = fay::camera{ glm::vec3{ 0, 0, 1.5 } };
+        camera = fay::camera{ glm::vec3{ 0, 0, 1.5 } };
     }
 
-    void update() override
+    void render() override
     {
+        glm::mat4 view = camera.view_matrix();
+        glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom),
+            (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 
-        misc.update_io();
-        glm::mat4 view = misc.camera_.GetViewMatrix();
-        glm::mat4 proj = glm::perspective(glm::radians(misc.camera_.Zoom),
-            (float)desc_.window.width / desc_.window.height, 0.1f, 10000.0f);
-
-        glm::mat4 model(10.f);
-        auto MVP = proj * view * model;
+        auto MVP = proj * view * transform.model_matrix();
 
         fay::command_list pass1, pass2;
 
@@ -610,11 +579,11 @@ public:
             .bind_texture(offscreen_tex_id2, "gNormal")
             .bind_texture(offscreen_tex_id3, "gAlbedoSpec")
             .bind_uniform("MVP", MVP)
-            .bind_uniform("viewPos", misc.camera_.Position);
+            .bind_uniform("viewPos", camera.Position);
 
         for (unsigned int i = 0; i < lightPositions.size(); i++)
         {
-            // update attenuation parameters and calculate radius
+            // render attenuation parameters and calculate radius
             const float constant = 1.0; // note that we don't send this to the shader, we assume it is always 1.0 (in our case)
             const float linear = 0.7;
             const float quadratic = 1.8;
@@ -628,7 +597,7 @@ public:
         mesh2->render(pass2);
         pass2.end_frame();
 
-        render->execute({ pass1, pass2 });
+        device->execute({ pass1, pass2 });
     }
 };
 

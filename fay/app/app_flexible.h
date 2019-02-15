@@ -7,6 +7,7 @@
 #include "fay/core/config.h"
 #include "fay/core/fay.h"
 #include "fay/gfx/camera.h"
+#include "fay/gfx/light.h"
 #include "fay/gfx/mesh.h"
 #include "fay/render/device.h"
 #include "fay/render/shader.h"
@@ -232,89 +233,6 @@ const inline std::string ftm_sketchfab     = "model/ftm/ftm_sketchfab.blend";
 const inline std::string Nier_2b_ik_rigged = "model/Nier_2b_ik_rigged/scene.gltf";
 const inline std::string Sponza            = "model/sponza/sponza.obj";
 const inline std::string LightBulb         = "model/LightBulb/LightBulb.obj";
-
-// model
-struct render_data
-{
-    // model
-    glm::vec3 model_scale{1.f};
-
-    // camera_
-    fay::camera camera_{glm::vec3{ 0, 20, 50 }};
-    //float lastX = Width / 2.0f;
-    //float lastY = Height / 2.0f;
-    bool firstMouse = true;
-
-    //light 
-    glm::vec3 lightPosition = glm::vec3(15, 25, 0); // world space light position
-    float light_speed = 2.f;
-    glm::vec3 light_scale{ 0.5f, 0.5f, 0.5f };
-
-    // some flag
-    bool some_flag = false;
-    char mouse_move = 'z';
-    int render_state = 1;
-
-    void update_io(const fay::single_input& io = fay::input)
-    {
-        // TODO: io['z'], io.x
-        if (io.key[' ']) mouse_move = ++mouse_move % 3;
-        if (io.key['z']) mouse_move = 'z';
-        if (io.key['x']) mouse_move = 'x';
-        if (io.key['c']) mouse_move = 'c';
-
-        if (mouse_move == 'z')
-        {
-            // camera
-            camera_.on_input_event(io);
-        }
-        else if (mouse_move == 'x')
-        {
-            // light
-            light_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * glm::vec3(io.wheel);
-            if (light_scale.x < 0.f)
-                light_scale = glm::vec3(0.1f, 0.1f, 0.1f);
-            else if (light_scale.x > 1.f)
-                light_scale = glm::vec3(1.f, 1.f, 1.f);
-
-            light_speed -= io.wheel;
-            if (light_speed <= 0.f)
-                light_speed = 0.f;
-            else if (light_speed >= 10.f)
-                light_speed = 10.f;
-
-            if (io.key['w']) lightPosition.z -= io.delta_time * light_speed;
-            if (io.key['s']) lightPosition.z += io.delta_time * light_speed;
-            if (io.key['a']) lightPosition.x -= io.delta_time * light_speed;
-            if (io.key['d']) lightPosition.x += io.delta_time * light_speed;
-            if (io.left_down) lightPosition.y += io.delta_time * light_speed;
-            if (io.right_down) lightPosition.y -= io.delta_time * light_speed;
-
-            // if (io.MouseDown[2]) clear_color = ImColor(255, 255, 255);
-        }
-        else if (mouse_move == 'c')
-        {
-            // model
-            if (model_scale.x <= 1.f)
-                model_scale -= glm::vec3(0.1f, 0.1f, 0.1f) * glm::vec3(io.wheel);
-            else
-                model_scale -= glm::vec3(1.f, 1.f, 1.f) * glm::vec3(io.wheel);
-
-            if (model_scale.x < 0.f)
-                model_scale = glm::vec3(0.1f, 0.1f, 0.1f);
-            else if (model_scale.x > 10.f)
-                model_scale = glm::vec3(10.f, 10.f, 10.f);
-        }
-        else if (mouse_move == 'v')
-        {
-            // GUI
-        }
-        else
-        {
-            LOG(ERROR) << "shouldn't be here";
-        }
-    }
-};
 
 struct render_paras
 {

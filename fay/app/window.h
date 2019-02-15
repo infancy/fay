@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_APP_WINDOW_H
-#define FAY_APP_WINDOW_H
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -96,9 +91,6 @@ inline void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 inline void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-	// TODO
-	input_.left_down = input_.middle_down = input_.right_down = false;
-
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 		input_.left_down = true;
 	else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
@@ -109,7 +101,6 @@ inline void mouse_button_callback(GLFWwindow* window, int button, int action, in
 
 inline void scroll_callback(GLFWwindow* window, double /*xoffset*/, double yoffset)
 {
-	// ???
 	input_.wheel = yoffset;
 }
 
@@ -243,6 +234,11 @@ private:
 
     void update_input()
     {
+        // reset value
+        input_.left_down = input_.middle_down = input_.right_down = false;
+        input_.wheel = 0.0;
+        input_.key = {};
+
         // Processing events will cause the window
         // and input callbacks associated with those events to be called.
         glfwPollEvents();
@@ -265,8 +261,6 @@ private:
 
         // keyboard
         // TODO: do it by keyboard_cb
-        input_.key = {};
-
         if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
             input_.key['w'] = true; //input_.key == 'w';
         /*else*/if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
@@ -302,5 +296,3 @@ class window_imgui
 };
 
 } // namespace fay
-
-#endif // FAY_APP_WINDOW_H

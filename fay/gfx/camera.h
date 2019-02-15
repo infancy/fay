@@ -12,23 +12,12 @@ namespace fay
 // TODO
 // eunum {ui, role, terrain, scene};
 
-// Defines several possible options for camera movement. Used as abstraction to 
-// stay away from window-system specific input methods
-enum Camera_Movement 
-{
-	FORWARD,
-	BACKWARD,
-	LEFT,
-	RIGHT
-};
-
 // Default camera values
 static const float YAW = -90.0f;
 static const float PITCH = 0.0f;
-static const float SPEED = 2.5f;
-static const float SENSITIVTY = 0.1f;
+static const float SPEED = 10.f;
+static const float SENSITIVTY = 0.2f;
 static const float ZOOM = 90.0f;
-
 
 // An abstract camera class that processes input and calculates the corresponding 
 //Eular Angles, Vectors and Matrices for use in OpenGL
@@ -66,7 +55,8 @@ public:
 		updateCameraVectors();
 	}
 	// Constructor with scalar values
-	camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
+	camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) 
+        : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
 	{
 		Position = glm::vec3(posX, posY, posZ);
 		WorldUp = glm::vec3(upX, upY, upZ);
@@ -76,23 +66,9 @@ public:
 	}
 
 	// Returns the view matrix calculated using Eular Angles and the LookAt Matrix
-	glm::mat4 GetViewMatrix()
+	glm::mat4 view_matrix() const
 	{
 		return glm::lookAt(Position, Position + Front, Up);
-	}
-
-	// Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-	void ProcessKeyboard(Camera_Movement direction, float deltaTime)
-	{
-		float velocity = MovementSpeed * deltaTime;
-		if (direction == FORWARD)
-			Position += Front * velocity;
-		if (direction == BACKWARD)
-			Position -= Front * velocity;
-		if (direction == LEFT)
-			Position -= Right * velocity;
-		if (direction == RIGHT)
-			Position += Right * velocity;
 	}
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -107,37 +83,38 @@ public:
 		// Make sure that when pitch is out of bounds, screen doesn't get flipped
 		if (constrainPitch)
 		{
-			if (Pitch > 89.0f)
-				Pitch = 89.0f;
-			if (Pitch < -89.0f)
-				Pitch = -89.0f;
+            std::clamp(Pitch, -89.f, 89.f);
 		}
 
 		// Update Front, Right and Up Vectors using the updated Eular angles
 		updateCameraVectors();
-	}
+	}	
+    
+    // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
+    // FORWARD, BACKWARD, LEFT, RIGHT
+    void ProcessKeyboard(std::array<char, 4> direction, float deltaTime)
+    {
+        float velocity = MovementSpeed * deltaTime;
+        if (direction[0]) Position += Front * velocity;
+        if (direction[1]) Position -= Front * velocity;
+        if (direction[2]) Position -= Right * velocity;
+        if (direction[3]) Position += Right * velocity;
+    }
 
 	// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
 	void ProcessMouseScroll(float yoffset)
 	{
-		if (Zoom >= 1.0f && Zoom <= ZOOM)
+		if (Zoom >= 1.f && Zoom <= ZOOM)
 			Zoom -= yoffset;
-		if (Zoom <= 1.0f)
-			Zoom = 1.0f;
-		if (Zoom >= ZOOM)
-			Zoom = ZOOM;
+
+        std::clamp(Zoom, 1.f, ZOOM);
 	}
 
     bool on_input_event(const fay::single_input& io)
     {
         // if(active)
         ProcessMouseMovement(io.dx, io.dy);
-        
-        if (io.key['w']) ProcessKeyboard(fay::FORWARD, io.delta_time);
-        if (io.key['s']) ProcessKeyboard(fay::BACKWARD, io.delta_time);
-        if (io.key['a']) ProcessKeyboard(fay::LEFT, io.delta_time);
-        if (io.key['d']) ProcessKeyboard(fay::RIGHT, io.delta_time);
-        
+        ProcessKeyboard({ io.key['w'], io.key['s'], io.key['a'], io.key['d'] }, io.delta_time);
         //ProcessMouseScroll(io.wheel);
 
         return true;

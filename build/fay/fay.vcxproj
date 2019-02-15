@@ -61,6 +61,7 @@
     <ClInclude Include="..\..\fay\core\utility.h" />
     <ClInclude Include="..\..\fay\gfx\camera.h" />
     <ClInclude Include="..\..\fay\gfx\gfx_scene.h" />
+    <ClInclude Include="..\..\fay\gfx\light.h" />
     <ClInclude Include="..\..\fay\gfx\material.h" />
     <ClInclude Include="..\..\fay\gfx\mesh.h" />
     <ClInclude Include="..\..\fay\gfx\renderable.h" />

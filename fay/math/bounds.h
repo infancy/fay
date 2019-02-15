@@ -1,7 +1,9 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
+#include "fay/app/input.h"
 #include "fay/core/fay.h"
 #include "fay/math/math.h"
 
@@ -22,6 +24,51 @@ enum class bounds_corner : uint32_t
     VI   = 0b010, // (-, +, -)
     VII  = 0b000, // (-, -, -) min
     VIII = 0b100, // (+, -, -)
+};
+
+// TODO: move to math.transform
+struct transform
+{
+    glm::vec3 position{ 0.f };
+    //quat rotation{ 1.f, 0.f, 0.f, 0.f };
+    glm::vec3 scale{ 1.f };
+
+    float speed_ = 2.f;
+
+    glm::mat4 model_matrix() const
+    {
+        glm::mat4 model{ 1.f };
+
+        model = glm::translate(model, this->position);
+        model = glm::scale(model, this->scale);
+
+        return model;
+    }
+
+    bool on_input_event(const fay::single_input& io)
+    {
+        // if(active)
+
+        if (io['w']) position.z -= io.delta_time * speed_;
+        if (io['s']) position.z += io.delta_time * speed_;
+        if (io['a']) position.x -= io.delta_time * speed_;
+        if (io['d']) position.x += io.delta_time * speed_;
+        if (io.left_down) position.y += io.delta_time * speed_;
+        if (io.right_down) position.y -= io.delta_time * speed_;
+
+        if (scale.x <= 1.f)
+            scale -= glm::vec3(0.1f, 0.1f, 0.1f) * glm::vec3(io.wheel);
+        else
+            scale -= glm::vec3(1.f, 1.f, 1.f) * glm::vec3(io.wheel);
+
+        if (scale.x < 0.f)
+            scale = glm::vec3(0.1f, 0.1f, 0.1f);
+        else if (scale.x > 10.f)
+            scale = glm::vec3(10.f, 10.f, 10.f);
+        //std::clamp(scale, glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(10.f, 10.f, 10.f));
+
+        return true;
+    }
 };
 
 class bounds2

@@ -140,7 +140,8 @@ inline mat<4, 4, T> scale(const vec<3, T>& v)
 {
 	T x = v.x, y = v.y, z = v.z;
 
-	mat<4, 4, T> t{
+	mat<4, 4, T> t
+    {
 		x, 0, 0, 0,
 		0, y, 0, 0,
 		0, 0, z, 0,
