@@ -207,13 +207,24 @@ public:
 class two_passes : public fay::app
 {
 public:
-    fay::camera camera{ glm::vec3{ 0, 20, 50 } };
-    fay::camera camera2{ glm::vec3{ 0, 20, 50 } };
-
-    fay::light light;
-
-    fay::transform transform;
-    fay::transform transform2;
+    fay::camera cameras_[2]
+    {
+        fay::camera{ glm::vec3{  0, 20, 50 } },
+        fay::camera{ glm::vec3{ 100, 50, 0 } },
+    };
+    fay::light lights_[2]
+    {
+        fay::light{ glm::vec3{  0, 30, 30 } },
+        fay::light{ glm::vec3{ 0, 0, 0 } },
+    };
+    fay::transform transforms_[2]
+    {
+        fay::transform{ glm::vec3{ 0, 0, 0 } },
+        fay::transform{ glm::vec3{ 0, 0, 0 } },
+    };
+    const fay::camera* camera{ cameras_ };
+    const fay::light* light{ lights_ };
+    const fay::transform* transform{ transforms_ };
 
     fay::buffer_id vbo;
     fay::buffer_id ibo;
@@ -237,15 +248,29 @@ public:
     render_paras paras;
     //fay::command_list pass1, pass2;
 
+public:
     using fay::app::app;
 
     void add_update_items()
     {
-        add_update_items_(
-            { &camera, &camera2 },
-            { &light },
-            { &transform, &transform2 }
+        add_update_items_
+        (
+            { cameras_, cameras_ + 1 },
+            { lights_, lights_+1 },
+            { transforms_, transforms_ + 1 }
         );
+    }
+
+    void update(const fay::single_input& io) override
+    {
+        static size_t current_item_{};
+        //if (io['0']) current_item_ = 0;
+        if (io['1']) current_item_ = 0;
+        if (io['2']) current_item_ = 1;
+
+        camera = cameras_ + current_item_;
+        light = lights_ + current_item_;
+        transform = transforms_ + current_item_;
     }
 };
 
@@ -287,14 +312,14 @@ public:
 
     void render() override
     {
-        glm::mat4 view = camera.view_matrix();
+        glm::mat4 view = camera->view_matrix();
 
         // move to camera
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
+        glm::mat4 projection = glm::perspective(glm::radians(camera->zoom()),
             (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 
         // draw
-        auto MVP = projection * view * transform.model_matrix();
+        auto MVP = projection * view * transform->model_matrix();
 
         fay::command_list pass1, pass2;
 
@@ -390,8 +415,8 @@ public:
 
     void render() override
     {
-        glm::mat4 view = camera.view_matrix();
-        glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom),
+        glm::mat4 view = camera->view_matrix();
+        glm::mat4 proj = glm::perspective(glm::radians(camera->zoom()),
             (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 
         //light_mesh.render(proj * view, misc.lightPosition);
@@ -403,7 +428,7 @@ public:
         glm::mat4 lightProj = glm::perspective(glm::radians(120.f),
             1.f / 1.f, 10.f, 1024.f);
         glm::mat4 lightView = glm::lookAt(
-            light.position(), glm::vec3(0.0f), glm::vec3(-1.f, 1.f, 0.f));
+            light->position(), glm::vec3(0.0f), glm::vec3(-1.f, 1.f, 0.f));
         glm::mat4 lightSpace = lightProj * lightView;
 
         // depth map
@@ -414,7 +439,7 @@ public:
             .clear_stencil()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
-            .bind_uniform("MVP", lightSpace * light.model_matrix())
+            .bind_uniform("MVP", lightSpace * light->model_matrix())
             .draw(mesh.get())
             .end_frame();
 
@@ -423,10 +448,10 @@ public:
             //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
             .bind_uniform("Proj", proj)
             .bind_uniform("View", view)
-            .bind_uniform("Model", transform.model_matrix())
+            .bind_uniform("Model", transform->model_matrix())
             .bind_uniform("LightSpace", lightSpace)
-            .bind_uniform("LightPos", light.position())
-            .bind_uniform("ViewPos", camera.Position)
+            .bind_uniform("LightPos", light->position())
+            .bind_uniform("ViewPos", camera->position())
             .bind_textures({ tex_id, offscreen_ds_id })
             .draw(mesh.get())
             //.draw(&light_mesh) // with it's state
@@ -531,16 +556,16 @@ public:
         offscreen_tex_id3 = std::get<3>(frame);
         offscreen_ds_id   = std::get<4>(frame);
 
-        camera = fay::camera{ glm::vec3{ 0, 0, 1.5 } };
+        //camera = fay::camera{ glm::vec3{ 0, 0, 1.5 } };
     }
 
     void render() override
     {
-        glm::mat4 view = camera.view_matrix();
-        glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom),
+        glm::mat4 view = camera->view_matrix();
+        glm::mat4 proj = glm::perspective(glm::radians(camera->zoom()),
             (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 
-        auto MVP = proj * view * transform.model_matrix();
+        auto MVP = proj * view * transform->model_matrix();
 
         fay::command_list pass1, pass2;
 
@@ -579,7 +604,7 @@ public:
             .bind_texture(offscreen_tex_id2, "gNormal")
             .bind_texture(offscreen_tex_id3, "gAlbedoSpec")
             .bind_uniform("MVP", MVP)
-            .bind_uniform("viewPos", camera.Position);
+            .bind_uniform("viewPos", camera->position());
 
         for (unsigned int i = 0; i < lightPositions.size(); i++)
         {

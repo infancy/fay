@@ -9,7 +9,8 @@ namespace fay
 class light
 {
 public:
-    void setup()
+    light(glm::vec3 position)
+        : position_{ position }
     {
     }
 
@@ -47,8 +48,8 @@ public:
     }
 
 private:
-    glm::vec3 position_ = glm::vec3(15, 25, 0); // world space light position
-    float speed_ = 2.f;
+    glm::vec3 position_{}; // world space light position
+    float speed_{ 1.f };
 };
 
 /*

@@ -91,6 +91,8 @@ inline void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 inline void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+    input_.left_down = input_.middle_down = input_.right_down = false;
+
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 		input_.left_down = true;
 	else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
@@ -235,7 +237,7 @@ private:
     void update_input()
     {
         // reset value
-        input_.left_down = input_.middle_down = input_.right_down = false;
+        // input_.left_down = input_.middle_down = input_.right_down = false;
         input_.wheel = 0.0;
         input_.key = {};
 
@@ -275,6 +277,17 @@ private:
             input_.key['x'] = true;
         if (glfwGetKey(window_, GLFW_KEY_C) == GLFW_PRESS)
             input_.key['c'] = true;
+
+        if (glfwGetKey(window_, GLFW_KEY_0) == GLFW_PRESS)
+            input_.key['0'] = true; 
+        if (glfwGetKey(window_, GLFW_KEY_1) == GLFW_PRESS)
+            input_.key['1'] = true;
+        if (glfwGetKey(window_, GLFW_KEY_2) == GLFW_PRESS)
+            input_.key['2'] = true;
+        if (glfwGetKey(window_, GLFW_KEY_3) == GLFW_PRESS)
+            input_.key['3'] = true;
+        if (glfwGetKey(window_, GLFW_KEY_4) == GLFW_PRESS)
+            input_.key['4'] = true;
     }
 
 	bool keydown(int key) { return (glfwGetKey(window_, key) == GLFW_PRESS); }

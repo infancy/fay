@@ -4,16 +4,24 @@
 class gfx : public fay::app
 {
 public:
-    gfx(const fay::app_desc& desc) : fay::app(desc)
+    gfx(const fay::app_desc& _desc) : fay::app(_desc)
     {
-        desc_.window.title = "gfx";
+        desc.window.title = "gfx";
 
-        //scene_ = std::make_unique<fay::scene>(render.get());
+        //scene_ = std::make_unique<fay::scene>(device.get());
     }
 
     void setup() override
     {
-        scene_ = std::make_unique<fay::scene>(render.get());
+        // TODO: remove it
+        add_update_items_
+        (
+            { cameras_, cameras_ + 1 },
+            { lights_, lights_ + 1 },
+            { transforms_, transforms_ + 1 }
+        );
+
+        scene_ = std::make_unique<fay::scene>(device.get());
         gfx_ = scene_->graphics_scene_proxy();
 
         std::string name;
@@ -24,7 +32,7 @@ public:
 
         fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs", false);
         sd.name = "shd"; //todo
-        auto shd_id = render->create(sd);
+        auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
         {
@@ -34,7 +42,7 @@ public:
             pd.cull_mode = fay::cull_mode::none;
             pd.depth_compare_op = fay::compare_op::less;
         }
-        auto pipe_id = render->create(pd);
+        auto pipe_id = device->create(pd);
 
         paras.a = { 1.f, 0.f, 0.f, 1.f };
         paras.b = { 0.f, 1.f, 0.f, 1.f };
@@ -47,16 +55,14 @@ public:
             .apply_pipeline(pipe_id);
     }
 
-    void update() override
+    void render() override
     {
-        misc.update_io();
-        glm::mat4 view = misc.camera_.view_matrix();
-        glm::mat4 projection = glm::perspective(glm::radians(misc.camera_.Zoom),
-            (float)misc.Width / (float)misc.Height, 0.1f, 10000.0f);
+        glm::mat4 view = camera.view_matrix();
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
+            (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 
         // draw
-        glm::mat4 model(1.f);
-        MVP = projection * view * model;
+        MVP = projection * view * transform.model_matrix();
 
         auto cmds = pass1;
         cmds.bind_uniform("MVP", MVP);
@@ -66,7 +72,7 @@ public:
     void flush_to(command_list& cmd)
     {
         for (auto& mesh : render_list)
-            mesh->render(cmd);
+            mesh->device(cmd);
     }
         */
         for (auto& comps : *gfx_.renderables)
@@ -74,11 +80,30 @@ public:
 
         cmds.end_frame();
 
-        render->submit(cmds);
-        render->execute();
+        device->submit(cmds);
+        device->execute();
     }
 
-    fay::render_data misc;
+    // TODO: add to scene
+    fay::camera cameras_[2]
+    {
+        fay::camera{ glm::vec3{  0, 20, 50 } },
+        fay::camera{ glm::vec3{ 100, 0, 50 } },
+    };
+    fay::light lights_[2]
+    {
+        fay::light{ glm::vec3{  0, 20, 50 } },
+        fay::light{ glm::vec3{ 100, 0, 50 } },
+    };
+    fay::transform transforms_[2]
+    {
+        fay::transform{ glm::vec3{  0, 20, 50 } },
+        fay::transform{ glm::vec3{ 100, 0, 50 } },
+    };
+    const fay::camera& camera{ cameras_[0] };
+    const fay::light& light{ lights_[0] };
+    const fay::transform& transform{ transforms_[0] };
+
 
     fay::scene_ptr scene_;
     fay::graphics_scene gfx_;

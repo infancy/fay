@@ -36,11 +36,10 @@ public:
     {
     }
 
-    /*
-    virtual void update()
+
+    virtual void update(const single_input& io)
     {
 	}
-    */
 
     virtual void render()
     {
@@ -77,7 +76,10 @@ public:
             update_items();
 
 			// update
-			//update();
+            // TODO: update(window->input());
+			update(input);
+
+            // physical...
 
             // render
             // device->render();
@@ -125,11 +127,11 @@ private:
         if (io['x']) mouse_move = 'x';
         if (io['c']) mouse_move = 'c';
 
-        if (io['0']) current_item_ = '0';
-        if (io['1']) current_item_ = '1';
-        if (io['2']) current_item_ = '2';
-        if (io['3']) current_item_ = '3';
-        if (io['4']) current_item_ = '4';
+        //if (io['0']) current_item_ = 0;
+        if (io['1']) current_item_ = 0;
+        if (io['2']) current_item_ = 1;
+        if (io['3']) current_item_ = 2;
+        if (io['4']) current_item_ = 3;
 
         if (mouse_move == 'z')
         {
