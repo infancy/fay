@@ -15,19 +15,12 @@ namespace fay
 class camera
 {
 public:
-	camera(
-		glm::vec3 position = glm::vec3(0.f, 0.f, 0.f), glm::vec3 up = glm::vec3(0.f, 1.f, 0.f),
-		float yaw = -90.f, 
-        float pitch = 0.f)
+	camera(glm::vec3 position = glm::vec3(0.f, 0.f, 0.f), float yaw = -90.f, float pitch = 0.f)
         : position_{ position }
-        , front_{ glm::vec3(0.0f, 0.0f, -1.0f) }
-        , up_{ up }
-        /*, right{}*/
-        , world_up_{ up }
         , yaw_{ yaw }
         , pitch_{ pitch}
 	{
-        // calculate 'right_'
+        // calculate 'front', 'up_' and 'right_'
 		update_camera();
 	}
 
@@ -101,21 +94,24 @@ private:
 		front_ = glm::normalize(front);
 
 		// Also re-calculate the right_ and up_ vector
-		right_ = glm::normalize(glm::cross(front_, world_up_));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+		right_ = glm::normalize(glm::cross(front_, WorldUp_));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
 		up_ = glm::normalize(glm::cross(right_, front_));
 	}
 
 private:
     static inline float Zoom_{ 90.f };
+    static inline glm::vec3 WorldUp_{ glm::vec3(0.f, 1.f, 0.f) };
 
     glm::vec3 position_;
-    glm::vec3 front_;
-    glm::vec3 up_;
+    glm::vec3 front_; // glm::vec3(0.f, 0.f, -1.f)
+    glm::vec3 up_;    // glm::vec3(0.f, 1.f, 0.f)
     glm::vec3 right_;
-    glm::vec3 world_up_;
+    // glm::mat4 view_matrix_{ 1.f };
+
     // Eular Angles
     float yaw_; // x
     float pitch_; // y
+
     // camera options
     float mouse_movement_speed_{ 10.f };
     float mouse_sensitivity_{ 0.2f };

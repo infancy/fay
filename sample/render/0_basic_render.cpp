@@ -209,18 +209,18 @@ class two_passes : public fay::app
 public:
     fay::camera cameras_[2]
     {
-        fay::camera{ glm::vec3{  0, 20, 50 } },
-        fay::camera{ glm::vec3{ 100, 50, 0 } },
+        fay::camera{ glm::vec3{ 0, 20, 50 } },
+        fay::camera{ glm::vec3{ 100, 50, 0 }, -180, 0 },
     };
     fay::light lights_[2]
     {
-        fay::light{ glm::vec3{  0, 30, 30 } },
+        fay::light{ glm::vec3{ 0, 30, 30 } },
         fay::light{ glm::vec3{ 0, 0, 0 } },
     };
     fay::transform transforms_[2]
     {
         fay::transform{ glm::vec3{ 0, 0, 0 } },
-        fay::transform{ glm::vec3{ 0, 0, 0 } },
+        fay::transform{ glm::vec3{ -100, 0, 0 } },
     };
     const fay::camera* camera{ cameras_ };
     const fay::light* light{ lights_ };
@@ -263,14 +263,21 @@ public:
 
     void update(const fay::single_input& io) override
     {
-        static size_t current_item_{};
-        //if (io['0']) current_item_ = 0;
-        if (io['1']) current_item_ = 0;
-        if (io['2']) current_item_ = 1;
+        static size_t current_mode_{};
+        static size_t current_items_[3]{};
 
-        camera = cameras_ + current_item_;
-        light = lights_ + current_item_;
-        transform = transforms_ + current_item_;
+        if (io[' ']) current_mode_ = ++current_mode_ % 3;
+        if (io['z']) current_mode_ = 0;
+        if (io['x']) current_mode_ = 1;
+        if (io['c']) current_mode_ = 2;
+
+        //if (io['0']) current_item_ = 0;
+        if (io['1']) current_items_[current_mode_] = 0;
+        if (io['2']) current_items_[current_mode_] = 1;
+
+        camera = cameras_ + current_items_[0];
+        light = lights_ + current_items_[1];
+        transform = transforms_ + current_items_[2];
     }
 };
 

@@ -118,40 +118,42 @@ private:
 
     void update_items(const single_input& io = input)
     {
-        static size_t current_item_{};
-        static char mouse_move = 'z';
+        static size_t current_mode_{};
+        static size_t current_items_[3]{};
 
         // TODO: io['z'], io.x
-        if (io[' ']) mouse_move = ++mouse_move % 3;
-        if (io['z']) mouse_move = 'z';
-        if (io['x']) mouse_move = 'x';
-        if (io['c']) mouse_move = 'c';
+        if (io[' ']) current_mode_ = ++current_mode_ % 3;
+        if (io['z']) current_mode_ = 0;
+        if (io['x']) current_mode_ = 1;
+        if (io['c']) current_mode_ = 2;
 
         //if (io['0']) current_item_ = 0;
-        if (io['1']) current_item_ = 0;
-        if (io['2']) current_item_ = 1;
-        if (io['3']) current_item_ = 2;
-        if (io['4']) current_item_ = 3;
+        if (io['1']) current_items_[current_mode_] = 0;
+        if (io['2']) current_items_[current_mode_] = 1;
+        if (io['3']) current_items_[current_mode_] = 2;
+        if (io['4']) current_items_[current_mode_] = 3;
 
-        if (mouse_move == 'z')
+        auto current_item_ = current_items_[current_mode_];
+
+        if (current_mode_ == 0)
         {
             // camera
             if (cameras_.size() > current_item_ && cameras_[current_item_])
                 cameras_[current_item_]->on_input_event(io);
         }
-        else if (mouse_move == 'x')
+        else if (current_mode_ == 1)
         {
             // light
             if(lights_.size() > current_item_ && lights_[current_item_])
                 lights_[current_item_]->on_input_event(io);
         }
-        else if (mouse_move == 'c')
+        else if (current_mode_ == 2)
         {
             // model
             if (transforms_.size() > current_item_ && transforms_[current_item_])
             transforms_[current_item_]->on_input_event(io);
         }
-        else if (mouse_move == 'v')
+        else if (current_mode_ == 3)
         {
             // GUI
         }
