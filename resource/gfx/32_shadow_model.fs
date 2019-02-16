@@ -6,7 +6,7 @@ in VS_OUT
     vec3 wPos;
     vec3 wNor;
     vec2 wTex;
-    vec4 LightSpacePos;
+    vec4 LightSpacePos; // Light NDC Space
 } fs_in;
 
 uniform sampler2D Diffuse;
@@ -15,7 +15,7 @@ uniform sampler2D Shadowmap;
 uniform vec3 LightPos;
 uniform vec3 ViewPos;
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+float ShadowCalculation(vec4 fragPosLightSpace) // , i)
 {
     // 执行透视除法
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -30,6 +30,11 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     //float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
     float bias = 0.005;
 
+    if(currentDepth < closestDepth)
+        return 0.0;
+    else
+        return 1.0;
+    /*
     if(projCoords.z > 1.0)
         return 0.0;
 
@@ -45,6 +50,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     }
 
     return shadow / 9.0;
+    */
 }
 
 void main()
@@ -53,7 +59,7 @@ void main()
     vec3 normal = normalize(fs_in.wNor);
     vec3 lightColor = vec3(1.0);
     // Ambient
-    vec3 ambient = 0.15 * color;
+    vec3 ambient = 0.05 * color;
     // Diffuse
     vec3 lightDir = normalize(LightPos - fs_in.wPos);
     float diff = max(dot(lightDir, normal), 0.0);

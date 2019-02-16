@@ -209,13 +209,13 @@ class two_passes : public fay::app
 public:
     fay::camera cameras_[2]
     {
-        fay::camera{ glm::vec3{ 0, 20, 50 } },
-        fay::camera{ glm::vec3{ 100, 50, 0 }, -180, 0 },
+        fay::camera{ glm::vec3{ 0, 40, 80 }, -90, 0, 1.f, 300.f },
+        fay::camera{ glm::vec3{ 100, 200, 0 }, -180, 0 },
     };
     fay::light lights_[2]
     {
-        fay::light{ glm::vec3{ 0, 30, 30 } },
-        fay::light{ glm::vec3{ 0, 0, 0 } },
+        fay::light{ glm::vec3{ -100, 100, 0 } },
+        fay::light{ glm::vec3{ 100, 100, 0 } },
     };
     fay::transform transforms_[2]
     {
@@ -337,7 +337,7 @@ public:
 
     void render() override
     {
-        glm::mat4 view = camera->view_matrix();
+        glm::mat4 view = camera->view();
 
         // move to camera
         glm::mat4 projection = glm::perspective(glm::radians(camera->zoom()),
@@ -403,30 +403,23 @@ public:
             fay::shader_desc sd = fay::scan_shader_program("gfx/32_shadow_map.vs", "gfx/32_shadow_map.fs", false);
             sd.name = "shd"; //todo
             shd_id = device->create(sd);
+
+            fay::pipeline_desc pd;
+            pd.name = "shadow_pipe";
+            pd.cull_mode = fay::cull_mode::front;
+            pd.stencil_enabled = false;
+            pipe_id = device->create(pd);
         }
 
         {
             //fay::shader_desc sd2 = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.vs", false);
-            fay::shader_desc sd2 = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs", false);
-            sd2.name = "shd2"; //todo
-            shd_id2 = device->create(sd2);
-        }
+            fay::shader_desc sd = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs", false);
+            sd.name = "shd2"; //todo
+            shd_id2 = device->create(sd);
 
-        {
             fay::pipeline_desc pd;
-            {
-                pd.name = "shadow_pipe";
-                pd.cull_mode = fay::cull_mode::front;
-                pd.stencil_enabled = false;
-            }
-            pipe_id = device->create(pd);
-        }
-        {
-            fay::pipeline_desc pd;
-            {
-                pd.name = "pipe2";
-                pd.cull_mode = fay::cull_mode::none;
-            }
+            pd.name = "pipe2";
+            pd.cull_mode = fay::cull_mode::none;
             pipe_id2 = device->create(pd);
         }
 
@@ -439,24 +432,22 @@ public:
 
     void render() override
     {
-        glm::mat4 view = camera->view_matrix();
-        glm::mat4 proj = glm::perspective(glm::radians(camera->zoom()),
-            (float)desc.window.width / desc.window.height, 1.f, 100.f);
-
-
-        GLfloat near_plane = 1.0f, far_plane = 1024.f;
-        glm::mat4 lightOrtho = glm::ortho(-512.0f, 512.0f, -512.0f, 512.0f, near_plane, far_plane);
-        glm::mat4 lightProj = glm::perspective(glm::radians(120.f),
-            1.f / 1.f, 10.f, 1024.f);
+        GLfloat near_plane = 1.0f, far_plane = 300.f;
+        //glm::mat4 lightOrtho = glm::ortho(-150.0f, 150.0f, -200.0f, 200.0f, near_plane, far_plane);
+        glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
+            1.f, 1.f, 1024.f);
         glm::mat4 lightView = glm::lookAt(
-            light->position(), glm::vec3(0.0f), glm::vec3(-1.f, 1.f, 0.f));
+            light->position(), glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
         glm::mat4 lightSpace = lightProj * lightView;
 
-
         // debug info
+        //fay::bounds3 box_light(-70, 70);
+        fay::frustum box_light(lightSpace);
+        auto debug_light = create_box_mesh(box_light, device.get());
+
         //fay::bounds3 box(-70, 70);
-        fay::frustum box(proj * cameras_[0].view_matrix());
-        auto debug_mesh = create_box_mesh(box, device.get());
+        fay::frustum box_camera(cameras_[0].world_to_ndc());
+        auto debug_camera = create_box_mesh(box_camera, device.get());
 
 
         fay::command_list pass1, pass2;
@@ -468,15 +459,15 @@ public:
             .clear_stencil()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
-            .bind_uniform("MVP", lightSpace * light->model_matrix())
+            .bind_uniform("MVP", lightSpace * transform->model_matrix())
             .draw(mesh.get())
             .end_frame();
 
         pass2
             .begin_default(pipe_id2, shd_id2)
             //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
-            .bind_uniform("Proj", proj)
-            .bind_uniform("View", view)
+            .bind_uniform("Proj", camera->persp())
+            .bind_uniform("View", camera->view())
             .bind_uniform("Model", transform->model_matrix())
             .bind_uniform("LightSpace", lightSpace)
             .bind_uniform("LightPos", light->position())
@@ -487,8 +478,9 @@ public:
 
             .apply_pipeline(debug_pipe_id)
             .apply_shader(debug_shd_id)
-            .bind_uniform("MVP", proj * view)
-            .draw(debug_mesh.get())
+            .bind_uniform("MVP", camera->world_to_ndc())
+            .draw(debug_camera.get()) // they are in the world space, doesn't need model matrix.
+            .draw(debug_light.get())
             .end_frame();
 
         device->execute({ pass1, pass2 });
@@ -595,7 +587,7 @@ public:
 
     void render() override
     {
-        glm::mat4 view = camera->view_matrix();
+        glm::mat4 view = camera->view();
         glm::mat4 proj = glm::perspective(glm::radians(camera->zoom()),
             (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 

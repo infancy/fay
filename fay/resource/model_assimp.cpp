@@ -149,7 +149,14 @@ void model_assimp::convert(resource_mesh& mesh, const aiMesh* aiMesh)
 		auto copy = [](glm::vec3& vec, aiVector3D& rhs) { vec.x = rhs.x; vec.y = rhs.y; vec.z = rhs.z; };
 
 		copy(vertex.position, aiMesh->mVertices[i]);
-		copy(vertex.normal, aiMesh->mNormals[i]);
+
+        // TODO: better way
+        if (aiMesh->mNormals)
+        {
+            copy(vertex.normal, aiMesh->mNormals[i]);
+        }
+        else
+            vertex.normal = glm::vec3(0.f, 0.f, 0.f);
 
 		if (aiMesh->mTextureCoords[0]) // does the aiMesh contain texture coordinates?
 		{
@@ -161,7 +168,7 @@ void model_assimp::convert(resource_mesh& mesh, const aiMesh* aiMesh)
 		else
 			vertex.texcoord = glm::vec2(0.f, 0.f);
 
-        if (format() == model_format::obj)
+        if ((format() == model_format::obj) && aiMesh->mTangents && aiMesh->mBitangents)
         {
             copy(vertex.tangent, aiMesh->mTangents[i]);
             copy(vertex.bitangent, aiMesh->mBitangents[i]);

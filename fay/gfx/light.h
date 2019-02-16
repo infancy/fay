@@ -49,7 +49,7 @@ public:
 
 private:
     glm::vec3 position_{}; // world space light position
-    float speed_{ 1.f };
+    float speed_{ 10.f };
 };
 
 /*

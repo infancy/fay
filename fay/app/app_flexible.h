@@ -32,7 +32,8 @@ inline buffer_sp create_buffer_sp(render_device* device, const buffer_desc desc)
 
 // inline app_desc global_desc;
 
-inline renderable_sp create_box_mesh(const frustum& box, render_device* device)
+template<typename Box>
+inline renderable_sp create_box_mesh(const Box& box, render_device* device)
 //inline renderable_sp create_box_mesh(const bounds3& box, render_device* device)
 {
     resource_mesh mesh;
@@ -270,6 +271,7 @@ const inline std::string ftm_sketchfab     = "model/ftm/ftm_sketchfab.blend";
 const inline std::string Nier_2b_ik_rigged = "model/Nier_2b_ik_rigged/scene.gltf";
 const inline std::string Sponza            = "model/sponza/sponza.obj";
 const inline std::string LightBulb         = "model/LightBulb/LightBulb.obj";
+//const inline std::string shadows           = "model/shadows/shadows.obj";
 
 struct render_paras
 {

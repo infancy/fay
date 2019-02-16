@@ -57,7 +57,7 @@ public:
 
     void render() override
     {
-        glm::mat4 view = camera.view_matrix();
+        glm::mat4 view = camera.view();
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
             (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 

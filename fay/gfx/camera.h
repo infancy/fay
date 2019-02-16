@@ -15,10 +15,14 @@ namespace fay
 class camera
 {
 public:
-	camera(glm::vec3 position = glm::vec3(0.f, 0.f, 0.f), float yaw = -90.f, float pitch = 0.f)
+	camera(
+        glm::vec3 position = glm::vec3(0.f, 0.f, 0.f),
+        float yaw = -90.f, float pitch = 0.f, float _near = 1.f, float _far = 1000.f)
         : position_{ position }
         , yaw_{ yaw }
-        , pitch_{ pitch}
+        , pitch_{ pitch }
+        , near_ { _near }
+        , far_{ _far }
 	{
         // calculate 'front', 'up_' and 'right_'
 		update_camera();
@@ -28,16 +32,37 @@ public:
 
     float zoom() const { return zoom_; }
 
-	glm::mat4 view_matrix() const
+    // view_matrix
+	glm::mat4 view() const
 	{
 		return glm::lookAt(position_, position_ + front_, up_);
 	}
+
+    glm::mat4 persp() const
+    {
+        return glm::perspective(
+            glm::radians(zoom()), aspect_, near_, far_);
+    }
+
+    glm::mat4 ortho() const
+    {
+        return glm::ortho(-50.f, 50.f, -50.f, 50.f, 1.f, 100.f);
+    }
+
+    // actually transform to homogeneous clipping space
+    glm::mat4 world_to_ndc(bool use_perspective = true) const
+    {
+        return (use_perspective ? persp() : ortho()) * view();
+    }
+
+    // TODO
+    // bool on_window_resize_event(const window_resize_event& event)
 
     bool on_input_event(const fay::single_input& io)
     {
         // if(active)
         ProcessMouseMovement(io.dx, io.dy);
-        ProcessKeyboard({ io.key['w'], io.key['s'], io.key['a'], io.key['d'] }, io.delta_time);
+        ProcessKeyboard(io);
         ProcessMouseScroll(io.wheel);
 
         // up_date front_, right_ and up_ Vectors using the updated Eular angles
@@ -65,13 +90,16 @@ private:
 
     // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
     // FORWARD, BACKWARD, LEFT, RIGHT
-    void ProcessKeyboard(std::array<char, 4> direction, float deltaTime)
+    void ProcessKeyboard(const fay::single_input& io)
     {
-        float velocity = mouse_movement_speed_ * deltaTime;
-        if (direction[0]) position_ += front_ * velocity;
-        if (direction[1]) position_ -= front_ * velocity;
-        if (direction[2]) position_ -= right_ * velocity;
-        if (direction[3]) position_ += right_ * velocity;
+        float velocity = mouse_movement_speed_ * io.delta_time;
+
+        if (io['w']) position_ += front_ * velocity;
+        if (io['s']) position_ -= front_ * velocity;
+        if (io['a']) position_ -= right_ * velocity;
+        if (io['d']) position_ += right_ * velocity;
+        if (io.left_down)  position_ += up_ * velocity;
+        if (io.right_down) position_ -= up_ * velocity;
     }
 
     // Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
@@ -115,7 +143,11 @@ private:
     // camera options
     float mouse_movement_speed_{ 10.f };
     float mouse_sensitivity_{ 0.2f };
+
     float zoom_{ Zoom_ };
+    float aspect_{ 1080.f / 720.f };
+    float near_;
+    float far_;
 };
 
 } // namespace fay
