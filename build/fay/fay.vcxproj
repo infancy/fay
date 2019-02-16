@@ -68,7 +68,6 @@
     <ClInclude Include="..\..\fay\gfx\renderer.h" />
     <ClInclude Include="..\..\fay\gfx\frame_graph.h" />
     <ClInclude Include="..\..\fay\gfx\render_queue.h" />
-    <ClInclude Include="..\..\fay\math\bounds.h" />
     <ClInclude Include="..\..\fay\math\color.h" />
     <ClInclude Include="..\..\fay\math\geometry.h" />
     <ClInclude Include="..\..\fay\math\math.h" />

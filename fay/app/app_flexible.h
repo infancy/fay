@@ -32,6 +32,43 @@ inline buffer_sp create_buffer_sp(render_device* device, const buffer_desc desc)
 
 // inline app_desc global_desc;
 
+inline renderable_sp create_box_mesh(const frustum& box, render_device* device)
+//inline renderable_sp create_box_mesh(const bounds3& box, render_device* device)
+{
+    resource_mesh mesh;
+    mesh.size = 8;
+    mesh.layout = vertex_layout{
+        {fay::attribute_usage::position,  fay::attribute_format::float3}
+    };
+
+    std::vector<glm::vec3> box_mesh
+    {
+        box.corner(box_corner::I),
+        box.corner(box_corner::II),
+        box.corner(box_corner::III),
+        box.corner(box_corner::IV),
+        box.corner(box_corner::V),
+        box.corner(box_corner::VI),
+        box.corner(box_corner::VII),
+        box.corner(box_corner::VIII),
+    };
+
+    size_t byte_size = mesh.size * mesh.layout.stride();
+    mesh.vertices.reserve(byte_size);
+    mesh.vertices.resize(byte_size);
+    std::memcpy(mesh.vertices.data(), box_mesh.data(), byte_size);
+
+    mesh.indices = 
+    { 
+        0, 1, 1, 2, 2, 3, 3, 0,
+        4, 5, 5, 6, 6, 7, 7, 4,
+        0, 4, 1, 5, 2, 6, 3, 7
+    };
+    mesh.primitive_ = primitive_type::lines;
+
+    return std::make_shared<raw_mesh>(device, mesh);
+}
+
 inline renderable_sp create_raw_renderable(const std::string& model_path, render_device* device)
 {
     auto model = create_resource_model(model_path, device->type());

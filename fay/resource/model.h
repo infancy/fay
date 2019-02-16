@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fay/math/bounds.h"
+#include "fay/math/geometry.h"
 #include "fay/resource/define.h"
 #include "fay/resource/file.h"
 #include "fay/resource/image.h"

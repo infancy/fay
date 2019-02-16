@@ -51,15 +51,7 @@ protected:
     std::string name_{};
 
     buffer_id vbo;
-    // buffer_id vbo_attributes;
     buffer_id ibo;
-
-    uint32_t ibo_offset = 0;
-    int32_t vertex_offset = 0;
-    uint32_t count = 0;
-    uint32_t position_stride = 0;
-    uint32_t attribute_stride = 0;
-
     primitive_type primitive_;
 };
 

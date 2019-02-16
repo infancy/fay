@@ -226,6 +226,9 @@ public:
     const fay::light* light{ lights_ };
     const fay::transform* transform{ transforms_ };
 
+    fay::shader_id debug_shd_id;
+    fay::pipeline_id debug_pipe_id;
+
     fay::buffer_id vbo;
     fay::buffer_id ibo;
 
@@ -259,6 +262,21 @@ public:
             { lights_, lights_+1 },
             { transforms_, transforms_ + 1 }
         );
+    }
+
+    void debug_setup()
+    {
+        fay::shader_desc sd = fay::scan_shader_program("gfx/lines.vs", "gfx/lines.fs");
+        sd.name = "light_shd";
+        debug_shd_id = device->create(sd);
+
+        fay::pipeline_desc pd;
+        {
+            pd.name = "light_pipe";
+            pd.stencil_enabled = false;
+            pd.primitive_type = fay::primitive_type::lines;
+            debug_pipe_id = device->create(pd);
+        }
     }
 
     void update(const fay::single_input& io) override
@@ -372,8 +390,7 @@ public:
     void setup() override
     {
         add_update_items();
-
-        //light_mesh.setup(device.get());
+        debug_setup();
 
         mesh = fay::create_raw_renderable(fay::Blocks, device.get());
 
@@ -424,11 +441,8 @@ public:
     {
         glm::mat4 view = camera->view_matrix();
         glm::mat4 proj = glm::perspective(glm::radians(camera->zoom()),
-            (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
+            (float)desc.window.width / desc.window.height, 1.f, 100.f);
 
-        //light_mesh.render(proj * view, misc.lightPosition);
-
-        fay::command_list pass1, pass2;
 
         GLfloat near_plane = 1.0f, far_plane = 1024.f;
         glm::mat4 lightOrtho = glm::ortho(-512.0f, 512.0f, -512.0f, 512.0f, near_plane, far_plane);
@@ -438,6 +452,14 @@ public:
             light->position(), glm::vec3(0.0f), glm::vec3(-1.f, 1.f, 0.f));
         glm::mat4 lightSpace = lightProj * lightView;
 
+
+        // debug info
+        //fay::bounds3 box(-70, 70);
+        fay::frustum box(proj * cameras_[0].view_matrix());
+        auto debug_mesh = create_box_mesh(box, device.get());
+
+
+        fay::command_list pass1, pass2;
         // depth map
         pass1
             .begin_frame(offscreen_frm_id)
@@ -461,7 +483,12 @@ public:
             .bind_uniform("ViewPos", camera->position())
             .bind_textures({ tex_id, offscreen_ds_id })
             .draw(mesh.get())
-            //.draw(&light_mesh) // with it's state
+
+
+            .apply_pipeline(debug_pipe_id)
+            .apply_shader(debug_shd_id)
+            .bind_uniform("MVP", proj * view)
+            .draw(debug_mesh.get())
             .end_frame();
 
         device->execute({ pass1, pass2 });

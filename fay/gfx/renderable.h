@@ -1,7 +1,7 @@
 #pragma once
 
 #include "fay/core/fay.h"
-#include "fay/math/bounds.h"
+#include "fay/math/geometry.h"
 #include "fay/render/define.h"
 
 namespace fay

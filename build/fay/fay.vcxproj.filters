@@ -200,9 +200,6 @@
     <ClInclude Include="..\..\fay\gfx\renderable.h">
       <Filter>gfx</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\math\bounds.h">
-      <Filter>math</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\resource\model.h">
       <Filter>resouce</Filter>
     </ClInclude>
