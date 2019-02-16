@@ -30,12 +30,14 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     //float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
     float bias = 0.005;
 
+    /*
     currentDepth = currentDepth - 0.005;
     if(gl_FragCoord.z < closestDepth)
         return 0.5;
     else
         return 1.0;
-    /*
+    */
+    
     if(projCoords.z > 1.0)
         return 0.0;
 
@@ -51,7 +53,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     }
 
     return shadow / 9.0;
-    */
+    
 }
 
 void main()
