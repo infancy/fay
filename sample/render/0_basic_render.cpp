@@ -207,10 +207,22 @@ public:
 class two_passes : public fay::app
 {
 public:
-    fay::camera cameras_[2]
+    /*
+    GLfloat near_plane = 1.0f, far_plane = 300.f;
+        //glm::mat4 lightOrtho = glm::ortho(-150.0f, 150.0f, -200.0f, 200.0f, near_plane, far_plane);
+        glm::mat4 lightProj = glm::perspective(glm::radians(120.f),
+            1.f, near_plane, far_plane);
+        glm::mat4 lightView = glm::lookAt(
+            light->position(), glm::vec3(0.0f), glm::vec3(1.f, 1.f, 0.f));
+        glm::mat4 lightSpace = lightProj * lightView;
+    */
+    fay::camera cameras_[3]
     {
         fay::camera{ glm::vec3{ 0, 40, 80 }, -90, 0, 1.f, 300.f },
-        fay::camera{ glm::vec3{ 100, 200, 0 }, -180, 0 },
+
+        //pitch 0 -> -30
+        fay::camera{ glm::vec3{ -100, 100, 0 }, /*-180*/0, -45, 1.f, 300.f }, // light1
+        fay::camera{ glm::vec3{ 100, 100, 0 },    0, 0,  1.f, 300.f }, // light2
     };
     fay::light lights_[2]
     {
@@ -292,6 +304,7 @@ public:
         //if (io['0']) current_item_ = 0;
         if (io['1']) current_items_[current_mode_] = 0;
         if (io['2']) current_items_[current_mode_] = 1;
+        if (io['3']) current_items_[current_mode_] = 2;
 
         camera = cameras_ + current_items_[0];
         light = lights_ + current_items_[1];
@@ -435,7 +448,7 @@ public:
         GLfloat near_plane = 1.0f, far_plane = 300.f;
         //glm::mat4 lightOrtho = glm::ortho(-150.0f, 150.0f, -200.0f, 200.0f, near_plane, far_plane);
         glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
-            1.f, 1.f, 1024.f);
+            1080.f / 720.f, near_plane, far_plane);
         glm::mat4 lightView = glm::lookAt(
             light->position(), glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
         glm::mat4 lightSpace = lightProj * lightView;

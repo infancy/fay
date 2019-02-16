@@ -15,7 +15,7 @@ uniform sampler2D Shadowmap;
 uniform vec3 LightPos;
 uniform vec3 ViewPos;
 
-float ShadowCalculation(vec4 fragPosLightSpace) // , i)
+float ShadowCalculation(vec4 fragPosLightSpace)
 {
     // 执行透视除法
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -30,8 +30,9 @@ float ShadowCalculation(vec4 fragPosLightSpace) // , i)
     //float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
     float bias = 0.005;
 
-    if(currentDepth < closestDepth)
-        return 0.0;
+    currentDepth = currentDepth - 0.005;
+    if(gl_FragCoord.z < closestDepth)
+        return 0.5;
     else
         return 1.0;
     /*
