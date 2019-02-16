@@ -157,12 +157,14 @@ enum class texture_usage
 
 enum class render_target
 {
-    none,
-    color,
-    depth,
-    stencil,
-    depth_stencil,
+    none          = 0b0000,
+    color         = 0b0001,
+    depth         = 0b0010,
+    stencil       = 0b0100,
+    depth_stencil = 0b1000,
+    DepthStencil  = depth | stencil | depth_stencil
 };
+FAY_ENUM_CLASS_OPERATORS(render_target)
 
 enum class filter_mode
 {
@@ -549,7 +551,7 @@ struct texture_desc
     float min_lod{ 0.f }; // -1000 ~ +1000 or 0 ~ 1000 ???
     float max_lod{ 1000.f }; // max_float
 
-    render_target as_render_target{ render_target::none }; // used as render target or depth_stencil target is depended by pixel_format
+    render_target as_render_target{ render_target::color }; // used as render target or depth_stencil target is depended by pixel_format
     uint32_t rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target
 
     texture_desc() = default;

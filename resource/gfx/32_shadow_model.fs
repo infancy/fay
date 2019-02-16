@@ -30,14 +30,15 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     //float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
     float bias = 0.005;
 
+
     /*
     currentDepth = currentDepth - 0.005;
-    if(gl_FragCoord.z < closestDepth)
-        return 0.5;
+    if(closestDepth == 1.0)
+        return 0.1;
     else
         return 1.0;
     */
-    
+
     if(projCoords.z > 1.0)
         return 0.0;
 
@@ -48,7 +49,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
         for(int y = -1; y <= 1; ++y)
         {
             float pcfDepth = texture(Shadowmap, projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+            shadow += (currentDepth - bias) > pcfDepth ? 1.0 : 0.0;        
         }    
     }
 
@@ -79,4 +80,5 @@ void main()
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
 
     FragColor = vec4(lighting, 1.0f);
+    //FragColor = vec4(vec3(shadow), 1.0f);
 }

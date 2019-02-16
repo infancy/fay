@@ -83,7 +83,7 @@ namespace backend_opengl_func
                 return GL_R8;
 
             case pixel_format::depth:
-                return GL_DEPTH_COMPONENT16; // TODO: or 24, 32
+                return GL_DEPTH_COMPONENT32; // TODO: or 24, 32
             case pixel_format::depthstencil:
                 return GL_DEPTH24_STENCIL8;
 
@@ -175,7 +175,7 @@ namespace backend_opengl_func
                 return GL_UNSIGNED_SHORT_4_4_4_4;
             case pixel_format::depth:
                 // FIXME???
-                return GL_UNSIGNED_SHORT;
+                return GL_FLOAT; // GL_UNSIGNED_INT;
             case pixel_format::depthstencil:
                 // FIXME???
                 return GL_UNSIGNED_INT_24_8;
@@ -355,7 +355,7 @@ namespace backend_opengl_type
         GLuint msaa_rbo{};
 
         // if used as depth_stencil target or msaa color target
-        GLuint ds_rbo{};
+        //GLuint ds_rbo{};
 
         texture() = default;
         texture(const texture_desc& desc)
@@ -681,7 +681,7 @@ public:
         texture_id pid = pool_.insert(desc); // id in the pool
         texture& tex = pool_[pid];
 
-        if (!is_dpeth_stencil_pixel_format(desc.pixel_format))
+        if (desc.as_render_target == render_target::color) //!is_dpeth_stencil_pixel_format(desc.pixel_format))
         {
             glGenTextures(1, &tex.tbo);
             glActiveTexture(GL_TEXTURE0);
@@ -763,8 +763,30 @@ public:
                     pixel_internal_format(desc.pixel_format), tex.width, tex.height);
             }
         }
-        else // depth_stencil
+        else if(enum_have(render_target::DepthStencil, desc.as_render_target))// depth_stencil
         {
+                    /*
+
+        tex_ = std::move(base_texture(GL_TEXTURE_2D, GL_NEAREST, GL_CLAMP_TO_BORDER));
+        tex_.set_border_color({ 1.f, 1.f, 1.f, 1.f });
+        tex_.set_format(format);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, NULL);
+        */
+
+            glGenTextures(1, &tex.tbo);
+            //glActiveTexture(GL_TEXTURE0);
+            glBindTexture(tex.type, tex.tbo);
+
+            glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, tex.min_filter);
+            glTexParameteri(tex.type, GL_TEXTURE_MAG_FILTER, tex.max_filter);
+            glTexParameteri(tex.type, GL_TEXTURE_WRAP_S, tex.wrap_u);
+            glTexParameteri(tex.type, GL_TEXTURE_WRAP_T, tex.wrap_v);
+
+            auto[in_fmt, ex_fmt, ex_type] = gl_pixel_format(desc.pixel_format);
+            glTexImage2D(tex.type, 0, in_fmt,
+                desc.width, desc.height, 0, ex_fmt, ex_type, desc.data[0]);
+
+            /*
             glGenRenderbuffers(1, &tex.ds_rbo);
             glBindRenderbuffer(GL_RENDERBUFFER, tex.ds_rbo);
             
@@ -773,12 +795,19 @@ public:
 
             if (render_desc_.anti_aliasing == anti_aliasing::MSAA)
             {
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, tex.rt_sample_count, GL_DEPTH24_STENCIL8, tex.width, tex.height);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, tex.rt_sample_count, 
+                    pixel_internal_format(desc.pixel_format), tex.width, tex.height);
             }
             else
             {
-                glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, tex.width, tex.height);
+                glRenderbufferStorage(GL_RENDERBUFFER, 
+                    pixel_internal_format(desc.pixel_format), tex.width, tex.height);
             }
+            */
+        }
+        else
+        {
+            LOG(ERROR) << "shouldn't be here";
         }
 
         glcheck_errors();
@@ -845,7 +874,10 @@ public:
         {
             const auto& tex = pool_[frm.depth_stencil.tex_pid];
 
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, tex.render_target, GL_RENDERBUFFER, tex.ds_rbo);
+            //glFramebufferRenderbuffer(GL_FRAMEBUFFER, tex.render_target, GL_RENDERBUFFER, tex.ds_rbo);
+            // TODO
+            glFramebufferTexture2D(GL_FRAMEBUFFER, tex.render_target, 
+                tex.type, tex.tbo, desc.depth_stencil.level);
         }
 
         // render target
@@ -1155,14 +1187,14 @@ public:
         // depth-stencil state
         if (flags[2])
         {
-            // glEnable(GL_DEPTH_TEST); always open the depth test???
+            gl_enabled(GL_DEPTH_TEST, pipe.depth_enabled); // always open the depth test???
             glDepthFunc(pipe.depth_compare_op);
             // void glDepthMask(GLboolean flag);
             glDepthMask(pipe.depth_enabled);
 
             glcheck_errors();
 
-            // gl_enabled(GL_STENCIL_TEST, pipe.stencil_enabled);
+            gl_enabled(GL_STENCIL_TEST, pipe.stencil_enabled);
             // auto apply_stencil_state = [](const pipeline::stencil_state ss, GLenum face)   
             for (auto i : range(2))
             {

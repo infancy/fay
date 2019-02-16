@@ -156,8 +156,9 @@ inline std::tuple<frame_id, texture_id, texture_id> create_depth_frame(const std
     desc.size = width * height * 16; // byte size
     auto color_id = device->create(desc);
 
+    // ???
     desc.as_render_target = render_target::depth;
-    desc.pixel_format = pixel_format::r32f; // float
+    desc.pixel_format = pixel_format::depth; // r32f,float
     desc.size = width * height * 4; // byte size
     auto ds_id = device->create(desc);
 
