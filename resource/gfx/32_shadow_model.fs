@@ -33,7 +33,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, float dot_lightDir_normal)
     // 检查当前片元是否在阴影中
 
     float shadow = 0.0;
-    float bias = max(0.005 * (1.0 - dot_lightDir_normal), 0.0005);
+    float bias = max(0.05 * (1.0 - dot_lightDir_normal), 0.005);
     vec2 texelSize = 1.0 / textureSize(Shadowmap, 0);
 
     for(int x = -1; x <= 1; ++x)
@@ -45,8 +45,8 @@ float ShadowCalculation(vec4 fragPosLightSpace, float dot_lightDir_normal)
         }    
     }
 
-    //return shadow / 9.0;
-    return 0.f;
+    return shadow / 9.0;
+    //return 0.f;
 }
 
 void main()
@@ -57,7 +57,7 @@ void main()
     vec3 lightDir = normalize(LightPos - fs_in.wPos);
 
     // Ambient
-    vec3 ambient = 0.05 * color;
+    vec3 ambient = 0.1 * color;
     // Albedo
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 Albedo = diff * lightColor;

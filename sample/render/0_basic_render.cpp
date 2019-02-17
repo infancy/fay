@@ -454,13 +454,14 @@ public:
         glm::mat4 lightSpace = lightOrtho * lightView;
 
         // debug info
+        // FIXME: over the GPU memory
         //fay::bounds3 box_light(-70, 70);
         fay::frustum box_light(lightSpace);
-        auto debug_light = create_box_mesh(box_light, device.get());
+        //auto debug_light = create_box_mesh(box_light, device.get());
 
         //fay::bounds3 box(-70, 70);
         fay::frustum box_camera(cameras_[0].world_to_ndc());
-        auto debug_camera = create_box_mesh(box_camera, device.get());
+        //auto debug_camera = create_box_mesh(box_camera, device.get());
 
 
         fay::command_list pass1, pass2;
@@ -491,8 +492,8 @@ public:
             .apply_pipeline(debug_pipe_id)
             .apply_shader(debug_shd_id)
             .bind_uniform("MVP", camera->world_to_ndc())
-            .draw(debug_camera.get()) // they are in the world space, doesn't need model matrix.
-            .draw(debug_light.get())
+            //.draw(debug_camera.get()) // they are in the world space, doesn't need model matrix.
+            //.draw(debug_light.get())
             .end_frame();
 
         device->execute({ pass1, pass2 });

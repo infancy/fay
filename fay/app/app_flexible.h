@@ -259,11 +259,11 @@ inline std::tuple<frame_id, texture_id, texture_id, texture_id, texture_id> crea
 
 const inline std::string Nier_2b           = "model/Nier_2b/2b.obj";
 const inline std::string Box               = "model/box/box.obj";
-const inline std::string Blocks            = "model/blocks/blocks.obj";
+const inline std::string Blocks            = "model/blocks/scene.obj";
 const inline std::string Rei               = "model/Rei/Rei.obj";
 const inline std::string CornellBox        = "model/CornellBox/CornellBox.obj";
 const inline std::string Planet            = "model/planet/planet.obj";
-const inline std::string Plants            = "model/plants/scene.gltf";
+const inline std::string Plants            = "model/plants/scene.obj";
 const inline std::string Rock              = "model/rock/rock.obj";
 const inline std::string Fairy             = "model/fairy/fairy.obj";
 const inline std::string Nanosuit          = "model/nanosuit/nanosuit.obj";
