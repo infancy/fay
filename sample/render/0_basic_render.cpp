@@ -405,7 +405,7 @@ public:
         add_update_items();
         debug_setup();
 
-        mesh = fay::create_raw_renderable(fay::Blocks, device.get());
+        mesh = fay::create_renderable(fay::Plants, device.get());
 
         {
             fay::image img("texture/awesomeface.png", true);
@@ -419,7 +419,7 @@ public:
 
             fay::pipeline_desc pd;
             pd.name = "shadow_pipe";
-            pd.cull_mode = fay::cull_mode::front;
+            // pd.cull_mode = fay::cull_mode::front; // sometimes could improve the quality
             pd.stencil_enabled = false;
             pipe_id = device->create(pd);
         }
@@ -436,7 +436,7 @@ public:
             pipe_id2 = device->create(pd);
         }
 
-        auto frame = fay::create_depth_frame("depth_frm", 1024, 1024, device.get());
+        auto frame = fay::create_depth_frame("shadowmap_frame", 1024, 1024, device.get());
 
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
@@ -445,13 +445,13 @@ public:
 
     void render() override
     {
-        GLfloat near_plane = 1.0f, far_plane = 300.f;
-        //glm::mat4 lightOrtho = glm::ortho(-150.0f, 150.0f, -200.0f, 200.0f, near_plane, far_plane);
+        GLfloat near_plane = 1.f, far_plane = 200.f;
+        glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
         glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
             1080.f / 720.f, near_plane, far_plane);
         glm::mat4 lightView = glm::lookAt(
             light->position(), glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
-        glm::mat4 lightSpace = lightProj * lightView;
+        glm::mat4 lightSpace = lightOrtho * lightView;
 
         // debug info
         //fay::bounds3 box_light(-70, 70);
@@ -485,10 +485,9 @@ public:
             .bind_uniform("LightSpace", lightSpace)
             .bind_uniform("LightPos", light->position())
             .bind_uniform("ViewPos", camera->position())
-            .bind_textures({ tex_id, offscreen_ds_id })
+            .bind_texture(offscreen_ds_id, "Shadowmap")
             .draw(mesh.get())
-
-
+            // debug info
             .apply_pipeline(debug_pipe_id)
             .apply_shader(debug_shd_id)
             .bind_uniform("MVP", camera->world_to_ndc())

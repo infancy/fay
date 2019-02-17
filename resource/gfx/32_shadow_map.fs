@@ -1,6 +1,10 @@
 #version 330 core
 out vec4 FragColor;
 
+// TODO: remove
+uniform sampler2D Albedo;
+uniform bool bAlbedo;
+
 float near = 1.0; 
 float far  = 300.0;
 

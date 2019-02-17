@@ -263,6 +263,7 @@ const inline std::string Blocks            = "model/blocks/blocks.obj";
 const inline std::string Rei               = "model/Rei/Rei.obj";
 const inline std::string CornellBox        = "model/CornellBox/CornellBox.obj";
 const inline std::string Planet            = "model/planet/planet.obj";
+const inline std::string Plants            = "model/plants/scene.gltf";
 const inline std::string Rock              = "model/rock/rock.obj";
 const inline std::string Fairy             = "model/fairy/fairy.obj";
 const inline std::string Nanosuit          = "model/nanosuit/nanosuit.obj";
