@@ -97,48 +97,53 @@ void render_device::apply_pipeline(const pipeline_id id)
     backend_->apply_pipeline(id, flags);
 }
 
-void render_device::bind_buffer(const buffer_id id, const std::vector<attribute_usage>& attrs, uint32_t instance_rate)
+void render_device::bind_buffer(const buffer_id id, const std::vector<attribute_usage>& usages, size_t instance_rate)
 {
     DCHECK(query_valid(id)) << "invalid id";
-    DCHECK(instance_rate >= 0);
 
-    if(instance_rate == 0)
-        ctx_.vertex_count = desc_[id].size; // WARNNING: ???
+    auto desc = desc_[id];
+    DCHECK(
+        (desc.type == buffer_type::vertex && instance_rate == 0) ||
+        (desc.type == buffer_type::instance /*&& instance_rate * desc.size <= ctx_.vertex_count*/)); // TODO???: draw_instance before bind_instance
 
-    std::vector<uint32_t> attrs_, slots_;
+    if(desc.type == buffer_type::vertex)
+        ctx_.vertex_count = desc.size;
+
+    std::vector<size_t> attrs_, slots_;
 
     const auto& buf_layout = desc_[id].layout;
     const auto& shd_layout = ctx_.shd.layout;
 
-    if (attrs.size() == 0)
+    if (usages.size() == 0)
     {
-        int num = std::min(buf_layout.size(), shd_layout.size());
+        DCHECK(buf_layout.size() <= shd_layout.size());
+        int num = buf_layout.size();
 
         attrs_.resize(num);
         slots_.resize(num);
 
         for (auto i : range(num))
         {
-            // TODO: check
+            DCHECK(buf_layout[i] == shd_layout[i]) << "not same vertex attribute";
             attrs_[i] = i;
             slots_[i] = i;
         }
     }
     else
     {
-        DCHECK(attrs.size() < ctx_.shd.layout.size());
+        DCHECK(usages.size() < ctx_.shd.layout.size());
 
-        for (auto usage : attrs)
+        for (auto usage : usages)
         {
             auto idx0 = index(buf_layout, [usage](const vertex_attribute& attr)
             {
-                return attr.usage == usage;
+                return attr.usage() == usage;
             });
             DCHECK(idx0.has_value()) << "invaild vertex attribute";
 
             auto idx1 = index(shd_layout, [usage](const vertex_attribute& attr)
             {
-                return attr.usage == usage;
+                return attr.usage() == usage;
             });
             DCHECK(idx1.has_value()) << "invaild vertex attribute";
 
@@ -146,6 +151,16 @@ void render_device::bind_buffer(const buffer_id id, const std::vector<attribute_
 
             attrs_.push_back(idx0.value());
             slots_.push_back(idx1.value());
+
+            // WARNING: not complete
+            if (usage == attribute_usage::instance_model)
+            {
+                for (size_t i : range(1, 4))
+                {
+                    attrs_.push_back(idx0.value() + i);
+                    slots_.push_back(idx1.value() + i);
+                }
+            }
         }
     }
 

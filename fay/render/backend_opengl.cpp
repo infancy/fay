@@ -209,11 +209,6 @@ namespace backend_opengl_type
         // GLsizei       stride;  // storge in buffer.stsride
         const GLvoid* offset;     // (void*)0, (void*)(size * sizeof(type)), ...
 
-        // these variables are just for debug when processing a pass_desc. TODO: better way
-        attribute_usage  usage;
-        attribute_format format;
-        uint32_t         num;
-
         static GLenum attribute_type(attribute_format fmt)
         {
             switch (fmt)
@@ -222,18 +217,13 @@ namespace backend_opengl_type
                 case fay::attribute_format::float2:
                 case fay::attribute_format::float3:
                 case fay::attribute_format::float4:
-                case fay::attribute_format::floatx:
                     return GL_FLOAT;
                 case fay::attribute_format::byte4:
-                case fay::attribute_format::byte4x:
                     return GL_BYTE;
                 case fay::attribute_format::ubyte4:
-                case fay::attribute_format::ubyte4x:
                     return GL_UNSIGNED_BYTE;
                 case fay::attribute_format::short2:
-                case fay::attribute_format::short2x:
                 case fay::attribute_format::short4:
-                case fay::attribute_format::short4x:
                     return GL_SHORT;
                 default:
                     LOG(ERROR) << "shouldn't be here";
@@ -246,13 +236,9 @@ namespace backend_opengl_type
             switch (fmt)
             {
                 case fay::attribute_format::byte4:
-                case fay::attribute_format::byte4x:
                 case fay::attribute_format::ubyte4:
-                case fay::attribute_format::ubyte4x:
                 case fay::attribute_format::short2:
-                case fay::attribute_format::short2x:
                 case fay::attribute_format::short4:
-                case fay::attribute_format::short4x:
                     return GL_TRUE;
                 default:
                     return GL_FALSE;
@@ -271,9 +257,7 @@ namespace backend_opengl_type
 
         // used for vertex buffer, instance buffer
         GLsizei     stride{};
-        std::vector<vertex_attribute_gl> layout{ 0 };
-        // only used for instance buffer
-        GLuint instance_rate{ 0 };
+        std::vector<vertex_attribute_gl> layout{};
 
         // then assign others
         GLuint gid{}; // union { GLuint vbo; GLuint ibo; };
@@ -297,25 +281,20 @@ namespace backend_opengl_type
                     auto& da = desc.layout[i];
                     auto& a = layout[i];
 
-                    a.usage = da.usage;
-                    a.format = da.format;
-                    a.num = da.num; // normally num is 1
+                    //a.usage = da.usage();
+                    //a.format = da.format();
 
                     a.index = i; // i_, ix, ic, ii
-                    a.type = vertex_attribute_gl::attribute_type(da.format);
-                    a.normalized = vertex_attribute_gl::need_normalized(da.format);
+                    a.type       = vertex_attribute_gl::attribute_type(da.format());
+                    a.normalized = vertex_attribute_gl::need_normalized(da.format());
 
-                    // TODO
-                    auto[sz, byte] = attribute_format_map.at(da.format);
-                    a.size = sz * da.num;
+                    auto[num, byte] = attribute_format_map.at(da.format());
+                    a.size = num;
+
                     a.offset = (GLvoid*)offset;
-
-                    offset += byte * da.num; // e.g. {..., floatx, 8} -> size: 1 * 8, offset: 4 * 8
+                    offset += byte;
                 }
             }
-
-            if (desc.type == buffer_type::instance)
-                instance_rate = desc.instance_rate;
         }
     };
 
@@ -1297,7 +1276,7 @@ public:
         glcheck_errors();
         log0_ << ("index    : "s + (ctx_.index_id.value == 0 ? "null" : pool_[ctx_.index_id].name) + '\n');
     }
-    void bind_vertex(const buffer_id id, std::vector<uint32_t> attrs, std::vector<uint32_t> slots, uint32_t instance_rate) override
+    void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) override
     {
         ctx_.buf_ids.push_back(id);
 

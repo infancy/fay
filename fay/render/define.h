@@ -8,6 +8,7 @@
 #include "fay/core/define.h"
 #include "fay/core/fay.h"
 #include "fay/core/memory.h"
+#include "fay/core/range.h"
 
 namespace fay
 {
@@ -97,7 +98,7 @@ enum class /*vertex_*/attribute_usage
     texcoord3,
 
     // instance
-    model_matrix,
+    instance_model,
 
     unknown0,
     unknown1,
@@ -111,20 +112,14 @@ enum class /*vertex_*/attribute_format
     float2,
     float3,
     float4,
-    floatx,
+    // floatx, could use float1 * 16 or float4 * 4
 
     // WARNING: The following type in opengl maybe need to normalized
     byte4,
-    byte4x,
-
     ubyte4,
-    ubyte4x,
 
     short2,
-    short2x,
-
     short4,
-    short4x,
 
     // uint10_x2,
 };
@@ -390,31 +385,41 @@ FAY_RENDER_TYPE_ID(frame)
 #undef FAY_RENDER_TYPE_ID
 
 // a matrix instance : { fay::attribute_usage::instance_matrix,  fay::attribute_format::floatx, 16 }
-struct vertex_attribute
+class vertex_attribute
 {
-    attribute_usage  usage;
-    attribute_format format;
-    uint32_t         num;
+public:
+    friend class vertex_layout;
 
     vertex_attribute() {}
-    vertex_attribute(attribute_usage usage, attribute_format format, uint32_t num = 1)
+    vertex_attribute(attribute_usage usage, attribute_format format, size_t num = 1, size_t index = 0)
     {
-        this->usage  = usage;
-        this->format = format;
-        this->num    = num;
+        this->usage_  = usage;
+        this->format_ = format;
+        this->index_  = index;
+        this->num_    = num;
     }
+
+    attribute_usage  usage()  const { return usage_; }
+    attribute_format format() const { return format_; }
+    size_t           index()  const { return index_; }
 
     bool operator==(const vertex_attribute& va) const
     {
-        return usage == va.usage && format == va.format && num == va.num;
+        return usage_ == va.usage_ && format_ == va.format_ && index_ == va.index_ && num_ == va.num_;
     }
+
+private:
+    attribute_usage  usage_{};
+    attribute_format format_{};
+    size_t           index_{};
+
+    size_t           num_{};
 };
 
 struct attribute_detail // rename: attribute_num_bytesize
 {
-    // TODO: size_t
-    uint32_t num;
-    uint32_t size; // num * sizeof(T)
+    size_t num;
+    size_t size; // num * sizeof(T)
 };
 
 // nums, bytes of attribute_format
@@ -425,19 +430,12 @@ attribute_format_map
     { attribute_format::float2,  {2,  8} },
     { attribute_format::float3,  {3, 12} },
     { attribute_format::float4,  {4, 16} },
-    { attribute_format::floatx,  {1,  4} },
 
     { attribute_format::byte4,   {4, 4} },
-    { attribute_format::byte4x,  {4, 4} },
-
     { attribute_format::ubyte4,  {4, 4} },
-    { attribute_format::ubyte4x, {4, 4} },
 
     { attribute_format::short2,  {2, 4} },
-    { attribute_format::short2x, {2, 4} },
-
     { attribute_format::short4,  {4, 8} },
-    { attribute_format::short4x, {4, 8} },
 
     //{ uint10_x2, {1, 4} },
 };
@@ -468,13 +466,29 @@ public:
     //using extends_sequence<std::vector<vertex_attribute>>::extends_sequence;
     using std::vector<vertex_attribute>::vector;
 
+    vertex_layout(std::initializer_list<vertex_attribute> il)
+    {
+        for (const auto& attr : il)
+        {
+            if (attr.num_ == 1)
+            {
+                push_back({ attr.usage(), attr.format(), 1, 0 });
+            }
+            else
+            {
+                for (size_t i : range(attr.num_))
+                    push_back({ attr.usage(), attr.format(), attr.num_, i });
+            }
+        }
+    }
+
     size_t stride() const
     {
         size_t size{};
 
-        for (auto& attr : *this)
+        for (const auto& attr : *this)
         {
-            size += attribute_format_map.at(attr.format).size;
+            size += attribute_format_map.at(attr.format()).size;
         }
 
         return size;
@@ -487,19 +501,21 @@ struct buffer_desc
     std::string name { "defult" };
 
     uint32_t    size     {}; // vertex/index nums
-    uint32_t    stride   {}; // byte sizes of single element. WARNNING: fay can't check if this value is right or not.
-    const void* data     {}; // data's length is size * stride
+    const void* data     {}; // data's length is size * layout.stride()
+    // TODO: remove
+    uint32_t    stride{}; // byte sizes of single element. WARNNING: fay can't check if this value is right or not.
 
     buffer_type type     {};
     resource_usage usage { resource_usage::immutable };
 
     // used for vertex buffer, instance buffer
+    // TODO: improve
     vertex_layout layout{};
 
     // only used for instance buffer
     // instance buffer update data per instance(or more), instead of updating per vertex.
     // TODO: remove it
-    uint32_t instance_rate{};
+    // uint32_t instance_rate{};
 
     buffer_desc() = default;
     buffer_desc(buffer_type type)
@@ -1087,6 +1103,7 @@ public:
     // command_list& update_texture(const texture_id id, const void* data, uint32_t size);
 
     // WARNNING: if count is 0, it will be computed by device automatically
+    // WARNNING: if instance_count is 0, use 'draw', else use 'draw_instance'
     command_list& draw(uint32_t count = 0, uint32_t first = 0, uint32_t instance_count = 1)
     {
         auto& cmd = add_command(command_type::draw);

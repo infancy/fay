@@ -35,7 +35,19 @@ struct render_paras
 class triangle : public fay::app
 {
 public:
-    // using fay::app;
+    fay::buffer_id buf_id;
+
+    static const inline size_t nInstance = 2;
+    glm::mat4 instance_transforms[nInstance]
+    {
+        fay::transform{ glm::vec3{ 0, 0, 0 } }.model_matrix(),
+        fay::transform{ glm::vec3{ 0.5, 0, 0 } }.model_matrix(),
+    };
+    fay::buffer_id instance_transforms_id;
+
+    render_paras paras;
+    fay::command_list pass1, pass2;
+
     triangle(const fay::app_desc& _desc) : fay::app(_desc)
     {
         desc.window.title = "triangle";
@@ -56,21 +68,21 @@ public:
         fay::buffer_desc bd0; {
             bd0.name = "line_stripe_vb";
             bd0.size = 6;// sizeof(vertices);
-            bd0.stride = 12; // TODO: do it by helper functions;
             bd0.data = lines;
             bd0.type = fay::buffer_type::vertex;
 
             bd0.layout = { {fay::attribute_usage::position, fay::attribute_format::float3} };
+            bd0.stride = bd0.layout.stride();
         }
         auto line_strip_vb = device->create(bd0);
 
 
 
         float vertices[] = {
-             0.6f,  0.45f, 0.0f,   1.f, 1.f, // right top
-             0.6f, -0.45f, 0.0f,   1.f, 0.f, // right bottom
-            -0.6f, -0.45f, 0.0f,   0.f, 0.f, // left bottom
-            -0.6f,  0.45f, 0.0f,   0.f, 1.f, // left top
+             0.6f,  0.45f, 0.5f,   0.f, 0.f, -1.f,   1.f, 1.f, // right top
+             0.6f, -0.45f, 0.5f,   0.f, 0.f, -1.f,   1.f, 0.f, // right bottom
+            -0.6f, -0.45f, 0.5f,   0.f, 0.f, -1.f,   0.f, 0.f, // left bottom
+            -0.6f,  0.45f, 0.5f,   0.f, 0.f, -1.f,   0.f, 1.f, // left top
         };
         unsigned int indices[] = {  // note that we start from 0!
             0, 1, 3,  // first Triangle
@@ -79,15 +91,16 @@ public:
         fay::buffer_desc bd; {
             bd.name = "triangle_vb";
             bd.size = 4;// sizeof(vertices);
-            bd.stride = 20; // TODO: do it by helper functions;
             bd.data = vertices;
             bd.type = fay::buffer_type::vertex;
 
             bd.layout =
             {
                 {fay::attribute_usage::position,  fay::attribute_format::float3},
+                {fay::attribute_usage::normal,    fay::attribute_format::float3},
                 {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
             };
+            bd.stride = bd.layout.stride();
         }
         fay::buffer_desc id(fay::buffer_type::index); {
             id.name = "triangle_ib";
@@ -97,13 +110,28 @@ public:
         auto triangle_vb = device->create(bd);
         auto triangle_ib = device->create(id);
 
+        {
+            fay::buffer_desc desc;
+            desc.name = "instance_model";
+            desc.size = nInstance;
+            desc.layout =
+            {
+                {fay::attribute_usage::instance_model,  fay::attribute_format::float4, 4},
+            };
+            desc.stride = desc.layout.stride();
+            desc.data = &instance_transforms;
+            desc.type = fay::buffer_type::instance;
+            instance_transforms_id = device->create(desc);
+        }
+
         fay::image img("texture/awesomeface.png", true);
         auto triangle_tbo = create_2d(this->device, "hello", img);
 
         auto vs_code = R"(
                 #version 330 core
                 layout (location = 0) in vec3 mPos;
-                layout (location = 1) in vec2 mTex;
+                layout (location = 1) in vec3 mNor;
+                layout (location = 2) in vec2 mTex;
 
                 out vec2 vTex;
 
@@ -138,7 +166,7 @@ public:
                    //FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
                 }
             )";
-        fay::shader_desc sd = fay::scan_shader_program(vs_code, fs_code, true);
+        fay::shader_desc sd = fay::scan_shader_program("gfx/29_instancing.vs", "gfx/29_instancing.fs"); // fay::scan_shader_program(vs_code, fs_code, true);
         sd.name = "shd"; //todo
         auto shd_id = device->create(sd);
 
@@ -153,6 +181,7 @@ public:
         {
             pd.name = "triangles";
             pd.primitive_type = fay::primitive_type::triangles;
+            pd.cull_mode = fay::cull_mode::none;
         }
         auto pipe2_id = device->create(pd);
 
@@ -175,8 +204,9 @@ public:
                 .bind_textures({ triangle_tbo })
                 .bind_index(triangle_ib)
                 .bind_vertex(triangle_vb)
+                .bind_instance(instance_transforms_id, { fay::attribute_usage::instance_model })
                 .bind_uniform("flag", 0)
-                .draw_index()
+                .draw_index(6, 0, 2)
 
                 .end_frame();
         }
@@ -193,15 +223,9 @@ public:
     {
        // device->draw(pass1);
        // device->draw(pass2);
-        auto cmds = pass1;
         device->submit(pass1);
         device->execute();
     }
-
-    fay::buffer_id buf_id;
-
-    render_paras paras;
-    fay::command_list pass1, pass2;
 };
 
 class two_passes : public fay::app
@@ -394,7 +418,6 @@ public:
 class shadow_map : public two_passes
 {
 public:
-    // using fay::app;
     shadow_map(const fay::app_desc& _desc) : two_passes(_desc)
     {
         desc.window.title = "shadow_map";

@@ -56,7 +56,7 @@ public:
     virtual void bind_texture(const texture_id id, int tex_unit, const std::string& sampler) = 0;
 
     virtual void bind_index(const buffer_id id) = 0;
-    virtual void bind_vertex(const buffer_id id, std::vector<uint32_t> attrs, std::vector<uint32_t> slots, uint32_t instance_rate) = 0;
+    virtual void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) = 0;
 
     virtual void update(buffer_id id, const void* data, int size) = 0;
     virtual void update(texture_id id, const void* data) = 0;

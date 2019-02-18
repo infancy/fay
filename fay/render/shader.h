@@ -23,7 +23,7 @@ const inline std::unordered_map<std::string_view, vertex_attribute> shader_verte
     // { "mColor", { attribute_usage::color,  attribute_format::float3, 1} },
 
     // instance
-    { "mInstanceModel", { attribute_usage::model_matrix, attribute_format::floatx, 16} },
+    { "mat4 iModel", { attribute_usage::instance_model, attribute_format::float4, 4} },
 };
 
 const inline std::unordered_map<std::string_view, texture_type> shader_sampler_map =
