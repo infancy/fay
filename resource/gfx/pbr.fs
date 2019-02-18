@@ -12,11 +12,18 @@ uniform sampler2D roughnessMap;
 uniform sampler2D normalMap;
 uniform sampler2D aoMap;
 
+// material parameters
+uniform vec3 Albedo;
+uniform float Metallic;
+uniform float Roughness;
+uniform float Ao;
+
 // lights
 uniform vec3 camPos;
 uniform vec3 lightPositions[4];
 uniform vec3 lightColors[4];
 
+const bool useMap = false;
 const float PI = 3.14159265359;
 // ----------------------------------------------------------------------------
 // Easy trick to get tangent-normals to world-space to keep PBR code simplified.
@@ -51,7 +58,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness)
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 
-    return nom / denom;
+    return nom / max(denom, 0.001); // prevent divide by zero for roughness=0.0 and NdotH=1.0
 }
 // ----------------------------------------------------------------------------
 float GeometrySchlickGGX(float NdotV, float roughness)
@@ -82,13 +89,30 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 // ----------------------------------------------------------------------------
 void main()
 {		
-    vec3 albedo     = pow(texture(albedoMap, vTex).rgb, vec3(2.2)); // gamma correction
-    float metallic  = texture(metallicMap, vTex).r;
-    float roughness = texture(roughnessMap, vTex).r;
-    float ao        = texture(aoMap, vTex).r;
-
-    vec3 N = getNormalFromMap();
     vec3 V = normalize(camPos - wPos);
+    vec3 N;
+    
+    vec3 albedo;
+    float metallic, roughness, ao;
+    if(useMap)
+    {
+        albedo     = pow(texture(albedoMap, vTex).rgb, vec3(2.2)); // gamma correction
+        metallic  = texture(metallicMap, vTex).r;
+        roughness = texture(roughnessMap, vTex).r;
+        ao        = texture(aoMap, vTex).r;
+
+        N = getNormalFromMap();
+    }
+    else
+    {
+        albedo = Albedo;
+        metallic = Metallic;
+        roughness = Roughness;
+        ao = Ao;
+
+        N = normalize(Normal);
+    }
+
 
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
     // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    
@@ -112,8 +136,8 @@ void main()
         vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
            
         vec3 nominator    = NDF * G * F; 
-        float denominator = 4 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001; // 0.001 to prevent divide by zero.
-        vec3 specular = nominator / denominator;
+        float denominator = 4 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+        vec3 specular = nominator / max(denominator, 0.001); // prevent divide by zero for NdotV=0.0 or NdotL=0.0
         
         // kS is equal to Fresnel
         vec3 kS = F;

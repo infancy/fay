@@ -248,10 +248,11 @@ public:
         fay::camera{ glm::vec3{ -100, 100, 0 }, /*-180*/0, -45, 1.f, 300.f }, // light1
         fay::camera{ glm::vec3{ 100, 100, 0 },    0, 0,  1.f, 300.f }, // light2
     };
-    fay::light lights_[2]
+    fay::light lights_[3]
     {
-        fay::light{ glm::vec3{ -100, 100, 0 } },
+        fay::light{ glm::vec3{ 0, 100, 100 } }, // WARNING: shadow map -> fay::light{ glm::vec3{ -100, 100, 0 } },
         fay::light{ glm::vec3{ 100, 100, 0 } },
+        fay::light{ glm::vec3{ 0, 100, 100 } },
     };
     fay::transform transforms_[2]
     {
@@ -529,6 +530,7 @@ public:
     void setup() override
     {
         add_update_items();
+        debug_setup();
 
         mesh = fay::create_raw_renderable(fay::Sphere, device.get());
 
@@ -554,7 +556,19 @@ public:
 
     void render() override
     {
-        auto MVP = camera->world_to_ndc() * transform->model_matrix();
+        GLfloat near_plane = 1.f, far_plane = 200.f;
+        glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
+        glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
+            1080.f / 720.f, near_plane, far_plane);
+        glm::mat4 lightView = glm::lookAt(
+            light->position(), glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
+        glm::mat4 lightSpace = lightProj * lightView;
+
+        // debug info
+        // FIXME: over the GPU memory
+        //fay::bounds3 box_light(-70, 70);
+        fay::frustum box_light(lightSpace);
+        auto debug_light = create_box_mesh(box_light, device.get());
 
         fay::command_list pass;
 
@@ -562,12 +576,45 @@ public:
             .begin_default(pipe_id, shd_id)
             .bind_uniform("proj", camera->persp())
             .bind_uniform("view", camera->view())
-            .bind_uniform("model", transform->model_matrix())
-            .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4, })
             .bind_uniform("camPos", camera->position())
             .bind_uniform("lightPositions[0]", light->position())
             .bind_uniform("lightColors[0]", glm::vec3(1.f, 1.f, 1.f))
-            .draw(mesh.get())
+
+            .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4, })
+            .bind_uniform("Albedo", glm::vec3(0.5f, 0.0f, 0.0f))
+            .bind_uniform("Ao", 1.f);
+
+        int nrRows = 7;
+        int nrColumns = 7;
+        float spacing = 25;
+        glm::mat4 model = glm::mat4(1.0f);
+        for (int row = 0; row < nrRows; ++row)
+        {
+            for (int col = 0; col < nrColumns; ++col)
+            {
+                // we clamp the roughness to 0.025 - 1.0 as perfectly smooth surfaces (roughness of 0.0) tend to look a bit off
+                // on direct lighting.
+
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(
+                    (col - (nrColumns / 2)) * spacing,
+                    (row - (nrRows / 2)) * spacing,
+                    0.0f
+                ));
+
+                pass
+                    .bind_uniform("model", model)
+                    .bind_uniform("Metallic", (float)row / (float)nrRows)
+                    .bind_uniform("Roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f))
+                    .draw(mesh.get());
+            }
+        }
+
+        pass
+            .apply_pipeline(debug_pipe_id)
+            .apply_shader(debug_shd_id)
+            .bind_uniform("MVP", camera->world_to_ndc())
+            .draw(debug_light.get())
             .end_frame();
 
         device->execute(pass);
