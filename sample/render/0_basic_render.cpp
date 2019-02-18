@@ -350,7 +350,7 @@ public:
     {
         add_update_items();
 
-        mesh = fay::create_raw_renderable("object/box/box.obj", device.get());
+        mesh = fay::create_raw_renderable(fay::Box, device.get());
 
         fay::image img("texture/awesomeface.png", true);
         tex_id = create_2d(this->device, "hello", img);
@@ -374,14 +374,7 @@ public:
 
     void render() override
     {
-        glm::mat4 view = camera->view();
-
-        // move to camera
-        glm::mat4 projection = glm::perspective(glm::radians(camera->zoom()),
-            (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
-
-        // draw
-        auto MVP = projection * view * transform->model_matrix();
+        auto MVP = camera->world_to_ndc() * transform->model_matrix();
 
         fay::command_list pass1, pass2;
 
@@ -520,6 +513,64 @@ public:
             .end_frame();
 
         device->execute({ pass1, pass2 });
+    }
+};
+
+class PBR : public two_passes
+{
+public:
+    fay::texture_id tex_id0, tex_id1, tex_id2, tex_id3, tex_id4;
+
+    PBR(const fay::app_desc& _desc) : two_passes(_desc)
+    {
+        desc.window.title = "PBR";
+    }
+
+    void setup() override
+    {
+        add_update_items();
+
+        mesh = fay::create_raw_renderable(fay::Sphere, device.get());
+
+        fay::image img0("texture/pbr/rusted_iron/albedo.png", true);
+        fay::image img1("texture/pbr/rusted_iron/metallic.png", true);
+        fay::image img2("texture/pbr/rusted_iron/roughness.png", true);
+        fay::image img3("texture/pbr/rusted_iron/normal.png", true);
+        fay::image img4("texture/pbr/rusted_iron/ao.png", true);
+        tex_id0 = create_2d(this->device, "albedo", img0);
+        tex_id1 = create_2d(this->device, "metal", img1);
+        tex_id2 = create_2d(this->device, "rough", img2);
+        tex_id3 = create_2d(this->device, "normal", img3);
+        tex_id4 = create_2d(this->device, "ao", img4);
+
+        fay::shader_desc sd = fay::scan_shader_program("gfx/pbr.vs", "gfx/pbr.fs");
+        sd.name = "shd";
+        shd_id = device->create(sd);
+
+        fay::pipeline_desc pd;
+        pd.name = "pipe";
+        pipe_id = device->create(pd);
+    }
+
+    void render() override
+    {
+        auto MVP = camera->world_to_ndc() * transform->model_matrix();
+
+        fay::command_list pass;
+
+        pass
+            .begin_default(pipe_id, shd_id)
+            .bind_uniform("proj", camera->persp())
+            .bind_uniform("view", camera->view())
+            .bind_uniform("model", transform->model_matrix())
+            .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4, })
+            .bind_uniform("camPos", camera->position())
+            .bind_uniform("lightPositions[0]", light->position())
+            .bind_uniform("lightColors[0]", glm::vec3(1.f, 1.f, 1.f))
+            .draw(mesh.get())
+            .end_frame();
+
+        device->execute(pass);
     }
 };
 
@@ -693,3 +744,5 @@ SAMPLE_RENDER_APP_IMPL(triangle)
 SAMPLE_RENDER_APP_IMPL(offscreen)
 SAMPLE_RENDER_APP_IMPL(shadow_map)
 SAMPLE_RENDER_APP_IMPL(defer_rendering)
+
+SAMPLE_RENDER_APP_IMPL(PBR)

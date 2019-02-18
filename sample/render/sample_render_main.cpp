@@ -15,6 +15,8 @@ SAMPLE_RENDER_APP_DECL(offscreen)
 SAMPLE_RENDER_APP_DECL(shadow_map)
 SAMPLE_RENDER_APP_DECL(defer_rendering)
 
+SAMPLE_RENDER_APP_DECL(PBR)
+
 int main(int argc, char** argv)
 {
     google::InitGoogleLogging(argv[0]);
@@ -28,6 +30,6 @@ int main(int argc, char** argv)
     {
         //
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(triangle, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(PBR, desc);
     return app_->run();
 }

@@ -222,18 +222,18 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
     {
         if (AI_SUCCESS == aiGetMaterialColor(aiMtl, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, &ai_albedo))
         {
-            mtl.albedo_factor = glm::vec4(ai_albedo.r, ai_albedo.g, ai_albedo.b, ai_albedo.a);
+            mtl.base_factor = glm::vec4(ai_albedo.r, ai_albedo.g, ai_albedo.b, ai_albedo.a);
         }
     }
     else
     {
         if (AI_SUCCESS == aiGetMaterialColor(aiMtl, AI_MATKEY_COLOR_DIFFUSE, &ai_albedo))
         {
-            mtl.albedo_factor = glm::vec4(ai_albedo.r, ai_albedo.g, ai_albedo.b, ai_albedo.a);
+            mtl.base_factor = glm::vec4(ai_albedo.r, ai_albedo.g, ai_albedo.b, ai_albedo.a);
         }
         if (float ai_opacity = 1.f; AI_SUCCESS == aiGetMaterialFloat(aiMtl, AI_MATKEY_OPACITY, &ai_opacity))
         {
-            mtl.albedo_factor.a = ai_opacity;
+            mtl.base_factor.a = ai_opacity;
         }
     }
     
@@ -271,7 +271,7 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
         mtl.emissive_factor = glm::vec4(ai_emissive.r, ai_emissive.g, ai_emissive.b, ai_emissive.a);
     }
 
-    if ((mtl.albedo_factor.a < 1) || (aiGetMaterialTextureCount(aiMtl, aiTextureType_OPACITY) > 0))
+    if ((mtl.base_factor.a < 1) || (aiGetMaterialTextureCount(aiMtl, aiTextureType_OPACITY) > 0))
     {
         mtl.transparent = true;
     }
@@ -304,11 +304,11 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
 
     if (format() == model_format::gltf)
     {
-        try_load_image(mtl.albedo, aiTextureType_DIFFUSE, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE);
+        try_load_image(mtl.base_color, aiTextureType_DIFFUSE, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE);
     }
     else
     {
-        try_load_image(mtl.albedo, aiTextureType_DIFFUSE);
+        try_load_image(mtl.base_color, aiTextureType_DIFFUSE);
     }
 
     if (format() == model_format::gltf)

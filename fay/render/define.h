@@ -138,7 +138,7 @@ enum class texture_type
 
 enum class texture_usage
 {
-    albedo,
+    base_color,
     metallic_roughness,
     normal,
     occlusion,

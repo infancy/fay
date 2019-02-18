@@ -271,6 +271,7 @@ const inline std::string silly_dancing     = "model/silly_dancing.fbx";
 const inline std::string nierautomata_2b   = "model/nierautomata_2b/scene.gltf";
 const inline std::string ftm_sketchfab     = "model/ftm/ftm_sketchfab.blend";
 const inline std::string Nier_2b_ik_rigged = "model/Nier_2b_ik_rigged/scene.gltf";
+const inline std::string Sphere            = "model/sphere/scene.obj";
 const inline std::string Sponza            = "model/sponza/sponza.obj";
 const inline std::string LightBulb         = "model/LightBulb/LightBulb.obj";
 //const inline std::string shadows           = "model/shadows/shadows.obj";

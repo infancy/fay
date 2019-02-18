@@ -93,6 +93,7 @@ public:
         bool bAlbedo = mat_->textures[0].value > 0;
 
         cmd
+            // TODO: span_view
             .try_bind_texture(mat_->textures[0], "Albedo")
             .bind_uniform("bAlbedo", bAlbedo)
             .bind_index(ibo)

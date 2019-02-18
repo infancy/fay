@@ -17,13 +17,13 @@ struct material // : std::enabled_shared_from_this<material>
     {
         name = res.name;
 
-        if (!res.albedo.empty())             textures[0] = create_2d_(device, name + "_base_color",         texture_usage::albedo,             res.albedo);
+        if (!res.base_color.empty())             textures[0] = create_2d_(device, name + "_base_color",         texture_usage::base_color,             res.base_color);
         if (!res.metallic_roughness.empty()) textures[2] = create_2d_(device, name + "_metallic_roughness", texture_usage::metallic_roughness, res.metallic_roughness);
         if (!res.normal.empty())             textures[1] = create_2d_(device, name + "_normal",             texture_usage::normal,             res.normal);
         if (!res.occlusion.empty())          textures[3] = create_2d_(device, name + "_occlusion",          texture_usage::occlusion,          res.occlusion);
         if (!res.emissive.empty())           textures[4] = create_2d_(device, name + "_emissive",           texture_usage::emissive,           res.emissive);
 
-        albedo = res.albedo_factor;
+        base = res.base_factor;
         emissive = res.emissive_factor;
         metallic = res.metallic_factor;
         roughness = res.roughness_factor;
@@ -58,11 +58,11 @@ struct material // : std::enabled_shared_from_this<material>
 
     std::array<texture_id, 5> textures{};
 
-    glm::vec4 albedo{ 1.f };
-    glm::vec3 emissive{ 0.f };
+    glm::vec4 base{ 1.f };
     float metallic = 1.f;
     float roughness = 1.f;
     float normal = 1.f;
+    glm::vec3 emissive{ 0.f };
 
     uint32_t shader_variant = 0;
     //DrawPipeline pipeline = DrawPipeline::Opaque;

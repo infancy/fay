@@ -46,13 +46,14 @@ struct resource_material
 {
     std::string name{};
 
-    image albedo; // use alpha channel as specular
-    image metallic_roughness;
+    image base_color; // use alpha channel as metal revealed.
+    image metallic_roughness; // metallic saved in blue channel, roughness saved in green channel.
     image normal;
+    // image height;
     image occlusion;
     image emissive;
 
-    glm::vec4 albedo_factor{ 1.f };
+    glm::vec4 base_factor{ 1.f };
     float metallic_factor = 1.f;
     float roughness_factor = 1.f;
 
@@ -66,6 +67,8 @@ struct resource_material
 
 struct resource_mesh
 {
+    resource_mesh() = default;
+
     std::string name{};
 
     // memory_block, buffer_block
