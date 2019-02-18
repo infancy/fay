@@ -15,6 +15,10 @@ uniform sampler2D Shadowmap;
 uniform vec3 LightPos;
 uniform vec3 ViewPos;
 
+float OrthoBias = 0.05;
+float PerspBias = 0.001;
+float baseBias = PerspBias;
+
 float ShadowCalculation(vec4 fragPosLightSpace, float dot_lightDir_normal)
 {
     // 执行（正交、透视）投影除法
@@ -33,7 +37,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, float dot_lightDir_normal)
     // 检查当前片元是否在阴影中
 
     float shadow = 0.0;
-    float bias = max(0.05 * (1.0 - dot_lightDir_normal), 0.005);
+    float bias = max(baseBias * (1.0 - dot_lightDir_normal), baseBias * 0.1);
     vec2 texelSize = 1.0 / textureSize(Shadowmap, 0);
 
     for(int x = -1; x <= 1; ++x)
@@ -57,7 +61,7 @@ void main()
     vec3 lightDir = normalize(LightPos - fs_in.wPos);
 
     // Ambient
-    vec3 ambient = 0.1 * color;
+    vec3 ambient = 0.1 * lightColor;
     // Albedo
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 Albedo = diff * lightColor;
