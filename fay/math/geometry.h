@@ -217,15 +217,26 @@ public:
         // normalize
         // const auto project = [](const vec4 &v) { return vec3(v.x / v.w, v.y / v.w, v.z / v.w); };
 
-        // transform to world space
-        vec3 TRF = corners_[7] = project(inv_view_projection_ * trf);
-        vec3 TLF = corners_[3] = project(inv_view_projection_ * tlf);
-        vec3 TLN = corners_[1] = project(inv_view_projection_ * tln);
-        vec3 TRN = corners_[5] = project(inv_view_projection_ * trn);
-        vec3 BRF = corners_[6] = project(inv_view_projection_ * brf);
-        vec3 BLF = corners_[2] = project(inv_view_projection_ * blf);
-        vec3 BLN = corners_[0] = project(inv_view_projection_ * bln);
-        vec3 BRN = corners_[4] = project(inv_view_projection_ * brn);
+        //                                                                            v1
+        //                                                                          /  |
+        // transform to world space                                               /    |
+        //                 v2----- v1                 |y             v2         v0     |
+        //    |y          /|      /|                  |             / |         |      |
+        //    |          v3------v0|                  |            v3 |         |      |
+        //    |     z    | |     | |            z     |            |  |         |      |
+        //    .------    | |v6---|-|v5          ------.            |  |v6       |      |
+        //   /           |/      |/                  /             | /          |     v5
+        //  / x          v7------v4  NDC            / x     proj   v7           |   /
+        //                                                                      | /
+        //                                                                      v4
+        vec3 TRF = corners_[0] = project(inv_view_projection_ * trf);
+        vec3 TLF = corners_[1] = project(inv_view_projection_ * tlf);
+        vec3 TLN = corners_[2] = project(inv_view_projection_ * tln);
+        vec3 TRN = corners_[3] = project(inv_view_projection_ * trn);
+        vec3 BRF = corners_[4] = project(inv_view_projection_ * brf);
+        vec3 BLF = corners_[5] = project(inv_view_projection_ * blf);
+        vec3 BLN = corners_[6] = project(inv_view_projection_ * bln);
+        vec3 BRN = corners_[7] = project(inv_view_projection_ * brn);
 
         // the normal of each plane, pointing to the internal
         vec3 l = normalize(cross(BLF - BLN, TLN - BLN));
@@ -318,9 +329,17 @@ public:
 
     glm::vec3 corner(box_corner corner) const
     {
+        static size_t map[8] =
+        {
+         // 1, 2, 3, 4,   5, 6, 7, 8
+         // 7, 3, 1, 5,   6, 2, 0, 4
+
+            6, 2, 5, 1,   7, 3, 4, 0
+        };
+
         uint32_t i = static_cast<uint32_t>(corner);
         DCHECK(i < 8);
-        return corners_[i];
+        return corners_[ map[i] ];
     }
 
     // WARNNING: if 0.f < p < 1.f, the return value is inside of the box
@@ -340,29 +359,57 @@ public:
     {
         glm::vec3 p(0.5f);
         glm::vec3 near_center = glm::lerp(corner(box_corner::IV), corner(box_corner::VII), p);
-        glm::vec3 far_center  = glm::lerp(corner(box_corner::I), corner(box_corner::VI), p);
+        glm::vec3 far_center = glm::lerp(corner(box_corner::I), corner(box_corner::VI), p);
         return glm::lerp(near_center, far_center, p);
     }
 
     bounds3 bounds() const
     {
-        return bounds_(corner(box_corner::II), corner(box_corner::V), corner(box_corner::III));
+        bounds3 bounds(corner(box_corner::I), corner(box_corner::II));
+        bounds.expand(corner(box_corner::III));
+        bounds.expand(corner(box_corner::IV));
+        bounds.expand(corner(box_corner::V));
+        bounds.expand(corner(box_corner::VI));
+        bounds.expand(corner(box_corner::VII));
+        bounds.expand(corner(box_corner::VIII));
+
+        return bounds;
     }
 
-    enum class split_policy
-    {
-        logic,
-        liner,
-        PSSM
-    };
-    
     // mainly used in CSM
-    // 'ts':interpolation values, like (0.0), 0.05, 0.15,(1.0)
-    std::vector<frustum> section_bounds(const std::vector<float> ts) const
+    // 'ts':interpolation values, like 0.0, 0.05, 0.15, 1.0
+    /*
+    std::vector<std::array<glm::vec3, 8>> section_bounds(const std::vector<float> ts) const
     {
-        frustum bounds = *this;
-        return { bounds };
+        DCHECK(ts.size() >= 2);
+
+        std::vector<std::array<glm::vec3, 4>> faces(ts.size());
+        faces.front() = { corners_[2], corners_[3], corners_[6], corners_[7] };
+        faces.back()  = { corners_[0], corners_[1], corners_[4], corners_[5] };
+
+        auto _near = faces.front();
+        auto _far  = faces.back();
+
+        for (size_t i = 1; i < ts.size() - 1; ++i)
+        {
+            auto& face = faces[i];
+
+            for (size_t j = 0; j < 4; ++j)
+                face[j] = glm::lerp(_near[j], _far[j], ts[i]);
+        }
+
+        auto sz = ts.size() - 1;
+        std::vector<std::array<glm::vec3, 8>> corners(sz);
+
+        for (size_t i = 0; i < sz; ++i)
+        {
+            auto _near = faces[i], _far = faces[i + 1];
+            corners[i] = { _far[0], _far[1], _near[2], _near[3], _far[4], _far[5], _near[6], _near[7] };
+        }
+
+        return corners;
     }
+    */
 
     //glm::vec4 rough_bounding_sphere() const;
     //glm::vec4 bounding_sphere() const;
@@ -384,18 +431,6 @@ private:
     {
         return glm::vec3(v.x / v.w, v.y / v.w, v.z / v.w);
     };
-
-    bounds3 bounds_(glm::vec3 tlf, glm::vec3 brf, glm::vec3 tln) const
-    {
-        bounds3 bounds(corner(box_corner::I), corner(box_corner::II));
-        bounds.expand(corner(box_corner::III));
-        bounds.expand(corner(box_corner::IV));
-        bounds.expand(corner(box_corner::V));
-        bounds.expand(corner(box_corner::VI));
-        bounds.expand(corner(box_corner::VII));
-        bounds.expand(corner(box_corner::VIII));
-        return bounds;
-    }
 
 private:
     struct frustum_plane

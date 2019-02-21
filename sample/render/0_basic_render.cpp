@@ -270,20 +270,23 @@ public:
     fay::buffer_id ibo;
 
     fay::renderable_sp mesh;
+    fay::renderable_sp mesh2;
     fay::texture_id tex_id;
+    fay::texture_id tex_id2;
     fay::shader_id shd_id;
+    fay::shader_id shd_id2;
     fay::pipeline_id pipe_id;
+    fay::pipeline_id pipe_id2;
 
     fay::texture_id offscreen_tex_id;
     fay::texture_id offscreen_tex_id2;
     fay::texture_id offscreen_tex_id3;
     fay::texture_id offscreen_ds_id;
+    fay::texture_id offscreen_ds_id2;
+    fay::texture_id offscreen_ds_id3;
     fay::frame_id offscreen_frm_id;
-
-    fay::renderable_sp mesh2;
-    fay::texture_id tex_id2;
-    fay::shader_id shd_id2;
-    fay::pipeline_id pipe_id2;
+    fay::frame_id offscreen_frm_id2;
+    fay::frame_id offscreen_frm_id3;
 
     render_paras paras;
     //fay::command_list pass1, pass2;
@@ -296,7 +299,7 @@ public:
         add_update_items_
         (
             { cameras_, cameras_ + 1 },
-            { lights_, lights_+1 },
+            { lights_, lights_ + 1 },
             { transforms_, transforms_ + 1 }
         );
     }
@@ -405,7 +408,7 @@ public:
             .draw(mesh.get())
             .end_frame();
 
-        device->execute({ pass1, pass2});
+        device->execute({ pass1, pass2 });
     }
 };
 
@@ -454,10 +457,16 @@ public:
         }
 
         auto frame = fay::create_depth_frame("shadowmap_frame", 1024, 1024, device.get());
+        auto frame2 = fay::create_depth_frame("shadowmap_frame2", 512, 512, device.get());
+        auto frame3 = fay::create_depth_frame("shadowmap_frame3", 512, 512, device.get());
 
         offscreen_frm_id = std::get<0>(frame);
-        offscreen_tex_id = std::get<1>(frame);
-        offscreen_ds_id  = std::get<2>(frame);
+        offscreen_frm_id2 = std::get<0>(frame2);
+        offscreen_frm_id3 = std::get<0>(frame3);
+
+        offscreen_ds_id = std::get<2>(frame);
+        offscreen_ds_id2 = std::get<2>(frame2);
+        offscreen_ds_id3 = std::get<2>(frame3);
     }
 
     glm::mat4 frustum_to_ortho(glm::vec3 light_position, fay::frustum box, glm::vec3 camera_up = glm::vec3(0.f, 1.f, 0.f))
@@ -469,7 +478,8 @@ public:
         //glm::vec3 bb = glm::vec3(lightView * glm::vec4(bounds.max(), 1.f));
 
         auto corners = box.corners();
-        for(auto& c : corners)
+
+        for (auto& c : corners)
             c = glm::vec3(lightView * glm::vec4(c, 1.f));
 
         fay::bounds3 bounds(corners[0], corners[1]);
@@ -487,9 +497,14 @@ public:
 
     void render() override
     {
+        size_t frustum_num = 1;
+        //GLfloat near_plane = 1.f, middle_ = 299.f;
+        //float depthSection[2] = { near_plane, near_plane + middle_ * 1.f };
+
         // debug info
         // FIXME: over the GPU memory
         //fay::bounds3 box(-70, 70);
+        //glm::mat4 lightProj = glm::perspective(cameras_[0].zoom(), 1080.f / 720.f, depthSection[0], depthSection[1]);
         fay::frustum box_camera(cameras_[0].world_to_ndc());
         auto debug_camera = create_box_mesh(box_camera, device.get());
 
@@ -699,7 +714,7 @@ public:
             lightColors.push_back(glm::vec3(rColor, gColor, bColor));
         }
 
-        mesh  = fay::create_renderable(fay::nierautomata_2b, device.get());
+        mesh = fay::create_renderable(fay::nierautomata_2b, device.get());
         mesh2 = fay::create_raw_renderable(fay::Box, device.get());
 
         // quad
