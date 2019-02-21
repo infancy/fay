@@ -15,9 +15,9 @@ uniform sampler2D Shadowmap;
 uniform vec3 LightPos;
 uniform vec3 ViewPos;
 
-float OrthoBias = 0.05;
+float OrthoBias = 0.03;
 float PerspBias = 0.001;
-float baseBias = PerspBias;
+float baseBias = OrthoBias;
 
 float ShadowCalculation(vec4 fragPosLightSpace, float dot_lightDir_normal)
 {

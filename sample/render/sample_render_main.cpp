@@ -30,6 +30,6 @@ int main(int argc, char** argv)
     {
         //
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(PBR, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(shadow_map, desc);
     return app_->run();
 }

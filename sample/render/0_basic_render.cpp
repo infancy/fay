@@ -245,12 +245,12 @@ public:
         fay::camera{ glm::vec3{ 0, 40, 80 }, -90, 0, 1.f, 300.f },
 
         //pitch 0 -> -30
-        fay::camera{ glm::vec3{ -100, 100, 0 }, /*-180*/0, -45, 1.f, 300.f }, // light1
+        fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f }, // light1
         fay::camera{ glm::vec3{ 100, 100, 0 },    0, 0,  1.f, 300.f }, // light2
     };
     fay::light lights_[3]
     {
-        fay::light{ glm::vec3{ 0, 100, 100 } }, // WARNING: shadow map -> fay::light{ glm::vec3{ -100, 100, 0 } },
+        fay::light{ glm::vec3{ -300, 300, 0 } },
         fay::light{ glm::vec3{ 100, 100, 0 } },
         fay::light{ glm::vec3{ 0, 100, 100 } },
     };
@@ -460,26 +460,54 @@ public:
         offscreen_ds_id  = std::get<2>(frame);
     }
 
+    glm::mat4 frustum_to_ortho(glm::vec3 light_position, fay::frustum box, glm::vec3 camera_up = glm::vec3(0.f, 1.f, 0.f))
+    {
+        glm::mat4 lightView = glm::lookAt(light_position, box.center(), camera_up);
+
+        // transform to light space
+        //glm::vec3 aa = glm::vec3(lightView * glm::vec4(bounds.min(), 1.f));
+        //glm::vec3 bb = glm::vec3(lightView * glm::vec4(bounds.max(), 1.f));
+
+        auto corners = box.corners();
+        for(auto& c : corners)
+            c = glm::vec3(lightView * glm::vec4(c, 1.f));
+
+        fay::bounds3 bounds(corners[0], corners[1]);
+        for (size_t i : fay::range(2, 8))
+            bounds.expand(corners[i]);
+
+        glm::vec3 a = bounds.min(), b = bounds.max();
+
+        return  glm::ortho(
+            a.x, b.x,
+            a.y, b.y,
+            -b.z, -a.z
+        );
+    }
+
     void render() override
     {
-        GLfloat near_plane = 1.f, far_plane = 200.f;
-        glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
-        glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
-            1080.f / 720.f, near_plane, far_plane);
-        glm::mat4 lightView = glm::lookAt(
-            light->position(), glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
-        glm::mat4 lightSpace = lightProj * lightView;
-
         // debug info
         // FIXME: over the GPU memory
-        //fay::bounds3 box_light(-70, 70);
-        fay::frustum box_light(lightSpace);
-        auto debug_light = create_box_mesh(box_light, device.get());
-
         //fay::bounds3 box(-70, 70);
         fay::frustum box_camera(cameras_[0].world_to_ndc());
         auto debug_camera = create_box_mesh(box_camera, device.get());
 
+
+        GLfloat near_plane = 1.f, far_plane = 200.f;
+        //glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
+        glm::mat4 lightOrtho = frustum_to_ortho(light->position(), box_camera);
+
+        glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
+            1080.f / 720.f, near_plane, far_plane);
+
+        glm::mat4 lightView = glm::lookAt(
+            light->position(), box_camera.center(), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
+        glm::mat4 lightSpace = lightOrtho * lightView;
+
+        //fay::bounds3 box_light(-70, 70);
+        fay::frustum box_light(lightSpace);
+        auto debug_light = create_box_mesh(box_light, device.get());
 
         fay::command_list pass1, pass2;
         // depth map

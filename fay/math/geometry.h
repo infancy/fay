@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/compatibility.hpp>
 
 #include "fay/app/input.h"
 #include "fay/core/fay.h"
@@ -199,7 +201,7 @@ public:
     {
         using namespace glm;
 
-        inv_view_projection = glm::inverse(view_projection);
+        inv_view_projection_ = glm::inverse(view_projection);
 
         // (openGL) NDC box corner point(top/bottom, left/right, near/far)
         static const vec4 trf(+1.f, +1.f, +1.f, 1.f);
@@ -216,14 +218,14 @@ public:
         // const auto project = [](const vec4 &v) { return vec3(v.x / v.w, v.y / v.w, v.z / v.w); };
 
         // transform to world space
-        vec3 TRF = corners[7] = project(inv_view_projection * trf);
-        vec3 TLF = corners[3] = project(inv_view_projection * tlf);
-        vec3 TLN = corners[1] = project(inv_view_projection * tln);
-        vec3 TRN = corners[5] = project(inv_view_projection * trn);
-        vec3 BRF = corners[6] = project(inv_view_projection * brf);
-        vec3 BLF = corners[2] = project(inv_view_projection * blf);
-        vec3 BLN = corners[0] = project(inv_view_projection * bln);
-        vec3 BRN = corners[4] = project(inv_view_projection * brn);
+        vec3 TRF = corners_[7] = project(inv_view_projection_ * trf);
+        vec3 TLF = corners_[3] = project(inv_view_projection_ * tlf);
+        vec3 TLN = corners_[1] = project(inv_view_projection_ * tln);
+        vec3 TRN = corners_[5] = project(inv_view_projection_ * trn);
+        vec3 BRF = corners_[6] = project(inv_view_projection_ * brf);
+        vec3 BLF = corners_[2] = project(inv_view_projection_ * blf);
+        vec3 BLN = corners_[0] = project(inv_view_projection_ * bln);
+        vec3 BRN = corners_[4] = project(inv_view_projection_ * brn);
 
         // the normal of each plane, pointing to the internal
         vec3 l = normalize(cross(BLF - BLN, TLN - BLN));
@@ -234,17 +236,17 @@ public:
         vec3 b = normalize(cross(BRF - BRN, BLN - BRN));
 
         // 
-        planes[0] = vec4(l, -dot(l, BLN));
-        planes[1] = vec4(r, -dot(r, TRN));
-        planes[2] = vec4(n, -dot(n, BRN));
-        planes[3] = vec4(f, -dot(f, BRF));
-        planes[4] = vec4(t, -dot(t, TRN));
-        planes[5] = vec4(b, -dot(b, BRN));
+        planes_[0] = vec4(l, -dot(l, BLN));
+        planes_[1] = vec4(r, -dot(r, TRN));
+        planes_[2] = vec4(n, -dot(n, BRN));
+        planes_[3] = vec4(f, -dot(f, BRF));
+        planes_[4] = vec4(t, -dot(t, TRN));
+        planes_[5] = vec4(b, -dot(b, BRN));
 
         // 
-        vec4 Center = inv_view_projection * center;
+        vec4 Center = inv_view_projection_ * center;
         // checks winding order
-        for (auto &p : planes)
+        for (auto &p : planes_)
             if (dot(Center, p) < 0.f)
                 p = -p;
     }
@@ -258,7 +260,7 @@ public:
     {
         using namespace glm;
 
-        for (auto &plane : planes)
+        for (auto &plane : planes_)
         {
             bool all_outside = true;
 
@@ -283,7 +285,7 @@ public:
     {
         using namespace glm;
 
-        for (auto &plane : planes)
+        for (auto &plane : planes_)
         {
             bool has_outside = false;
 
@@ -318,7 +320,7 @@ public:
     {
         uint32_t i = static_cast<uint32_t>(corner);
         DCHECK(i < 8);
-        return corners[i];
+        return corners_[i];
     }
 
     // WARNNING: if 0.f < p < 1.f, the return value is inside of the box
@@ -326,12 +328,20 @@ public:
     {
         // WARNNING: OpenGL NDC space
         glm::vec4 clip = glm::vec4(2.f * x - 1.f, 2.f * y - 1.f, 2.f * z - 1.f, 1.f);
-        return project(inv_view_projection * clip);
+        return project(inv_view_projection_ * clip);
     }
 
     glm::vec3 coord(glm::vec3 p) const
     {
         return coord(p.x, p.y, p.z);
+    }
+
+    glm::vec3 center() const
+    {
+        glm::vec3 p(0.5f);
+        glm::vec3 near_center = glm::lerp(corner(box_corner::IV), corner(box_corner::VII), p);
+        glm::vec3 far_center  = glm::lerp(corner(box_corner::I), corner(box_corner::VI), p);
+        return glm::lerp(near_center, far_center, p);
     }
 
     bounds3 bounds() const
@@ -347,17 +357,25 @@ public:
     };
     
     // mainly used in CSM
-    std::vector<bounds3> section_bounds(split_policy policy = split_policy::PSSM) const
+    // 'ts':interpolation values, like (0.0), 0.05, 0.15,(1.0)
+    std::vector<frustum> section_bounds(const std::vector<float> ts) const
     {
-
+        frustum bounds = *this;
+        return { bounds };
     }
 
     //glm::vec4 rough_bounding_sphere() const;
     //glm::vec4 bounding_sphere() const;
 
-    const glm::vec4* get_planes() const
+
+    std::array<glm::vec3, 8> corners() const
     {
-        return planes;
+        return corners_;
+    }
+
+    std::array<glm::vec4, 6> planes() const
+    {
+        return planes_;
     }
 
 private:
@@ -369,8 +387,13 @@ private:
 
     bounds3 bounds_(glm::vec3 tlf, glm::vec3 brf, glm::vec3 tln) const
     {
-        bounds3 bounds(tlf, brf); 
-        bounds.expand(tln);
+        bounds3 bounds(corner(box_corner::I), corner(box_corner::II));
+        bounds.expand(corner(box_corner::III));
+        bounds.expand(corner(box_corner::IV));
+        bounds.expand(corner(box_corner::V));
+        bounds.expand(corner(box_corner::VI));
+        bounds.expand(corner(box_corner::VII));
+        bounds.expand(corner(box_corner::VIII));
         return bounds;
     }
 
@@ -380,11 +403,11 @@ private:
         glm::vec3   xyz;    ///< Camera frustum plane position
         float       negW;   ///< Camera frustum plane, sign of the coordinates
         glm::vec3   sign;   ///< Camera frustum plane position
-    } planes_[6];
+    } planes__[6];
 
-    glm::vec3 corners[8];
-    glm::vec4 planes[6];
-    glm::mat4 inv_view_projection;
+    std::array<glm::vec3, 8> corners_{};
+    std::array<glm::vec4, 6> planes_{};
+    glm::mat4 inv_view_projection_;
 };
 
 } // namespace fay
