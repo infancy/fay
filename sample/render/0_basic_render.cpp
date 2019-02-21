@@ -491,40 +491,43 @@ public:
         return  glm::ortho(
             a.x, b.x,
             a.y, b.y,
-            -b.z, -a.z
+            0.f, -a.z
         );
     }
 
     void render() override
     {
         size_t frustum_num = 1;
-        //GLfloat near_plane = 1.f, middle_ = 299.f;
-        //float depthSection[2] = { near_plane, near_plane + middle_ * 1.f };
+        GLfloat near_plane = 1.f, middle_ = 299.f;
+        float depthSection[3] = { near_plane, near_plane + middle_ * 0.5f, near_plane + middle_ * 1.f };
 
         // debug info
         // FIXME: over the GPU memory
         //fay::bounds3 box(-70, 70);
-        //glm::mat4 lightProj = glm::perspective(cameras_[0].zoom(), 1080.f / 720.f, depthSection[0], depthSection[1]);
-        fay::frustum box_camera(cameras_[0].world_to_ndc());
+        glm::mat4 lightProj = glm::perspective(glm::radians(cameras_[0].zoom()), 1080.f / 720.f, depthSection[0], depthSection[1]);
+        glm::mat4 lightProj2 = glm::perspective(glm::radians(cameras_[0].zoom()), 1080.f / 720.f, depthSection[1], depthSection[2]);
+        fay::frustum box_camera(lightProj * cameras_[0].view());
         auto debug_camera = create_box_mesh(box_camera, device.get());
+        fay::frustum box_camera2(lightProj2 * cameras_[0].view());
+        auto debug_camera2 = create_box_mesh(box_camera2, device.get());
 
-
-        GLfloat near_plane = 1.f, far_plane = 200.f;
-        //glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
         glm::mat4 lightOrtho = frustum_to_ortho(light->position(), box_camera);
-
-        glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
-            1080.f / 720.f, near_plane, far_plane);
+        glm::mat4 lightOrtho2 = frustum_to_ortho(light->position(), box_camera2);
 
         glm::mat4 lightView = glm::lookAt(
             light->position(), box_camera.center(), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
         glm::mat4 lightSpace = lightOrtho * lightView;
+        glm::mat4 lightView2 = glm::lookAt(
+            light->position(), box_camera2.center(), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
+        glm::mat4 lightSpace2 = lightOrtho2 * lightView2;
 
         //fay::bounds3 box_light(-70, 70);
         fay::frustum box_light(lightSpace);
         auto debug_light = create_box_mesh(box_light, device.get());
+        fay::frustum box_light2(lightSpace2);
+        auto debug_light2 = create_box_mesh(box_light2, device.get());
 
-        fay::command_list pass1, pass2;
+        fay::command_list pass1, pass2, pass3;
         // depth map
         pass1
             .begin_frame(offscreen_frm_id)
@@ -536,8 +539,18 @@ public:
             .bind_uniform("MVP", lightSpace * transform->model_matrix())
             .draw(mesh.get())
             .end_frame();
-
         pass2
+            .begin_frame(offscreen_frm_id2)
+            .clear_color({ 1.f, 0.f, 0.f, 1.f }) // rgb32f
+            .clear_depth()
+            .clear_stencil()
+            .apply_pipeline(pipe_id)
+            .apply_shader(shd_id)
+            .bind_uniform("MVP", lightSpace2 * transform->model_matrix())
+            .draw(mesh.get())
+            .end_frame();
+
+        pass3
             .begin_default(pipe_id2, shd_id2)
             //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
             .bind_uniform("Proj", camera->persp())
@@ -554,9 +567,11 @@ public:
             .bind_uniform("MVP", camera->world_to_ndc())
             .draw(debug_camera.get()) // they are in the world space, doesn't need model matrix.
             .draw(debug_light.get())
+            .draw(debug_camera2.get())
+            .draw(debug_light2.get())
             .end_frame();
 
-        device->execute({ pass1, pass2 });
+        device->execute({ pass1, pass2, pass3 });
     }
 };
 

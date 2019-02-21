@@ -74,7 +74,7 @@ struct resource_mesh
     // memory_block, buffer_block
     std::vector<uint8_t> vertices;
     uint32_t      size{}; // vertex nums
-    vertex_layout layout;
+    vertex_layout layout{};
 
     std::vector<uint32_t> indices;
     primitive_type primitive_{ primitive_type::triangles };
