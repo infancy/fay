@@ -7,7 +7,7 @@ layout (location = 4) in vec3 mBit;
 
 out vec2 vTex;
 out vec3 wPos;
-out vec3 Normal;
+out vec3 wNor;
 
 uniform mat4 proj;
 uniform mat4 view;
@@ -17,8 +17,8 @@ void main()
 {
     vTex = mTex; // or rename to Tex
     wPos = vec3(model * vec4(mPos, 1.0));
-    // mat3 normalMatrix = transpose(inverse(mat3(Model)));
-    Normal = mat3(model) * mNor;
+    wNor = transpose(inverse(mat3(model))) * mNor;
+    //wNor = mat3(model) * mNor; // if not scale or rotate, it's ok
 
     gl_Position =  proj * view * vec4(wPos, 1.0);
 }

@@ -1,7 +1,7 @@
 #version 330 core
 in vec2 vTex;
 in vec3 wPos;
-in vec3 Normal;
+in vec3 wNor;
 
 out vec4 FragColor;
 
@@ -21,7 +21,7 @@ uniform float Ao;
 // lights
 uniform vec3 camPos;
 uniform vec3 lightPositions[4];
-uniform vec3 lightColors[4];
+uniform vec3 lightColor;
 
 const bool useMap = false;
 const float PI = 3.14159265359;
@@ -39,7 +39,7 @@ vec3 getNormalFromMap()
     vec2 st1 = dFdx(vTex);
     vec2 st2 = dFdy(vTex);
 
-    vec3 N   = normalize(Normal);
+    vec3 N   = normalize(wNor);
     vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
     vec3 B  = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
@@ -58,7 +58,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness)
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 
-    return nom / max(denom, 0.001); // prevent divide by zero for roughness=0.0 and NdotH=1.0
+    return nom / max(denom, 0.00000001); // prevent divide by zero for roughness=0.0 and NdotH=1.0
 }
 // ----------------------------------------------------------------------------
 float GeometrySchlickGGX(float NdotV, float roughness)
@@ -110,7 +110,7 @@ void main()
         roughness = Roughness;
         ao = Ao;
 
-        N = normalize(Normal);
+        N = normalize(wNor);
     }
 
 
@@ -121,14 +121,14 @@ void main()
 
     // reflectance equation
     vec3 Lo = vec3(0.0);
-    for(int i = 0; i < 1; ++i) 
+    for(int i = 0; i < 4; ++i) 
     {
         // calculate per-light radiance
         vec3 L = normalize(lightPositions[i] - wPos);
         vec3 H = normalize(V + L);
         float distance = length(lightPositions[i] - wPos);
         float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = lightColors[i] * attenuation;
+        vec3 radiance = lightColor * attenuation;
 
         // Cook-Torrance BRDF
         float NDF = DistributionGGX(N, H, roughness);   
@@ -161,7 +161,7 @@ void main()
     // this ambient lighting with environment lighting).
     vec3 ambient = vec3(0.03) * albedo * ao;
     
-    vec3 color = ambient + Lo;
+    vec3 color = ambient + Lo * 10000;
 
     // HDR tonemapping
     color = color / (color + vec3(1.0));

@@ -574,11 +574,15 @@ public:
 
         pass
             .begin_default(pipe_id, shd_id)
+            // TODO: check uniform (blocks)
             .bind_uniform("proj", camera->persp())
             .bind_uniform("view", camera->view())
             .bind_uniform("camPos", camera->position())
             .bind_uniform("lightPositions[0]", light->position())
-            .bind_uniform("lightColors[0]", glm::vec3(1.f, 1.f, 1.f))
+            .bind_uniform("lightPositions[1]", glm::vec3{ 0, 0, 100 })
+            .bind_uniform("lightPositions[2]", glm::vec3{ -100, 100, 100 })
+            .bind_uniform("lightPositions[3]", glm::vec3{ 100, 100, 100 })
+            .bind_uniform("lightColor", glm::vec3(1.f, 1.f, 1.f))
 
             .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4, })
             .bind_uniform("Albedo", glm::vec3(0.5f, 0.0f, 0.0f))
@@ -587,7 +591,7 @@ public:
         int nrRows = 7;
         int nrColumns = 7;
         float spacing = 25;
-        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 model = glm::mat4(1.f);
         for (int row = 0; row < nrRows; ++row)
         {
             for (int col = 0; col < nrColumns; ++col)
@@ -598,14 +602,15 @@ public:
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(
                     (col - (nrColumns / 2)) * spacing,
-                    (row - (nrRows / 2)) * spacing,
+                    (row - (nrRows / 2)) * spacing + 40.f,
                     0.0f
                 ));
+                model = glm::scale(model, glm::vec3(0.5));
 
                 pass
                     .bind_uniform("model", model)
                     .bind_uniform("Metallic", (float)row / (float)nrRows)
-                    .bind_uniform("Roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f))
+                    .bind_uniform("Roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 0.95f))
                     .draw(mesh.get());
             }
         }
