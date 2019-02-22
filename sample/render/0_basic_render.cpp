@@ -504,7 +504,7 @@ public:
     {
         size_t frustum_num = 1;
         GLfloat near_plane = 1.f, middle_ = 299.f;
-        float depthSection[3] = { near_plane, near_plane + middle_ * 0.5f, near_plane + middle_ * 1.f };
+        float depthSection[3] = { near_plane, near_plane + middle_ * 0.35f, near_plane + middle_ * 1.f };
 
         // debug info
         // FIXME: over the GPU memory
@@ -565,7 +565,7 @@ public:
             .bind_uniform("LightSpace2", lightSpace2)
             .bind_uniform("LightPos", light->position())
             .bind_uniform("ViewPos", camera->position())
-            .bind_uniform("depthSection[1]", transform_view_z_to_NDC(1.f, 300.f, depthSection[1]))
+            .bind_uniform("depthSection[1]", -depthSection[1])
             .bind_texture(offscreen_ds_id, "Shadowmap")
             .bind_texture(offscreen_ds_id2, "Shadowmap2")
             .draw(mesh.get())
