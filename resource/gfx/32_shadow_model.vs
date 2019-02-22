@@ -11,13 +11,12 @@ out VS_OUT
     vec3 wPos;
     vec3 wNor;
     vec2 wTex;
-    vec4 LightSpacePos;
+    vec4 CameraSpacePos;
 } vs_out;
 
 uniform mat4 Proj;
 uniform mat4 View;
 uniform mat4 Model;
-uniform mat4 LightSpace;
 
 void main()
 {
@@ -28,5 +27,6 @@ void main()
     vs_out.wPos = vec3(ModelMat * vec4(mPos, 1.0));
     vs_out.wNor = transpose(inverse(mat3(ModelMat))) * mNor;
     vs_out.wTex = mTex;
-    vs_out.LightSpacePos = LightSpace * vec4(vs_out.wPos, 1.0);
+
+    vs_out.CameraSpacePos = View * ModelMat * vec4(mPos, 1.f);
 }

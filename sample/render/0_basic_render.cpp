@@ -242,7 +242,7 @@ public:
     */
     fay::camera cameras_[3]
     {
-        fay::camera{ glm::vec3{ 0, 40, 80 }, -90, 0, 1.f, 300.f },
+        fay::camera{ glm::vec3{ 0, 40, 160 }, -90, 0, 1.f, 300.f },
 
         //pitch 0 -> -30
         fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f }, // light1
@@ -457,8 +457,8 @@ public:
         }
 
         auto frame = fay::create_depth_frame("shadowmap_frame", 1024, 1024, device.get());
-        auto frame2 = fay::create_depth_frame("shadowmap_frame2", 512, 512, device.get());
-        auto frame3 = fay::create_depth_frame("shadowmap_frame3", 512, 512, device.get());
+        auto frame2 = fay::create_depth_frame("shadowmap_frame2", 1024, 1024, device.get());
+        auto frame3 = fay::create_depth_frame("shadowmap_frame3", 1024, 1024, device.get());
 
         offscreen_frm_id = std::get<0>(frame);
         offscreen_frm_id2 = std::get<0>(frame2);
@@ -491,8 +491,13 @@ public:
         return  glm::ortho(
             a.x, b.x,
             a.y, b.y,
-            0.f, -a.z
+            -b.z - 100.f, -a.z + 200.f
         );
+    }
+
+    float transform_view_z_to_NDC(float _near, float _far, float z)
+    {
+        return (z - _near) / (_far - _near);
     }
 
     void render() override
@@ -557,9 +562,12 @@ public:
             .bind_uniform("View", camera->view())
             .bind_uniform("Model", transform->model_matrix())
             .bind_uniform("LightSpace", lightSpace)
+            .bind_uniform("LightSpace2", lightSpace2)
             .bind_uniform("LightPos", light->position())
             .bind_uniform("ViewPos", camera->position())
+            .bind_uniform("depthSection[1]", transform_view_z_to_NDC(1.f, 300.f, depthSection[1]))
             .bind_texture(offscreen_ds_id, "Shadowmap")
+            .bind_texture(offscreen_ds_id2, "Shadowmap2")
             .draw(mesh.get())
             // debug info
             .apply_pipeline(debug_pipe_id)
