@@ -1,12 +1,12 @@
 #version 330 core
 out vec4 FragColor;
-in vec3 WorldPos;
+in vec3 wPos;
 
 uniform samplerCube environmentMap;
 
 void main()
 {		
-    vec3 envColor = texture(environmentMap, WorldPos).rgb;
+    vec3 envColor = texture(environmentMap, wPos).rgb;
     
     // HDR tonemap and gamma correct
     envColor = envColor / (envColor + vec3(1.0));

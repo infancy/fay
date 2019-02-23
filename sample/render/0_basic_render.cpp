@@ -166,8 +166,7 @@ public:
                    //FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
                 }
             )";
-        fay::shader_desc sd = fay::scan_shader_program("gfx/29_instancing.vs", "gfx/29_instancing.fs"); // fay::scan_shader_program(vs_code, fs_code, true);
-        sd.name = "shd"; //todo
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/29_instancing.vs", "gfx/29_instancing.fs"); // fay::scan_shader_program(vs_code, fs_code, true);
         auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
@@ -297,8 +296,7 @@ public:
 
     void debug_setup()
     {
-        fay::shader_desc sd = fay::scan_shader_program("gfx/lines.vs", "gfx/lines.fs");
-        sd.name = "light_shd";
+        fay::shader_desc sd = fay::scan_shader_program("light_shd", "gfx/lines.vs", "gfx/lines.fs");
         debug_shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
@@ -350,8 +348,7 @@ public:
         fay::image img("texture/awesomeface.png", true);
         tex_id = create_2d(this->device, "hello", img);
 
-        fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs");
-        sd.name = "shd"; //todo
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/renderable.vs", "gfx/renderable.fs");
         shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
@@ -424,8 +421,7 @@ public:
         }
 
         {
-            fay::shader_desc sd = fay::scan_shader_program("gfx/32_shadow_map.vs", "gfx/32_shadow_map.fs", false);
-            sd.name = "shd"; //todo
+            fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/32_shadow_map.vs", "gfx/32_shadow_map.fs", false);
             shd_id = device->create(sd);
 
             fay::pipeline_desc pd;
@@ -436,8 +432,7 @@ public:
         }
 
         {
-            //fay::shader_desc sd2 = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.vs", false);
-            fay::shader_desc sd = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs", false);
+            fay::shader_desc sd = fay::scan_shader_program("shd2", "gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs", false);
             sd.name = "shd2"; //todo
             shd_id2 = device->create(sd);
 
@@ -602,8 +597,7 @@ public:
         tex_id3 = create_2d(this->device, "normal", img3);
         tex_id4 = create_2d(this->device, "ao", img4);
 
-        fay::shader_desc sd = fay::scan_shader_program("gfx/pbr.vs", "gfx/pbr.fs");
-        sd.name = "shd";
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/pbr.vs", "gfx/pbr.fs");
         shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
@@ -688,6 +682,11 @@ class IBL : public two_passes
 public:
     fay::texture_id tex_id0, tex_id1, tex_id2, tex_id3, tex_id4;
 
+    fay::shader_id generate_cube_shd_id;
+    fay::shader_id irradiance_shd_id;
+    fay::shader_id background_shd_id;
+
+
     IBL(const fay::app_desc& _desc) : two_passes(_desc)
     {
         desc.window.title = "PBR";
@@ -699,6 +698,11 @@ public:
         debug_setup();
 
         mesh = fay::create_raw_renderable(fay::Sphere, device.get());
+        mesh2 = fay::create_raw_renderable(fay::Box, device.get()); // box
+
+        auto frame = fay::create_cubemap_frame("cubemap_frame", 512, 512, fay::pixel_format::rgb16f, 2, device.get());
+        offscreen_frm_id = std::get<0>(frame);
+        offscreen_tex_id = std::get<1>(frame);
 
         fay::image img0("texture/pbr/rusted_iron/albedo.png", true);
         fay::image img1("texture/pbr/rusted_iron/metallic.png", true);
@@ -711,34 +715,49 @@ public:
         tex_id3 = create_2d(this->device, "normal", img3);
         tex_id4 = create_2d(this->device, "ao", img4);
 
-        fay::shader_desc sd = fay::scan_shader_program("gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs");
-        sd.name = "shd";
-        shd_id = device->create(sd);
+
+        generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
+        irradiance_shd_id = create_shader("irradiance", "gfx/IBL/cubemap.vs", "gfx/IBL/irradiance_convolution.fs", device.get());
+        background_shd_id = create_shader("background", "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
+        shd_id = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
 
         fay::pipeline_desc pd;
         pd.name = "pipe";
         pipe_id = device->create(pd);
+
+        /*
+        fay::command_list pass; // gen cubemap
+
+        pass
+            .begin_frame(offscreen_frm_id)
+            .clear_frame()
+            .set_viewport(0, 0, 512, 512)
+            .set_scissor(0, 0, 512, 512)
+            .apply_pipeline(pipe_id)
+            .apply_shader(generate_cube_shd_id)
+            .draw(mesh2.get())
+            .end_frame()
+            ;
+        device->execute(pass);
+        */
     }
 
     void render() override
     {
-        GLfloat near_plane = 1.f, far_plane = 200.f;
-        glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
-        glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
-            1080.f / 720.f, near_plane, far_plane);
-        glm::mat4 lightView = glm::lookAt(
-            light->position(), glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
-        glm::mat4 lightSpace = lightProj * lightView;
-
-        // debug info
-        // FIXME: over the GPU memory
-        //fay::bounds3 box_light(-70, 70);
-        fay::frustum box_light(lightSpace);
-        auto debug_light = create_box_mesh(box_light, device.get());
-
-        fay::command_list pass;
+        fay::command_list pass, pass2;
 
         pass
+            .begin_frame(offscreen_frm_id)
+            .clear_frame()
+            .set_viewport(0, 0, 512, 512)
+            .set_scissor(0, 0, 512, 512)
+            .apply_pipeline(pipe_id)
+            .apply_shader(generate_cube_shd_id)
+            .draw(mesh2.get())
+            .end_frame()
+            ;
+
+        pass2
             .begin_default(pipe_id, shd_id)
             // TODO: check uniform (blocks)
             .bind_uniform("proj", camera->persp())
@@ -750,9 +769,10 @@ public:
             .bind_uniform("lightPositions[3]", glm::vec3{ 100, 100, 100 })
             .bind_uniform("lightColor", glm::vec3(1.f, 1.f, 1.f))
 
-            .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4, })
+            .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4 })
             .bind_uniform("Albedo", glm::vec3(0.5f, 0.0f, 0.0f))
-            .bind_uniform("Ao", 1.f);
+            .bind_uniform("Ao", 1.f)
+            ;
 
         int nrRows = 7;
         int nrColumns = 7;
@@ -773,7 +793,7 @@ public:
                 ));
                 model = glm::scale(model, glm::vec3(0.5));
 
-                pass
+                pass2
                     .bind_uniform("model", model)
                     .bind_uniform("Metallic", (float)row / (float)nrRows)
                     .bind_uniform("Roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 0.95f))
@@ -781,14 +801,10 @@ public:
             }
         }
 
-        pass
-            .apply_pipeline(debug_pipe_id)
-            .apply_shader(debug_shd_id)
-            .bind_uniform("MVP", camera->world_to_ndc())
-            .draw(debug_light.get())
-            .end_frame();
+        pass2.end_frame();
 
-        device->execute(pass);
+        //device->execute(pass2);
+        device->execute({ pass, pass2 });
     }
 };
 
@@ -850,15 +866,12 @@ public:
         }
 
         {
-            fay::shader_desc sd = fay::scan_shader_program("gfx/30_phong_shading.vs", "gfx/38_g_buffer.fs", false);
-            sd.name = "shd"; //todo
+            fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/30_phong_shading.vs", "gfx/38_g_buffer.fs", false);
             shd_id = device->create(sd);
         }
 
         {
-            //fay::shader_desc sd2 = fay::scan_shader_program("gfx/32_shadow_model.vs", "gfx/32_shadow_model.vs", false);
-            fay::shader_desc sd2 = fay::scan_shader_program("gfx/two_passes.vs", "gfx/38_deferred_shading.fs", false);
-            sd2.name = "shd2"; //todo
+            fay::shader_desc sd2 = fay::scan_shader_program("shd2", "gfx/two_passes.vs", "gfx/38_deferred_shading.fs", false);
             shd_id2 = device->create(sd2);
         }
 

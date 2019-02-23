@@ -13,7 +13,7 @@
 
 using namespace std::string_literals;
 
-namespace fay // ::render // ::opengl
+namespace fay // TODO fay::opengl
 {
 
 // -------------------------------------------------------------------------------------------------
@@ -21,10 +21,41 @@ namespace fay // ::render // ::opengl
 
 // static FAY_FORCE_INLINE void check_errors() { CHECK(glGetError() == GL_NO_ERROR); }
 // TODO: in debug mode forces turned on error check, while in release it is optional.
-#define glcheck_errors() CHECK(glGetError() == GL_NO_ERROR)
+void glCheckError_(const char *file, int line)
+{
+    if (glGetError() == GL_NO_ERROR)
+        return;
+
+    GLenum errorCode;
+    while ((errorCode = glGetError()) != GL_NO_ERROR)
+    {
+        std::string error;
+        switch (errorCode)
+        {
+            case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
+            case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
+            case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
+            //case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
+            //case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
+            case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+            default:
+                error = std::to_string(errorCode);
+        }
+        std::cout << "OpenGL error: " << error << " | " << file << " (" << line << ")\n";
+    }
+}
+
+#ifdef FAY_DEBUG
+#define glcheck_errors() glCheckError_(__FILE__, __LINE__) 
+#else
+#define glcheck_errors()
+#endif
 
 // -------------------------------------------------------------------------------------------------
-// helper functions
+// helper function & type
+
+
 
 namespace backend_opengl_func
 {
@@ -200,7 +231,7 @@ namespace backend_opengl_type
     // -------------------------------------------------------------------------------------------------
     // helper types
 
-    struct vertex_attribute
+    struct vertex_attribute_gl
     {
         GLuint        index;      // 0, 1, 2, 3
         GLint         size;       // float3 : 3, byte4: 4
@@ -257,7 +288,7 @@ namespace backend_opengl_type
 
         // used for vertex buffer, instance buffer
         GLsizei     stride{};
-        std::vector<vertex_attribute> layout{};
+        std::vector<vertex_attribute_gl> layout{};
 
         // then assign others
         GLuint gid{}; // union { GLuint vbo; GLuint ibo; };
@@ -285,8 +316,8 @@ namespace backend_opengl_type
                     //a.format = da.format();
 
                     a.index = i; // i_, ix, ic, ii
-                    a.type       = vertex_attribute::attribute_type(da.format());
-                    a.normalized = vertex_attribute::need_normalized(da.format());
+                    a.type       = vertex_attribute_gl::attribute_type(da.format());
+                    a.normalized = vertex_attribute_gl::need_normalized(da.format());
 
                     auto[num, byte] = attribute_format_map.at(da.format());
                     a.size = num;
@@ -674,7 +705,7 @@ public:
 
                 glTexParameteri(tex.type, GL_TEXTURE_WRAP_S, tex.wrap_u);
                 glTexParameteri(tex.type, GL_TEXTURE_WRAP_T, tex.wrap_v);
-                if (tex.type == GL_TEXTURE_3D)
+                if ((tex.type == GL_TEXTURE_3D) || tex.type == GL_TEXTURE_CUBE_MAP)
                 // if (tex.type == GL_PROXY_TEXTURE_3D || tex.type == GL_TEXTURE_CUBE_MAP)
                     glTexParameteri(tex.type, GL_TEXTURE_WRAP_R, tex.wrap_w);
 
@@ -696,14 +727,17 @@ public:
 
                 for (uint32_t i = 0; i < nums; ++i)
                 {
-                    GLenum target = tex.type == GL_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
+                    if (desc.data[i])
+                    {
+                        GLenum target = tex.type == GL_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
 
-                    if (is_compressed)
-                        glCompressedTexImage2D(target, 0, in_fmt,
-                            desc.width, desc.height, 0, desc.size, desc.data[i]); // TODO: even data is nullptr, it is not problem.
-                    else
-                        glTexImage2D(target, 0, in_fmt,
-                            desc.width, desc.height, 0, ex_fmt, ex_type, desc.data[i]);
+                        if (is_compressed)
+                            glCompressedTexImage2D(target, 0, in_fmt,
+                                desc.width, desc.height, 0, desc.size, desc.data[i]); // even data is nullptr, it is not problem.
+                        else
+                            glTexImage2D(target, 0, in_fmt,
+                                desc.width, desc.height, 0, ex_fmt, ex_type, desc.data[i]);
+                    }
                 }
             }
             else if (tex.type == GL_TEXTURE_2D_ARRAY || tex.type == GL_TEXTURE_3D)
@@ -711,10 +745,10 @@ public:
                 // WARNNING: data or data3d, only one is available
                 if (is_compressed)
                     glCompressedTexImage3D(tex.type, 0, in_fmt,
-                        desc.width, desc.height, desc.depth, 0, desc.size, desc.data.front()); // TODO: even data3d is nullptr, it is not problem.
+                        desc.width, desc.height, desc.depth, 0, desc.size, nullptr);
                 else
                     glTexImage3D(tex.type, 0, in_fmt,
-                        desc.width, desc.height, desc.depth, 0, ex_fmt, ex_type, desc.data.front());
+                        desc.width, desc.height, desc.depth, 0, ex_fmt, ex_type, nullptr);
 
                 if (!desc.data.empty())
                     update(pid, nullptr); // TODO
@@ -742,7 +776,7 @@ public:
                     pixel_internal_format(desc.pixel_format), tex.width, tex.height);
             }
         }
-        else if(enum_have(render_target::DepthStencil, desc.as_render_target))// depth_stencil
+        else if(enum_have(render_target::DepthStencil, desc.as_render_target))// reanme: depth_or_stencil
         {
                     /*
 
@@ -753,7 +787,7 @@ public:
         */
 
             glGenTextures(1, &tex.tbo);
-            //glActiveTexture(GL_TEXTURE0);
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(tex.type, tex.tbo);
 
             glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, tex.min_filter);
@@ -976,8 +1010,8 @@ public:
 
             // TODO!!!
             // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-            unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-            DCHECK(ctx_.frm.render_targets.size() < 4);
+            unsigned int attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
+            DCHECK(ctx_.frm.render_targets.size() <= 6);
             glDrawBuffers(ctx_.frm.render_targets.size(), attachments);
         }
         else // default frame

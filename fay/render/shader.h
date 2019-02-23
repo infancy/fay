@@ -31,7 +31,7 @@ const inline std::unordered_map<std::string_view, texture_type> shader_sampler_m
     // TODO: sampler1D, sampler3DArray, samplerShadow...
     { "sampler2D",     texture_type::two },
     { "sampler3D",     texture_type::two },
-    { "amplerCube",    texture_type::cube },
+    { "samplerCube",    texture_type::cube },
     { "sampler2DArry", texture_type::array },
 };
 
@@ -273,7 +273,7 @@ inline shader_context shader_extracting_context(std::stringstream& stream)
             }
             else
             {
-                LOG(ERROR) << "shouldn't be here";
+                LOG(ERROR) << "shouldn't be here: " << line;
             }
         }
         else if (have(vs, "(")) // goto: return
@@ -314,7 +314,7 @@ inline shader_desc shader_merge_context(std::vector<shader_context>&& ctxs)
 }
 
 // TODO: scan_shader_program(std::vector<std::string> shader, bool buildin = false)
-inline shader_desc scan_shader_program(std::string vs, std::string fs, bool buildin = false)
+inline shader_desc scan_shader_program(const std::string name, std::string vs, std::string fs, bool buildin = false)
 {
     std::stringstream vs_stream{};
     std::stringstream fs_stream{};
@@ -348,6 +348,7 @@ inline shader_desc scan_shader_program(std::string vs, std::string fs, bool buil
     auto&& fs_ctx = shader_extracting_context(fs_stream);
 
     auto&& desc = shader_merge_context({ vs_ctx, fs_ctx });
+    desc.name = name;
     desc.vs = vs_code;
     desc.fs = fs_code;
 
