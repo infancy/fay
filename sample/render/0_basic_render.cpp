@@ -231,22 +231,13 @@ public:
 class two_passes : public fay::app
 {
 public:
-    /*
-    GLfloat near_plane = 1.0f, far_plane = 300.f;
-        //glm::mat4 lightOrtho = glm::ortho(-150.0f, 150.0f, -200.0f, 200.0f, near_plane, far_plane);
-        glm::mat4 lightProj = glm::perspective(glm::radians(120.f),
-            1.f, near_plane, far_plane);
-        glm::mat4 lightView = glm::lookAt(
-            light->position(), glm::vec3(0.0f), glm::vec3(1.f, 1.f, 0.f));
-        glm::mat4 lightSpace = lightProj * lightView;
-    */
     fay::camera cameras_[3]
     {
         fay::camera{ glm::vec3{ 0, 40, 160 }, -90, 0, 1.f, 300.f },
 
         //pitch 0 -> -30
-        fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f }, // light1
-        fay::camera{ glm::vec3{ 100, 100, 0 },    0, 0,  1.f, 300.f }, // light2
+        fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f },
+        fay::camera{ glm::vec3{ 100, 100, 0 },    0, 0,  1.f, 300.f },
     };
     fay::light lights_[3]
     {
@@ -692,6 +683,115 @@ public:
     }
 };
 
+class IBL : public two_passes
+{
+public:
+    fay::texture_id tex_id0, tex_id1, tex_id2, tex_id3, tex_id4;
+
+    IBL(const fay::app_desc& _desc) : two_passes(_desc)
+    {
+        desc.window.title = "PBR";
+    }
+
+    void setup() override
+    {
+        add_update_items();
+        debug_setup();
+
+        mesh = fay::create_raw_renderable(fay::Sphere, device.get());
+
+        fay::image img0("texture/pbr/rusted_iron/albedo.png", true);
+        fay::image img1("texture/pbr/rusted_iron/metallic.png", true);
+        fay::image img2("texture/pbr/rusted_iron/roughness.png", true);
+        fay::image img3("texture/pbr/rusted_iron/normal.png", true);
+        fay::image img4("texture/pbr/rusted_iron/ao.png", true);
+        tex_id0 = create_2d(this->device, "albedo", img0);
+        tex_id1 = create_2d(this->device, "metal", img1);
+        tex_id2 = create_2d(this->device, "rough", img2);
+        tex_id3 = create_2d(this->device, "normal", img3);
+        tex_id4 = create_2d(this->device, "ao", img4);
+
+        fay::shader_desc sd = fay::scan_shader_program("gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs");
+        sd.name = "shd";
+        shd_id = device->create(sd);
+
+        fay::pipeline_desc pd;
+        pd.name = "pipe";
+        pipe_id = device->create(pd);
+    }
+
+    void render() override
+    {
+        GLfloat near_plane = 1.f, far_plane = 200.f;
+        glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
+        glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
+            1080.f / 720.f, near_plane, far_plane);
+        glm::mat4 lightView = glm::lookAt(
+            light->position(), glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
+        glm::mat4 lightSpace = lightProj * lightView;
+
+        // debug info
+        // FIXME: over the GPU memory
+        //fay::bounds3 box_light(-70, 70);
+        fay::frustum box_light(lightSpace);
+        auto debug_light = create_box_mesh(box_light, device.get());
+
+        fay::command_list pass;
+
+        pass
+            .begin_default(pipe_id, shd_id)
+            // TODO: check uniform (blocks)
+            .bind_uniform("proj", camera->persp())
+            .bind_uniform("view", camera->view())
+            .bind_uniform("camPos", camera->position())
+            .bind_uniform("lightPositions[0]", light->position())
+            .bind_uniform("lightPositions[1]", glm::vec3{ 0, 0, 100 })
+            .bind_uniform("lightPositions[2]", glm::vec3{ -100, 100, 100 })
+            .bind_uniform("lightPositions[3]", glm::vec3{ 100, 100, 100 })
+            .bind_uniform("lightColor", glm::vec3(1.f, 1.f, 1.f))
+
+            .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4, })
+            .bind_uniform("Albedo", glm::vec3(0.5f, 0.0f, 0.0f))
+            .bind_uniform("Ao", 1.f);
+
+        int nrRows = 7;
+        int nrColumns = 7;
+        float spacing = 25;
+        glm::mat4 model = glm::mat4(1.f);
+        for (int row = 0; row < nrRows; ++row)
+        {
+            for (int col = 0; col < nrColumns; ++col)
+            {
+                // we clamp the roughness to 0.025 - 1.0 as perfectly smooth surfaces (roughness of 0.0) tend to look a bit off
+                // on direct lighting.
+
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(
+                    (col - (nrColumns / 2)) * spacing,
+                    (row - (nrRows / 2)) * spacing + 40.f,
+                    0.0f
+                ));
+                model = glm::scale(model, glm::vec3(0.5));
+
+                pass
+                    .bind_uniform("model", model)
+                    .bind_uniform("Metallic", (float)row / (float)nrRows)
+                    .bind_uniform("Roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 0.95f))
+                    .draw(mesh.get());
+            }
+        }
+
+        pass
+            .apply_pipeline(debug_pipe_id)
+            .apply_shader(debug_shd_id)
+            .bind_uniform("MVP", camera->world_to_ndc())
+            .draw(debug_light.get())
+            .end_frame();
+
+        device->execute(pass);
+    }
+};
+
 class defer_rendering : public two_passes
 {
 public:
@@ -864,3 +964,4 @@ SAMPLE_RENDER_APP_IMPL(shadow_map)
 SAMPLE_RENDER_APP_IMPL(defer_rendering)
 
 SAMPLE_RENDER_APP_IMPL(PBR)
+SAMPLE_RENDER_APP_IMPL(IBL)

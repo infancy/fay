@@ -16,6 +16,7 @@ SAMPLE_RENDER_APP_DECL(shadow_map)
 SAMPLE_RENDER_APP_DECL(defer_rendering)
 
 SAMPLE_RENDER_APP_DECL(PBR)
+SAMPLE_RENDER_APP_DECL(IBL)
 
 int main(int argc, char** argv)
 {
@@ -30,6 +31,6 @@ int main(int argc, char** argv)
     {
         //
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(shadow_map, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(IBL, desc);
     return app_->run();
 }

@@ -200,7 +200,7 @@ namespace backend_opengl_type
     // -------------------------------------------------------------------------------------------------
     // helper types
 
-    struct vertex_attribute_gl
+    struct vertex_attribute
     {
         GLuint        index;      // 0, 1, 2, 3
         GLint         size;       // float3 : 3, byte4: 4
@@ -257,7 +257,7 @@ namespace backend_opengl_type
 
         // used for vertex buffer, instance buffer
         GLsizei     stride{};
-        std::vector<vertex_attribute_gl> layout{};
+        std::vector<vertex_attribute> layout{};
 
         // then assign others
         GLuint gid{}; // union { GLuint vbo; GLuint ibo; };
@@ -285,8 +285,8 @@ namespace backend_opengl_type
                     //a.format = da.format();
 
                     a.index = i; // i_, ix, ic, ii
-                    a.type       = vertex_attribute_gl::attribute_type(da.format());
-                    a.normalized = vertex_attribute_gl::need_normalized(da.format());
+                    a.type       = vertex_attribute::attribute_type(da.format());
+                    a.normalized = vertex_attribute::need_normalized(da.format());
 
                     auto[num, byte] = attribute_format_map.at(da.format());
                     a.size = num;
