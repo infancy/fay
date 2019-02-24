@@ -232,7 +232,7 @@ class two_passes : public fay::app
 public:
     fay::camera cameras_[3]
     {
-        fay::camera{ glm::vec3{ 0, 40, 160 }, -90, 0, 1.f, 300.f },
+        fay::camera{ glm::vec3{ 0, 40, 160 }, -90, 0, 0.9f, 300.f },
 
         //pitch 0 -> -30
         fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f },
@@ -261,6 +261,7 @@ public:
 
     fay::renderable_sp mesh;
     fay::renderable_sp mesh2;
+    fay::renderable_sp mesh3;
     fay::texture_id tex_id;
     fay::texture_id tex_id2;
     fay::shader_id shd_id;
@@ -700,12 +701,8 @@ public:
         debug_setup();
 
         mesh = fay::create_raw_renderable(fay::Sphere, device.get());
-        mesh2 = fay::create_raw_renderable(fay::Face, device.get()); // box
-
-        // TODO: in_fmt, ex_fmt
-        auto frame = fay::create_cubemap_frame("cubemap_frame", 512, 512, fay::pixel_format::rgb32f, 12, device.get());
-        offscreen_frm_id = std::get<0>(frame);
-        offscreen_tex_id = std::get<1>(frame);
+        mesh2 = fay::create_raw_renderable(fay::Face, device.get()); // face
+        mesh3 = fay::create_raw_renderable(fay::Box, device.get()); // box
 
         fay::image env_img("texture/hdr/newport_loft.hdr", true);
         env_tex_id = create_2d(this->device, "equirectangularMap", env_img);
@@ -715,9 +712,17 @@ public:
         background_shd_id = create_shader("background", "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
         shd_id = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
 
-        fay::pipeline_desc pd;
-        pd.name = "pipe";
-        pipe_id = device->create(pd);
+        {
+            fay::pipeline_desc pd;
+            pd.name = "pipe";
+            pd.cull_mode = fay::cull_mode::none; // TODO: default set cull_mode::none
+            pipe_id = device->create(pd);
+        }
+
+        // TODO: in_fmt, ex_fmt
+        auto frame = fay::create_cubemap_frame("cubemap_frame", 512, 512, fay::pixel_format::rgb32f, 12, device.get());
+        offscreen_frm_id = std::get<0>(frame);
+        offscreen_tex_id = std::get<1>(frame);
 
         /*
         fay::command_list pass; // gen cubemap
@@ -820,7 +825,14 @@ public:
             }
         }
 
-        pass2.end_frame();
+        pass2
+            .apply_pipeline(pipe_id)
+            .apply_shader(background_shd_id)
+            .bind_texture(offscreen_tex_id, "environmentMap")
+            .bind_uniform("proj", camera->persp())
+            .bind_uniform("view", camera->view())
+            .draw(mesh3.get())
+            .end_frame();
 
         //device->execute(pass2);
         device->execute({ pass, pass2 });
