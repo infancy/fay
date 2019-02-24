@@ -745,16 +745,15 @@ public:
         glm::mat4 captureModel(1.f);
         glm::mat4 captureModels[6] =
         {
+            // positive x, negative x, positive y, negative y, positive z, negative z, 
+            glm::rotate(captureModel, glm::radians(180.f), glm::vec3(0.f, 1.f, 0.f)),
             captureModel,
 
-            glm::rotate(captureModel, glm::radians(180.f), glm::vec3(0.f, 1.f, 0.f)),
-
-            glm::rotate(captureModel, glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f)),
             glm::rotate(captureModel, glm::radians(270.f), glm::vec3(1.f, 0.f, 0.f)),
+            glm::rotate(captureModel, glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f)),
 
-            glm::rotate(captureModel, glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)),
             glm::rotate(captureModel, glm::radians(270.f), glm::vec3(0.f, 1.f, 0.f)),
-
+            glm::rotate(captureModel, glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)),
         };
 
         pass
