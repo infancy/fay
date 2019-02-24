@@ -33,8 +33,7 @@ vec3 SampleSphericalMap(vec3 v)
 
 void main()
 {
-    FragColor0 = vec3(1.0, 1.0, 0.0);//texture(equirectangularMap, vec2(gl_FragCoord.x, gl_FragCoord.y)).rgb;//SampleSphericalMap(fs_in.wPos0);
-    //FragColor0 = SampleSphericalMap(fs_in.wPos0);
+    FragColor0 = SampleSphericalMap(fs_in.wPos0);
     FragColor1 = SampleSphericalMap(fs_in.wPos1);
     FragColor2 = SampleSphericalMap(fs_in.wPos2);
     FragColor3 = SampleSphericalMap(fs_in.wPos3);
