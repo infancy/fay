@@ -232,7 +232,7 @@ class two_passes : public fay::app
 public:
     fay::camera cameras_[3]
     {
-        fay::camera{ glm::vec3{ 0, 40, 160 }, -90, 0, 0.9f, 300.f },
+        fay::camera{ glm::vec3{ 0, 40, 160 }, -90, 0, 1.f, 300.f },
 
         //pitch 0 -> -30
         fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f },
@@ -707,7 +707,7 @@ public:
         fay::image env_img("texture/hdr/newport_loft.hdr", true);
         env_tex_id = create_2d(this->device, "equirectangularMap", env_img);
 
-        generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/generate_cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
+        generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
         irradiance_shd_id = create_shader("irradiance", "gfx/IBL/cubemap.vs", "gfx/IBL/irradiance_convolution.fs", device.get());
         background_shd_id = create_shader("background", "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
         shd_id = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
@@ -724,26 +724,13 @@ public:
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
 
-        /*
-        fay::command_list pass; // gen cubemap
+        auto frame2 = fay::create_cubemap_frame("irradiance_frame", 64, 64, fay::pixel_format::rgb32f, 12, device.get());
+        offscreen_frm_id2 = std::get<0>(frame2);
+        offscreen_tex_id2 = std::get<1>(frame2);
 
-        pass
-            .begin_frame(offscreen_frm_id)
-            .clear_frame()
-            .set_viewport(0, 0, 512, 512)
-            .set_scissor(0, 0, 512, 512)
-            .apply_pipeline(pipe_id)
-            .apply_shader(generate_cube_shd_id)
-            .draw(mesh2.get())
-            .end_frame()
-            ;
-        device->execute(pass);
-        */
-    }
 
-    void render() override
-    {
-        fay::command_list pass, pass2;
+
+        fay::command_list pass, pass2, pass3;
 
         glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
         glm::mat4 captureView = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -782,6 +769,32 @@ public:
             ;
 
         pass2
+            .begin_frame(offscreen_frm_id2)
+            .clear_frame()
+            .set_viewport(0, 0, 64, 64)
+            .set_scissor(0, 0, 64, 64)
+            .apply_pipeline(pipe_id)
+            .apply_shader(irradiance_shd_id)
+            .bind_uniform("model0", captureModels[0])
+            .bind_uniform("model1", captureModels[1])
+            .bind_uniform("model2", captureModels[2])
+            .bind_uniform("model3", captureModels[3])
+            .bind_uniform("model4", captureModels[4])
+            .bind_uniform("model5", captureModels[5])
+            .bind_uniform("proj", captureProjection)
+            .bind_uniform("view", captureView)
+            .bind_texture(offscreen_tex_id, "environmentMap")
+            .draw(mesh2.get())
+            .end_frame()
+            ;
+        device->execute({ pass, pass2 });
+    }
+
+    void render() override
+    {
+        fay::command_list pass;
+
+        pass
             .begin_default(pipe_id, shd_id)
             // TODO: check uniform (blocks)
             .bind_uniform("proj", camera->persp())
@@ -817,7 +830,7 @@ public:
                 ));
                 model = glm::scale(model, glm::vec3(0.5));
 
-                pass2
+                pass
                     .bind_uniform("model", model)
                     .bind_uniform("Metallic", (float)row / (float)nrRows)
                     .bind_uniform("Roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 0.95f))
@@ -825,7 +838,8 @@ public:
             }
         }
 
-        pass2
+        // background
+        pass
             .apply_pipeline(pipe_id)
             .apply_shader(background_shd_id)
             .bind_texture(offscreen_tex_id, "environmentMap")
@@ -835,7 +849,7 @@ public:
             .end_frame();
 
         //device->execute(pass2);
-        device->execute({ pass, pass2 });
+        device->execute({ pass });
     }
 };
 
