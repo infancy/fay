@@ -46,6 +46,60 @@ void glCheckError_(const char *file, int line)
     }
 }
 
+// typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,const void *userParam);
+void APIENTRY glDebugOutput(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar *message,
+    const void *userParam)
+{
+    if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return; // ignore these non-significant error codes
+
+    // TODO: use diff color
+    if (severity == GL_DEBUG_SEVERITY_LOW || severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+        return;
+
+    std::cout << "---------------" << std::endl;
+    std::cout << "Debug message (" << id << "): " << message << std::endl;
+
+    switch (source)
+    {
+        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
+        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
+        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+    } 
+    std::cout << std::endl;
+
+    switch (type)
+    {
+        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
+        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
+        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
+        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
+        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+    } 
+    std::cout << std::endl;
+
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
+        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
+        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+    }
+    std::cout << std::endl;
+}
+
 #ifdef FAY_DEBUG
 #define glcheck_errors() glCheckError_(__FILE__, __LINE__) 
 #else
@@ -625,12 +679,30 @@ public:
         : render_backend(desc)
         , window_(static_cast<GLFWwindow*>(desc.glfw_window))
     {
+    #ifdef FAY_DEBUG
+        GLint flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+        if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+        {
+            glEnable(GL_DEBUG_OUTPUT);
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // makes sure errors are displayed synchronously
+            glDebugMessageCallback(glDebugOutput, nullptr);
+            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+            /*
+            glDebugMessageControl(GL_DEBUG_SOURCE_API, 
+                      GL_DEBUG_TYPE_ERROR, 
+                      GL_DEBUG_SEVERITY_HIGH,
+                      0, nullptr, GL_TRUE); 
+            */
+        }
+    #endif // FAY_DEBUG
 
         // TODO: add to render_desc
+        glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
-        glEnable(GL_STENCIL_TEST);
         glEnable(GL_SCISSOR_TEST);
         glEnable(GL_PROGRAM_POINT_SIZE); // The point size can be modify in vertex shader
+
+        glDisable(GL_STENCIL_TEST);
 
         glGenVertexArrays(1, &context_.vao);
         glBindVertexArray(context_.vao);
@@ -693,10 +765,12 @@ public:
 
         if (desc.as_render_target == render_target::color) //!is_dpeth_stencil_pixel_format(desc.pixel_format))
         {
-            glGenTextures(1, &tex.tbo);
+            // 0. create texture id
             glActiveTexture(GL_TEXTURE0);
+            glGenTextures(1, &tex.tbo);
             glBindTexture(tex.type, tex.tbo);
 
+            // 1. sampler attribute
             if (tex.type != GL_TEXTURE_2D_MULTISAMPLE)
             {
                 glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, tex.min_filter);
@@ -718,6 +792,7 @@ public:
             }
             glcheck_errors();
 
+            // 2. allocate memory
             bool is_compressed = is_compressed_pixel_format(desc.pixel_format);
             auto[in_fmt, ex_fmt, ex_type] = gl_pixel_format(desc.pixel_format);
 
@@ -727,22 +802,18 @@ public:
 
                 for (uint32_t i = 0; i < nums; ++i)
                 {
-                    if (desc.data[i])
-                    {
-                        GLenum target = tex.type == GL_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
+                    GLenum target = tex.type == GL_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
 
-                        if (is_compressed)
-                            glCompressedTexImage2D(target, 0, in_fmt,
-                                desc.width, desc.height, 0, desc.size, desc.data[i]); // even data is nullptr, it is not problem.
-                        else
-                            glTexImage2D(target, 0, in_fmt,
-                                desc.width, desc.height, 0, ex_fmt, ex_type, desc.data[i]);
-                    }
+                    if (is_compressed)
+                        glCompressedTexImage2D(target, 0, in_fmt,
+                            desc.width, desc.height, 0, desc.size, desc.data[i]); // even data is nullptr, it is not problem.
+                    else
+                        glTexImage2D(target, 0, in_fmt,
+                            desc.width, desc.height, 0, ex_fmt, ex_type, desc.data[i]);
                 }
             }
             else if (tex.type == GL_TEXTURE_2D_ARRAY || tex.type == GL_TEXTURE_3D)
             {
-                // WARNNING: data or data3d, only one is available
                 if (is_compressed)
                     glCompressedTexImage3D(tex.type, 0, in_fmt,
                         desc.width, desc.height, desc.depth, 0, desc.size, nullptr);
@@ -750,15 +821,17 @@ public:
                     glTexImage3D(tex.type, 0, in_fmt,
                         desc.width, desc.height, desc.depth, 0, ex_fmt, ex_type, nullptr);
 
+                DCHECK(false);
                 if (!desc.data.empty())
                     update(pid, nullptr); // TODO
             }
             else
             {
-                LOG(ERROR) << "shouldn't be here";
+                DCHECK(false) << "shouldn't be here";
             }
             glcheck_errors();
 
+            // 3. generate mipmap
             // TODO: koi, generate mipmap by itself.
             if (desc.mipmap)
             {
@@ -767,6 +840,7 @@ public:
             }
             glcheck_errors();
 
+            // (4. create renderbuffer for MSAA)
             if ((desc.as_render_target == render_target::color) &&
                 (render_desc_.anti_aliasing == anti_aliasing::MSAA))
             {
@@ -786,8 +860,8 @@ public:
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, NULL);
         */
 
-            glGenTextures(1, &tex.tbo);
             glActiveTexture(GL_TEXTURE0);
+            glGenTextures(1, &tex.tbo);
             glBindTexture(tex.type, tex.tbo);
 
             glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, tex.min_filter);
@@ -820,7 +894,7 @@ public:
         }
         else
         {
-            LOG(ERROR) << "shouldn't be here";
+            DCHECK(false) << "shouldn't be here";
         }
 
         glcheck_errors();

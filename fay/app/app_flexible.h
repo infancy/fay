@@ -155,11 +155,20 @@ inline texture_id create_depth_stencil_map(const std::string& name, size_t width
     desc.height = height;
     desc.data = { nullptr };
     desc.type = texture_type::two;
+    desc.mipmap = false; // TODO: default set it false
+
+    desc.min_filter = filter_mode::nearest;
+    desc.max_filter = filter_mode::nearest;
+    desc.wrap_u = wrap_mode::repeat;
+    desc.wrap_v = wrap_mode::repeat;
+
 
     desc.as_render_target = render_target::depth_stencil;
     desc.pixel_format = pixel_format::depthstencil; // rename: depth_stencil
     desc.size = width * height * 4;
-    auto ds_id = device->create(desc);
+    
+    // stupid bug
+    // auto ds_id = device->create(desc);
 
     return device->create(desc);
 }
@@ -198,7 +207,8 @@ inline texture_id create_2d(render_device_ptr& device, const std::string& name, 
     desc.height = img.height();
     desc.pixel_format = img.format();
 
-    desc.size = img.size() * img.channel();
+    desc.size = img.size() * img.pixel_size();
+    //if (get_filetype(std::string(img.filepath())) == "hdr") // TODO: get_filetype(std::string_view)
     desc.data = { img.data() };
 
     desc.type = texture_type::two;
@@ -212,6 +222,7 @@ inline fay::texture_id create_cubemap(const std::string& name, size_t width, siz
     desc.name = name;
     desc.width = width;
     desc.height = height;
+    desc.type = fay::texture_type::cube;
     desc.pixel_format = fmt;
 
     desc.size = width * height * pixel_bytesize; // TODO: do it by help func
@@ -219,9 +230,8 @@ inline fay::texture_id create_cubemap(const std::string& name, size_t width, siz
 
     desc.wrap_u = wrap_mode::clamp_to_edge;
     desc.wrap_v = wrap_mode::clamp_to_edge;
+    desc.wrap_w = wrap_mode::clamp_to_edge;
     desc.mipmap = false;
-
-    desc.type = fay::texture_type::cube;
 
     return device->create(desc);
 }
@@ -254,8 +264,8 @@ inline std::tuple<frame_id, texture_id, texture_id> create_cubemap_frame(const s
         { color_id, 5, 0 },
     };
     fd.depth_stencil = { ds_id, 0, 0 };
-    auto frm_id = device->create(fd);
 
+    auto frm_id = device->create(fd);
     return { frm_id, color_id, ds_id };
 }
 
@@ -381,24 +391,25 @@ inline std::tuple<frame_id, texture_id, texture_id, texture_id, texture_id> crea
 // -------------------------------------------------------------------------------------------------
 // IO
 
-const inline std::string Nier_2b           = "model/Nier_2b/2b.obj";
-const inline std::string Box               = "model/box/box.obj";
-const inline std::string Blocks            = "model/blocks/scene.obj";
-const inline std::string Rei               = "model/Rei/Rei.obj";
-const inline std::string CornellBox        = "model/CornellBox/CornellBox.obj";
-const inline std::string Planet            = "model/planet/planet.obj";
-const inline std::string Plants            = "model/plants/scene.obj";
-const inline std::string Rock              = "model/rock/rock.obj";
-const inline std::string Fairy             = "model/fairy/fairy.obj";
-const inline std::string Nanosuit          = "model/nanosuit/nanosuit.obj";
-const inline std::string silly_dancing     = "model/silly_dancing.fbx";
-const inline std::string nierautomata_2b   = "model/nierautomata_2b/scene.gltf";
-const inline std::string ftm_sketchfab     = "model/ftm/ftm_sketchfab.blend";
-const inline std::string Nier_2b_ik_rigged = "model/Nier_2b_ik_rigged/scene.gltf";
-const inline std::string Sphere            = "model/sphere/scene.obj";
-const inline std::string Sponza            = "model/sponza/sponza.obj";
-const inline std::string LightBulb         = "model/LightBulb/LightBulb.obj";
-//const inline std::string shadows           = "model/shadows/shadows.obj";
+const inline std::string Box        = "model/box/box.obj";
+const inline std::string Blocks     = "model/blocks/scene.obj";
+const inline std::string CornellBox = "model/CornellBox/CornellBox.obj";
+const inline std::string dancing    = "model/silly_dancing.fbx";
+const inline std::string Face       = "model/face/face.obj";
+const inline std::string Fairy      = "model/fairy/fairy.obj";
+const inline std::string ftm        = "model/ftm/ftm_sketchfab.blend";
+const inline std::string LightBulb  = "model/LightBulb/LightBulb.obj";
+const inline std::string Planet     = "model/planet/planet.obj";
+const inline std::string Plants     = "model/plants/scene.obj";
+const inline std::string Rei        = "model/Rei/Rei.obj";
+const inline std::string Rock       = "model/rock/rock.obj";
+const inline std::string Nanosuit   = "model/nanosuit/nanosuit.obj";
+const inline std::string Nier_2b_0  = "model/nierautomata_2b/scene.gltf";
+const inline std::string Nier_2b_1  = "model/Nier_2b/2b.obj";
+const inline std::string Nier_2b_2  = "model/Nier_2b_ik_rigged/scene.gltf";
+const inline std::string Sphere     = "model/sphere/scene.obj";
+const inline std::string Sponza     = "model/sponza/sponza.obj";
+//const inline std::string shadows  = "model/shadows/shadows.obj";
 
 struct render_paras
 {

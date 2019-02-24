@@ -8,6 +8,7 @@
 
 #include "fay/core/define.h"
 #include "fay/math/math.h"
+#include "fay/resource/file.h"
 
 namespace fay
 {
@@ -33,7 +34,11 @@ public:
     uint32_t height()  const { return height_; }
     uint32_t size()    const { return width_ * height_; } // WARNNING: pixel nums, not byte nums
 
+    // TODO: remove
     uint32_t channel() const { return channel_; }
+
+    size_t pixel_size() const { return channel_ * (is_hdr_ ? 4 : 1); }
+
     pixel_format format() const { return fmt_; }
 
     std::string_view filepath() const { return filepath_; }
@@ -46,6 +51,7 @@ protected:
     int channel_{};
     pixel_format fmt_{};
 
+    bool is_hdr_{};
     bool is_flip_vertical_{};
     // bool is_load_from_file_{};
 
@@ -76,7 +82,7 @@ public:
         fmt_ = format;
         channel_ = to_channel(format);
 
-        resize(width * height, channel(), initial_value);
+        resize(width * height, pixel_size(), initial_value);
     }
 
     // image(const uint8_t* data, size_t size, pixel_format format)
@@ -88,17 +94,27 @@ public:
         filepath_ = filepath;
         is_flip_vertical_ = flip_vertical;
         is_load_from_file_ = true;
+        is_hdr_ = get_filetype(filepath) == "hdr";
 
         if (flip_vertical)
             stbi_set_flip_vertically_on_load(true);
 
-        auto src = stbi_load(filepath.c_str(), &width_, &height_, &channel_, 0);
+        // TODO: color_space
+        void* src{};
+        if (is_hdr_)
+        {
+            src = stbi_loadf(filepath.c_str(), &width_, &height_, &channel_, 0);
+        }
+        else
+        {
+            src = stbi_load(filepath.c_str(), &width_, &height_, &channel_, 0);
+        }
         LOG_IF(ERROR, src == nullptr) << "image failed to load at path: " << filepath;
 
         fmt_ = to_format(channel());
 
-        resize(size(), channel());
-        memcpy(data(), src, size() * channel());
+        resize(size(), pixel_size());
+        memcpy(data(), src, size() * pixel_size());
 
         stbi_image_free(src);
     }
@@ -158,32 +174,52 @@ private:
 
     pixel_format to_format(size_t _channel) const
     {
-        switch (_channel)
+        if (is_hdr_)
         {
-            case 1: return pixel_format::r8;
-            case 3: return pixel_format::rgb8;
-            case 4: return pixel_format::rgba8;
-            default:
-                LOG(ERROR) << "format failed to choose";
-                return pixel_format();
+            switch (_channel)
+            {
+                case 1: return pixel_format::r32f;
+                //case 2: return pixel_format::rg32f;
+                case 3: return pixel_format::rgb32f;
+                case 4: return pixel_format::rgba32f;
+                default:
+                    LOG(ERROR) << "format failed to choose";
+                    return pixel_format();
+            }
+        }
+        else
+        {
+            switch (_channel)
+            {
+                case 1: return pixel_format::r8;
+                case 2: return pixel_format::rg8;
+                case 3: return pixel_format::rgb8;
+                case 4: return pixel_format::rgba8;
+                default:
+                    LOG(ERROR) << "format failed to choose";
+                    return pixel_format();
+            }
         }
     }
 
-    void resize(size_t pixel_size, size_t pixel_channel, glm::u8vec4 initial_value = { 0, 0, 0, 0xff })
+    void resize(size_t size, size_t pixel_size, glm::u8vec4 initial_value = { 0, 0, 0, 0xff })
     {
-        DCHECK((pixel_size > 0) && (pixel_channel > 0));
+        DCHECK((size > 0) && (pixel_size > 0));
 
-        pixels_.reserve(pixel_size * pixel_channel);
-        pixels_.resize(pixel_size * pixel_channel);
+        pixels_.reserve(size * pixel_size);
+        pixels_.resize(size * pixel_size);
 
+        // FIXME
+        /*
         size_t flag{};
         for (auto& value : pixels_)
         {
             value = initial_value[flag];
 
-            if (++flag == pixel_channel)
+            if (++flag == 4)
                 flag = 0;
         }
+        */
     }
 
     uint8_t* pixel(size_t x, size_t y, size_t num)

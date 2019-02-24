@@ -682,6 +682,8 @@ class IBL : public two_passes
 public:
     fay::texture_id tex_id0, tex_id1, tex_id2, tex_id3, tex_id4;
 
+    fay::texture_id env_tex_id;
+
     fay::shader_id generate_cube_shd_id;
     fay::shader_id irradiance_shd_id;
     fay::shader_id background_shd_id;
@@ -698,25 +700,17 @@ public:
         debug_setup();
 
         mesh = fay::create_raw_renderable(fay::Sphere, device.get());
-        mesh2 = fay::create_raw_renderable(fay::Box, device.get()); // box
+        mesh2 = fay::create_raw_renderable(fay::Face, device.get()); // box
 
-        auto frame = fay::create_cubemap_frame("cubemap_frame", 512, 512, fay::pixel_format::rgb16f, 2, device.get());
+        // TODO: in_fmt, ex_fmt
+        auto frame = fay::create_cubemap_frame("cubemap_frame", 512, 512, fay::pixel_format::rgb32f, 12, device.get());
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
 
-        fay::image img0("texture/pbr/rusted_iron/albedo.png", true);
-        fay::image img1("texture/pbr/rusted_iron/metallic.png", true);
-        fay::image img2("texture/pbr/rusted_iron/roughness.png", true);
-        fay::image img3("texture/pbr/rusted_iron/normal.png", true);
-        fay::image img4("texture/pbr/rusted_iron/ao.png", true);
-        tex_id0 = create_2d(this->device, "albedo", img0);
-        tex_id1 = create_2d(this->device, "metal", img1);
-        tex_id2 = create_2d(this->device, "rough", img2);
-        tex_id3 = create_2d(this->device, "normal", img3);
-        tex_id4 = create_2d(this->device, "ao", img4);
+        fay::image env_img("texture/hdr/newport_loft.hdr", true);
+        env_tex_id = create_2d(this->device, "equirectangularMap", env_img);
 
-
-        generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
+        generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/generate_cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
         irradiance_shd_id = create_shader("irradiance", "gfx/IBL/cubemap.vs", "gfx/IBL/irradiance_convolution.fs", device.get());
         background_shd_id = create_shader("background", "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
         shd_id = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
@@ -746,6 +740,21 @@ public:
     {
         fay::command_list pass, pass2;
 
+        glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+        glm::mat4 captureView = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 captureModel(1.f);
+        glm::mat4 captureModels[6] =
+        {
+            captureModel,
+
+            glm::rotate(captureModel, glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)),
+            glm::rotate(captureModel, glm::radians(180.f), glm::vec3(0.f, 1.f, 0.f)),
+            glm::rotate(captureModel, glm::radians(270.f), glm::vec3(0.f, 1.f, 0.f)),
+
+            glm::rotate(captureModel, glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f)),
+            glm::rotate(captureModel, glm::radians(270.f), glm::vec3(1.f, 0.f, 0.f)),
+        };
+
         pass
             .begin_frame(offscreen_frm_id)
             .clear_frame()
@@ -753,6 +762,15 @@ public:
             .set_scissor(0, 0, 512, 512)
             .apply_pipeline(pipe_id)
             .apply_shader(generate_cube_shd_id)
+            .bind_uniform("model0", captureModels[0])
+            .bind_uniform("model1", captureModels[1])
+            .bind_uniform("model2", captureModels[2])
+            .bind_uniform("model3", captureModels[3])
+            .bind_uniform("model4", captureModels[4])
+            .bind_uniform("model5", captureModels[5])
+            .bind_uniform("proj", captureProjection)
+            .bind_uniform("view", captureView)
+            .bind_texture(env_tex_id, "equirectangularMap") // TODO: bind_texture("equirectangularMap", env_tex_id)
             .draw(mesh2.get())
             .end_frame()
             ;
@@ -853,7 +871,7 @@ public:
             lightColors.push_back(glm::vec3(rColor, gColor, bColor));
         }
 
-        mesh = fay::create_renderable(fay::nierautomata_2b, device.get());
+        mesh = fay::create_renderable(fay::Rei, device.get());
         mesh2 = fay::create_raw_renderable(fay::Box, device.get());
 
         // quad

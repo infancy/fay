@@ -121,7 +121,7 @@ public:
 
 		if (desc_.render_backend_type_v == render_backend_type::opengl) // TODO: choose opengl version by itself
 		{
-			create_window_and_glcontext(3, 3);
+			create_window_and_glcontext(4, 3);
 		}
 		else if (desc_.render_backend_type_v == render_backend_type::opengl_dsa)
 		{
@@ -211,6 +211,10 @@ private:
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    #ifdef FAY_DEBUG
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    #endif // FAY_DEBUG
+
 	#ifdef FAY_IN_APPLE
 		// uncomment this statement to fix compilation on OS X
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
