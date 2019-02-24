@@ -807,6 +807,7 @@ public:
             .bind_uniform("lightColor", glm::vec3(1.f, 1.f, 1.f))
 
             .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4 })
+            .bind_texture(offscreen_tex_id2, "irradianceMap")
             .bind_uniform("Albedo", glm::vec3(0.5f, 0.0f, 0.0f))
             .bind_uniform("Ao", 1.f)
             ;
@@ -843,6 +844,7 @@ public:
             .apply_pipeline(pipe_id)
             .apply_shader(background_shd_id)
             .bind_texture(offscreen_tex_id, "environmentMap")
+            //.bind_texture(offscreen_tex_id2, "environmentMap")
             .bind_uniform("proj", camera->persp())
             .bind_uniform("view", camera->view())
             .draw(mesh3.get())

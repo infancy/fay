@@ -25,6 +25,8 @@ vec3 SampleEnvironmentMap(vec3 wPos)
     // WARNNING
     wPos.y = -wPos.y;
 
+    // return texture(environmentMap, wPos).rgb;
+
 	// The world vector acts as the normal of a tangent surface
     // from the origin, aligned to wPos. Given this normal, calculate all
     // incoming radiance of the environment. The result of this radiance
