@@ -684,9 +684,6 @@ public:
     fay::texture_id tex_id0, tex_id1, tex_id2, tex_id3, tex_id4;
 
     fay::texture_id env_tex_id;
-
-    fay::shader_id generate_cube_shd_id;
-    fay::shader_id irradiance_shd_id;
     fay::shader_id background_shd_id;
 
 
@@ -707,8 +704,9 @@ public:
         fay::image env_img("texture/hdr/newport_loft.hdr", true);
         env_tex_id = create_2d(this->device, "equirectangularMap", env_img);
 
-        generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
-        irradiance_shd_id = create_shader("irradiance", "gfx/IBL/cubemap.vs", "gfx/IBL/irradiance_convolution.fs", device.get());
+        auto generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
+        auto irradiance_shd_id = create_shader("irradiance",       "gfx/IBL/cubemap.vs", "gfx/IBL/irradiance_convolution.fs", device.get());
+        auto prefilter_map_shd_id = create_shader("prefilter_map", "gfx/IBL/cubemap.vs", "gfx/IBL/prefilter.fs", device.get());
         background_shd_id = create_shader("background", "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
         shd_id = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
 
@@ -720,17 +718,16 @@ public:
         }
 
         // TODO: in_fmt, ex_fmt
-        auto frame = fay::create_cubemap_frame(device.get(), "cubemap_frame", 512, 512, fay::pixel_format::rgb32f, 12);
+        const size_t res = 512, res2 = 32, res3 = 128;
+        auto frame = fay::create_cubemap_frame(device.get(), "cubemap_frame", res, res, fay::pixel_format::rgb32f, 12);
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
 
-        auto frame2 = fay::create_cubemap_frame(device.get(), "irradiance_frame", 32, 32, fay::pixel_format::rgb32f, 12);
+        auto frame2 = fay::create_cubemap_frame(device.get(), "irradiance_frame", res2, res2, fay::pixel_format::rgb32f, 12);
         offscreen_frm_id2 = std::get<0>(frame2);
         offscreen_tex_id2 = std::get<1>(frame2);
 
-
-
-        fay::command_list pass, pass2, pass3;
+        fay::command_list pass, pass2;
 
         glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
         glm::mat4 captureView = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -751,8 +748,8 @@ public:
         pass
             .begin_frame(offscreen_frm_id)
             .clear_frame()
-            .set_viewport(0, 0, 512, 512)
-            .set_scissor(0, 0, 512, 512)
+            .set_viewport(0, 0, res, res)
+            .set_scissor(0, 0, res, res)
             .apply_pipeline(pipe_id)
             .apply_shader(generate_cube_shd_id)
             .bind_uniform("model0", captureModels[0])
@@ -771,8 +768,8 @@ public:
         pass2
             .begin_frame(offscreen_frm_id2)
             .clear_frame()
-            .set_viewport(0, 0, 32, 32)
-            .set_scissor(0, 0, 32, 32)
+            .set_viewport(0, 0, res2, res2)
+            .set_scissor(0, 0, res2, res2)
             .apply_pipeline(pipe_id)
             .apply_shader(irradiance_shd_id)
             .bind_uniform("model0", captureModels[0])
@@ -787,7 +784,44 @@ public:
             .draw(mesh2.get())
             .end_frame()
             ;
-        device->execute({ pass, pass2 });
+
+        offscreen_tex_id3 = fay::create_cubemap(device.get(), "prefilter_map_frame", res3, res3, fay::pixel_format::rgb32f, 12, true);
+        offscreen_ds_id3 = create_depth_stencil_map(device.get(), "prefilter_map_frame", res3, res3);
+
+        const size_t maxLevel = 5;
+        fay::command_list pass3[maxLevel];
+        for (size_t level = 0; level < maxLevel; ++level)
+        {
+            // reisze framebuffer according to mip-level size.
+            unsigned int mipWidth = 128 * std::pow(0.5, level);
+            unsigned int mipHeight = 128 * std::pow(0.5, level);
+
+            auto frame3 = fay::choose_mipmap_cubemap_frame(device.get(), "prefilter_map_frame", mipWidth, mipHeight, offscreen_tex_id3, offscreen_ds_id3, level);
+            offscreen_frm_id3 = std::get<0>(frame3);
+
+            pass3[level]
+                .begin_frame(offscreen_frm_id3)
+                .clear_frame()
+                .set_viewport(0, 0, mipWidth, mipHeight)
+                .set_scissor(0, 0, mipWidth, mipHeight)
+                .apply_pipeline(pipe_id)
+                .apply_shader(prefilter_map_shd_id)
+                .bind_uniform("model0", captureModels[0])
+                .bind_uniform("model1", captureModels[1])
+                .bind_uniform("model2", captureModels[2])
+                .bind_uniform("model3", captureModels[3])
+                .bind_uniform("model4", captureModels[4])
+                .bind_uniform("model5", captureModels[5])
+                .bind_uniform("proj", captureProjection)
+                .bind_uniform("view", captureView)
+                .bind_uniform("roughness", (float)level / (float)(maxLevel - 1))
+                .bind_texture(offscreen_tex_id, "environmentMap")
+                .draw(mesh2.get())
+                .end_frame()
+                ;
+        }
+
+        device->execute({ pass, pass2, pass3[0], pass3[1], pass3[2], pass3[3], pass3[4] });
     }
 
     void render() override

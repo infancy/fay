@@ -146,7 +146,7 @@ inline texture_desc create_texture_desc(
 }
 
 // most of the time, depth-stencil attachment is written only.
-inline texture_id create_depth_stencil_map(const std::string& name, size_t width, size_t height, render_device* device)
+inline texture_id create_depth_stencil_map(render_device* device, const std::string& name, size_t width, size_t height)
 {
     texture_desc desc;
 
@@ -247,7 +247,7 @@ inline fay::texture_id create_cubemap(render_device* device, const std::string& 
 inline std::tuple<frame_id, texture_id, texture_id> create_cubemap_frame(render_device* device, const std::string& name, size_t width, size_t height, fay::pixel_format fmt, size_t pixel_size, bool mipmap = false)
 {
     texture_id color_id = create_cubemap(device, name, width, height, fmt, pixel_size, mipmap);
-    texture_id ds_id = create_depth_stencil_map(name, width, height, device);
+    texture_id ds_id = create_depth_stencil_map(device, name, width, height);
 
     frame_desc fd;
     fd.name = name;
@@ -262,6 +262,29 @@ inline std::tuple<frame_id, texture_id, texture_id> create_cubemap_frame(render_
         { color_id, 3, 0 },
         { color_id, 4, 0 },
         { color_id, 5, 0 },
+    };
+    fd.depth_stencil = { ds_id, 0, 0 };
+
+    auto frm_id = device->create(fd);
+    return { frm_id, color_id, ds_id };
+}
+
+// TODO: better way
+inline std::tuple<frame_id, texture_id, texture_id> choose_mipmap_cubemap_frame(render_device* device, const std::string& name, size_t width, size_t height, texture_id color_id, texture_id ds_id, uint32_t level)
+{
+    frame_desc fd;
+    fd.name = name;
+    fd.width = width;
+    fd.height = height;
+
+    fd.render_targets =
+    {
+        { color_id, 0, level },
+        { color_id, 1, level },
+        { color_id, 2, level },
+        { color_id, 3, level },
+        { color_id, 4, level },
+        { color_id, 5, level },
     };
     fd.depth_stencil = { ds_id, 0, 0 };
 
