@@ -216,7 +216,7 @@ inline texture_id create_2d(render_device_ptr& device, const std::string& name, 
     return device->create(desc);
 }
 
-inline fay::texture_id create_cubemap(const std::string& name, size_t width, size_t height, fay::pixel_format fmt, size_t pixel_bytesize, render_device* device) // TODO: compute pixel_bytesize by help func
+inline fay::texture_id create_cubemap(render_device* device, const std::string& name, size_t width, size_t height, fay::pixel_format fmt, size_t pixel_bytesize, bool mipmap = false) // TODO: compute pixel_bytesize by help func
 {
     fay::texture_desc desc;
     desc.name = name;
@@ -231,22 +231,22 @@ inline fay::texture_id create_cubemap(const std::string& name, size_t width, siz
     desc.wrap_u = wrap_mode::clamp_to_edge;
     desc.wrap_v = wrap_mode::clamp_to_edge;
     desc.wrap_w = wrap_mode::clamp_to_edge;
-    desc.mipmap = false;
+    desc.mipmap = mipmap;
 
     return device->create(desc);
 }
 
-inline fay::texture_id create_cubemap(const std::string& name, const image& img, render_device* device) // TODO: compute pixel_bytesize by help func
+inline fay::texture_id create_cubemap(render_device* device, const std::string& name, const image& img) // TODO: compute pixel_bytesize by help func
 {
     // FIXME
-    return create_cubemap(name, img.width(), img.height(), img.format(), img.channel(), device);
+    return create_cubemap(device, name, img.width(), img.height(), img.format(), img.pixel_size());
 }
 
 // -------------------------------------------------------------------------------------------------
 
-inline std::tuple<frame_id, texture_id, texture_id> create_cubemap_frame(const std::string& name, size_t width, size_t height, fay::pixel_format fmt, size_t pixel_bytesize, render_device* device)
+inline std::tuple<frame_id, texture_id, texture_id> create_cubemap_frame(render_device* device, const std::string& name, size_t width, size_t height, fay::pixel_format fmt, size_t pixel_size, bool mipmap = false)
 {
-    texture_id color_id = create_cubemap(name, width, height, fmt, pixel_bytesize, device);
+    texture_id color_id = create_cubemap(device, name, width, height, fmt, pixel_size, mipmap);
     texture_id ds_id = create_depth_stencil_map(name, width, height, device);
 
     frame_desc fd;

@@ -720,11 +720,11 @@ public:
         }
 
         // TODO: in_fmt, ex_fmt
-        auto frame = fay::create_cubemap_frame("cubemap_frame", 512, 512, fay::pixel_format::rgb32f, 12, device.get());
+        auto frame = fay::create_cubemap_frame(device.get(), "cubemap_frame", 512, 512, fay::pixel_format::rgb32f, 12);
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
 
-        auto frame2 = fay::create_cubemap_frame("irradiance_frame", 64, 64, fay::pixel_format::rgb32f, 12, device.get());
+        auto frame2 = fay::create_cubemap_frame(device.get(), "irradiance_frame", 32, 32, fay::pixel_format::rgb32f, 12);
         offscreen_frm_id2 = std::get<0>(frame2);
         offscreen_tex_id2 = std::get<1>(frame2);
 
@@ -771,8 +771,8 @@ public:
         pass2
             .begin_frame(offscreen_frm_id2)
             .clear_frame()
-            .set_viewport(0, 0, 64, 64)
-            .set_scissor(0, 0, 64, 64)
+            .set_viewport(0, 0, 32, 32)
+            .set_scissor(0, 0, 32, 32)
             .apply_pipeline(pipe_id)
             .apply_shader(irradiance_shd_id)
             .bind_uniform("model0", captureModels[0])
