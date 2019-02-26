@@ -22,9 +22,6 @@ const float PI = 3.14159265359;
 
 vec3 SampleEnvironmentMap(vec3 wPos)
 {	
-    // WARNNING
-    wPos.y = -wPos.y;
-
     // return texture(environmentMap, wPos).rgb;
 
 	// The world vector acts as the normal of a tangent surface

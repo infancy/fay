@@ -78,9 +78,6 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
 
 vec3 SampleEnvironmentMap(vec3 wPos)
 {	
-    // WARNNING
-    wPos.y = -wPos.y;
-    
     vec3 N = normalize(wPos);
     
     // make the simplyfying assumption that V equals R equals the normal 

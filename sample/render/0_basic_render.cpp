@@ -885,6 +885,8 @@ public:
 
             .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4 })
             .bind_texture(offscreen_tex_id2, "irradianceMap")
+            .bind_texture(offscreen_tex_id3, "prefilterMap")
+            .bind_texture(offscreen_tex_id4, "brdfLUT")
             .bind_uniform("Albedo", glm::vec3(0.5f, 0.0f, 0.0f))
             .bind_uniform("Ao", 1.f)
             ;
