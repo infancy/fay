@@ -181,12 +181,12 @@ enum class wrap_mode
 
 enum class cube_face
 {
-	pos_x,
-	neg_x,
-	pos_y,
-	neg_y,
-	pos_z,
-	neg_z,
+	pos_x, // 0
+	neg_x, // 1
+	pos_y, // 2
+	neg_y, // 3
+	pos_z, // 4
+	neg_z, // 5
 };
 
 // core/define/
@@ -543,6 +543,7 @@ struct texture_desc
 
 	uint32_t width{};
 	uint32_t height{};
+    // TODO: auto calculation by ctor
     uint32_t depth{}; // layers, used in texture3d or texture_array
     pixel_format pixel_format{}; // rename: format
 
@@ -570,7 +571,7 @@ struct texture_desc
     render_target as_render_target{ render_target::color }; // used as render target or depth_stencil target is depended by pixel_format
     uint32_t rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target
 
-    texture_desc() = default;
+    texture_desc() = default; // for texture2d
     texture_desc(texture_type type)
     {
         this->type = type;

@@ -332,22 +332,19 @@ inline std::tuple<frame_id, texture_id, texture_id> create_depth_frame(const std
     return { frm_id, color_id, ds_id };
 }
 
-inline std::tuple<frame_id, texture_id, texture_id> create_frame(render_device* device, const std::string& name, size_t width, size_t height)
+inline std::tuple<frame_id, texture_id, texture_id> create_frame(render_device* device, const std::string& name, size_t width, size_t height, pixel_format fmt = pixel_format::rgba8)
 {
     texture_desc desc;
-
-    fay::image img("texture/container2.png", true);
-
     desc.name = name;
     desc.width = width;
     desc.height = height;
-    desc.size = width * height * 4; // byte size
-    desc.data = { img.data() };
+    desc.size = width * height * 4 * (fmt == pixel_format::rgba8 ? 1 : 4); // WARNNING
+    desc.data = { nullptr };
     desc.type = texture_type::two;
     desc.mipmap = false;
 
     desc.as_render_target = render_target::color;
-    desc.pixel_format = pixel_format::rgba8;
+    desc.pixel_format = fmt;
     auto color_id = device->create(desc);
 
     desc.as_render_target = render_target::depth_stencil;

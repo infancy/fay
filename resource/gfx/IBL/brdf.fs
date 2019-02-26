@@ -1,6 +1,6 @@
 #version 330 core
-out vec2 FragColor;
-in vec2 TexCoords;
+out vec3 FragColor;
+in vec2 Tex;
 
 const float PI = 3.14159265359;
 // ----------------------------------------------------------------------------
@@ -15,7 +15,6 @@ float RadicalInverse_VdC(uint bits)
      bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
      return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
-// ----------------------------------------------------------------------------
 vec2 Hammersley(uint i, uint N)
 {
 	return vec2(float(i)/float(N), RadicalInverse_VdC(i));
@@ -69,9 +68,9 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 vec2 IntegrateBRDF(float NdotV, float roughness)
 {
     vec3 V;
-    V.x = sqrt(1.0 - NdotV*NdotV);
+    V.x = sqrt(1.0 - NdotV*NdotV); // sin
     V.y = 0.0;
-    V.z = NdotV;
+    V.z = NdotV; // cos
 
     float A = 0.0;
     float B = 0.0; 
@@ -85,6 +84,7 @@ vec2 IntegrateBRDF(float NdotV, float roughness)
         // preferred alignment direction (importance sampling).
         vec2 Xi = Hammersley(i, SAMPLE_COUNT);
         vec3 H = ImportanceSampleGGX(Xi, N, roughness);
+        // H = Normalize(V+L) -> 
         vec3 L = normalize(2.0 * dot(V, H) * H - V);
 
         float NdotL = max(L.z, 0.0);
@@ -108,6 +108,6 @@ vec2 IntegrateBRDF(float NdotV, float roughness)
 // ----------------------------------------------------------------------------
 void main() 
 {
-    vec2 integratedBRDF = IntegrateBRDF(TexCoords.x, TexCoords.y);
-    FragColor = integratedBRDF;
+    vec2 integratedBRDF = IntegrateBRDF(Tex.x, Tex.y);
+    FragColor = vec3(integratedBRDF, 0.f);
 }

@@ -270,14 +270,17 @@ public:
     fay::pipeline_id pipe_id2;
 
     fay::texture_id offscreen_tex_id;
+    fay::texture_id  offscreen_ds_id;
+    fay::frame_id   offscreen_frm_id;
     fay::texture_id offscreen_tex_id2;
+    fay::texture_id  offscreen_ds_id2;
+    fay::frame_id   offscreen_frm_id2;
     fay::texture_id offscreen_tex_id3;
-    fay::texture_id offscreen_ds_id;
-    fay::texture_id offscreen_ds_id2;
-    fay::texture_id offscreen_ds_id3;
-    fay::frame_id offscreen_frm_id;
-    fay::frame_id offscreen_frm_id2;
-    fay::frame_id offscreen_frm_id3;
+    fay::texture_id  offscreen_ds_id3;
+    fay::frame_id   offscreen_frm_id3;
+    fay::texture_id offscreen_tex_id4;
+    fay::texture_id  offscreen_ds_id4;
+    fay::frame_id   offscreen_frm_id4;
 
     render_paras paras;
     //fay::command_list pass1, pass2;
@@ -707,6 +710,7 @@ public:
         auto generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
         auto irradiance_shd_id = create_shader("irradiance",       "gfx/IBL/cubemap.vs", "gfx/IBL/irradiance_convolution.fs", device.get());
         auto prefilter_map_shd_id = create_shader("prefilter_map", "gfx/IBL/cubemap.vs", "gfx/IBL/prefilter.fs", device.get());
+        auto brdf_map_shd_id = create_shader("brdf_map", "gfx/IBL/brdf.vs", "gfx/IBL/brdf.fs", device.get());
         background_shd_id = create_shader("background", "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
         shd_id = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
 
@@ -718,7 +722,7 @@ public:
         }
 
         // TODO: in_fmt, ex_fmt
-        const size_t res = 512, res2 = 32, res3 = 128;
+        const size_t res = 512, res2 = 32, res3 = 128, res4 = 512;
         auto frame = fay::create_cubemap_frame(device.get(), "cubemap_frame", res, res, fay::pixel_format::rgb32f, 12);
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
@@ -793,8 +797,8 @@ public:
         for (size_t level = 0; level < maxLevel; ++level)
         {
             // reisze framebuffer according to mip-level size.
-            unsigned int mipWidth = 128 * std::pow(0.5, level);
-            unsigned int mipHeight = 128 * std::pow(0.5, level);
+            unsigned int mipWidth = res3 * std::pow(0.5, level);
+            unsigned int mipHeight = res3 * std::pow(0.5, level);
 
             auto frame3 = fay::choose_mipmap_cubemap_frame(device.get(), "prefilter_map_frame", mipWidth, mipHeight, offscreen_tex_id3, offscreen_ds_id3, level);
             offscreen_frm_id3 = std::get<0>(frame3);
@@ -821,7 +825,46 @@ public:
                 ;
         }
 
-        device->execute({ pass, pass2, pass3[0], pass3[1], pass3[2], pass3[3], pass3[4] });
+        //
+        {
+            // TODO: ctor, set_sampler, set_
+            fay::texture_desc desc;
+            desc.name = "brdf_tex";
+            desc.width = res4;
+            desc.height = res4;
+            desc.pixel_format = fay::pixel_format::rgb32f; // rename: depth_stencil
+            desc.size = res4 * res4 * 12;
+            desc.type = fay::texture_type::two;
+            desc.data = { nullptr };
+            desc.wrap_u = fay::wrap_mode::clamp_to_edge;
+            desc.wrap_v = fay::wrap_mode::clamp_to_edge;
+            desc.mipmap = false; // TODO: default set it false
+            offscreen_tex_id4 = device->create(desc); 
+
+            offscreen_ds_id4 = create_depth_stencil_map(device.get(), "brdf_ds", res4, res4);
+
+            fay::frame_desc fd;
+            fd.name = "brdf_frame";
+            fd.width = res4;
+            fd.height = res4;
+            fd.render_targets = { { offscreen_tex_id4, 0, 0 } };
+            fd.depth_stencil = { offscreen_ds_id4, 0, 0 };
+            offscreen_frm_id4 = device->create(fd);
+        }
+
+        fay::command_list pass4;
+        pass4
+            .begin_frame(offscreen_frm_id4)
+            .clear_frame()
+            .set_viewport(0, 0, res4, res4)
+            .set_scissor(0, 0, res4, res4)
+            .apply_pipeline(pipe_id)
+            .apply_shader(brdf_map_shd_id)
+            .draw(mesh2.get())
+            .end_frame()
+            ;
+
+        device->execute({ pass, pass2, pass3[0], pass3[1], pass3[2], pass3[3], pass3[4], pass4 });
     }
 
     void render() override
@@ -877,7 +920,7 @@ public:
         pass
             .apply_pipeline(pipe_id)
             .apply_shader(background_shd_id)
-            .bind_texture(offscreen_tex_id, "environmentMap")
+            .bind_texture(offscreen_tex_id, "environmentMap") // TODO: layer, level
             //.bind_texture(offscreen_tex_id2, "environmentMap")
             .bind_uniform("proj", camera->persp())
             .bind_uniform("view", camera->view())

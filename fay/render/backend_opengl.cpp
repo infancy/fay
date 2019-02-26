@@ -701,6 +701,7 @@ public:
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_SCISSOR_TEST);
         glEnable(GL_PROGRAM_POINT_SIZE); // The point size can be modify in vertex shader
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
         glDisable(GL_STENCIL_TEST);
 
@@ -835,8 +836,8 @@ public:
             // TODO: koi, generate mipmap by itself.
             if (desc.mipmap)
             {
+                glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // use three-linear filtration
                 glGenerateMipmap(tex.type);
-                glTexParameteri(tex.type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             }
             glcheck_errors();
 
