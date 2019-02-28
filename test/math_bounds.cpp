@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "fay/core/fay.h"
-#include "fay/math/bounds.h"
+#include "fay/math/geometry.h"
 
 using namespace std;
 using namespace fay;
@@ -34,14 +34,14 @@ TEST(math, bounds3)
 
     ASSERT_TRUE(is_equal(b3.radius(), std::sqrt(3.f)));
 
-    ASSERT_TRUE(is_equal(b3.corner(bounds_corner::I),    glm::vec3( 1.f,  1.f,  1.f)));
-    ASSERT_TRUE(is_equal(b3.corner(bounds_corner::II),   glm::vec3(-1.f,  1.f,  1.f)));
-    ASSERT_TRUE(is_equal(b3.corner(bounds_corner::III),  glm::vec3(-1.f, -1.f,  1.f)));
-    ASSERT_TRUE(is_equal(b3.corner(bounds_corner::IV),   glm::vec3( 1.f, -1.f,  1.f)));
-    ASSERT_TRUE(is_equal(b3.corner(bounds_corner::V),    glm::vec3( 1.f,  1.f, -1.f)));
-    ASSERT_TRUE(is_equal(b3.corner(bounds_corner::VI),   glm::vec3(-1.f,  1.f, -1.f)));
-    ASSERT_TRUE(is_equal(b3.corner(bounds_corner::VII),  glm::vec3(-1.f, -1.f, -1.f)));
-    ASSERT_TRUE(is_equal(b3.corner(bounds_corner::VIII), glm::vec3( 1.f, -1.f, -1.f)));
+    ASSERT_TRUE(is_equal(b3.corner(box_corner::I),    glm::vec3( 1.f,  1.f,  1.f)));
+    ASSERT_TRUE(is_equal(b3.corner(box_corner::II),   glm::vec3(-1.f,  1.f,  1.f)));
+    ASSERT_TRUE(is_equal(b3.corner(box_corner::III),  glm::vec3(-1.f, -1.f,  1.f)));
+    ASSERT_TRUE(is_equal(b3.corner(box_corner::IV),   glm::vec3( 1.f, -1.f,  1.f)));
+    ASSERT_TRUE(is_equal(b3.corner(box_corner::V),    glm::vec3( 1.f,  1.f, -1.f)));
+    ASSERT_TRUE(is_equal(b3.corner(box_corner::VI),   glm::vec3(-1.f,  1.f, -1.f)));
+    ASSERT_TRUE(is_equal(b3.corner(box_corner::VII),  glm::vec3(-1.f, -1.f, -1.f)));
+    ASSERT_TRUE(is_equal(b3.corner(box_corner::VIII), glm::vec3( 1.f, -1.f, -1.f)));
 
     b3.expand(glm::vec3{ 2.f, -2.f, -2.f });
     b3.expand(glm::vec3{ -2.f, 2.f, 2.f });

@@ -128,8 +128,10 @@ TEST(render, shader)
             uniform_type::vec1,
         }
     };
-    desc.vs_samplers = {};
-    desc.fs_samplers =
+
+    desc.vs_samplers_sz = 0;
+    desc.fs_samplers_sz = 4;
+    desc.samplers =
     {
         { "Ambient",  texture_type::two },
         { "Diffuse",  texture_type::two },
@@ -137,13 +139,14 @@ TEST(render, shader)
         { "Parallax", texture_type::two },
     };
 
-    shader_desc test = scan_shader_program(test_vs, test_fs, true);
+    shader_desc test = scan_shader_program("test_render_shader", test_vs, test_fs, true);
 
     ASSERT_TRUE(desc.vertex_names == test.vertex_names);
     ASSERT_TRUE(desc.layout == test.layout);
     ASSERT_TRUE(desc.uniform_blocks == test.uniform_blocks);
-    ASSERT_TRUE(desc.vs_samplers == test.vs_samplers);
-    ASSERT_TRUE(desc.fs_samplers == test.fs_samplers);
+    ASSERT_TRUE(desc.vs_samplers_sz == test.vs_samplers_sz);
+    ASSERT_TRUE(desc.fs_samplers_sz == test.fs_samplers_sz);
+    ASSERT_TRUE(desc.samplers == test.samplers);
 }
 
 

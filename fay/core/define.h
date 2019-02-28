@@ -78,6 +78,12 @@ enum class pixel_format
     rgb32f,
     rgb16f,
 
+    rg32f,
+    rg16f,
+
+    r32f,
+    r16f,
+
     rgba8,
     rgba4,
 
@@ -89,8 +95,6 @@ enum class pixel_format
 
     rg8,
 
-    r32f, // float
-    r16f,
     r8,   // byte
 
     depth,

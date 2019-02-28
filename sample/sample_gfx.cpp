@@ -28,9 +28,9 @@ public:
         //std::cin >> name;
 
         //scene_->add_model("object/Rei/Rei.obj");// + name);
-        scene_->add_model(fay::nierautomata_2b);
+        scene_->add_model(fay::Box);
 
-        fay::shader_desc sd = fay::scan_shader_program("gfx/renderable.vs", "gfx/renderable.fs", false);
+        fay::shader_desc sd = fay::scan_shader_program("renderable", "gfx/renderable.vs", "gfx/renderable.fs");
         sd.name = "shd"; //todo
         auto shd_id = device->create(sd);
 
@@ -57,12 +57,8 @@ public:
 
     void render() override
     {
-        glm::mat4 view = camera.view();
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
-            (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
-
         // draw
-        MVP = projection * view * transform.model_matrix();
+        MVP = camera.world_to_ndc() * transform.model_matrix();
 
         auto cmds = pass1;
         cmds.bind_uniform("MVP", MVP);

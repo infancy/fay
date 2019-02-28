@@ -5,8 +5,12 @@ GTEST_API_ int main(int argc, char **argv)
 {
     google::InitGoogleLogging(argv[0]);
 
+// define FAY_TEST_SOMEONE
+#ifdef FAY_TEST_SOMEONE
     char filter[] = "--gtest_filter=ecs.*";
     argv[argc++] = filter;
+#endif // FAY_TEST_SOMEONE
+
     //testing::GTEST_FLAG(filter) = "utility.*";
 	testing::InitGoogleTest(&argc, argv);
 	auto result = RUN_ALL_TESTS();

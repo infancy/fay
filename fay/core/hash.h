@@ -27,7 +27,7 @@ struct fnv<uint64_t>
 
     static constexpr uint64_t hash(const char* str, const uint64_t val = default_offset_basis)
     {
-        return (str[0] == '\0') ? val : hash(&str[1], iterate_(str[0], val)); // can't use ++str
+        return (str[0] == '\0') ? val : hash(str + 1, iterate_(str[0], val)); // can't use ++str
     }
 
     static constexpr uint64_t merge_(const uint64_t a, const uint64_t b)
