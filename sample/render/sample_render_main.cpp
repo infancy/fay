@@ -11,6 +11,8 @@
 
 SAMPLE_RENDER_APP_DECL(clear)
 SAMPLE_RENDER_APP_DECL(triangle)
+
+SAMPLE_RENDER_APP_DECL(instancing)
 SAMPLE_RENDER_APP_DECL(offscreen)
 SAMPLE_RENDER_APP_DECL(shadow_map)
 SAMPLE_RENDER_APP_DECL(defer_rendering)
@@ -31,6 +33,6 @@ int main(int argc, char** argv)
     {
         //
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(IBL, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(instancing, desc);
     return app_->run();
 }
