@@ -17,7 +17,7 @@ class camera
 public:
 	camera(
         glm::vec3 position = glm::vec3(0.f, 0.f, 0.f),
-        float yaw = -90.f, float pitch = 0.f, float _near = 1.f, float _far = 1000.f)
+        float yaw = 90.f, float pitch = 0.f, float _near = 1.f, float _far = 1000.f)
         : position_{ position }
         , yaw_{ yaw }
         , pitch_{ pitch }
@@ -35,12 +35,13 @@ public:
     // view_matrix
 	glm::mat4 view() const
 	{
-		return glm::lookAt(position_, position_ + front_, up_);
+		// return glm::lookAt(position_, position_ + front_, up_);
+        return glm::lookAtLH(position_, position_ + front_, up_);
 	}
 
     glm::mat4 persp() const
     {
-        return glm::perspective(
+        return glm::perspectiveLH(
             glm::radians(zoom()), aspect_, near_, far_);
     }
 
@@ -73,16 +74,16 @@ public:
 
 private:
     // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-    void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainpitch_ = true)
+    void ProcessMouseMovement(float xoffset, float yoffset, bool constrain_pitch = true)
     {
         xoffset *= mouse_sensitivity_;
         yoffset *= mouse_sensitivity_;
 
-        yaw_ += xoffset;
+        yaw_ -= xoffset;
         pitch_ += yoffset;
 
         // Make sure that when pitch is out of bounds, screen doesn't get flipped
-        if (constrainpitch_)
+        if (constrain_pitch)
         {
             pitch_ = std::clamp(pitch_, -89.f, 89.f);
         }
@@ -116,14 +117,14 @@ private:
 	{
 		// Calculate the new front_ vector
 		glm::vec3 front;
-		front.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
-		front.y = sin(glm::radians(pitch_));
-		front.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+        front.y = sin(glm::radians(pitch_));
+		front.x = cos(glm::radians(pitch_)) * cos(glm::radians(yaw_));
+		front.z = cos(glm::radians(pitch_)) * sin(glm::radians(yaw_));
 		front_ = glm::normalize(front);
 
 		// Also re-calculate the right_ and up_ vector
-		right_ = glm::normalize(glm::cross(front_, WorldUp_));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-		up_ = glm::normalize(glm::cross(right_, front_));
+		right_ = glm::normalize(glm::cross(WorldUp_, front_));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+		up_ = glm::normalize(glm::cross(front_, right_));
 	}
 
 private:

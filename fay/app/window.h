@@ -262,8 +262,7 @@ private:
         //if (glfwGetWindowAttrib(window_, GLFW_FOCUSED))
         glfwGetCursorPos(window_, &input_.x, &input_.y);
         input_.dx = input_.x - input_.lastx;
-        // reversed since y-coordinates go from bottom to top but z_xais form out to in
-        input_.dy = input_.lasty - input_.y;
+        input_.dy = input_.y - input_.lasty;
 
         // keyboard
         // TODO: do it by keyboard_cb

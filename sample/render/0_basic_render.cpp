@@ -222,11 +222,11 @@ class two_passes : public fay::app
 public:
     fay::camera cameras_[3]
     {
-        fay::camera{ glm::vec3{ 0, 40, 160 }, -90, 0, 1.f, 300.f },
+        fay::camera{ glm::vec3{ 0, 40, -160 }, 90, 0, 1.f, 300.f }, // look at the positive-z axis
 
         //pitch 0 -> -30
-        fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f },
-        fay::camera{ glm::vec3{ 100, 100, 0 },    0, 0,  1.f, 300.f },
+        fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f }, // look at the positive-x axis
+        fay::camera{ glm::vec3{ 100, 100, 0 },    180, -45,  1.f, 300.f },
     };
     fay::light lights_[3]
     {
@@ -337,9 +337,9 @@ public:
     {
         add_update_items();
 
-        mesh = fay::create_raw_renderable(fay::Box, device.get());
+        mesh = fay::create_raw_renderable(fay::Face, device.get());
 
-        fay::image img("texture/awesomeface.png", true);
+        fay::image img("texture/awesomeface.png");// , true);
         tex_id = create_2d(this->device, "hello", img);
 
         fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/renderable.vs", "gfx/renderable.fs");
@@ -360,7 +360,12 @@ public:
 
     void render() override
     {
-        auto MVP = camera->world_to_ndc() * transform->model_matrix();
+        glm::mat4 model(1.f);
+        auto model1 = glm::scale(model, glm::vec3(40.f, 40.f, 40.f));
+        auto model2 = glm::translate(model1, glm::vec3(5.f, 5.f, 0.f)); // y, x, z
+        auto model3 = glm::translate(model1, glm::vec3(5.f, -5.f, 0.f));
+
+        auto VP = camera->world_to_ndc();
 
         fay::command_list pass1, pass2;
 
@@ -372,9 +377,13 @@ public:
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
             .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
-            .bind_uniform("MVP", MVP)
             .bind_uniform("bAlbedo", true)
             .bind_textures({ tex_id })
+            .bind_uniform("MVP", VP * model1)
+            .draw(mesh.get())
+            .bind_uniform("MVP", VP * model2)
+            .draw(mesh.get())
+            .bind_uniform("MVP", VP * model3)
             .draw(mesh.get())
             .end_frame();
 
@@ -384,9 +393,13 @@ public:
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
             .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
-            .bind_uniform("MVP", MVP)
             .bind_uniform("bAlbedo", true)
             .bind_textures({ offscreen_tex_id })
+            .bind_uniform("MVP", VP * model1)
+            .draw(mesh.get())
+            .bind_uniform("MVP", VP * model2)
+            .draw(mesh.get())
+            .bind_uniform("MVP", VP * model3)
             .draw(mesh.get())
             .end_frame();
 
