@@ -37,8 +37,8 @@ struct transform
     {
         // if(active)
 
-        if (io['w']) position.z -= io.delta_time * speed_;
-        if (io['s']) position.z += io.delta_time * speed_;
+        if (io['w']) position.z += io.delta_time * speed_;
+        if (io['s']) position.z -= io.delta_time * speed_;
         if (io['a']) position.x -= io.delta_time * speed_;
         if (io['d']) position.x += io.delta_time * speed_;
         if (io.left_down) position.y += io.delta_time * speed_;
@@ -203,32 +203,32 @@ public:
 
         inv_view_projection_ = glm::inverse(view_projection);
 
-        // (openGL) NDC box corner point(top/bottom, left/right, near/far)
+        // (D3D) NDC box corner point(top/bottom, left/right, near/far)
         static const vec4 trf(+1.f, +1.f, +1.f, 1.f);
         static const vec4 tlf(-1.f, +1.f, +1.f, 1.f);
-        static const vec4 tln(-1.f, +1.f, -1.f, 1.f);
-        static const vec4 trn(+1.f, +1.f, -1.f, 1.f);
+        static const vec4 tln(-1.f, +1.f, +0.f, 1.f);
+        static const vec4 trn(+1.f, +1.f, +0.f, 1.f);
         static const vec4 brf(+1.f, -1.f, +1.f, 1.f);
         static const vec4 blf(-1.f, -1.f, +1.f, 1.f);
-        static const vec4 bln(-1.f, -1.f, -1.f, 1.f);
-        static const vec4 brn(+1.f, -1.f, -1.f, 1.f);
-        static const vec4 center(0.f, 0.f, 0.f, 1.f);
+        static const vec4 bln(-1.f, -1.f, +0.f, 1.f);
+        static const vec4 brn(+1.f, -1.f, +0.f, 1.f);
+        static const vec4 center(0.f, 0.f, 0.5f, 1.f);
 
         // normalize
         // const auto project = [](const vec4 &v) { return vec3(v.x / v.w, v.y / v.w, v.z / v.w); };
 
-        //                                                                            v1
-        //                                                                          /  |
-        // transform to world space                                               /    |
-        //                 v2----- v1                 |y             v2         v0     |
-        //    |y          /|      /|                  |             / |         |      |
-        //    |          v3------v0|                  |            v3 |         |      |
-        //    |     z    | |     | |            z     |            |  |         |      |
-        //    .------    | |v6---|-|v5          ------.            |  |v6       |      |
-        //   /           |/      |/                  /             | /          |     v5
-        //  / x          v7------v4  NDC            / x     proj   v7           |   /
-        //                                                                      | /
-        //                                                                      v4
+        //                                                                      v1
+        //                                                                    /  |
+        // transform to world space                                         /    |
+        //                 v2----- v1           |y             v2         v0     |
+        //    |y          /|      /|            |             / |         |      |
+        //    |          v3------v0|            |            v3 |         |      |
+        //    |     z    | |     | |            |     z      |  |         |      |
+        //    .------    | |v6---|-|v5          .------      |  |v6       |      |
+        //   /           |/      |/            /             | /          |     v5
+        //  / x          v7------v4  NDC      / x     proj   v7           |   /
+        //                                                                | /
+        //                                                                v4
         vec3 TRF = corners_[0] = project(inv_view_projection_ * trf);
         vec3 TLF = corners_[1] = project(inv_view_projection_ * tlf);
         vec3 TLN = corners_[2] = project(inv_view_projection_ * tln);
@@ -345,8 +345,8 @@ public:
     // WARNNING: if 0.f < p < 1.f, the return value is inside of the box
     glm::vec3 coord(float x, float y, float z) const
     {
-        // WARNNING: OpenGL NDC space
-        glm::vec4 clip = glm::vec4(2.f * x - 1.f, 2.f * y - 1.f, 2.f * z - 1.f, 1.f);
+        // WARNNING: D3D NDC space
+        glm::vec4 clip = glm::vec4(2.f * x - 1.f, 2.f * y - 1.f, z, 1.f);
         return project(inv_view_projection_ * clip);
     }
 

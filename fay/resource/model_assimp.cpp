@@ -82,13 +82,9 @@ model_assimp::model_assimp(const std::string& filepath, render_backend_type api)
     Assimp::Importer importer_{};
 	const aiScene* scene{};
 
-	if(api == render_backend_type::opengl)
-		scene = importer_.ReadFile(filepath,
-			aiProcess_Triangulate | aiProcess_CalcTangentSpace);
-	else
-		scene = importer_.ReadFile(filepath,
-			aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_FlipUVs);
-
+    scene = importer_.ReadFile(filepath,
+        aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_ConvertToLeftHanded);
+		
 	if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE))
 	{
 		LOG(ERROR) << "ASSIMP:: " << importer_.GetErrorString();

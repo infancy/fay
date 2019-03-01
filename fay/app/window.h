@@ -95,7 +95,7 @@ inline void mouse_button_callback(GLFWwindow* window, int button, int action, in
 
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 		input_.left_down = true;
-	else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	else if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
 		input_.middle_down = true;
 	else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
 		input_.right_down = true;

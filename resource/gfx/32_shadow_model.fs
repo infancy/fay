@@ -28,7 +28,7 @@ float baseBias = OrthoBias2;
 
 float ShadowCalculation(vec4 CameraSpacePos, float dot_lightDir_normal)
 {
-    bool is_near = CameraSpacePos.z >= depthSection[1];
+    bool is_near = CameraSpacePos.z <= depthSection[1];
 
     vec4 LightSpacePos;
     if(is_near)

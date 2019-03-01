@@ -232,11 +232,11 @@ public:
     {
         fay::light{ glm::vec3{ -300, 300, 0 } },
         fay::light{ glm::vec3{ 100, 100, 0 } },
-        fay::light{ glm::vec3{ 0, 100, 100 } },
+        fay::light{ glm::vec3{ 0, 100, -100 } },
     };
     fay::transform transforms_[2]
     {
-        fay::transform{ glm::vec3{ 0, 0, 0 } },
+        fay::transform{ glm::vec3{ 0, 100, 0 } },
         fay::transform{ glm::vec3{ -100, 0, 0 } },
     };
     const fay::camera* camera{ cameras_ };
@@ -423,12 +423,7 @@ public:
         mesh = fay::create_renderable(fay::Plants, device.get());
 
         {
-            fay::image img("texture/awesomeface.png", true);
-            tex_id = create_2d(this->device, "hello", img);
-        }
-
-        {
-            fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/32_shadow_map.vs", "gfx/32_shadow_map.fs", false);
+            fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/32_shadow_map.vs", "gfx/32_shadow_map.fs");
             shd_id = device->create(sd);
 
             fay::pipeline_desc pd;
@@ -439,13 +434,12 @@ public:
         }
 
         {
-            fay::shader_desc sd = fay::scan_shader_program("shd2", "gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs", false);
-            sd.name = "shd2"; //todo
+            fay::shader_desc sd = fay::scan_shader_program("shd2", "gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs");
             shd_id2 = device->create(sd);
 
             fay::pipeline_desc pd;
             pd.name = "pipe2";
-            //pd.cull_mode = fay::cull_mode::none;
+            pd.cull_mode = fay::cull_mode::none;
             pipe_id2 = device->create(pd);
         }
 
@@ -464,7 +458,7 @@ public:
 
     glm::mat4 frustum_to_ortho(glm::vec3 light_position, fay::frustum box, glm::vec3 camera_up = glm::vec3(0.f, 1.f, 0.f))
     {
-        glm::mat4 lightView = glm::lookAt(light_position, box.center(), camera_up);
+        glm::mat4 lightView = glm::lookAtLH(light_position, box.center(), camera_up);
 
         // transform to light space
         //glm::vec3 aa = glm::vec3(lightView * glm::vec4(bounds.min(), 1.f));
@@ -481,7 +475,7 @@ public:
 
         glm::vec3 a = bounds.min(), b = bounds.max();
 
-        return  glm::ortho(
+        return  glm::orthoLH(
             a.x, b.x,
             a.y, b.y,
             -b.z - 100.f, -a.z + 200.f
@@ -502,8 +496,8 @@ public:
         // debug info
         // FIXME: over the GPU memory
         //fay::bounds3 box(-70, 70);
-        glm::mat4 lightProj = glm::perspective(glm::radians(cameras_[0].zoom()), 1080.f / 720.f, depthSection[0], depthSection[1]);
-        glm::mat4 lightProj2 = glm::perspective(glm::radians(cameras_[0].zoom()), 1080.f / 720.f, depthSection[1], depthSection[2]);
+        glm::mat4 lightProj = glm::perspectiveLH(glm::radians(cameras_[0].zoom()), 1080.f / 720.f, depthSection[0], depthSection[1]);
+        glm::mat4 lightProj2 = glm::perspectiveLH(glm::radians(cameras_[0].zoom()), 1080.f / 720.f, depthSection[1], depthSection[2]);
         fay::frustum box_camera(lightProj * cameras_[0].view());
         auto debug_camera = create_box_mesh(box_camera, device.get());
         fay::frustum box_camera2(lightProj2 * cameras_[0].view());
@@ -512,10 +506,10 @@ public:
         glm::mat4 lightOrtho = frustum_to_ortho(light->position(), box_camera);
         glm::mat4 lightOrtho2 = frustum_to_ortho(light->position(), box_camera2);
 
-        glm::mat4 lightView = glm::lookAt(
+        glm::mat4 lightView = glm::lookAtLH(
             light->position(), box_camera.center(), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
         glm::mat4 lightSpace = lightOrtho * lightView;
-        glm::mat4 lightView2 = glm::lookAt(
+        glm::mat4 lightView2 = glm::lookAtLH(
             light->position(), box_camera2.center(), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
         glm::mat4 lightSpace2 = lightOrtho2 * lightView2;
 
@@ -615,10 +609,10 @@ public:
     void render() override
     {
         GLfloat near_plane = 1.f, far_plane = 200.f;
-        glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
-        glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
+        glm::mat4 lightOrtho = glm::orthoLH(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
+        glm::mat4 lightProj = glm::perspectiveLH(glm::radians(90.f),
             1080.f / 720.f, near_plane, far_plane);
-        glm::mat4 lightView = glm::lookAt(
+        glm::mat4 lightView = glm::lookAtLH(
             light->position(), glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
         glm::mat4 lightSpace = lightProj * lightView;
 
@@ -736,8 +730,8 @@ public:
 
         fay::command_list pass, pass2;
 
-        glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-        glm::mat4 captureView = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 captureProjection = glm::perspectiveLH(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+        glm::mat4 captureView = glm::lookAtLH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 captureModel(1.f);
         glm::mat4 captureModels[6] =
         {
@@ -1035,7 +1029,7 @@ public:
     void render() override
     {
         glm::mat4 view = camera->view();
-        glm::mat4 proj = glm::perspective(glm::radians(camera->zoom()),
+        glm::mat4 proj = glm::perspectiveLH(glm::radians(camera->zoom()),
             (float)desc.window.width / desc.window.height, 0.1f, 10000.0f);
 
         auto MVP = proj * view * transform->model_matrix();
