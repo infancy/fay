@@ -101,8 +101,6 @@ private:
         if (io['d']) position_ += right_ * velocity;
         if (io.left_down)  position_ += up_ * velocity;
         if (io.right_down) position_ -= up_ * velocity;
-
-        std::cout << "positon " << position_.x << ' ' << position_.y << ' ' << position_.z << '\n';
     }
 
     // Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis

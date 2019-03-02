@@ -84,7 +84,7 @@ public:
         auto triangle_vb = device->create(bd);
         auto triangle_ib = device->create(id);
 
-        fay::image img("texture/awesomeface.png");
+        fay::image img("texture/awesomeface.png", true);
         auto triangle_tbo = create_2d(this->device, "hello", img);
 
         fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/3_uniform.vs", "gfx/test/3_uniform.fs");
@@ -338,7 +338,7 @@ public:
 
         mesh = fay::create_raw_renderable(fay::Face, device.get());
 
-        fay::image img("texture/awesomeface.png");// , true);
+        fay::image img("texture/awesomeface.png");//, true);
         tex_id = create_2d(this->device, "hello", img);
 
         fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/renderable.vs", "gfx/renderable.fs");
@@ -347,6 +347,7 @@ public:
         fay::pipeline_desc pd;
         {
             pd.name = "triangles";
+            pd.cull_mode = fay::cull_mode::none;
         }
         pipe_id = device->create(pd);
 
@@ -361,7 +362,7 @@ public:
     {
         glm::mat4 model(1.f);
         auto model1 = glm::scale(model, glm::vec3(40.f, 40.f, 40.f));
-        auto model2 = glm::translate(model1, glm::vec3(5.f, 5.f, 0.f)); // y, x, z
+        auto model2 = glm::translate(model1, glm::vec3(5.f, 0.f, 0.f)); // y, x, z
         auto model3 = glm::translate(model1, glm::vec3(5.f, -5.f, 0.f));
 
         auto VP = camera->world_to_ndc();

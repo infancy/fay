@@ -282,7 +282,7 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
 
 
     // generally speaking, 'type_query' and 'type_get' is same
-    auto try_load_image = [aiMtl, dir = directory(), flip = need_flip_image()](
+    auto try_load_image = [aiMtl, dir = directory()](
         image& img, aiTextureType type_query, aiTextureType type_get = aiTextureType_NONE, unsigned int index = 0)
     {
         if (type_get == aiTextureType_NONE)
@@ -294,7 +294,7 @@ void model_assimp::convert(resource_material& mtl, const aiMaterial* aiMtl)
             aiString image_location;
             aiGetMaterialTexture(aiMtl, type_get, index, &image_location, 0, 0, 0, 0, 0, 0);
 
-            img = image(dir + image_location.C_Str(), flip);
+            img = image(dir + image_location.C_Str());
         }
     };
 

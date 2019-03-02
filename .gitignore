@@ -278,3 +278,4 @@ __pycache__/
 /resource/object
 /resource/nsight_profiler.cfg
 /resource/model
+/fay/.vscode

@@ -712,7 +712,7 @@ struct pipeline_desc
 
 	// rasterization state
     cull_mode cull_mode{ cull_mode::back };
-    face_winding face_winding{ face_winding::ccw };
+    face_winding face_winding{ face_winding::cw }; // D3D-style
 
 	bool alpha_to_coverage_enabled { false };
 	int rasteriza_sample_count     { 1 }; // if sc > 1, use multisample

@@ -20,7 +20,7 @@ std::string resource_model::directory() const { return dir_; }
 
 model_format resource_model::format() const { return fmt_; }
 
-bool resource_model::need_flip_image() const { return (api_ == render_backend_type::opengl) || (api_ == render_backend_type::opengl_dsa); }
+bool resource_model::need_flip_image() const { return false; }
 
 
 
