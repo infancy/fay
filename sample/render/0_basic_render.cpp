@@ -630,9 +630,9 @@ public:
             .bind_uniform("view", camera->view())
             .bind_uniform("camPos", camera->position())
             .bind_uniform("lightPositions[0]", light->position())
-            .bind_uniform("lightPositions[1]", glm::vec3{ 0, 0, 100 })
-            .bind_uniform("lightPositions[2]", glm::vec3{ -100, 100, 100 })
-            .bind_uniform("lightPositions[3]", glm::vec3{ 100, 100, 100 })
+            .bind_uniform("lightPositions[1]", glm::vec3{ 0, 0, -100 })
+            .bind_uniform("lightPositions[2]", glm::vec3{ -100, 100, -100 })
+            .bind_uniform("lightPositions[3]", glm::vec3{ 100, 100, -100 })
             .bind_uniform("lightColor", glm::vec3(1.f, 1.f, 1.f))
 
             .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4, })
@@ -700,15 +700,15 @@ public:
         mesh2 = fay::create_raw_renderable(fay::Face, device.get()); // face
         mesh3 = fay::create_raw_renderable(fay::Box, device.get()); // box
 
-        fay::image env_img("texture/hdr/newport_loft.hdr", true);
+        fay::image env_img("texture/hdr/newport_loft.hdr");
         env_tex_id = create_2d(this->device, "equirectangularMap", env_img);
 
-        auto generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
-        auto irradiance_shd_id = create_shader("irradiance",       "gfx/IBL/cubemap.vs", "gfx/IBL/irradiance_convolution.fs", device.get());
-        auto prefilter_map_shd_id = create_shader("prefilter_map", "gfx/IBL/cubemap.vs", "gfx/IBL/prefilter.fs", device.get());
-        auto brdf_map_shd_id = create_shader("brdf_map", "gfx/IBL/brdf.vs", "gfx/IBL/brdf.fs", device.get());
-        background_shd_id = create_shader("background", "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
-        shd_id = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
+        auto generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/cubemap.vs",    "gfx/IBL/generate_cubemap.fs", device.get());
+        auto irradiance_shd_id    = create_shader("irradiance",    "gfx/IBL/cubemap.vs",    "gfx/IBL/irradiance_convolution.fs", device.get());
+        auto prefilter_map_shd_id = create_shader("prefilter_map", "gfx/IBL/cubemap.vs",    "gfx/IBL/prefilter.fs", device.get());
+        auto brdf_map_shd_id      = create_shader("brdf_map",      "gfx/IBL/brdf.vs",       "gfx/IBL/brdf.fs", device.get());
+        background_shd_id         = create_shader("background",    "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
+        shd_id                    = create_shader("IBL_PBR",       "gfx/IBL/pbr.vs",        "gfx/IBL/pbr.fs", device.get());
 
         {
             fay::pipeline_desc pd;
@@ -730,7 +730,7 @@ public:
         fay::command_list pass, pass2;
 
         glm::mat4 captureProjection = glm::perspectiveLH(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-        glm::mat4 captureView = glm::lookAtLH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 captureView = glm::lookAtLH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 captureModel(1.f);
         glm::mat4 captureModels[6] =
         {
@@ -874,9 +874,9 @@ public:
             .bind_uniform("view", camera->view())
             .bind_uniform("camPos", camera->position())
             .bind_uniform("lightPositions[0]", light->position())
-            .bind_uniform("lightPositions[1]", glm::vec3{ 0, 0, 100 })
-            .bind_uniform("lightPositions[2]", glm::vec3{ -100, 100, 100 })
-            .bind_uniform("lightPositions[3]", glm::vec3{ 100, 100, 100 })
+            .bind_uniform("lightPositions[1]", glm::vec3{ 0, 0, -100 })
+            .bind_uniform("lightPositions[2]", glm::vec3{ -100, 100, -100 })
+            .bind_uniform("lightPositions[3]", glm::vec3{ 100, 100, -100 })
             .bind_uniform("lightColor", glm::vec3(1.f, 1.f, 1.f))
 
             .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4 })
