@@ -13,12 +13,12 @@ namespace fay
 // -------------------------------------------------------------------------------------------------
 2. class pool { FAY_RENDER_POOL( type )... };
 #define FAY_RENDER_POOL( type )                \
-uint32_t type##_unique_counter{};              \
-std::unordered_map<uint32_t, type> type##_map; \
+uint type##_unique_counter{};              \
+std::unordered_map<uint, type> type##_map; \
                                                \
 type##_id insert(const type##_desc& desc)      \
 {                                              \
-    uint32_t id = ++type##_unique_counter;     \
+    uint id = ++type##_unique_counter;     \
     type##_map.emplace(id, desc);              \
     return type##_id(id);                      \
 }                                              \
@@ -41,10 +41,10 @@ class resource_pool_ // pool_
 public:
     Key insert(const Desc& desc) // std::pair<Key, Value&> insert(const Desc& desc) isn't a good interfae
     {
-        uint32_t id = ++unique_counter;
+        uint id = ++unique_counter;
 
         // TODO: pair, make_pair, undered_map.emplace
-        // std::pair<uint32_t, Desc> p2(id, desc);
+        // std::pair<uint, Desc> p2(id, desc);
         // auto p = std::make_pair<Key, Value>(id, desc);
         // std::pair<Key, Value> p = std::make_pair<Key, Value>(id, desc);
 
@@ -59,8 +59,8 @@ public:
     }
 
 private:
-    uint32_t unique_counter{};
-    std::unordered_map<uint32_t, Value> map; // xx_id dosn't meet the hash requirements
+    uint unique_counter{};
+    std::unordered_map<uint, Value> map; // xx_id dosn't meet the hash requirements
 };
 
 template<> using  buffer_pool = resource_pool_< buffer_id,  buffer_desc,  buffer, Base>;
@@ -79,11 +79,17 @@ template<typename Buffer, typename Texture, typename Shader, typename Pipeline, 
 class resource_pool // pool
 {
 public:
-    buffer_id   insert(const   buffer_desc& desc) { uint32_t pid = ++cnt[0];   buffer_map.emplace(pid, desc); return   buffer_id(pid); }
-    texture_id  insert(const  texture_desc& desc) { uint32_t pid = ++cnt[1];  texture_map.emplace(pid, desc); return  texture_id(pid); }
-    shader_id   insert(const   shader_desc& desc) { uint32_t pid = ++cnt[2];   shader_map.emplace(pid, desc); return   shader_id(pid); }
-    pipeline_id insert(const pipeline_desc& desc) { uint32_t pid = ++cnt[3]; pipeline_map.emplace(pid, desc); return pipeline_id(pid); }
-    frame_id    insert(const    frame_desc& desc) { uint32_t pid = ++cnt[4];    frame_map.emplace(pid, desc); return    frame_id(pid); }
+    buffer_id   insert(const   buffer_desc& desc) { uint pid = ++cnt[0];   buffer_map.emplace(pid, desc); return   buffer_id(pid); }
+    texture_id  insert(const  texture_desc& desc) { uint pid = ++cnt[1];  texture_map.emplace(pid, desc); return  texture_id(pid); }
+    shader_id   insert(const   shader_desc& desc) { uint pid = ++cnt[2];   shader_map.emplace(pid, desc); return   shader_id(pid); }
+    pipeline_id insert(const pipeline_desc& desc) { uint pid = ++cnt[3]; pipeline_map.emplace(pid, desc); return pipeline_id(pid); }
+    frame_id    insert(const    frame_desc& desc) { uint pid = ++cnt[4];    frame_map.emplace(pid, desc); return    frame_id(pid); }
+
+    buffer_id   insert(uint pid, const   buffer_desc& desc) {   buffer_map.emplace(pid, desc); return   buffer_id(pid); }
+    texture_id  insert(uint pid, const  texture_desc& desc) {  texture_map.emplace(pid, desc); return  texture_id(pid); }
+    shader_id   insert(uint pid, const   shader_desc& desc) {   shader_map.emplace(pid, desc); return   shader_id(pid); }
+    pipeline_id insert(uint pid, const pipeline_desc& desc) { pipeline_map.emplace(pid, desc); return pipeline_id(pid); }
+    frame_id    insert(uint pid, const    frame_desc& desc) {    frame_map.emplace(pid, desc); return    frame_id(pid); }
 
     template<typename Handle>
     bool have(Handle id) const { const auto& m = map(id); return m.find(id.value) != m.end(); }
@@ -117,13 +123,13 @@ private:
     constexpr auto& map(   frame_id id) const { return frame_map;    }
 
 private:
-    std::array<uint32_t, 5> cnt{ 0, 0, 0, 0, 0 };
+    std::array<uint, 5> cnt{ 0, 0, 0, 0, 0 };
 
-    std::unordered_map<uint32_t, Buffer>   buffer_map;
-    std::unordered_map<uint32_t, Texture>  texture_map;
-    std::unordered_map<uint32_t, Shader>   shader_map;
-    std::unordered_map<uint32_t, Pipeline> pipeline_map;
-    std::unordered_map<uint32_t, Frame>    frame_map;
+    std::unordered_map<uint, Buffer>   buffer_map;
+    std::unordered_map<uint, Texture>  texture_map;
+    std::unordered_map<uint, Shader>   shader_map;
+    std::unordered_map<uint, Pipeline> pipeline_map;
+    std::unordered_map<uint, Frame>    frame_map;
 };
 
 } // namespace fay

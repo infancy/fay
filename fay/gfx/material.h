@@ -40,7 +40,7 @@ struct material // : std::enabled_shared_from_this<material>
         desc.name = name;
         desc.width = img.width();
         desc.height = img.height();
-        desc.pixel_format = img.format();
+        desc.format = img.format();
 
         desc.size = img.size() * img.channel();
         desc.data = { img.data() };

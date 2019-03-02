@@ -80,12 +80,7 @@ public:
                 {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
             };
         }
-        fay::buffer_desc id(fay::buffer_type::index); 
-        {
-            id.name = "triangle_ib";
-            id.size = 9;
-            id.data = indices;
-        }
+        fay::buffer_desc id("triangle_ib", 9, indices);
         auto triangle_vb = device->create(bd);
         auto triangle_ib = device->create(id);
 
@@ -174,12 +169,7 @@ public:
             };
             bd.stride = bd.layout.stride();
         }
-        fay::buffer_desc id(fay::buffer_type::index); 
-        {
-            id.name = "triangle_ib";
-            id.size = 6;
-            id.data = indices;
-        }
+        fay::buffer_desc id("triangle_ib", 6, indices);
         auto triangle_vb = device->create(bd);
         auto triangle_ib = device->create(id);
 
@@ -838,7 +828,7 @@ public:
             desc.name = "brdf_tex";
             desc.width = res4;
             desc.height = res4;
-            desc.pixel_format = fay::pixel_format::rgb32f; // rename: depth_stencil
+            desc.format = fay::pixel_format::rgb32f; // rename: depth_stencil
             desc.size = res4 * res4 * 12;
             desc.type = fay::texture_type::two;
             desc.data = { nullptr };

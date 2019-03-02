@@ -27,12 +27,7 @@ public:
         }
         vbo = device->create(bd);
 
-        fay::buffer_desc id(fay::buffer_type::index);
-        {
-            id.name = res.name + "_ibo";
-            id.size = res.indices.size();
-            id.data = res.indices.data();
-        }
+        fay::buffer_desc id(res.name + "_ibo", res.indices.size(), res.indices.data(), fay::buffer_type::index);
         ibo = device->create(id);
 
         primitive_ = res.primitive_;
@@ -74,12 +69,7 @@ public:
         }
         vbo = device->create(bd);
 
-        fay::buffer_desc id(fay::buffer_type::index); 
-        {
-            id.name = res.name + "_ibo";
-            id.size = res.indices.size();
-            id.data = res.indices.data();
-        }
+        fay::buffer_desc id(res.name + "_ibo", res.indices.size(), res.indices.data(), fay::buffer_type::index);
         ibo = device->create(id);
 
         primitive_ = res.primitive_;

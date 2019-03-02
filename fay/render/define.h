@@ -15,17 +15,17 @@ namespace fay
 
 // enum { ... };
 // TODO: const_t, const32_t, constant...
-constexpr inline uint32_t InvalidId              = 0;
-constexpr inline uint32_t NumInflightFrames      = 2;
-constexpr inline uint32_t MaxColorAttachments    = 4;
-constexpr inline uint32_t MaxShaderStages        = 3;
-constexpr inline uint32_t PassMaxBuffers         = 4;
-constexpr inline uint32_t PassMaxTextures        = 12;
-constexpr inline uint32_t MaxShaderstageUniforms = 4;	// uniform_blocks
-constexpr inline uint32_t MaxUniformMembers      = 16;
-constexpr inline uint32_t MaxVertexAttributes    = 16;
-constexpr inline uint32_t MaxMipmaps             = 16;
-constexpr inline uint32_t MaxTextureArrayLayers  = 128;
+constexpr inline uint InvalidId              = 0;
+constexpr inline uint NumInflightFrames      = 2;
+constexpr inline uint MaxColorAttachments    = 4;
+constexpr inline uint MaxShaderStages        = 3;
+constexpr inline uint PassMaxBuffers         = 4;
+constexpr inline uint PassMaxTextures        = 12;
+constexpr inline uint MaxShaderstageUniforms = 4;	// uniform_blocks
+constexpr inline uint MaxUniformMembers      = 16;
+constexpr inline uint MaxVertexAttributes    = 16;
+constexpr inline uint MaxMipmaps             = 16;
+constexpr inline uint MaxTextureArrayLayers  = 128;
 
 // -------------------------------------------------------------------------------------------------
 // render features
@@ -363,14 +363,14 @@ enum class pass_type
 // device, context, effect, pass
 
 // TODO: struct no ctor init, default ctor
-// TODO: uint32_T -> size_t
+// TODO: uint -> size_t
 // TODO: bool() -> is_valid()
 // TODO: value -> private: value
 #define FAY_RENDER_TYPE_ID( type )                                          \
 struct type##_id                                                            \
 {                                                                           \
-    uint32_t value;                                                         \
-    explicit type##_id(uint32_t i = 0) : value{ i } {}                      \
+    uint value;                                                             \
+    explicit type##_id(uint i = 0) : value{ i } {}                          \
     explicit operator bool() const { return value != 0u; }                  \
     bool operator==(type##_id right) const { return value == right.value; } \
     bool operator!=(type##_id right) const { return !operator==(right); }   \
@@ -447,7 +447,7 @@ public:
     vertex_layout() {}
     vertex_layout(const std::initializer_list<vertex_attribute> il) : attrs(il) {}
 
-    uint32_t size() { return (uint32_t)attrs.size(); }
+    uint size() { return (uint)attrs.size(); }
     bool operator==(const vertex_layout&& layout) const { return attrs == layout.attrs; }
 
 public:
@@ -500,10 +500,10 @@ struct buffer_desc
 {
     std::string name { "defult" };
 
-    uint32_t    size     {}; // vertex/index nums
-    const void* data     {}; // data's length is size * layout.stride()
+    uint    size{}; // vertex/index nums
+    const void* data{}; // data's length is size * layout.stride()
     // TODO: remove
-    uint32_t    stride{}; // byte sizes of single element. WARNNING: fay can't check if this value is right or not.
+    uint    stride{}; // byte sizes of single element. WARNNING: fay can't check if this value is right or not.
 
     buffer_type type     {};
     resource_usage usage { resource_usage::immutable };
@@ -515,21 +515,24 @@ struct buffer_desc
     // only used for instance buffer
     // instance buffer update data per instance(or more), instead of updating per vertex.
     // TODO: remove it
-    // uint32_t instance_rate{};
+    // uint instance_rate{};
 
     buffer_desc() = default;
-    buffer_desc(buffer_type type)
+    buffer_desc(std::string_view name, uint size, const void* data, buffer_type type = buffer_type::index, vertex_layout layout = {})
+        : name{ name }
+        , size{ size }
+        , data{ std::move(data) }
+        , type{ type }
+        , layout{ layout }
     {
-        this->type = type;
-
         switch (type)
         {
             case fay::buffer_type::vertex:
+            case fay::buffer_type::instance:
+                stride = layout.stride();
                 break;
             case fay::buffer_type::index:
                 stride = 4;
-                break;
-            case fay::buffer_type::instance:
                 break;
             default:
                 break;
@@ -541,13 +544,12 @@ struct texture_desc
 {
     std::string name{ "defult" };
 
-	uint32_t width{};
-	uint32_t height{};
-    // TODO: auto calculation by ctor
-    uint32_t depth{}; // layers, used in texture3d or texture_array
-    pixel_format pixel_format{}; // rename: format
+	uint width{};
+	uint height{};
+    uint depth{}; // or called layers, used in texture3d or texture_array, auto calculation by ctor
+    pixel_format format{};
 
-    uint32_t                 size{}; // used for compressed texture
+    uint size{}; // used for compressed texture
     std::vector<const void*> data{};
 
     texture_type type{};
@@ -557,7 +559,7 @@ struct texture_desc
 
     filter_mode min_filter{ filter_mode::linear };
 	filter_mode max_filter{ filter_mode::linear };
-    uint32_t max_anisotropy{ 1 }; // 1 ~ 16
+    uint max_anisotropy{ 1 }; // 1 ~ 16
     bool mipmap{ true };
     // int num_mipmaps; // How many levels of mipmaps are generated
 
@@ -568,14 +570,20 @@ struct texture_desc
     float min_lod{ 0.f }; // -1000 ~ +1000 or 0 ~ 1000 ???
     float max_lod{ 1000.f }; // max_float
 
+    // rename: target
     render_target as_render_target{ render_target::color }; // used as render target or depth_stencil target is depended by pixel_format
-    uint32_t rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target
+    uint rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target
 
     texture_desc() = default; // for texture2d
-    texture_desc(texture_type type)
+    texture_desc(std::string_view name, uint width, uint height, pixel_format format, texture_type type = texture_type::two, std::vector<const void*> data = { nullptr })
+        : name{ name }
+        , width{ width }
+        , height{ height }
+        , depth{ static_cast<uint>(data.size()) }
+        , format{ format }
+        , type{ type }
+        , data{ std::move(data) }
     {
-        this->type = type;
-
         switch (type)
         {
             case fay::texture_type::two:
@@ -595,6 +603,42 @@ struct texture_desc
                 break;
         }
     }
+
+    texture_desc& sample(filter_mode filter, wrap_mode warp)
+    {
+        min_filter = filter;
+        max_filter = filter;
+
+        wrap_u = warp;
+        wrap_v = warp;
+        wrap_w = warp;
+
+        return *this;
+    }
+
+    // change pixel format automatically
+    texture_desc& set_target(render_target target)
+    {
+        as_render_target = target;
+        data = { nullptr };
+        mipmap = false;
+
+        switch (target)
+        {
+            case fay::render_target::depth:
+                format = pixel_format::depth;
+                break;
+            case fay::render_target::stencil:
+            case fay::render_target::depth_stencil:
+                format = pixel_format::depthstencil;
+                break;
+            default:
+                LOG(ERROR) << "shouldn't be here";
+                break;
+        }
+
+        return *this;
+    }
 };
 
 // shader sources(not filepath) + uniform blocks + texutres 
@@ -603,7 +647,7 @@ struct shader_desc
     struct uniform_block
     {
         std::string name{};
-        uint32_t size{}; // byte_size
+        uint size{}; // byte_size
         std::vector<uniform_type> types;
 
         bool operator==(const uniform_block& that) const
@@ -753,8 +797,8 @@ struct attachment_desc
 {
     texture_id tex_id{};
     // union { int face; int layer; int slice; };
-    uint32_t layer{}; // texture::two(0), texture::cube(0~5), texture::array/three(0~depth-1)
-    uint32_t level{}; // mipmap_level
+    uint layer{}; // texture::two(0), texture::cube(0~5), texture::array/three(0~depth-1)
+    uint level{}; // mipmap_level
 };
 
 /*
@@ -764,11 +808,19 @@ struct frame_desc
 {
     std::string name{ "defult" };
 
-    uint32_t width{};
-    uint32_t height{};
+    // TODO: move those
+    uint width{};
+    uint height{};
 
     std::vector<attachment_desc> render_targets{}; // color_attachments
     attachment_desc depth_stencil{};
+
+    frame_desc() = default;
+    frame_desc(std::string_view name, std::vector<attachment_desc> render_targets, attachment_desc depth_stencil)
+        : name{ name }
+        , depth_stencil{ depth_stencil }
+        , render_targets{ std::move(render_targets) }
+    {}
 };
 
 // ---------------------------
@@ -879,7 +931,7 @@ struct command // command/encoder
 
     // std::any, std::variant, union para { ... }
     int          int_{};
-    uint32_t    uint_{};
+    uint    uint_{};
     float      float_{};
 
     buffer_id   buf_{};
@@ -896,7 +948,7 @@ struct command // command/encoder
     memory uniform_block_;
 
     std::string str_{};
-    std::vector<uint32_t> uints_{};
+    std::vector<uint> uints_{};
     std::vector<texture_id> texs_{};
     std::vector<attribute_usage> attrs_{};
 
@@ -936,7 +988,7 @@ public:
 
         return *this;
     }
-    command_list& begin_default_frame(/*uint32_t x, uint32_t y, uint32_t w, uint32_t h*/)
+    command_list& begin_default_frame(/*uint x, uint y, uint w, uint h*/)
     {
         add_command(command_type::begin_default_frame);
 
@@ -948,10 +1000,10 @@ public:
 
         return *this;
     }
-    // command_list& bind_frame(frame_id id, uint32_t flags, std::vector<glm::vec4> colors, float depth, int stencil);
+    // command_list& bind_frame(frame_id id, uint flags, std::vector<glm::vec4> colors, float depth, int stencil);
 
     // WARNNING: clear all color targets if 'targets' is empty.
-    command_list& clear_color(glm::vec4 rgba = { 0.f, 0.f, 0.f, 1.f }, std::vector<uint32_t> targets = {})
+    command_list& clear_color(glm::vec4 rgba = { 0.f, 0.f, 0.f, 1.f }, std::vector<uint> targets = {})
     {
         auto& cmd = add_command(command_type::clear_color);
         cmd.float4_ = rgba;
@@ -968,7 +1020,7 @@ public:
 
         return *this;
     }
-    command_list& clear_stencil(uint32_t stencil = 0)
+    command_list& clear_stencil(uint stencil = 0)
     {
         auto& cmd = add_command(command_type::clear_stencil);
         cmd.uint_ = stencil;
@@ -986,14 +1038,14 @@ public:
     }
     
     // WARNNING: fay use top_left as origin(rather then bottom_left in opengl)
-    command_list& set_viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+    command_list& set_viewport(uint x, uint y, uint width, uint height)
     {
         auto& cmd = add_command(command_type::set_viewport);
         cmd.uint4_ = { x, y, width, height };
 
         return *this;
     }
-    command_list& set_scissor( uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+    command_list& set_scissor( uint x, uint y, uint width, uint height)
     {
         auto& cmd = add_command(command_type::set_scissor);
         cmd.uint4_ = { x, y, width, height };
@@ -1094,25 +1146,25 @@ public:
         return *this;
     }
 
-    //command_list& bind_vertex(const buffer_id id, std::vector<uint32_t> attrs = {}, std::vector<uint32_t> slots = {});
-    //command_list& bind_instance(const buffer_id id, std::vector<uint32_t> attrs = {}, std::vector<uint32_t> slots = {});
+    //command_list& bind_vertex(const buffer_id id, std::vector<uint> attrs = {}, std::vector<uint> slots = {});
+    //command_list& bind_instance(const buffer_id id, std::vector<uint> attrs = {}, std::vector<uint> slots = {});
     //command_list& bind_resource(const buffer_id id, const std::vector<buffer_id> buffers, const std::vector<texture_id> textures);
 
     // TODO: bind_vertex_attribute, allocate_vertex_data
 
-    // command_list& update_buffer(const buffer_id id, const void* data, uint32_t size); // cache the data
-    // command_list& update_texture(const texture_id id, const void* data, uint32_t size);
+    // command_list& update_buffer(const buffer_id id, const void* data, uint size); // cache the data
+    // command_list& update_texture(const texture_id id, const void* data, uint size);
 
     // WARNNING: if count is 0, it will be computed by device automatically
     // WARNNING: if instance_count is 0, use 'draw', else use 'draw_instance'
-    command_list& draw(uint32_t count = 0, uint32_t first = 0, uint32_t instance_count = 1)
+    command_list& draw(uint count = 0, uint first = 0, uint instance_count = 1)
     {
         auto& cmd = add_command(command_type::draw);
         cmd.uint4_ = { count, first, instance_count, 0 };
 
         return *this;
     }
-    command_list& draw_index(uint32_t count = 0, uint32_t first = 0, uint32_t instance_count = 1)
+    command_list& draw_index(uint count = 0, uint first = 0, uint instance_count = 1)
     {
         auto& cmd = add_command(command_type::draw_index);
         cmd.uint4_ = { count, first, instance_count, 0 };
@@ -1146,7 +1198,7 @@ private:
         return cmds_.back();
     }
 
-    command_list& bind_buffer(const buffer_id id, std::vector<attribute_usage> attrs, uint32_t instance_rate)
+    command_list& bind_buffer(const buffer_id id, std::vector<attribute_usage> attrs, uint instance_rate)
     {
         auto& cmd = add_command(command_type::bind_buffer);
         cmd.buf_ = id;

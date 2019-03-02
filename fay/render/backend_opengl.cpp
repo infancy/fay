@@ -10,6 +10,7 @@
 #include "fay/render/define.h"
 #include "fay/render/native_type.h"
 #include "fay/render/pool.h"
+#include "fay/render/shader.h"
 
 using namespace std::string_literals;
 
@@ -121,7 +122,19 @@ namespace backend_opengl_func
             glDisable(cap);
     }
 
-
+    void gl_try_enable(GLenum feature)
+    {
+        GLint para{};
+        glGetIntegerv(feature, &para);
+        if (para > 0)
+        {
+            glEnable(feature);
+        }
+        else
+        {
+            LOG(ERROR) << "backend_opengl doesn't support this feature";
+        }
+    }
 
     // -------------------------------------------------------------------------------------------------
     // helper functions
@@ -335,7 +348,7 @@ namespace backend_opengl_type
     {
         // init by buffer_desc
         std::string name{};
-        uint32_t    size{};
+        uint    size{};
         // const void* data{};
         GLenum      type{};
         GLenum      usage{};
@@ -360,8 +373,8 @@ namespace backend_opengl_type
             if (desc.type == buffer_type::vertex || desc.type == buffer_type::instance)
             {
 
-                uint32_t offset = 0;
-                for (uint32_t i = 0; i < desc.layout.size(); ++i)
+                uint offset = 0;
+                for (uint i = 0; i < desc.layout.size(); ++i)
                 {
                     auto& da = desc.layout[i];
                     auto& a = layout[i];
@@ -388,9 +401,9 @@ namespace backend_opengl_type
         // # init by texture_desc
         std::string name{};
 
-        uint32_t width{};
-        uint32_t height{};
-        uint32_t layer{}; // depth
+        uint width{};
+        uint height{};
+        uint layer{}; // depth
 
         GLenum type;
         GLenum usage;
@@ -400,7 +413,7 @@ namespace backend_opengl_type
 
         GLenum min_filter;
         GLenum max_filter;
-        uint32_t max_anisotropy;
+        uint max_anisotropy;
 
         GLenum wrap_u;
         GLenum wrap_v;
@@ -411,7 +424,7 @@ namespace backend_opengl_type
 
 
         GLenum render_target;
-        uint32_t rt_sample_count;
+        uint rt_sample_count;
 
         // # then assign others
         GLuint tbo{};
@@ -456,7 +469,7 @@ namespace backend_opengl_type
         struct uniform_block
         {
             std::string name{};
-            uint32_t size{}; // byte_size
+            uint size{}; // byte_size
             GLuint ubo{};
         };
 
@@ -598,8 +611,8 @@ namespace backend_opengl_type
     struct attachment
     {
         texture_id tex_pid{};
-        uint32_t layer;
-        uint32_t level;
+        uint layer;
+        uint level;
         mutable GLuint msaa_resolve_fbo{}; // only used when attachment is MSAA render target.
 
         attachment() {}
@@ -625,8 +638,8 @@ namespace backend_opengl_type
         // # init by frame_desc
         std::string name{};
 
-        uint32_t width{};
-        uint32_t height{};
+        uint width{};
+        uint height{};
 
         // TODO??? : std::vector<texture_id> render_targets{};
         std::vector<attachment> render_targets{};
@@ -696,52 +709,58 @@ public:
         }
     #endif // FAY_DEBUG
 
-
-    #define FAY_USE_OPENGL_AS_DIRECT3D
-    #ifdef FAY_USE_OPENGL_AS_DIRECT3D
-
-        //glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE); // OpenGL style
-
-        glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE); // D3D style
-
-    #endif // FAY_USE_OPENGL_AS_DIRECT3D
-
-
         // TODO: add to render_desc
-        glEnable(GL_CULL_FACE);
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_SCISSOR_TEST);
         glEnable(GL_PROGRAM_POINT_SIZE); // The point size can be modify in vertex shader
+        glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE); // D3D style
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_SCISSOR_TEST);
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        glEnable(GL_DEPTH_TEST);
 
         glDisable(GL_STENCIL_TEST);
 
-        glGenVertexArrays(1, &context_.vao);
-        glBindVertexArray(context_.vao);
+        // create default vao
+        glGenVertexArrays(1, &ctx_.vao);
+        glBindVertexArray(ctx_.vao);
 
-        // TODO: render_desc.default_frame
-        // default frame is created by glfw_window
+        // create context default offscreen fbo
+        {
+            float vertices[] =
+            {
+                 1.0f,  1.f, 0.f,   1.f, 1.f,  // right top
+
+                 1.0f, -1.f, 0.f,   1.f, 0.f,  // right bottom
+                -1.0f,  1.f, 0.f,   0.f, 1.f,  // left top
+
+                -1.0f,  1.f, 0.f,   0.f, 1.f,  // left top
+                 1.0f, -1.f, 0.f,   1.f, 0.f,  // right bottom
+
+                -1.0f, -1.f, 0.f,   0.f, 0.f,  // left bottom
+            };
+            ctx_.buf = create(buffer_desc("backend_opengl_default_vbo", 6u, vertices, buffer_type::vertex,
+                vertex_layout{ { attribute_usage::position, fay::attribute_format::float3 }, { attribute_usage::texcoord0, fay::attribute_format::float2 } }));
+
+            auto shd_desc = scan_shader_program("backend_opengl_default_shd", "gfx/backend_opengl_default_shd.vs", "gfx/backend_opengl_default_shd.fs");
+            ctx_.shd = create(shd_desc);
+
+            glfwGetFramebufferSize(window_, &ctx_.width, &ctx_.height);
+
+            texture_desc tex_desc("backend_opengl_default_tbo", ctx_.width, ctx_.height, pixel_format::rgba8);
+            ctx_.tex = create(tex_desc);
+            auto ds_id = create(tex_desc.set_target(render_target::depth_stencil));
+
+            ctx_.frm = create(frame_desc("backend_opengl_default_frame", { { ctx_.tex, 0, 0 } }, { ds_id, 0, 0 }));
+        }
 
         // TODO: global msaa???
         if (feature_.use_msaa)
-        {
-            GLint para{};
-            glGetIntegerv(GL_SAMPLE_BUFFERS, &para);
-            if (para > 0)
-            {
-                glEnable(GL_MULTISAMPLE);
-            }
-            else
-            {
-                LOG(ERROR) << "device_opengl doesn't support MSAA";
-            }
-        }
+            gl_try_enable(GL_SAMPLE_BUFFERS);
 
         glcheck_errors();
     }
     ~backend_opengl()
     {
-        glDeleteVertexArrays(1, &context_.vao);
+        glDeleteVertexArrays(1, &ctx_.vao);
     }
 
 	// resource creation, updating and destruction
@@ -775,7 +794,7 @@ public:
         texture_id pid = pool_.insert(desc); // id in the pool
         texture& tex = pool_[pid];
 
-        if (desc.as_render_target == render_target::color) //!is_dpeth_stencil_pixel_format(desc.pixel_format))
+        if (desc.as_render_target == render_target::color) //!is_dpeth_stencil_pixel_format(desc.format))
         {
             // 0. create texture id
             glActiveTexture(GL_TEXTURE0);
@@ -805,14 +824,14 @@ public:
             glcheck_errors();
 
             // 2. allocate memory
-            bool is_compressed = is_compressed_pixel_format(desc.pixel_format);
-            auto[in_fmt, ex_fmt, ex_type] = gl_pixel_format(desc.pixel_format);
+            bool is_compressed = is_compressed_pixel_format(desc.format);
+            auto[in_fmt, ex_fmt, ex_type] = gl_pixel_format(desc.format);
 
             if (tex.type == GL_TEXTURE_2D || tex.type == GL_TEXTURE_CUBE_MAP)
             {
-                uint32_t nums = tex.type == GL_TEXTURE_2D ? 1 : 6;
+                uint nums = tex.type == GL_TEXTURE_2D ? 1 : 6;
 
-                for (uint32_t i = 0; i < nums; ++i)
+                for (uint i = 0; i < nums; ++i)
                 {
                     GLenum target = tex.type == GL_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
 
@@ -859,7 +878,7 @@ public:
                 glGenRenderbuffers(1, &tex.msaa_rbo);
                 glBindRenderbuffer(GL_RENDERBUFFER, tex.msaa_rbo);
                 glRenderbufferStorageMultisample(GL_RENDERBUFFER, tex.rt_sample_count, 
-                    pixel_internal_format(desc.pixel_format), tex.width, tex.height);
+                    pixel_internal_format(desc.format), tex.width, tex.height);
             }
         }
         else if(enum_have(render_target::DepthStencil, desc.as_render_target))// reanme: depth_or_stencil
@@ -881,7 +900,7 @@ public:
             glTexParameteri(tex.type, GL_TEXTURE_WRAP_S, tex.wrap_u);
             glTexParameteri(tex.type, GL_TEXTURE_WRAP_T, tex.wrap_v);
 
-            auto[in_fmt, ex_fmt, ex_type] = gl_pixel_format(desc.pixel_format);
+            auto[in_fmt, ex_fmt, ex_type] = gl_pixel_format(desc.format);
             glTexImage2D(tex.type, 0, in_fmt,
                 desc.width, desc.height, 0, ex_fmt, ex_type, desc.data[0]);
 
@@ -890,17 +909,17 @@ public:
             glBindRenderbuffer(GL_RENDERBUFFER, tex.ds_rbo);
             
             // TODO : GL_DEPTH24_STENCIL8
-            //GLenum gl_depth_format = _sg_gl_depth_attachment_format(img->pixel_format);
+            //GLenum gl_depth_format = _sg_gl_depth_attachment_format(img->format);
 
             if (render_desc_.anti_aliasing == anti_aliasing::MSAA)
             {
                 glRenderbufferStorageMultisample(GL_RENDERBUFFER, tex.rt_sample_count, 
-                    pixel_internal_format(desc.pixel_format), tex.width, tex.height);
+                    pixel_internal_format(desc.format), tex.width, tex.height);
             }
             else
             {
                 glRenderbufferStorage(GL_RENDERBUFFER, 
-                    pixel_internal_format(desc.pixel_format), tex.width, tex.height);
+                    pixel_internal_format(desc.format), tex.width, tex.height);
             }
             */
         }
@@ -1082,51 +1101,57 @@ public:
 	// render
     void begin_frame(frame_id id) override
     {
-        ctx_ = command_list_context{}; // stateless
-
+        
         glcheck_errors();
 
         // clear_state
+        cmd_ = command_list_context{};
 
         if (id.value != 0) // offscreen frame
         {
-            ctx_.is_offscreen = true;
-            ctx_.frm = pool_[id];
-            glBindFramebuffer(GL_FRAMEBUFFER, ctx_.frm.fbo);
+            cmd_.is_offscreen = true;
+            cmd_.frm = pool_[id];
+            glBindFramebuffer(GL_FRAMEBUFFER, cmd_.frm.fbo);
 
-            // TODO!!!
             // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
-            unsigned int attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
-            DCHECK(ctx_.frm.render_targets.size() <= 6);
-            glDrawBuffers(ctx_.frm.render_targets.size(), attachments);
+            static const GLenum attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
+            
+            auto sz = cmd_.frm.render_targets.size();
+            DCHECK(sz <= 6);
+
+            if(sz > 0)
+                glDrawBuffers(cmd_.frm.render_targets.size(), attachments);
+            else
+                glDrawBuffer(GL_NONE);
         }
         else // default frame
         {
-            ctx_.is_offscreen = false;
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            cmd_.is_offscreen = false;
+            //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, pool_[ctx_.frm].fbo);
         }
 
         glcheck_errors();
 
-        log0_ << ("frame    : "s + (ctx_.is_offscreen ? ctx_.frm.name : "0") + '\n');
+        log_ << ("frame    : "s + (cmd_.is_offscreen ? cmd_.frm.name : "0") + '\n');
     }
     void end_frame() override
     {
         glcheck_errors();
 
         // if use MSAA in offscreen render, copy data from tex.rbo to tex.tbo
-        if (ctx_.is_offscreen && feature_.use_msaa)
+        if (cmd_.is_offscreen && feature_.use_msaa)
         {
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, ctx_.frm.fbo);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, cmd_.frm.fbo);
 
-            const int w = ctx_.frm.width;
-            const int h = ctx_.frm.height;
+            const int w = cmd_.frm.width;
+            const int h = cmd_.frm.height;
 
-            for (uint32_t i = 0; i < ctx_.frm.render_targets.size(); ++i)
+            for (uint i = 0; i < cmd_.frm.render_targets.size(); ++i)
             {
                 glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
 
-                const auto& attach = ctx_.frm.render_targets[i];
+                const auto& attach = cmd_.frm.render_targets[i];
                 glBindFramebuffer(GL_DRAW_FRAMEBUFFER, attach.msaa_resolve_fbo);
                 // WARNNING???: that's ok
                 //const GLenum gl_att = GL_COLOR_ATTACHMENT0;
@@ -1134,8 +1159,16 @@ public:
                 glDrawBuffer(GL_COLOR_ATTACHMENT0);
                 glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
             }
-
             glcheck_errors();
+        }
+        else if (!cmd_.is_offscreen)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            apply_shader(ctx_.shd);
+            glDisable(GL_CULL_FACE);
+            bind_vertex(ctx_.buf, {}, {}, 0);
+            bind_texture(ctx_.tex, 0, "offscreen");
+            draw(6, 0, 1);
         }
 
         glcheck_errors();
@@ -1143,26 +1176,26 @@ public:
         // log info
     #ifdef FAY_DEBUG_
         std::cout << "\nrender backend: opengl\n\n";
-        std::cout << log0_.rdbuf();
+        std::cout << log_.rdbuf();
         std::cout << '\n';
     #endif // FAY_DEBUG
 
-        log0_.clear();
+        log_.clear();
     }
 
-    void clear_color(glm::vec4 rgba, std::vector<uint32_t> targets) const override
+    void clear_color(glm::vec4 rgba, std::vector<uint> targets) const override
     {
         glcheck_errors();
 
-        if (ctx_.is_offscreen)
+        if (cmd_.is_offscreen)
         {
-            //glViewport(0, 0, ctx_.frm.width, ctx_.frm.height);
-            glViewport(0, 0, ctx_.frm.width, ctx_.frm.height);
-            glScissor(0, 0, ctx_.frm.width, ctx_.frm.height);
+            //glViewport(0, 0, cmd_.frm.width, cmd_.frm.height);
+            glViewport(0, 0, cmd_.frm.width, cmd_.frm.height);
+            glScissor(0, 0, cmd_.frm.width, cmd_.frm.height);
 
             for (auto i : targets)
             {
-                DCHECK(ctx_.frm.render_targets[i].tex_pid);
+                DCHECK(cmd_.frm.render_targets[i].tex_pid);
                 glClearBufferfv(GL_COLOR, i, &rgba[0]);
             }
         }
@@ -1183,12 +1216,12 @@ public:
     {
         glcheck_errors();
 
-        if (ctx_.is_offscreen)
+        if (cmd_.is_offscreen)
         {
-            glViewport(0, 0, ctx_.frm.width, ctx_.frm.height);
-            glScissor(0, 0, ctx_.frm.width, ctx_.frm.height);
+            glViewport(0, 0, cmd_.frm.width, cmd_.frm.height);
+            glScissor(0, 0, cmd_.frm.width, cmd_.frm.height);
 
-            DCHECK(ctx_.frm.depth_stencil.tex_pid);
+            DCHECK(cmd_.frm.depth_stencil.tex_pid);
         }
         else
         {
@@ -1202,16 +1235,16 @@ public:
 
         glcheck_errors();
     }
-    void clear_stencil(uint32_t stencil) const override
+    void clear_stencil(uint stencil) const override
     {
         glcheck_errors();
 
-        if (ctx_.is_offscreen)
+        if (cmd_.is_offscreen)
         {
-            glViewport(0, 0, ctx_.frm.width, ctx_.frm.height);
-            glScissor(0, 0, ctx_.frm.width, ctx_.frm.height);
+            glViewport(0, 0, cmd_.frm.width, cmd_.frm.height);
+            glScissor(0, 0, cmd_.frm.width, cmd_.frm.height);
 
-            DCHECK(ctx_.frm.depth_stencil.tex_pid);
+            DCHECK(cmd_.frm.depth_stencil.tex_pid);
         }
         else
         {
@@ -1230,7 +1263,7 @@ public:
         glcheck_errors();
     }
 
-    void set_viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override
+    void set_viewport(uint x, uint y, uint width, uint height) override
     {
         glcheck_errors();
 
@@ -1238,7 +1271,7 @@ public:
 
         glcheck_errors();
     }
-    void set_scissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override
+    void set_scissor(uint x, uint y, uint width, uint height) override
     {
         glcheck_errors();
 
@@ -1251,8 +1284,8 @@ public:
     {
         glcheck_errors();
 
-        ctx_.pipe = pool_[id];
-        const auto& pipe = ctx_.pipe;
+        cmd_.pipe = pool_[id];
+        const auto& pipe = cmd_.pipe;
 
         // primitive type
         if (flags[0])
@@ -1338,29 +1371,29 @@ public:
         }
 
         glcheck_errors();
-        log0_ << ("pipeline : "s + ctx_.pipe.name + '\n');
+        log_ << ("pipeline : "s + cmd_.pipe.name + '\n');
     }
     void apply_shader(const shader_id id) override
     {
         glcheck_errors();
 
-        ctx_.shd = pool_[id];
-        glUseProgram(ctx_.shd.gid);
+        cmd_.shd = pool_[id];
+        glUseProgram(cmd_.shd.gid);
 
         glcheck_errors();
-        log0_ << ("shader   : "s + ctx_.shd.name + "\n");
+        log_ << ("shader   : "s + cmd_.shd.name + "\n");
     }
 
 
     // TODO: rename uniform_block
-    void bind_uniform(uint32_t ub_index, const void* data, uint32_t size) override
+    void bind_uniform(uint ub_index, const void* data, uint size) override
     {
         glcheck_errors();
 
-        GLuint sho = ctx_.shd.gid;
-        GLuint ubo = ctx_.shd.uniforms[ub_index].ubo;
-        uint32_t bind_point = ub_index;
-        const char* ub_name = ctx_.shd.uniforms[ub_index].name.c_str();
+        GLuint sho = cmd_.shd.gid;
+        GLuint ubo = cmd_.shd.uniforms[ub_index].ubo;
+        uint bind_point = ub_index;
+        const char* ub_name = cmd_.shd.uniforms[ub_index].name.c_str();
 
         glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, size, data);
@@ -1369,24 +1402,24 @@ public:
         glBindBufferBase(GL_UNIFORM_BUFFER, bind_point, ubo);
 
         glcheck_errors();
-        log0_ << ("uniform block : "s + ub_name + '\n');
+        log_ << ("uniform block : "s + ub_name + '\n');
     }
 
     void bind_uniform(const char* name, command::uniform uniform) override
     {
         glcheck_errors();
 
-        uniform_visitor visitor{ glGetUniformLocation(ctx_.shd.gid, name) };
+        uniform_visitor visitor{ glGetUniformLocation(cmd_.shd.gid, name) };
 
         std::visit([visitor](auto&& t) { visitor.bind(t); }, uniform);
 
         glcheck_errors();
-        log0_ << ("uniform  : "s + std::to_string(uniform.index()) + '\n');
+        log_ << ("uniform  : "s + std::to_string(uniform.index()) + '\n');
     }
 
     void bind_index(const buffer_id id) override
     {
-        ctx_.index_id = id;
+        cmd_.index_id = id;
 
         glcheck_errors();
 
@@ -1394,11 +1427,11 @@ public:
         glBindBuffer(index.type, index.gid);
 
         glcheck_errors();
-        log0_ << ("index    : "s + (ctx_.index_id.value == 0 ? "null" : pool_[ctx_.index_id].name) + '\n');
+        log_ << ("index    : "s + (cmd_.index_id.value == 0 ? "null" : pool_[cmd_.index_id].name) + '\n');
     }
     void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) override
     {
-        ctx_.buf_ids.push_back(id);
+        cmd_.buf_ids.push_back(id);
 
         glcheck_errors();
 
@@ -1433,24 +1466,24 @@ public:
         }
 
         glcheck_errors();
-        log0_ << ("buffer   : "s + pool_[id].name + '\n');
+        log_ << ("buffer   : "s + pool_[id].name + '\n');
     }
     void bind_texture(const texture_id id, int tex_unit, const std::string& sampler) override
     {
-        ctx_.tex_ids.push_back(id);
+        cmd_.tex_ids.push_back(id);
 
         glcheck_errors();
 
         glActiveTexture(GL_TEXTURE0 + tex_unit);	    // active Nth texture unit
 
         // TODO: cache location
-        glUniform1i(glGetUniformLocation(ctx_.shd.gid, sampler.c_str()), tex_unit); // bind sampler to tex_unit
+        glUniform1i(glGetUniformLocation(cmd_.shd.gid, sampler.c_str()), tex_unit); // bind sampler to tex_unit
 
         const auto& tex = pool_[id];
         glBindTexture(tex.type, tex.tbo);	// bind texture to tex_unit
 
         glcheck_errors();
-        log0_ << ("texture  : "s + pool_[id].name + '\n');
+        log_ << ("texture  : "s + pool_[id].name + '\n');
     }
 
     void update(buffer_id id, const void* data, int size) override
@@ -1466,35 +1499,35 @@ public:
 
 
 
-    void draw(uint32_t count, uint32_t first, uint32_t instance_count) override
+    void draw(uint count, uint first, uint instance_count) override
     {
         glcheck_errors();
 
         if (instance_count == 1)
         {
-            glDrawArrays(ctx_.pipe.primitive_type, first, count);
+            glDrawArrays(cmd_.pipe.primitive_type, first, count);
         }
         else
         {
-            glDrawArraysInstanced(ctx_.pipe.primitive_type, first, count, instance_count);
+            glDrawArraysInstanced(cmd_.pipe.primitive_type, first, count, instance_count);
         }
 
         glcheck_errors();
-        log0_ << "draw\n\n";
+        log_ << "draw\n\n";
     }
-    void draw_index(uint32_t count, uint32_t first, uint32_t instance_count) override
+    void draw_index(uint count, uint first, uint instance_count) override
     {
         glcheck_errors();
 
         const GLvoid* indices = (const GLvoid*)(GLintptr)(first * sizeof(GLuint)); // first_element*4 + base_offset
 
         if (instance_count == 1)
-            glDrawElements(ctx_.pipe.primitive_type, count, GL_UNSIGNED_INT, indices);
+            glDrawElements(cmd_.pipe.primitive_type, count, GL_UNSIGNED_INT, indices);
         else
-            glDrawElementsInstanced(ctx_.pipe.primitive_type, count, GL_UNSIGNED_INT, indices, instance_count);
+            glDrawElementsInstanced(cmd_.pipe.primitive_type, count, GL_UNSIGNED_INT, indices, instance_count);
 
         glcheck_errors();
-        log0_ << "draw_index\n\n";
+        log_ << "draw_index\n\n";
     }
 
     /*
@@ -1548,9 +1581,9 @@ public:
             // TODO: device::device
             auto frm = pool_[pass.frm_id];
             auto fbo = frm.fbo;
-            if (fbo != ctx_.framebuffer)
+            if (fbo != cmd_.framebuffer)
             {
-                ctx_.framebuffer = fbo;
+                cmd_.framebuffer = fbo;
                 // glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*)&gl_orig_fb);
                 glBindFramebuffer(GL_FRAMEBUFFER, fbo);
             }
@@ -1658,6 +1691,12 @@ private:
 	struct context
 	{
         GLuint vao{}; // todo: opengl3.3+ must have a default VAO
+
+        int width, height;
+        buffer_id buf{};
+        texture_id tex{};
+        shader_id shd{};
+        frame_id frm{}; // default offscreen framebuffer
 	};
 
     struct command_list_context
@@ -1680,10 +1719,10 @@ private:
     // one ctx bind to one window(multiwindow needs multicontext, multi-vao)
     /*const*/ GLFWwindow* window_{};
 
-    std::stringstream log0_;
-    command_list_context ctx_{};
+    std::stringstream log_;
+    command_list_context cmd_{};
 
-    context context_{};
+    context ctx_{};
     resource_pool<buffer, texture, shader, pipeline, frame> pool_{};
 };
 

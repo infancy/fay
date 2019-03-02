@@ -164,7 +164,7 @@ inline texture_id create_depth_stencil_map(render_device* device, const std::str
 
 
     desc.as_render_target = render_target::depth_stencil;
-    desc.pixel_format = pixel_format::depthstencil; // rename: depth_stencil
+    desc.format = pixel_format::depthstencil; // rename: depth_stencil
     desc.size = width * height * 4;
     
     // stupid bug
@@ -191,7 +191,7 @@ inline texture_id create_readable_depth_map(const std::string& name, size_t widt
     desc.mipmap = false;
 
     desc.as_render_target = render_target::depth;
-    desc.pixel_format = pixel_format::depth; // r32f,float
+    desc.format = pixel_format::depth; // r32f,float
     desc.size = width * height * 4; // byte size
     auto ds_id = device->create(desc);
 
@@ -205,7 +205,7 @@ inline texture_id create_2d(render_device_ptr& device, const std::string& name, 
     desc.name = name;
     desc.width = img.width();
     desc.height = img.height();
-    desc.pixel_format = img.format();
+    desc.format = img.format();
 
     desc.size = img.size() * img.pixel_size();
     //if (get_filetype(std::string(img.filepath())) == "hdr") // TODO: get_filetype(std::string_view)
@@ -223,7 +223,7 @@ inline fay::texture_id create_cubemap(render_device* device, const std::string& 
     desc.width = width;
     desc.height = height;
     desc.type = fay::texture_type::cube;
-    desc.pixel_format = fmt;
+    desc.format = fmt;
 
     desc.size = width * height * pixel_bytesize; // TODO: do it by help func
     desc.data = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
@@ -309,13 +309,13 @@ inline std::tuple<frame_id, texture_id, texture_id> create_depth_frame(const std
     desc.mipmap = false;
 
     desc.as_render_target = render_target::color;
-    desc.pixel_format = pixel_format::rgba32f; // for debug
+    desc.format = pixel_format::rgba32f; // for debug
     desc.size = width * height * 16; // byte size
     auto color_id = device->create(desc);
 
     // ???
     desc.as_render_target = render_target::depth;
-    desc.pixel_format = pixel_format::depth; // r32f,float
+    desc.format = pixel_format::depth; // r32f,float
     desc.size = width * height * 4; // byte size
     auto ds_id = device->create(desc);
 
@@ -344,11 +344,11 @@ inline std::tuple<frame_id, texture_id, texture_id> create_frame(render_device* 
     desc.mipmap = false;
 
     desc.as_render_target = render_target::color;
-    desc.pixel_format = fmt;
+    desc.format = fmt;
     auto color_id = device->create(desc);
 
     desc.as_render_target = render_target::depth_stencil;
-    desc.pixel_format = pixel_format::depthstencil; // TODO: depth_stencil;
+    desc.format = pixel_format::depthstencil; // TODO: depth_stencil;
     auto ds_id = device->create(desc);
 
     frame_desc fd;
@@ -382,19 +382,19 @@ inline std::tuple<frame_id, texture_id, texture_id, texture_id, texture_id> crea
     desc.mipmap = false;
 
     desc.as_render_target = render_target::color;
-    desc.pixel_format = pixel_format::rgb32f;
+    desc.format = pixel_format::rgb32f;
     auto color_id = device->create(desc);
 
     desc.as_render_target = render_target::color;
-    desc.pixel_format = pixel_format::rgb32f;
+    desc.format = pixel_format::rgb32f;
     auto color_id2 = device->create(desc);
 
     desc.as_render_target = render_target::color;
-    desc.pixel_format = pixel_format::rgba8;
+    desc.format = pixel_format::rgba8;
     auto color_id3 = device->create(desc);
 
     desc.as_render_target = render_target::depth_stencil;
-    desc.pixel_format = pixel_format::depthstencil; // TODO: depth_stencil;
+    desc.format = pixel_format::depthstencil; // TODO: depth_stencil;
     auto ds_id = device->create(desc);
 
     frame_desc fd;

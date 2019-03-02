@@ -27,12 +27,12 @@ public:
     auto create(const Descriptor& desc)
     {
         create_check(desc); 
-        auto did = desc_.insert(desc);
 
-        auto pid = backend_->create(desc);
+        auto id = backend_->create(desc);
+        auto desc_id = desc_.insert(id.value, desc);
         
-        DCHECK(pid == did);
-        return pid;
+        DCHECK(id == desc_id);
+        return id;
         // TODO???: cache the buffer_desc
     }
     /*
@@ -179,7 +179,7 @@ private:
         backend_->end_frame();
     }
 
-    void clear_color(glm::vec4 rgba, std::vector<uint32_t> targets) const
+    void clear_color(glm::vec4 rgba, std::vector<uint> targets) const
     {
         auto is_clamp = [](float val)
         {
@@ -197,7 +197,7 @@ private:
 
         DCHECK(is_clamp(rgba.r) && is_clamp(rgba.g) && is_clamp(rgba.b) && is_clamp(rgba.a));
         DCHECK(targets.size() <= view_count);
-        DCHECK(all_of(targets, [view_count](uint32_t idx)
+        DCHECK(all_of(targets, [view_count](uint idx)
         {
             return idx >= 0 && idx < view_count;
         })) << "have some index out of range";
@@ -210,14 +210,14 @@ private:
 
         backend_->clear_depth(depth);
     }
-    void clear_stencil(uint32_t stencil) const
+    void clear_stencil(uint stencil) const
     {
         DCHECK(is_clamp(stencil, 0x00u, 0xffu));
 
         backend_->clear_stencil(stencil);
     }
 
-    void set_viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+    void set_viewport(uint x, uint y, uint width, uint height)
     {
         // TOCHECK
 
@@ -225,7 +225,7 @@ private:
 
         backend_->set_viewport(x, y, width, height);
     }
-    void set_scissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+    void set_scissor(uint x, uint y, uint width, uint height)
     {
         // TOCHECK
 
@@ -250,7 +250,7 @@ private:
     {
         backend_->bind_uniform(name.c_str(), uniform);
     }
-    void bind_uniform(const std::string& name, const void* data, uint32_t size)
+    void bind_uniform(const std::string& name, const void* data, uint size)
     {
         auto idx = index(ctx_.shd.uniform_blocks, [name, size](auto&& ub)
         {
@@ -324,10 +324,10 @@ private:
     }
     void bind_buffer(const buffer_id id, const std::vector<attribute_usage>& attrs, size_t instance_rate);
 
-    //void update(buffer_id id, const void* data, uint32_t size);
-    //void update(texture_id id, const void* data, uint32_t size);
+    //void update(buffer_id id, const void* data, uint size);
+    //void update(texture_id id, const void* data, uint size);
 
-    void draw(uint32_t count, uint32_t first, uint32_t instance_count)
+    void draw(uint count, uint first, uint instance_count)
     {
         DCHECK((count >= 0) && (first >= 0) && (instance_count > 0));
 
@@ -336,7 +336,7 @@ private:
 
         backend_->draw(count, first, instance_count);
     }
-    void draw_index(uint32_t count, uint32_t first, uint32_t instance_count)
+    void draw_index(uint count, uint first, uint instance_count)
     {
         DCHECK((count >= 0) && (first >= 0) && (instance_count > 0));
 
@@ -361,8 +361,8 @@ private:
 
     struct command_list_context
     {
-        uint32_t vertex_count{};
-        uint32_t index_count{};
+        uint vertex_count{};
+        uint index_count{};
 
         shader_id   shd_id{};
         pipeline_id pipe_id{};
