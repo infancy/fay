@@ -336,18 +336,18 @@ public:
     {
         add_update_items();
 
-        mesh = fay::create_raw_renderable(fay::Face, device.get());
+        mesh = fay::create_raw_renderable(fay::Box, device.get());
 
-        fay::image img("texture/awesomeface.png");//, true);
+        fay::image img("texture/awesomeface2.png");//, true);
         tex_id = create_2d(this->device, "hello", img);
 
-        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/renderable.vs", "gfx/renderable.fs");
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/offscreen.vs", "gfx/offscreen.fs");
         shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
         {
             pd.name = "triangles";
-            pd.cull_mode = fay::cull_mode::none;
+            // pd.cull_mode = fay::cull_mode::none;
         }
         pipe_id = device->create(pd);
 
@@ -376,9 +376,8 @@ public:
             .clear_stencil()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
-            .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
-            .bind_uniform("bAlbedo", true)
             .bind_textures({ tex_id })
+            .bind_uniform("bAlbedo", true)
             .bind_uniform("MVP", VP * model1)
             .draw(mesh.get())
             .bind_uniform("MVP", VP * model2)
@@ -392,9 +391,8 @@ public:
             .clear_frame()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
-            .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
-            .bind_uniform("bAlbedo", true)
             .bind_textures({ offscreen_tex_id })
+            .bind_uniform("bAlbedo", true)
             .bind_uniform("MVP", VP * model1)
             .draw(mesh.get())
             .bind_uniform("MVP", VP * model2)

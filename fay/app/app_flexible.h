@@ -411,7 +411,7 @@ inline std::tuple<frame_id, texture_id, texture_id, texture_id, texture_id> crea
 // -------------------------------------------------------------------------------------------------
 // IO
 
-const inline std::string Box        = "model/box/box.obj";
+const inline std::string Box        = "model/box/scene.obj";
 const inline std::string Blocks     = "model/blocks/scene.obj";
 const inline std::string CornellBox = "model/CornellBox/CornellBox.obj";
 const inline std::string dancing    = "model/silly_dancing.fbx";
