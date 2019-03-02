@@ -43,7 +43,10 @@ float ShadowCalculation(vec4 CameraSpacePos, float dot_lightDir_normal)
     // 执行（正交、透视）投影除法
     vec3 projCoords = LightSpacePos.xyz / LightSpacePos.w;
     // 变换到[0,1]的范围
-    projCoords = projCoords * 0.5 + 0.5;
+    projCoords.x = projCoords.x * 0.5 + 0.5;
+    projCoords.y = projCoords.y * 0.5 + 0.5;
+    projCoords.y = 1-projCoords.y;
+    // projCoords.z = projCoords.z * 0.5 + 0.5;
     // 取得当前片元在光源视角下的深度
     float currentDepth = projCoords.z;
 
@@ -54,10 +57,10 @@ float ShadowCalculation(vec4 CameraSpacePos, float dot_lightDir_normal)
     // 检查当前片元是否在阴影中
 
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(Shadowmap, 0);
 
     if(is_near)
     {
+        vec2 texelSize = 1.0 / textureSize(Shadowmap, 0);
         float bias = max(OrthoBias * (1.0 - dot_lightDir_normal), OrthoBias * 0.1);
         for(int x = -1; x <= 1; ++x)
         {
@@ -70,6 +73,7 @@ float ShadowCalculation(vec4 CameraSpacePos, float dot_lightDir_normal)
     }
     else
     {
+        vec2 texelSize = 1.0 / textureSize(Shadowmap2, 0);
         float bias2 = max(OrthoBias2 * (1.0 - dot_lightDir_normal), OrthoBias2 * 0.1);
         for(int x = -1; x <= 1; ++x)
         {

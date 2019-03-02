@@ -221,7 +221,7 @@ class two_passes : public fay::app
 public:
     fay::camera cameras_[3]
     {
-        fay::camera{ glm::vec3{ 0, 40, -160 }, 90, 0, 1.f, 300.f }, // look at the positive-z axis
+        fay::camera{ glm::vec3{ 0, 20, -80 }, 90, 0, 1.f, 300.f }, // look at the positive-z axis
 
         //pitch 0 -> -30
         fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f }, // look at the positive-x axis
@@ -229,13 +229,13 @@ public:
     };
     fay::light lights_[3]
     {
-        fay::light{ glm::vec3{ -300, 300, 0 } },
+        fay::light{ glm::vec3{ 0, 300, -100 } },
         fay::light{ glm::vec3{ 100, 100, 0 } },
         fay::light{ glm::vec3{ 0, 100, -100 } },
     };
     fay::transform transforms_[2]
     {
-        fay::transform{ glm::vec3{ 0, 100, 0 } },
+        fay::transform{ glm::vec3{ 0, 0, 0 } },
         fay::transform{ glm::vec3{ -100, 0, 0 } },
     };
     const fay::camera* camera{ cameras_ };
@@ -337,6 +337,7 @@ public:
         add_update_items();
 
         mesh = fay::create_raw_renderable(fay::Box, device.get());
+        mesh2 = fay::create_renderable(fay::Plants, device.get());
 
         fay::image img("texture/awesomeface2.png");//, true);
         tex_id = create_2d(this->device, "hello", img);
@@ -399,6 +400,8 @@ public:
             .draw(mesh.get())
             .bind_uniform("MVP", VP * model3)
             .draw(mesh.get())
+            .bind_uniform("MVP", VP * model)
+            .draw(mesh2.get())
             .end_frame();
 
         device->execute({ pass1, pass2 });
@@ -437,7 +440,6 @@ public:
 
             fay::pipeline_desc pd;
             pd.name = "pipe2";
-            pd.cull_mode = fay::cull_mode::none;
             pipe_id2 = device->create(pd);
         }
 
@@ -454,18 +456,18 @@ public:
         offscreen_ds_id3 = std::get<2>(frame3);
     }
 
-    glm::mat4 frustum_to_ortho(glm::vec3 light_position, fay::frustum box, glm::vec3 camera_up = glm::vec3(0.f, 1.f, 0.f))
+    glm::mat4 frustum_to_ortho(glm::vec3 light_position, fay::frustum camera_frustum, glm::vec3 camera_up = glm::vec3(0.f, 1.f, 0.f))
     {
-        glm::mat4 lightView = glm::lookAtLH(light_position, box.center(), camera_up);
+        glm::mat4 lightView = glm::lookAtLH(light_position, camera_frustum.center(), camera_up);
 
         // transform to light space
         //glm::vec3 aa = glm::vec3(lightView * glm::vec4(bounds.min(), 1.f));
         //glm::vec3 bb = glm::vec3(lightView * glm::vec4(bounds.max(), 1.f));
 
-        auto corners = box.corners();
+        auto corners = camera_frustum.corners();
 
         for (auto& c : corners)
-            c = glm::vec3(lightView * glm::vec4(c, 1.f));
+            c = glm::vec3(lightView * glm::vec4(c, 1.f)); // transform camera_frustum to light space
 
         fay::bounds3 bounds(corners[0], corners[1]);
         for (size_t i : fay::range(2, 8))
@@ -474,9 +476,9 @@ public:
         glm::vec3 a = bounds.min(), b = bounds.max();
 
         return  glm::orthoLH(
-            a.x, b.x,
-            a.y, b.y,
-            -b.z - 100.f, -a.z + 200.f
+            a.x - 10, b.x + 10,
+            a.y - 10, b.y + 10,
+            a.z - 100, b.z + 100
         );
     }
 
@@ -488,8 +490,8 @@ public:
     void render() override
     {
         size_t frustum_num = 1;
-        GLfloat near_plane = 1.f, middle_ = 299.f;
-        float depthSection[3] = { near_plane, near_plane + middle_ * 0.35f, near_plane + middle_ * 1.f };
+        float near_plane = 1.f, middle_ = 299.f;
+        float depthSection[3] = { near_plane, near_plane + middle_ * 0.2f, near_plane + middle_ * 1.f };
 
         // debug info
         // FIXME: over the GPU memory
@@ -542,7 +544,6 @@ public:
 
         pass3
             .begin_default(pipe_id2, shd_id2)
-            //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
             .bind_uniform("Proj", camera->persp())
             .bind_uniform("View", camera->view())
             .bind_uniform("Model", transform->model_matrix())

@@ -743,6 +743,8 @@ public:
             auto shd_desc = scan_shader_program("backend_opengl_default_shd", "gfx/backend_opengl_default_shd.vs", "gfx/backend_opengl_default_shd.fs");
             ctx_.shd = create(shd_desc);
 
+            ctx_.pipe = create(pipeline_desc());
+
             glfwGetFramebufferSize(window_, &ctx_.width, &ctx_.height);
 
             texture_desc tex_desc("backend_opengl_default_tbo", ctx_.width, ctx_.height, pixel_format::rgba8);
@@ -1165,7 +1167,7 @@ public:
         {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             apply_shader(ctx_.shd);
-            glDisable(GL_CULL_FACE);
+            apply_pipeline(ctx_.pipe, { true, true, true, true });
             bind_vertex(ctx_.buf, {}, {}, 0);
             bind_texture(ctx_.tex, 0, "offscreen");
             draw(6, 0, 1);
@@ -1448,7 +1450,7 @@ public:
             auto attrs_num = layout.size();
 
             attrs.resize(attrs_num);
-            std:iota(attrs.begin(), attrs.end(), 0u);
+            std::iota(attrs.begin(), attrs.end(), 0u);
 
             slots = attrs;
         }
@@ -1696,6 +1698,7 @@ private:
         buffer_id buf{};
         texture_id tex{};
         shader_id shd{};
+        pipeline_id pipe{};
         frame_id frm{}; // default offscreen framebuffer
 	};
 
