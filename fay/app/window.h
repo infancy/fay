@@ -192,6 +192,8 @@ public:
 	// TODO:remove
 	void show()	// don't clear framebuffer
 	{
+
+
 		glfwSwapBuffers(window_);
         // http://www.glfw.org/docs/latest/input_guide.html#events
         // Event processing must be done regularly while you have any windows and is normally done each frame after buffer swapping.

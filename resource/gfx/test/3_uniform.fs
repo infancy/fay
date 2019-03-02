@@ -11,13 +11,18 @@ layout (std140) uniform color
 };
 
 uniform int flag;
+uniform vec4 window; // origin_xy, width, height
 
 void main()
 {
-   if(flag == 1)
-       FragColor = texture(Diffuse, vTex);
-   else
-       FragColor = texture(Diffuse, vTex);
+    if(flag == 1)
+        FragColor = texture(Diffuse, vTex);
+    else
+    {
+        float y = gl_FragCoord.y / window.w;
+        FragColor = vec4(y, y, y, 1.f);
+    }
 
-   //FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+    if((gl_FragCoord.x < window.z / 2) && (gl_FragCoord.y < window.w / 2))
+        FragColor = vec4(1.0, 0.0, 0.0, 1.f);
 }

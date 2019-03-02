@@ -699,9 +699,10 @@ public:
 
     #define FAY_USE_OPENGL_AS_DIRECT3D
     #ifdef FAY_USE_OPENGL_AS_DIRECT3D
-        //glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE); // OpenGL style
-        glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE); // D3D style
 
+        //glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE); // OpenGL style
+
+        glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE); // D3D style
 
     #endif // FAY_USE_OPENGL_AS_DIRECT3D
 

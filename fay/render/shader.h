@@ -246,6 +246,10 @@ inline shader_context shader_extracting_context(std::stringstream& stream)
 
                 ctx.uniform_blocks.emplace_back(std::move(ub));
             }
+            else if (vs[2] == "in")
+            {
+                // layout(origin_upper_left) in vec4 gl_FragCoord;
+            }
             else
             {
                 LOG(ERROR) << "shouldn't be here";

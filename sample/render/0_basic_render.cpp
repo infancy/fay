@@ -50,20 +50,26 @@ public:
     {
         float vertices[] = 
         {
-             0.6f,  0.45f, 0.0f,   1.f, 1.f, // right top
-             0.6f, -0.45f, 0.0f,   1.f, 0.f, // right bottom
-            -0.6f, -0.45f, 0.0f,   0.f, 0.f, // left bottom
-            -0.6f,  0.45f, 0.0f,   0.f, 1.f, // left top
+             0.6f,  0.45f, 0.0f,  1.f, 0.f, // right top
+             0.6f, -0.45f, 0.0f,  1.f, 1.f, // right bottom
+            -0.6f, -0.45f, 0.0f,  0.f, 1.f, // left bottom
+            -0.6f,  0.45f, 0.0f,  0.f, 0.f, // left top
+
+            -0.85f, -0.95f, 0.0f,  1.f, 1.f, // right bottom
+            -0.95f, -0.95f, 0.0f,  0.f, 1.f, // left bottom
+            -0.90f,  0.95f, 0.0f,  0.f, 0.f, // left top
         };
         unsigned int indices[] = 
         {  // note that we start from 0!
             0, 1, 3,  // first Triangle
-            1, 2, 3   // second Triangle
+            1, 2, 3,   // second Triangle
+
+            4, 5, 6
         };
         fay::buffer_desc bd; 
         {
             bd.name = "triangle_vb";
-            bd.size = 4;// sizeof(vertices);
+            bd.size = 7;// sizeof(vertices);
             bd.stride = 20; // TODO: do it by helper functions;
             bd.data = vertices;
             bd.type = fay::buffer_type::vertex;
@@ -77,13 +83,13 @@ public:
         fay::buffer_desc id(fay::buffer_type::index); 
         {
             id.name = "triangle_ib";
-            id.size = 6;
+            id.size = 9;
             id.data = indices;
         }
         auto triangle_vb = device->create(bd);
         auto triangle_ib = device->create(id);
 
-        fay::image img("texture/awesomeface.png", true);
+        fay::image img("texture/awesomeface.png");
         auto triangle_tbo = create_2d(this->device, "hello", img);
 
         fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/3_uniform.vs", "gfx/test/3_uniform.fs");
@@ -104,8 +110,11 @@ public:
             .bind_index(triangle_ib)
             .bind_vertex(triangle_vb)
             .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
+            .bind_uniform("flag", 1)
+            .draw_index(6, 0)
             .bind_uniform("flag", 0)
-            .draw_index()
+            .bind_uniform("window", glm::vec4(0.f, 0.f, 1080.f, 720.f))
+            .draw_index(3, 6)
             .end_frame();
     }
 
