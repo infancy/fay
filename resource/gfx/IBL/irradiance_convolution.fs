@@ -60,13 +60,13 @@ vec3 SampleEnvironmentMap(vec3 wPos)
 
 void main()
 {
-    FragColor0 = SampleEnvironmentMap(fs_in.wPos1);
-    FragColor1 = SampleEnvironmentMap(fs_in.wPos0);
+    FragColor0 = SampleEnvironmentMap(fs_in.wPos0);
+    FragColor1 = SampleEnvironmentMap(fs_in.wPos1);
     
     // negative y
-    FragColor2 = SampleEnvironmentMap(vec3(-fs_in.wPos2.z, fs_in.wPos2.y, fs_in.wPos2.x)); // turn 90 degrees clockwise
+    FragColor2 = SampleEnvironmentMap(fs_in.wPos2);
     // positive y
-    FragColor3 = SampleEnvironmentMap(vec3(-fs_in.wPos3.z, fs_in.wPos3.y, fs_in.wPos3.x)); // turn 90 degrees inverse clockwise 
+    FragColor3 = SampleEnvironmentMap(fs_in.wPos3);
 
     FragColor4 = SampleEnvironmentMap(fs_in.wPos4);
     FragColor5 = SampleEnvironmentMap(fs_in.wPos5);

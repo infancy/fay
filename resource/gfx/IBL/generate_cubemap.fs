@@ -34,13 +34,13 @@ vec3 SampleSphericalMap(vec3 v)
 
 void main()
 {
-    FragColor0 = SampleSphericalMap(fs_in.wPos1);
-    FragColor1 = SampleSphericalMap(fs_in.wPos0);
+    FragColor0 = SampleSphericalMap(fs_in.wPos0);
+    FragColor1 = SampleSphericalMap(fs_in.wPos1);
     
     // negative y
-    FragColor2 = SampleSphericalMap(vec3(-fs_in.wPos2.z, fs_in.wPos2.y, fs_in.wPos2.x)); // turn 90 degrees clockwise
+    FragColor2 = SampleSphericalMap(fs_in.wPos2);
     // positive y
-    FragColor3 = SampleSphericalMap(vec3(-fs_in.wPos3.z, fs_in.wPos3.y, fs_in.wPos3.x)); // turn 90 degrees inverse clockwise 
+    FragColor3 = SampleSphericalMap(fs_in.wPos3);
 
     FragColor4 = SampleSphericalMap(fs_in.wPos4);
     FragColor5 = SampleSphericalMap(fs_in.wPos5);
