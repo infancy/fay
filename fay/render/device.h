@@ -221,16 +221,11 @@ private:
     {
         // TOCHECK
 
-        // TODO
-
         backend_->set_viewport(x, y, width, height);
     }
     void set_scissor(uint x, uint y, uint width, uint height)
     {
         // TOCHECK
-
-        //if(ctx_.type == render_backend_type::opengl)
-        //    y = // (_sg_gl.cur_pass_height - (y + h)) : y;
 
         backend_->set_scissor(x, y, width, height);
     }

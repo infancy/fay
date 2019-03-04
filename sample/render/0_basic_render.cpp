@@ -20,9 +20,15 @@ public:
 
     void render() override
     {
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glcheck_errors();
+        fay::command_list cmd;
+        cmd
+            .begin_default_frame()
+            .set_viewport(0, 0, 720, 480)
+            .set_scissor(360, 240, 720, 480)
+            .clear_color({ 1.f, 0.f, 0.f, 1.f })
+            .end_frame();
+
+        device->execute(cmd);
     }
 };
 

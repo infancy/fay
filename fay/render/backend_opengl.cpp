@@ -1125,12 +1125,22 @@ public:
                 glDrawBuffers(cmd_.frm.render_targets.size(), attachments);
             else
                 glDrawBuffer(GL_NONE);
+
+            glViewport(0, 0, cmd_.frm.width, cmd_.frm.height);
+            glScissor(0, 0, cmd_.frm.width, cmd_.frm.height);
         }
         else // default frame
         {
             cmd_.is_offscreen = false;
             //glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, pool_[ctx_.frm].fbo);
+
+            // TODO
+            int width{}, height{};
+            glfwGetFramebufferSize(window_, &width, &height);
+
+            glViewport(0, 0, width, height);
+            glScissor(0, 0, width, height);
         }
 
         glcheck_errors();
@@ -1165,7 +1175,15 @@ public:
         }
         else if (!cmd_.is_offscreen)
         {
+            // copy default offscreen frame to default frame.
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            // TODO
+            int width{}, height{};
+            glfwGetFramebufferSize(window_, &width, &height);
+
+            glViewport(0, 0, width, height);
+            glScissor(0, 0, width, height);
+
             apply_shader(ctx_.shd);
             apply_pipeline(ctx_.pipe, { true, true, true, true });
             bind_vertex(ctx_.buf, {}, {}, 0);
@@ -1191,10 +1209,6 @@ public:
 
         if (cmd_.is_offscreen)
         {
-            //glViewport(0, 0, cmd_.frm.width, cmd_.frm.height);
-            glViewport(0, 0, cmd_.frm.width, cmd_.frm.height);
-            glScissor(0, 0, cmd_.frm.width, cmd_.frm.height);
-
             for (auto i : targets)
             {
                 DCHECK(cmd_.frm.render_targets[i].tex_pid);
@@ -1203,12 +1217,6 @@ public:
         }
         else
         {
-            int width{}, height{};
-            glfwGetFramebufferSize(window_, &width, &height);
-
-            //glViewport(0, 0, width, height);
-            glViewport(0, 0, width, height);
-            glScissor(0, 0, width, height);
             glClearBufferfv(GL_COLOR, 0, &rgba[0]);
         }
 
@@ -1218,21 +1226,6 @@ public:
     {
         glcheck_errors();
 
-        if (cmd_.is_offscreen)
-        {
-            glViewport(0, 0, cmd_.frm.width, cmd_.frm.height);
-            glScissor(0, 0, cmd_.frm.width, cmd_.frm.height);
-
-            DCHECK(cmd_.frm.depth_stencil.tex_pid);
-        }
-        else
-        {
-            int width{}, height{};
-            glfwGetFramebufferSize(window_, &width, &height);
-
-            glViewport(0, 0, width, height); // TODO: remove
-            glScissor(0, 0, width, height);
-        }
         glClearBufferfv(GL_DEPTH, 0, &depth);
 
         glcheck_errors();
@@ -1241,21 +1234,6 @@ public:
     {
         glcheck_errors();
 
-        if (cmd_.is_offscreen)
-        {
-            glViewport(0, 0, cmd_.frm.width, cmd_.frm.height);
-            glScissor(0, 0, cmd_.frm.width, cmd_.frm.height);
-
-            DCHECK(cmd_.frm.depth_stencil.tex_pid);
-        }
-        else
-        {
-            int width{}, height{};
-            glfwGetFramebufferSize(window_, &width, &height);
-
-            glViewport(0, 0, width, height);
-            glScissor(0, 0, width, height);
-        }
         glcheck_errors();
         const GLint gl_stencil = stencil;
         // glClearNamedFramebufferiv(id_, GL_STENCIL, 0, &stencil);
