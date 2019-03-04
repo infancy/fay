@@ -41,12 +41,13 @@ float ShadowCalculation(vec4 CameraSpacePos, float dot_lightDir_normal)
     }
 
     // 执行（正交、透视）投影除法
+    // vec3 projCoords = LightSpacePos.x-yz / LightSpacePos.w;
     vec3 projCoords = LightSpacePos.xyz / LightSpacePos.w;
+    projCoords.y = -projCoords.y;
     // 变换到[0,1]的范围
     projCoords.x = projCoords.x * 0.5 + 0.5;
     projCoords.y = projCoords.y * 0.5 + 0.5;
-    projCoords.y = 1-projCoords.y;
-    // projCoords.z = projCoords.z * 0.5 + 0.5;
+    
     // 取得当前片元在光源视角下的深度
     float currentDepth = projCoords.z;
 

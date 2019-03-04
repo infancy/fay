@@ -229,7 +229,7 @@ public:
     };
     fay::light lights_[3]
     {
-        fay::light{ glm::vec3{ 0, 300, -100 } },
+        fay::light{ glm::vec3{ -300, 300, 0 } },
         fay::light{ glm::vec3{ 100, 100, 0 } },
         fay::light{ glm::vec3{ 0, 100, -100 } },
     };
