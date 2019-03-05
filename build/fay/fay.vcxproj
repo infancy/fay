@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\fay\app\window.cpp" />
     <ClCompile Include="..\..\fay\core\ecs.cpp" />
+    <ClCompile Include="..\..\fay\render\backend_d3d11.cpp" />
     <ClCompile Include="..\..\fay\render\define.cpp" />
     <ClCompile Include="..\..\fay\render\device.cpp" />
     <ClCompile Include="..\..\fay\render\render.cpp" />
@@ -29,7 +30,6 @@
     <ClCompile Include="..\..\fay\resource\model.cpp" />
     <ClCompile Include="..\..\fay\resource\model_assimp.cpp" />
     <ClCompile Include="..\..\fay\resource\model_obj.cpp" />
-    <ClCompile Include="..\..\fay\ui\window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\app\app.h" />
@@ -92,7 +92,6 @@
     <ClInclude Include="..\..\fay\resource\model.h" />
     <ClInclude Include="..\..\fay\resource\text.h" />
     <ClInclude Include="..\..\fay\resource\image.h" />
-    <ClInclude Include="..\..\fay\ui\window.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

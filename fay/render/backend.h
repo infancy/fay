@@ -1,7 +1,11 @@
 #pragma once
 
 #include "fay/core/fay.h"
+#include "fay/core/range.h"
 #include "fay/render/define.h"
+#include "fay/render/native_type.h"
+#include "fay/render/pool.h"
+#include "fay/render/shader.h"
 
 namespace fay
 {
@@ -11,13 +15,13 @@ class render_backend
 {
 public:
     render_backend() = default; // remove
-    render_backend(const render_desc& desc) : render_desc_(desc) 
+    render_backend(const render_desc& desc) : renderd_(desc) 
     {
         // init default frame
         // init environment
 
-        if (desc.anti_aliasing == anti_aliasing::MSAA)
-            feature_.use_msaa = true; // rename: enabled_MSAA
+        if (renderd_.anti_aliasing == anti_aliasing::MSAA)
+            renderd_.enable_msaa = true;
     }
     virtual ~render_backend() = default;
 
@@ -65,17 +69,12 @@ public:
     virtual void draw_index(uint count, uint first, uint instance_count) = 0;
 
 protected:
-    struct feature
-    {
-        bool use_msaa{};
-    };
-
-    feature feature_{};
-    render_desc render_desc_{};
+    render_desc renderd_{};
 };
 
 using render_backend_ptr = std::unique_ptr<render_backend>;
 
 render_backend_ptr create_backend_opengl(const render_desc& desc);
+render_backend_ptr create_backend_d3d11(const render_desc& desc);
 
 } // namespace fay

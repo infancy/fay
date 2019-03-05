@@ -2,15 +2,7 @@
 
 #include <sstream>
 
-#include "glad/glad.h"
-#include "GLFW/glfw3.h"
-
-#include "fay/core/range.h"
 #include "fay/render/backend.h"
-#include "fay/render/define.h"
-#include "fay/render/native_type.h"
-#include "fay/render/pool.h"
-#include "fay/render/shader.h"
 
 using namespace std::string_literals;
 
@@ -690,7 +682,6 @@ class backend_opengl : public render_backend
 public:
     backend_opengl(const render_desc& desc) 
         : render_backend(desc)
-        , window_(static_cast<GLFWwindow*>(desc.glfw_window))
     {
     #ifdef FAY_DEBUG
         GLint flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
@@ -745,9 +736,10 @@ public:
 
             ctx_.pipe = create(pipeline_desc());
 
-            glfwGetFramebufferSize(window_, &ctx_.width, &ctx_.height);
+            // TODO: event system
+            //glfwGetFramebufferSize(window_, &renderd_.width, &renderd_.height);
 
-            texture_desc tex_desc("backend_opengl_default_tbo", ctx_.width, ctx_.height, pixel_format::rgba8);
+            texture_desc tex_desc("backend_opengl_default_tbo", renderd_.width, renderd_.height, pixel_format::rgba8);
             ctx_.tex = create(tex_desc);
             auto ds_id = create(tex_desc.set_target(render_target::depth_stencil));
 
@@ -755,7 +747,7 @@ public:
         }
 
         // TODO: global msaa???
-        if (feature_.use_msaa)
+        if (renderd_.enable_msaa)
             gl_try_enable(GL_SAMPLE_BUFFERS);
 
         glcheck_errors();
@@ -875,7 +867,7 @@ public:
 
             // (4. create renderbuffer for MSAA)
             if ((desc.as_render_target == render_target::color) &&
-                (render_desc_.anti_aliasing == anti_aliasing::MSAA))
+                (renderd_.anti_aliasing == anti_aliasing::MSAA))
             {
                 glGenRenderbuffers(1, &tex.msaa_rbo);
                 glBindRenderbuffer(GL_RENDERBUFFER, tex.msaa_rbo);
@@ -913,7 +905,7 @@ public:
             // TODO : GL_DEPTH24_STENCIL8
             //GLenum gl_depth_format = _sg_gl_depth_attachment_format(img->format);
 
-            if (render_desc_.anti_aliasing == anti_aliasing::MSAA)
+            if (renderd_.anti_aliasing == anti_aliasing::MSAA)
             {
                 glRenderbufferStorageMultisample(GL_RENDERBUFFER, tex.rt_sample_count, 
                     pixel_internal_format(desc.format), tex.width, tex.height);
@@ -1026,7 +1018,7 @@ public:
 
         const auto& rts = frm.render_targets;
 
-        if (!(render_desc_.anti_aliasing == anti_aliasing::MSAA))
+        if (!(renderd_.anti_aliasing == anti_aliasing::MSAA))
         { // attach texture
             for (int i = 0; i < rts.size(); ++i)
             {
@@ -1051,7 +1043,7 @@ public:
         }
 
         // if ues MSAA, create MSAA resolve framebuffers to read data from tex.msaa_rbo to tex.tbo
-        if (render_desc_.anti_aliasing == anti_aliasing::MSAA)
+        if (renderd_.anti_aliasing == anti_aliasing::MSAA)
         {
             for (int i = 0; i < rts.size(); ++i)
             {
@@ -1135,12 +1127,8 @@ public:
             //glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, pool_[ctx_.frm].fbo);
 
-            // TODO
-            int width{}, height{};
-            glfwGetFramebufferSize(window_, &width, &height);
-
-            glViewport(0, 0, width, height);
-            glScissor(0, 0, width, height);
+            glViewport(0, 0, renderd_.width, renderd_.height);
+            glScissor(0, 0, renderd_.width, renderd_.height);
         }
 
         glcheck_errors();
@@ -1152,7 +1140,7 @@ public:
         glcheck_errors();
 
         // if use MSAA in offscreen render, copy data from tex.rbo to tex.tbo
-        if (cmd_.is_offscreen && feature_.use_msaa)
+        if (cmd_.is_offscreen && renderd_.enable_msaa)
         {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, cmd_.frm.fbo);
 
@@ -1177,12 +1165,9 @@ public:
         {
             // copy default offscreen frame to default frame.
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            // TODO
-            int width{}, height{};
-            glfwGetFramebufferSize(window_, &width, &height);
 
-            glViewport(0, 0, width, height);
-            glScissor(0, 0, width, height);
+            glViewport(0, 0, renderd_.width, renderd_.height);
+            glScissor(0, 0, renderd_.width, renderd_.height);
 
             apply_shader(ctx_.shd);
             apply_pipeline(ctx_.pipe, { true, true, true, true });
@@ -1672,7 +1657,6 @@ private:
 	{
         GLuint vao{}; // todo: opengl3.3+ must have a default VAO
 
-        int width, height;
         buffer_id buf{};
         texture_id tex{};
         shader_id shd{};
@@ -1698,12 +1682,11 @@ private:
 
     // TODO: multiwindow: one device + multictx   or   multidevice
     // one ctx bind to one window(multiwindow needs multicontext, multi-vao)
-    /*const*/ GLFWwindow* window_{};
-
-    std::stringstream log_;
-    command_list_context cmd_{};
+    // GLFWwindow* window_{};
 
     context ctx_{};
+    command_list_context cmd_{};
+    std::stringstream log_;
     resource_pool<buffer, texture, shader, pipeline, frame> pool_{};
 };
 

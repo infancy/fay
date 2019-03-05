@@ -6,6 +6,15 @@
 //fay::app_desc clear_desc = global_desc;
 //clear_desc.window.title = "clear";
 
+class init : public fay::app
+{
+public:
+    init(const fay::app_desc& _desc) : fay::app(_desc)
+    {
+        desc.window.title = "init";
+    }
+};
+
 class clear : public fay::app
 {
 public:
@@ -1098,6 +1107,7 @@ public:
     }
 };
 
+SAMPLE_RENDER_APP_IMPL(init)
 SAMPLE_RENDER_APP_IMPL(clear)
 SAMPLE_RENDER_APP_IMPL(triangle)
 

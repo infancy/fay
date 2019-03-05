@@ -460,6 +460,7 @@ private:
 */
 
 // TODO: better way
+// WARNNNING: vector's dtor isn't virtual
 class vertex_layout : public std::vector<vertex_attribute> //extends_sequence<std::vector<vertex_attribute>>
 {
 public:
@@ -827,34 +828,26 @@ struct frame_desc
 
 struct render_desc
 {
-    // render_device
     std::string name{ "default" };
-    render_backend_type render_backend_type{ render_backend_type::opengl };
-
-	/*
-    size_t   buffer_pool_size{ 128 };
-	size_t  texture_pool_size{ 128 };
-	size_t   shader_pool_size{  32 };
-	size_t pipeline_pool_size{  64 };
-	size_t     pass_pool_size{  16 };
-	size_t  context_pool_size{  16 };
-    */
+    render_backend_type backend{ render_backend_type::opengl };
 
     // feature
     anti_aliasing anti_aliasing{};
+    uint multiple_sample_count{}; // if use MSAA
 
     // opengl-specific
     // TODO: check backend_type & window/device/context
-    // struct GLFWwindow;
-    void* glfw_window;
 
 	// d3d11-specific
-	const void* d3d11_device{};
-	const void* d3d11_device_context{};
-	const void* (*d3d11_render_target_view_cb)() {};
-	const void* (*d3d11_depth_stencil_view_cb)() {};
+    // HWND d3d_handle;
+    void* d3d_handle;
 
     // **-specific
+
+    // responsible by the system
+    uint width;
+    uint height;
+    bool enable_msaa;
 };
 
 // clear_op

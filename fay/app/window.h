@@ -1,11 +1,18 @@
 #pragma once
 
+#include "fay/core/fay.h"
+
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#ifdef FAY_IN_WINDOWS
+    #define GLFW_EXPOSE_NATIVE_WIN32
+#endif
+#include "GLFW/glfw3native.h"
 
 #include "fay/app/input.h"
 #include "fay/core/config.h"
 #include "fay/core/fay.h"
+#include "fay/render/define.h"
 
 namespace fay
 {
@@ -19,16 +26,21 @@ struct window_desc	// TODO: merge to config?
 	uint32_t height{ 720 };
 	std::string title{ "test" };
 
+    bool resizable = false; // resize the window.
+    bool accept_drop_files = false; // drag-and-drop files into the window
+
 	cursor_mode cursor_mode_v{ cursor_mode::hidden };
-	render_backend_type render_backend_type_v{ g_config.render_backend_type_v };
-	uint32_t MSAA{ 1 };	// if MSAA > 1, open MSAA
+
+    //
+    bool is_backend_opengl{ false };
 };
 
 class window
 {
 public:
 	window() {}
-	window(const window_desc& desc) : desc_{ desc }
+	window(const window_desc& desc) 
+        : desc_{ desc }
 	{
 	}
     virtual ~window() = default;
@@ -114,63 +126,75 @@ class window_glfw : public window
 public:
 	// using window::window;
 	window_glfw() {}
-	window_glfw(const window_desc& desc) : window(desc)
-	{
-		glfwSetErrorCallback(glfw_detail::error_callback);
-		glfwInit();
+    window_glfw(const window_desc& windowd, render_desc& renderd) : window(windowd)
+    {
+        glfwSetErrorCallback(glfw_detail::error_callback);
+        glfwInit();
 
-		if (desc_.render_backend_type_v == render_backend_type::opengl) // TODO: choose opengl version by itself
-		{
-			create_window_and_glcontext(4, 3);
-		}
-		else if (desc_.render_backend_type_v == render_backend_type::opengl_dsa)
-		{
-			create_window_and_glcontext(4, 5);
-		}
-		else
-		{
-			// TODO: create other context/device by window too?
-			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-			window_ = glfwCreateWindow(desc_.width, desc_.height, desc_.title.c_str(), nullptr, nullptr);
-			if (window_ == nullptr)
-			{
-				LOG(ERROR) << "window_glfw: Failed to create GLFW window";
-				glfwTerminate();
-			}
-		}
+        // feature
+        if (renderd.anti_aliasing == anti_aliasing::MSAA)
+            glfwWindowHint(GLFW_SAMPLES, renderd.multiple_sample_count);
+        // GLFW_VISIBLE
+        glfwWindowHint(GLFW_RESIZABLE, desc_.resizable);
 
-		// tell GLFW to capture mouse
-		switch (desc_.cursor_mode_v)
-		{
-		case cursor_mode::normal:
-		{
-			glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			break;
-		}
-		case cursor_mode::hidden:
-		{
-			glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-			break;
-		}
-		case cursor_mode::disabled:
-		{
-			glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			break;
-		}
-		default:
-			break;
-		}
-		glfwGetCursorPos(window_, &input_.lastx, &input_.lasty);
+        // create window and render api context
+        switch (renderd.backend)
+        {
+            case render_backend_type::opengl:
+                desc_.is_backend_opengl = true;
+                create_window_and_glcontext(4, 3); // TODO: choose opengl version by itself
+                break;
+            case render_backend_type::opengl_dsa:
+                desc_.is_backend_opengl = true;
+                create_window_and_glcontext(4, 5);
+                break;
+            case render_backend_type::d3d11:
+                create_window();
+                break;
+            default:
+                LOG(ERROR);
+                break;
+        }
 
-		glfwSetFramebufferSizeCallback(window_, glfw_detail::framebuffer_size_callback);
+        // render_desc
+        renderd.d3d_handle = glfwGetWin32Window(window_);
+        renderd.width = desc_.width;
+        renderd.height = desc_.height;
+
+        // glfwSetWindowUserPointer(window_, this);
+
+        // capture mouse
+        switch (desc_.cursor_mode_v)
+        {
+            case cursor_mode::normal:
+                glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                break;
+            case cursor_mode::hidden:
+                glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+                break;
+            case cursor_mode::disabled:
+                glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                break;
+            default:
+                LOG(ERROR);
+                break;
+        }
+
+        // callback
+        //glfwSetWindowSizeCallback(pGLFWWindow, ApiCallbacks::windowSizeCallback);
+        glfwSetFramebufferSizeCallback(window_, glfw_detail::framebuffer_size_callback);
         glfwSetKeyCallback(window_, glfw_detail::key_callback);
-		glfwSetMouseButtonCallback(window_, glfw_detail::mouse_button_callback);
-		glfwSetScrollCallback(window_, glfw_detail::scroll_callback);
+        //glfwSetCursorPosCallback(window_, ApiCallbacks::mouseMoveCallback);
+        glfwSetMouseButtonCallback(window_, glfw_detail::mouse_button_callback);
+        glfwSetScrollCallback(window_, glfw_detail::scroll_callback);
+        //glfwSetCharCallback(window_, ApiCallbacks::charInputCallback);
+        //glfwSetDropCallback(window_, ApiCallbacks::droppedFileCallback);
 
         // init input
         input_.this_time = glfwGetTime();
+        glfwGetCursorPos(window_, &input_.lastx, &input_.lasty);
         glfwGetCursorPos(window_, &input_.x, &input_.y);
-	}
+    }
 	~window_glfw() override
 	{
 		// Destroys the specified window and its context.
@@ -193,8 +217,12 @@ public:
 	void show()	// don't clear framebuffer
 	{
 
+        if(desc_.is_backend_opengl)
+            glfwSwapBuffers(window_);
 
-		glfwSwapBuffers(window_);
+        //glfwShowWindow(window_);
+        //glfwFocusWindow(window_);
+
         // http://www.glfw.org/docs/latest/input_guide.html#events
         // Event processing must be done regularly while you have any windows and is normally done each frame after buffer swapping.
         //glfwPollEvents(); -> update input at the begin in every frame
@@ -221,24 +249,37 @@ private:
 		// uncomment this statement to fix compilation on OS X
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	#endif
-		if (desc_.MSAA > 1)
-			glfwWindowHint(GLFW_SAMPLES, desc_.MSAA);
 
-		// glfw window creation
 		window_ = glfwCreateWindow(desc_.width, desc_.height, desc_.title.c_str(), nullptr, nullptr);
 		if (window_ == nullptr)
 		{
 			LOG(ERROR) << "window_glfw: Failed to create GLFW window";
 			glfwTerminate();
 		}
-
 		glfwMakeContextCurrent(window_);
+
 		// glad: load all OpenGL function pointers
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		{
 			LOG(ERROR) << "Failed to initialize GLAD";
 		}
 	}
+
+    void create_window()
+    {
+    #ifdef FAY_IN_WINDOWS
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        window_ = glfwCreateWindow(desc_.width, desc_.height, desc_.title.c_str(), nullptr, nullptr);
+        if (window_ == nullptr)
+        {
+            LOG(ERROR) << "window_glfw: Failed to create GLFW window";
+            glfwTerminate();
+        }
+        // glfwMakeContextCurrent(window_);
+    #else
+        #error "unknown platform"
+    #endif
+    }
 
     void update_input()
     {

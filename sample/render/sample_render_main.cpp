@@ -9,6 +9,7 @@
 
 // extern class shadow shadow_app;
 
+SAMPLE_RENDER_APP_DECL(init)
 SAMPLE_RENDER_APP_DECL(clear)
 SAMPLE_RENDER_APP_DECL(triangle)
 
@@ -31,8 +32,8 @@ int main(int argc, char** argv)
     // vector<{XX_desc, XX}> ...;
     fay::app_desc desc;
     {
-        //
+        desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(clear, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(init, desc);
     return app_->run();
 }

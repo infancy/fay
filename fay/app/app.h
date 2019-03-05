@@ -97,22 +97,7 @@ private:
 	void init_app()
 	{
 		// TODO: factory
-		window = std::make_unique<window_glfw>(desc.window);	// create window and context
-
-        switch (desc.render.render_backend_type)
-        {
-            case render_backend_type::opengl:
-            case render_backend_type::opengl_dsa:
-
-                desc.render.glfw_window = window->native_handle();
-                break;
-
-            case render_backend_type::d3d11:
-            default:
-
-                LOG(ERROR) << "error";
-                break;
-        }
+		window = std::make_unique<window_glfw>(desc.window, desc.render);	// create window and context
         device = std::make_unique<render_device>(desc.render);
 	}
 

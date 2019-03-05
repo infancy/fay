@@ -27,9 +27,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\fay\ui\window.cpp">
-      <Filter>ui</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\fay\render\render.cpp">
       <Filter>render</Filter>
     </ClCompile>
@@ -58,6 +55,9 @@
       <Filter>resouce</Filter>
     </ClCompile>
     <ClCompile Include="..\..\fay\render\define.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fay\render\backend_d3d11.cpp">
       <Filter>render</Filter>
     </ClCompile>
   </ItemGroup>
@@ -112,9 +112,6 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\math\shape.h">
       <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\ui\window.h">
-      <Filter>ui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\render\render.h">
       <Filter>render</Filter>
