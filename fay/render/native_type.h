@@ -1,18 +1,21 @@
 #pragma once
 
 #include <d3d11.h>
+#include <dxgi.h>
 #include "glad/glad.h"
 
+#include "fay/core/define.h"
 #include "fay/core/enum.h"
 #include "fay/render/define.h"
 
 namespace fay
 {
 
+// template<typename T>
 struct native_type
 {
 	GLenum opengl;
-	int d3d11;
+	UINT d3d11;
 };
 
 const inline enum_class_map<resource_usage, native_type>
@@ -26,9 +29,37 @@ resource_usage_map
 const inline enum_class_map<buffer_type, native_type>
 buffer_type_map
 {
-	{ buffer_type::vertex,    { GL_ARRAY_BUFFER, 0 } },
-	{ buffer_type::index,     { GL_ELEMENT_ARRAY_BUFFER, 0 } },
-    { buffer_type::instance,  { GL_ARRAY_BUFFER, 0 } },
+	{ buffer_type::vertex,    { GL_ARRAY_BUFFER,         D3D11_BIND_VERTEX_BUFFER } },
+	{ buffer_type::index,     { GL_ELEMENT_ARRAY_BUFFER, D3D11_BIND_INDEX_BUFFER } },
+    { buffer_type::instance,  { GL_ARRAY_BUFFER,         D3D11_BIND_VERTEX_BUFFER } },
+};
+
+const inline enum_class_map<pixel_format, native_type>
+pixel_format_map
+{
+    { pixel_format::rgba32f,  { 0, DXGI_FORMAT_R32G32B32A32_FLOAT } },
+    { pixel_format::rgb32f,   { 0, DXGI_FORMAT_R32G32B32_FLOAT } },
+    { pixel_format::rg32f,    { 0, DXGI_FORMAT_R32G32_FLOAT } },
+    { pixel_format::r32f,     { 0, DXGI_FORMAT_R32_FLOAT } },
+
+    { pixel_format::rgba16f,  { 0, DXGI_FORMAT_R16G16B16A16_FLOAT } },
+    //{ pixel_format::rgb16f,   { 0, DXGI_FORMAT_R16G16B16_FLOAT } },
+    { pixel_format::rg16f,    { 0, DXGI_FORMAT_R16G16_FLOAT } },
+    { pixel_format::r16f,     { 0, DXGI_FORMAT_R16_FLOAT } },
+
+    { pixel_format::rgba8,    { 0, DXGI_FORMAT_R8G8B8A8_UNORM } },
+    //{ pixel_format::rgb8,     { 0, DXGI_FORMAT_R8G8A8_UNORM } },
+    { pixel_format::rg8,      { 0, DXGI_FORMAT_R8G8_UNORM } },
+    { pixel_format::r8,       { 0, DXGI_FORMAT_R8_UNORM } },
+
+    { pixel_format::rgba4,    { 0, DXGI_FORMAT_B4G4R4A4_UNORM } },
+
+    { pixel_format::rgb10_a2, { 0, DXGI_FORMAT_R10G10B10A2_UNORM } },
+    { pixel_format::rgb5_a1,  { 0, DXGI_FORMAT_B5G5R5A1_UNORM } },
+    { pixel_format::rgb565,   { 0, DXGI_FORMAT_B5G6R5_UNORM } },
+
+    { pixel_format::depth,        { 0, DXGI_FORMAT_D32_FLOAT} },
+    { pixel_format::depthstencil, { 0, DXGI_FORMAT_D24_UNORM_S8_UINT} }
 };
 
 const inline enum_class_map<texture_type, native_type>
@@ -56,12 +87,14 @@ const inline enum_class_map<filter_mode, native_type>
 filter_mode_map
 {
     { filter_mode::anisotropy,             { GL_NONE,                   D3D11_FILTER_ANISOTROPIC } },
-    { filter_mode::nearest,                { GL_NEAREST,                0 } },
-    { filter_mode::linear,                 { GL_LINEAR,                 0 } },
-    { filter_mode::nearest_mipmap_nearest, { GL_NEAREST_MIPMAP_NEAREST, 0 } },
-    { filter_mode::nearest_mipmap_linear,  { GL_NEAREST_MIPMAP_LINEAR,  0 } },
-    { filter_mode::linear_mipmap_nearest,  { GL_LINEAR_MIPMAP_NEAREST,  0 } },
-    { filter_mode::linear_mipmap_linear,   { GL_LINEAR_MIPMAP_LINEAR,   0 } },
+
+    { filter_mode::nearest,                { GL_NEAREST,                D3D11_FILTER_MIN_MAG_MIP_POINT } },
+    { filter_mode::nearest_mipmap_nearest, { GL_NEAREST_MIPMAP_NEAREST, D3D11_FILTER_MIN_MAG_MIP_POINT } },
+    { filter_mode::nearest_mipmap_linear,  { GL_NEAREST_MIPMAP_LINEAR,  D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR } },
+
+    { filter_mode::linear,                 { GL_LINEAR,                 D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT } },
+    { filter_mode::linear_mipmap_nearest,  { GL_LINEAR_MIPMAP_NEAREST,  D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT } },
+    { filter_mode::linear_mipmap_linear,   { GL_LINEAR_MIPMAP_LINEAR,   D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR } },
 };
 
 const inline enum_class_map<wrap_mode, native_type>

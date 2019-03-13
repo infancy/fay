@@ -10,6 +10,8 @@
 namespace fay
 {
 
+// TODO: OCCLUSION
+
 // TODO: FAY_NO_VTABLE
 class render_backend
 {
@@ -54,10 +56,11 @@ public:
     virtual void apply_pipeline(const pipeline_id id, std::array<bool, 4>) = 0;
     virtual void apply_shader(const shader_id id) = 0;
 
+    // TODO: remove
     virtual void bind_uniform(const char* name, command::uniform uniform) = 0;
-    virtual void bind_uniform(uint ub_index, const void* data, uint size) = 0;
 
-    virtual void bind_texture(const texture_id id, int tex_unit, const std::string& sampler) = 0;
+    virtual void bind_uniform(uint ub_index, const void* data, uint size, shader_stage stage = shader_stage::none) = 0;
+    virtual void bind_texture(const texture_id id, int tex_unit, const std::string& sampler, shader_stage stage = shader_stage::none) = 0;
 
     virtual void bind_index(const buffer_id id) = 0;
     virtual void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) = 0;
@@ -70,11 +73,27 @@ public:
 
 protected:
     render_desc renderd_{};
+    // TODO: desc_resource_pool desc_pool_{};
 };
 
 using render_backend_ptr = std::unique_ptr<render_backend>;
 
 render_backend_ptr create_backend_opengl(const render_desc& desc);
 render_backend_ptr create_backend_d3d11(const render_desc& desc);
+
+render_backend_ptr create_render_backend(const render_desc& desc)
+{
+    switch (desc.backend)
+    {
+        case render_backend_type::opengl:
+            return create_backend_opengl(desc);
+        case render_backend_type::d3d11:
+            return create_backend_d3d11(desc);
+        case render_backend_type::none:
+        default:
+            LOG(ERROR) << "render_device: no render_backend";
+            return nullptr;
+    }
+}
 
 } // namespace fay

@@ -340,7 +340,7 @@ namespace backend_opengl_type
     {
         // init by buffer_desc
         std::string name{};
-        uint    size{};
+        uint        size{};
         // const void* data{};
         GLenum      type{};
         GLenum      usage{};
@@ -1172,7 +1172,7 @@ public:
             apply_shader(ctx_.shd);
             apply_pipeline(ctx_.pipe, { true, true, true, true });
             bind_vertex(ctx_.buf, {}, {}, 0);
-            bind_texture(ctx_.tex, 0, "offscreen");
+            bind_texture(ctx_.tex, 0, "offscreen", shader_stage::fragment);
             draw(6, 0, 1);
         }
 
@@ -1351,7 +1351,7 @@ public:
 
 
     // TODO: rename uniform_block
-    void bind_uniform(uint ub_index, const void* data, uint size) override
+    void bind_uniform(uint ub_index, const void* data, uint size, shader_stage /*stage*/) override
     {
         glcheck_errors();
 
@@ -1433,7 +1433,7 @@ public:
         glcheck_errors();
         log_ << ("buffer   : "s + pool_[id].name + '\n');
     }
-    void bind_texture(const texture_id id, int tex_unit, const std::string& sampler) override
+    void bind_texture(const texture_id id, int tex_unit, const std::string& sampler, shader_stage /*stage*/) override
     {
         cmd_.tex_ids.push_back(id);
 

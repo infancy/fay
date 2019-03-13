@@ -7,19 +7,7 @@ namespace fay
 
 render_device::render_device(const render_desc& desc)
 {
-    switch (desc.backend)
-    {
-        case render_backend_type::opengl:
-            backend_ = std::move(create_backend_opengl(desc));
-            break;
-        case render_backend_type::d3d11:
-            backend_ = std::move(create_backend_d3d11(desc));
-            break;
-        case render_backend_type::none:
-        default:
-            LOG(ERROR) << "render_device: no render_backend";
-            break;
-    }
+    backend_ = create_render_backend(desc);
 
     context_.name = desc.name;
     context_.type = desc.backend;

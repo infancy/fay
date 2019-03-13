@@ -15,17 +15,19 @@ namespace fay
 
 // enum { ... };
 // TODO: const_t, const32_t, constant...
-constexpr inline uint InvalidId              = 0;
-constexpr inline uint NumInflightFrames      = 2;
-constexpr inline uint MaxColorAttachments    = 4;
-constexpr inline uint MaxShaderStages        = 3;
-constexpr inline uint PassMaxBuffers         = 4;
-constexpr inline uint PassMaxTextures        = 12;
-constexpr inline uint MaxShaderstageUniforms = 4;	// uniform_blocks
-constexpr inline uint MaxUniformMembers      = 16;
-constexpr inline uint MaxVertexAttributes    = 16;
-constexpr inline uint MaxMipmaps             = 16;
-constexpr inline uint MaxTextureArrayLayers  = 128;
+constexpr inline uint InvalidId               = 0;
+constexpr inline uint NumInflightFrames       = 2;
+constexpr inline uint MaxColorAttachments     = 6;
+
+constexpr inline uint MaxShaderStages         = 2;
+constexpr inline uint MaxShaderBuffers        = 4;
+constexpr inline uint MaxShaderTextures       = 12;
+constexpr inline uint MaxShaderUniformBlocks  = 4;
+
+constexpr inline uint MaxUniformBlocksMembers = 16;
+constexpr inline uint MaxVertexAttributes     = 16;
+constexpr inline uint MaxMipmaps              = 16;
+constexpr inline uint MaxTextureArrayLayers   = 128;
 
 // -------------------------------------------------------------------------------------------------
 // render features
@@ -115,11 +117,11 @@ enum class /*vertex_*/attribute_format
     // floatx, could use float1 * 16 or float4 * 4
 
     // WARNING: The following type in opengl maybe need to normalized
-    byte4,
-    ubyte4,
-
     short2,
     short4,
+
+    byte4,
+    ubyte4,
 
     // uint10_x2,
 };
@@ -134,6 +136,31 @@ enum class texture_type
 	array,
 	//data,	// ues 2d texture as array of data
 	//array_data
+};
+
+// TODO
+struct texture_type_ // : enum_class<texture_type_>
+{
+    enum enums
+    {
+        none,
+        two,
+        cube,
+        three,
+        array
+    };
+
+    texture_type_() = default;
+    texture_type_(enums e) : e{ e } {}
+
+    uint faces() { return e == cube ? 6 : 1; }
+
+    bool is_mutil()
+    {
+        return (e == three) || (e == array);
+    }
+
+    enums e;
 };
 
 enum class texture_usage
@@ -164,10 +191,12 @@ FAY_ENUM_CLASS_OPERATORS(render_target)
 enum class filter_mode
 {
 	anisotropy, // only for d3d11
+
 	nearest,
+    nearest_mipmap_nearest,
+    nearest_mipmap_linear,
+
 	linear,
-	nearest_mipmap_nearest,
-	nearest_mipmap_linear,
 	linear_mipmap_nearest,
 	linear_mipmap_linear,
 };
@@ -196,6 +225,8 @@ enum class cube_face
 
 enum class shader_stage
 {
+    none,
+
 	vertex,
 	geometry,
 	fragment,
@@ -548,12 +579,13 @@ struct texture_desc
 	uint width{};
 	uint height{};
     uint depth{}; // or called layers, used in texture3d or texture_array, auto calculation by ctor
+    uint mipmaps{ 1 }; // How many levels of mipmaps are generated
     pixel_format format{};
 
     uint size{}; // used for compressed texture
     std::vector<const void*> data{};
 
-    texture_type type{};
+    texture_type type{ texture_type::two };
     texture_usage _usage{}; // TODO: rename
 	resource_usage usage{ resource_usage::immutable }; // update_rate rate
     // resource_state state{ resource_state::empty };
@@ -561,8 +593,7 @@ struct texture_desc
     filter_mode min_filter{ filter_mode::linear };
 	filter_mode max_filter{ filter_mode::linear };
     uint max_anisotropy{ 1 }; // 1 ~ 16
-    bool mipmap{ true };
-    // int num_mipmaps; // How many levels of mipmaps are generated
+    bool mipmap{ true }; // TODO: remove
 
     wrap_mode wrap_u{ wrap_mode::repeat };
 	wrap_mode wrap_v{ wrap_mode::repeat };
@@ -572,6 +603,7 @@ struct texture_desc
     float max_lod{ 1000.f }; // max_float
 
     // rename: target
+    // render_target as_render_target{ render_target::none };
     render_target as_render_target{ render_target::color }; // used as render target or depth_stencil target is depended by pixel_format
     uint rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target
 
@@ -585,6 +617,8 @@ struct texture_desc
         , type{ type }
         , data{ std::move(data) }
     {
+        // DCHECK( cube, 6);
+
         switch (type)
         {
             case fay::texture_type::two:
@@ -685,11 +719,13 @@ struct shader_desc
     // TODO: uniform
     // std::vector<uniform> uniforms;
 
+    uint vs_uniform_block_sz{};
+    uint fs_uniform_block_sz{};
     std::vector<uniform_block> uniform_blocks;
 
     // TODO: std::span_view
-    size_t vs_samplers_sz{};
-    size_t fs_samplers_sz{};
+    uint vs_samplers_sz{};
+    uint fs_samplers_sz{};
     std::vector<sampler> samplers{};
     //std::vector<sampler> vs_samplers{};
     //std::vector<sampler> fs_samplers{};
@@ -798,7 +834,7 @@ struct attachment_desc
 {
     texture_id tex_id{};
     // union { int face; int layer; int slice; };
-    uint layer{}; // texture::two(0), texture::cube(0~5), texture::array/three(0~depth-1)
+    uint layer{}; // texture::two(0), texture::cube(0~5), texture::array/three(0~depth-1) // slice
     uint level{}; // mipmap_level
 };
 

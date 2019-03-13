@@ -5,9 +5,9 @@ GTEST_API_ int main(int argc, char **argv)
 {
     google::InitGoogleLogging(argv[0]);
 
-// define FAY_TEST_SOMEONE
+#define FAY_TEST_SOMEONE
 #ifdef FAY_TEST_SOMEONE
-    char filter[] = "--gtest_filter=ecs.*";
+    char filter[] = "--gtest_filter=render.*";
     argv[argc++] = filter;
 #endif // FAY_TEST_SOMEONE
 

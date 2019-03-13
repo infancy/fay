@@ -291,6 +291,8 @@ inline shader_context shader_extracting_context(std::stringstream& stream)
     return ctx;
 }
 
+
+
 inline shader_desc shader_merge_context(std::vector<shader_context>&& ctxs)
 {
     DCHECK(ctxs.size() >= 2);
@@ -299,7 +301,11 @@ inline shader_desc shader_merge_context(std::vector<shader_context>&& ctxs)
     shader_desc desc;
 
     desc.vertex_names = ctxs.front().entry_names;
-    desc.layout = ctxs.front().entry_layout;
+    desc.layout       = ctxs.front().entry_layout;
+
+    desc.vs_uniform_block_sz = ctxs.front().uniform_blocks.size();
+    desc.fs_uniform_block_sz = ctxs.back().uniform_blocks.size();
+
     desc.vs_samplers_sz = ctxs.front().samplers.size();
     desc.fs_samplers_sz = ctxs.back().samplers.size();
 
@@ -317,42 +323,52 @@ inline shader_desc shader_merge_context(std::vector<shader_context>&& ctxs)
     return desc;
 }
 
-// TODO: scan_shader_program(std::vector<std::string> shader, bool buildin = false)
-inline shader_desc scan_shader_program(const std::string name, std::string vs, std::string fs, bool buildin = false)
-{
-    std::stringstream vs_stream{};
-    std::stringstream fs_stream{};
-    std::string vs_code;
-    std::string fs_code;
+// move buildin
 
+// TODO: scan_shader_program(std::vector<std::string> shader, bool buildin = false)
+inline shader_desc scan_shader_program(const std::string shader_name, std::string vs_filepath, std::string fs_filepath, bool is_hlsl = false)
+{
+    /*
     if (buildin)
     {
-        //std::stringbuf vs_buf(vs);
+        //std::stringbuf vs_buf(vs_filepath);
         //std::stringstream vs_tmp{ vs_buf };
 
-        //vs_stream.read(vs.data(), vs.size());
-        //fs_stream.read(fs.data(), fs.size());
-        vs_code = vs;
-        fs_code = fs;
-        vs_stream.write(vs.data(), vs.size());
-        fs_stream.write(fs.data(), fs.size());
+        //vs_stream.read(vs_filepath.data(), vs_filepath.size());
+        //fs_stream.read(fs_filepath.data(), fs_filepath.size());
+        vs_code = vs_filepath;
+        fs_code = fs_filepath;
+        vs_stream.write(vs_filepath.data(), vs_filepath.size());
+        fs_stream.write(fs_filepath.data(), fs_filepath.size());
+    }
+    */
+
+    const auto vs_text = load_text(vs_filepath);
+    const auto fs_text = load_text(fs_filepath);
+
+    std::stringstream vs_stream{};
+    std::stringstream fs_stream{};
+    vs_stream << vs_text.rdbuf();
+    fs_stream << fs_text.rdbuf();
+
+    std::string vs_code = vs_stream.str();
+    std::string fs_code = fs_stream.str();
+
+    shader_context vs_ctx{};
+    shader_context fs_ctx{};
+
+    if (is_hlsl)
+    {
+        
     }
     else
     {
-        const auto vs_text = load_text(vs);
-        const auto fs_text = load_text(fs);
-
-        vs_stream << vs_text.rdbuf();
-        fs_stream << fs_text.rdbuf();
-        vs_code = vs_stream.str();
-        fs_code = fs_stream.str();
+        vs_ctx = shader_extracting_context(vs_stream);
+        fs_ctx = shader_extracting_context(fs_stream);
     }
 
-    auto&& vs_ctx = shader_extracting_context(vs_stream);
-    auto&& fs_ctx = shader_extracting_context(fs_stream);
-
     auto&& desc = shader_merge_context({ vs_ctx, fs_ctx });
-    desc.name = name;
+    desc.name = shader_name;
     desc.vs = vs_code;
     desc.fs = fs_code;
 
@@ -372,5 +388,7 @@ inline shader_desc scan_shader_program(const std::string name, std::string vs, s
 
     return desc;
 }
+
+
 
 } // namespace fay

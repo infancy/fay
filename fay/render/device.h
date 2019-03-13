@@ -255,7 +255,9 @@ private:
         DCHECK(idx.value() < ctx_.shd.uniform_blocks.size());
         DCHECK(size == ctx_.shd.uniform_blocks[idx.value()].size) << "input unifrom block size isn't match to shader";
 
-        backend_->bind_uniform(idx.value(), data, size);
+        auto stage = (idx.value() < ctx_.shd.vs_uniform_block_sz) ? shader_stage::vertex : shader_stage::fragment; // !!!
+
+        backend_->bind_uniform(idx.value(), data, size, stage);
     }
 
     void bind_texture(const texture_id id, const std::string& sampler_name) //const shader_desc::sampler& sampler)
@@ -267,7 +269,9 @@ private:
         DCHECK(idx.has_value()) << "unknown texture sampler";
         DCHECK(ctx_.shd.samplers[idx.value()].type == desc_[id].type) << "texture's type and sampler's isn't matching";
 
-        backend_->bind_texture(id, idx.value(), sampler_name); // !!!: use index of sampler in vector as index of tex_unit
+        auto stage = (idx.value() < ctx_.shd.vs_samplers_sz) ? shader_stage::vertex : shader_stage::fragment; // !!!
+
+        backend_->bind_texture(id, idx.value(), sampler_name, stage); // !!!: use index of sampler in vector as index of tex_unit
     }
 
     void bind_textures(const std::vector<texture_id>& textures, shader_stage stage)

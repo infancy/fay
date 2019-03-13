@@ -73,29 +73,25 @@ enum class pixel_format
     none,
 
     rgba32f,
-    rgba16f,
-
     rgb32f,
-    rgb16f,
-
     rg32f,
-    rg16f,
-
     r32f,
+
+    rgba16f,
+    rgb16f,
+    rg16f,
     r16f,
 
     rgba8,
+    rgb8,
+    rg8,
+    r8,
+
     rgba4,
 
     rgb10_a2,
     rgb5_a1,
-
-    rgb8,
     rgb565,
-
-    rg8,
-
-    r8,   // byte
 
     depth,
     depthstencil,
