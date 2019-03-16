@@ -1355,13 +1355,14 @@ public:
     {
         glcheck_errors();
 
-        GLuint sho = cmd_.shd.gid;
         GLuint ubo = cmd_.shd.uniforms[ub_index].ubo;
-        uint bind_point = ub_index;
-        const char* ub_name = cmd_.shd.uniforms[ub_index].name.c_str();
 
         glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, size, data);
+
+        GLuint sho = cmd_.shd.gid;
+        uint bind_point = ub_index;
+        const char* ub_name = cmd_.shd.uniforms[ub_index].name.c_str();
 
         glUniformBlockBinding(sho, glGetUniformBlockIndex(sho, ub_name), bind_point);
         glBindBufferBase(GL_UNIFORM_BUFFER, bind_point, ubo);
@@ -1433,12 +1434,13 @@ public:
         glcheck_errors();
         log_ << ("buffer   : "s + pool_[id].name + '\n');
     }
-    void bind_texture(const texture_id id, int tex_unit, const std::string& sampler, shader_stage /*stage*/) override
+    void bind_texture(const texture_id id, int tex_index, const std::string& sampler, shader_stage /*stage*/) override
     {
         cmd_.tex_ids.push_back(id);
 
         glcheck_errors();
 
+        uint tex_unit = tex_index;
         glActiveTexture(GL_TEXTURE0 + tex_unit);	    // active Nth texture unit
 
         // TODO: cache location

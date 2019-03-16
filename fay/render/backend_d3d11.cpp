@@ -338,34 +338,39 @@ struct shader
     };
     */
 
-    struct stage
-    {
-        std::vector<shader_desc::sampler> tex_types;
-
-        std::vector<ID3D11BufferPtr> d3d11_cbs;
-        std::vector<UINT> d3d11_cb_szs;
-    };
-
     // init by shader_desc
     std::string name{};
+    uint vs_uniform_block_sz{};
+    uint fs_uniform_block_sz{};
+    uint vs_samplers_sz{};
+    uint fs_samplers_sz{};
 
     // TODO: memory_view
     const uint8_t* vs_bytecode{};
     const uint8_t* ps_bytecode{};
 
+    // then assign others
+
+    // constant buffers
+    std::vector<UINT> d3d11_cb_szs;
+    std::vector<ID3D11BufferPtr> d3d11_cbs;
+
+    // shader
     void* vs_blob{};
     uint vs_blob_length{};
     ID3D11VertexShaderPtr d3d11_vs{};
     ID3D11PixelShaderPtr  d3d11_ps{};
 
-    stage stages[2];
-
-    // then assign others
-
     shader() = default;
     shader(const shader_desc& desc)
     {
         name = desc.name;
+
+        vs_uniform_block_sz = desc.vs_uniform_block_sz;
+        fs_uniform_block_sz = desc.fs_uniform_block_sz;
+
+        vs_samplers_sz = desc.vs_samplers_sz;
+        fs_samplers_sz = desc.fs_samplers_sz;
     }
 };
 
@@ -733,80 +738,71 @@ public:
         shader_id pid = pool_.insert(desc); // id in the pool
         shader& shd = pool_[pid];
 
-        for (uint i = 0; i < MaxShaderStages; ++i)
+        // create constant buffer
         {
             auto roundup = [](uint val, uint round_to) -> uint
             {
                 return (((val)+((round_to)-1))&~((round_to)-1));
             };
 
-            // TODO
-            uint ub_sz = (i == 0) ? desc.vs_uniform_block_sz : desc.fs_uniform_block_sz;
-            uint ub_start = (i == 0) ? 0 : desc.vs_uniform_block_sz;
+            uint ub_sz = desc.uniform_blocks.size();
+            shd.d3d11_cbs.resize(ub_sz);
+            shd.d3d11_cb_szs.resize(ub_sz);
 
-            auto& stage = shd.stages[i];
-            stage.d3d11_cbs.resize(ub_sz);
-            stage.d3d11_cb_szs.resize(ub_sz);
-
-            // create constant buffer
             for (int ub_index = 0; ub_index < ub_sz; ub_index++)
             {
-                const auto& ub_desc = desc.uniform_blocks[ub_start + ub_index];
+                const auto& ub_desc = desc.uniform_blocks[ub_index];
 
-                stage.d3d11_cb_szs[ub_index] = ub_desc.size;
+                shd.d3d11_cb_szs[ub_index] = ub_desc.size;
 
                 D3D11_BUFFER_DESC cb_desc;
                 memset(&cb_desc, 0, sizeof(cb_desc));
                 cb_desc.ByteWidth = roundup(ub_desc.size, 16); // remove
                 cb_desc.Usage = D3D11_USAGE_DEFAULT;
                 cb_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-                D3D_CHECK2(ctx_.device->CreateBuffer(&cb_desc, NULL, &stage.d3d11_cbs[ub_index]), stage.d3d11_cbs[ub_index]);
+                D3D_CHECK2(ctx_.device->CreateBuffer(&cb_desc, NULL, &shd.d3d11_cbs[ub_index]), shd.d3d11_cbs[ub_index]);
             }
-
-            // TODO
-            uint img_start = (i == 0) ? 0 : desc.vs_samplers_sz;
-            uint img_sz    = (i == 0) ? desc.vs_samplers_sz : desc.fs_samplers_sz;
-
-            stage.tex_types = std::vector(desc.samplers.cbegin() + img_start, desc.samplers.cbegin() + img_sz);
         }
 
-        const void *vs_ptr = 0, *ps_ptr = 0;
-        SIZE_T vs_length = 0, ps_length = 0;
-        ID3DBlob *vs_blob = 0, *ps_blob = 0;
-
-        /*
-        if (desc->vs.bytecode && desc->ps.bytecode) 
+        // compile shader code
         {
-            // create from byte code
-            vs_ptr = desc->vs.byte_code;
-            ps_ptr = desc->ps.byte_code;
-            vs_length = desc->vs.byte_code_size;
-            ps_length = desc->ps.byte_code_size;
-        }
-        else
-        */
-        {
-            // compile shader code
-            vs_blob = compile_shader(desc.vs, "vs_5_0");
-            ps_blob = compile_shader(desc.fs, "ps_5_0");
+            const void *vs_ptr = 0, *ps_ptr = 0;
+            SIZE_T vs_length = 0, ps_length = 0;
+            ID3DBlob *vs_blob = 0, *ps_blob = 0;
 
-            if (vs_blob && ps_blob) 
+            /*
+            if (desc->vs.bytecode && desc->ps.bytecode)
             {
-                vs_ptr = vs_blob->GetBufferPointer();
-                vs_length = vs_blob->GetBufferSize();
-                ps_ptr = ps_blob->GetBufferPointer();
-                ps_length = ps_blob->GetBufferSize();
+                // create from byte code
+                vs_ptr = desc->vs.byte_code;
+                ps_ptr = desc->ps.byte_code;
+                vs_length = desc->vs.byte_code_size;
+                ps_length = desc->ps.byte_code_size;
             }
+            else
+            */
+            {
+                vs_blob = compile_shader(desc.vs, "vs_5_0");
+                ps_blob = compile_shader(desc.fs, "ps_5_0");
+
+                if (vs_blob && ps_blob)
+                {
+                    vs_ptr = vs_blob->GetBufferPointer();
+                    vs_length = vs_blob->GetBufferSize();
+                    ps_ptr = ps_blob->GetBufferPointer();
+                    ps_length = ps_blob->GetBufferSize();
+                }
+            }
+
+            DCHECK(vs_ptr && ps_ptr && (vs_length > 0) && (ps_length > 0));
+
+            D3D_CHECK2(ctx_.device->CreateVertexShader(vs_ptr, vs_length, NULL, &shd.d3d11_vs), shd.d3d11_vs);
+            D3D_CHECK2(ctx_.device->CreatePixelShader(ps_ptr, ps_length, NULL, &shd.d3d11_ps), shd.d3d11_ps);
+
+            // need to store the vertex shader byte code, this is needed later in sg_create_pipeline
+            shd.vs_blob = vs_blob;
+            shd.vs_blob_length = vs_length;
         }
-
-        DCHECK(vs_ptr && ps_ptr && (vs_length > 0) && (ps_length > 0));
-
-        D3D_CHECK2(ctx_.device->CreateVertexShader(vs_ptr, vs_length, NULL, &shd.d3d11_vs), shd.d3d11_vs);
-        D3D_CHECK2(ctx_.device->CreatePixelShader(ps_ptr, ps_length, NULL, &shd.d3d11_ps), shd.d3d11_ps);
-
-        // need to store the vertex shader byte code, this is needed later in sg_create_pipeline
-        shd.vs_blob = vs_blob;
-        shd.vs_blob_length = vs_length;
 
         return pid;
     }
@@ -1135,23 +1131,20 @@ public:
     void apply_shader(const shader_id id) override
     {
         cmd_.shd = pool_[id];
+        cmd_.tex_ids = std::vector<texture_id>(cmd_.shd.vs_samplers_sz + cmd_.shd.fs_samplers_sz, texture_id(0u));
 
         ctx_.context->VSSetShader(cmd_.shd.d3d11_vs, NULL, 0);
-        ctx_.context->VSSetConstantBuffers(0, cmd_.shd.stages[0].d3d11_cb_szs.size(), reinterpret_cast<ID3D11Buffer**>(cmd_.shd.stages[0].d3d11_cbs.data()));
+        ctx_.context->VSSetConstantBuffers(0, cmd_.shd.vs_uniform_block_sz, reinterpret_cast<ID3D11Buffer**>(cmd_.shd.d3d11_cbs.data()));
         ctx_.context->PSSetShader(cmd_.shd.d3d11_ps, NULL, 0);
-        ctx_.context->PSSetConstantBuffers(0, cmd_.shd.stages[1].d3d11_cb_szs.size(), reinterpret_cast<ID3D11Buffer**>(cmd_.shd.stages[1].d3d11_cbs.data()));
+        ctx_.context->PSSetConstantBuffers(0, cmd_.shd.fs_uniform_block_sz, reinterpret_cast<ID3D11Buffer**>(cmd_.shd.d3d11_cbs.data() + cmd_.shd.vs_uniform_block_sz));
 
         log_ << ("shader   : "s + cmd_.shd.name + "\n");
     }
 
     // TODO: rename uniform_block
-    void bind_uniform(uint ub_index, const void* data, uint size, shader_stage stage) override
+    void bind_uniform(uint ub_index, const void* data, uint size, shader_stage /*stage*/) override
     {
-        // DCHECK
-
-        auto stage_index = stage == shader_stage::vertex ? 0 : 1;
-
-        ID3D11Buffer* cb = cmd_.shd.stages[stage_index].d3d11_cbs[ub_index];
+        ID3D11Buffer* cb = cmd_.shd.d3d11_cbs[ub_index];
         ctx_.context->UpdateSubresource((ID3D11Resource*)cb, 0, NULL, data, 0, 0);
 
         log_ << ("uniform block : "s + "TODO" + '\n');
@@ -1171,20 +1164,19 @@ public:
     }
     void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) override
     {
-        DCHECK((cmd_.shd.d3d11_vs != 0) && (cmd_.shd.d3d11_ps != 0));
-
         cmd_.buf_ids.push_back(id);
+
+        // FIXME
+        // have to bind all attrs of buffer
+        DCHECK(pool_[cmd_.buf_ids.back()].layout.size() == attrs.size());
 
         // delay all operators to 'bind_all_vertex_instance_buffers' stage
 
-        // defer bind buffer, bind_all_vertex_instance_buffers when draw
-
         log_ << ("buffer   : "s + pool_[id].name + '\n');
     }
-    void bind_texture(const texture_id id, int tex_unit, const std::string& sampler, shader_stage stage) override
+    void bind_texture(const texture_id id, int tex_index, const std::string& sampler, shader_stage /*stage*/) override
     {
-        auto stage_index = stage == shader_stage::vertex ? 0 : 1;
-        cmd_.tex_ids[stage_index].push_back(id);
+        cmd_.tex_ids[tex_index] = id;
 
         // log_ << ("texture  : "s + pool_[id].name + '\n');
     }
@@ -1373,6 +1365,8 @@ private:
 
     void bind_all_vertex_instance_buffers(UINT vb_offset = 0)
     {
+        DCHECK(cmd_.buf_ids.size() <= 2); // vertex buffer + instance buffer
+
         std::vector<D3D11_INPUT_ELEMENT_DESC> il_descs{};
 
         ID3D11Buffer* vbs[MaxShaderBuffers]{};
@@ -1383,7 +1377,8 @@ private:
         {
             const auto& buf = pool_[cmd_.buf_ids[i]];
 
-            // TODO
+            // TODO : input slot
+            il_descs.insert(il_descs.cend(), buf.layout.cbegin(), buf.layout.cend());
 
             vbs[i] = buf.d3d11_buf;
             vb_strides[i] = buf.stride;
@@ -1401,31 +1396,27 @@ private:
 
     void bind_all_textures()
     {
-        ID3D11ShaderResourceView* vs_srvs[MaxShaderTextures]{};
-        ID3D11SamplerState*       vs_smps[MaxShaderTextures]{};
-        ID3D11ShaderResourceView* fs_srvs[MaxShaderTextures]{};
-        ID3D11SamplerState*       fs_smps[MaxShaderTextures]{};
+        DCHECK((cmd_.shd.fs_samplers_sz + cmd_.shd.vs_samplers_sz) <= MaxShaderTextures);
 
-        for (uint i = 0; i < cmd_.tex_ids[0].size(); ++i)
+        ID3D11ShaderResourceView* srvs[MaxShaderTextures]{};
+        ID3D11SamplerState*       smps[MaxShaderTextures]{};
+
+        for (uint i = 0; i < cmd_.shd.vs_samplers_sz; ++i)
         {
-            const auto& tex = pool_[cmd_.tex_ids[0][i]];
+            if (cmd_.tex_ids[i])
+            {
+                const auto& tex = pool_[cmd_.tex_ids[i]];
 
-            vs_srvs[i] = tex.d3d11_srv;
-            vs_smps[i] = tex.d3d11_smp;
+                srvs[i] = tex.d3d11_srv;
+                smps[i] = tex.d3d11_smp;
+            }
         }
 
-        for (uint i = 0; i < cmd_.tex_ids[1].size(); ++i)
-        {
-            const auto& tex = pool_[cmd_.tex_ids[1][i]];
+        ctx_.context->VSSetShaderResources(0, cmd_.shd.vs_samplers_sz, srvs);
+        ctx_.context->VSSetSamplers(0,        cmd_.shd.vs_samplers_sz, smps);
 
-            fs_srvs[i] = tex.d3d11_srv;
-            fs_smps[i] = tex.d3d11_smp;
-        }
-
-        ctx_.context->VSSetShaderResources(0, MaxShaderTextures, vs_srvs);
-        ctx_.context->VSSetSamplers(0, MaxShaderTextures, vs_smps);
-        ctx_.context->PSSetShaderResources(0, MaxShaderTextures, fs_srvs);
-        ctx_.context->PSSetSamplers(0, MaxShaderTextures, fs_smps);
+        ctx_.context->PSSetShaderResources(0, cmd_.shd.fs_samplers_sz, srvs + cmd_.shd.vs_samplers_sz);
+        ctx_.context->PSSetSamplers(0,        cmd_.shd.fs_samplers_sz, smps + cmd_.shd.vs_samplers_sz);
     }
 
 private:
@@ -1459,7 +1450,7 @@ private:
     {
         buffer_id index_id{};
         std::vector<buffer_id> buf_ids{};
-        std::vector<texture_id> tex_ids[2]{}; // !!!
+        std::vector<texture_id> tex_ids{}; // !!!
 
         shader shd{};
         pipeline pipe{};

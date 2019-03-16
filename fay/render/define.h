@@ -236,7 +236,7 @@ enum class shader_stage
 
 enum class uniform_type
 {
-	invalid,
+	none,
 
     bvec1, // bool
     bvec2,

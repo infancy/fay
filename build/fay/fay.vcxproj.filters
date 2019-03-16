@@ -60,6 +60,9 @@
     <ClCompile Include="..\..\fay\render\backend_d3d11.cpp">
       <Filter>render</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\fay\render\shader.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\core\fay.h">
