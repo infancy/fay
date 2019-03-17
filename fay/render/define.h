@@ -257,9 +257,11 @@ enum class uniform_type
     vec2,
     vec3,
     vec4,
+
     mat2,
     mat3,
 	mat4,
+
     mat2x2,
     mat2x3,
     mat2x4,

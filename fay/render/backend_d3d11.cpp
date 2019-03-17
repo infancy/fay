@@ -1394,6 +1394,7 @@ private:
         ctx_.context->IASetVertexBuffers(0, MaxShaderBuffers, vbs, vb_strides, vb_offsets);
     }
 
+    // 0 texs check
     void bind_all_textures()
     {
         DCHECK((cmd_.shd.fs_samplers_sz + cmd_.shd.vs_samplers_sz) <= MaxShaderTextures);

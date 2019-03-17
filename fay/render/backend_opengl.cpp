@@ -104,7 +104,7 @@ void APIENTRY glDebugOutput(
 
 
 
-namespace backend_opengl_func
+inline namespace backend_opengl_func
 {
     void gl_enabled(GLenum cap, bool flag)
     {
@@ -283,9 +283,8 @@ namespace backend_opengl_func
         return { in_fmt, ex_fmt, ex_type };
     }
 }
-using namespace backend_opengl_func;
 
-namespace backend_opengl_type
+inline namespace backend_opengl_type
 {
     // -------------------------------------------------------------------------------------------------
     // helper types
@@ -673,9 +672,6 @@ namespace backend_opengl_type
         GLint location;
     };
 }
-using namespace backend_opengl_type;
-
-
 
 class backend_opengl : public render_backend
 {
