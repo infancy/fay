@@ -122,7 +122,7 @@ inline renderable_sp create_renderable(const std::string& model_path, render_dev
 
 inline shader_id create_shader(const std::string name, const std::string vs, const std::string fs, render_device* device)
 {
-    auto desc = fay::scan_shader_program(name, vs, fs);
+    auto desc = fay::scan_shader_program(name, vs, fs, device->type());
     return device->create(desc);
 }
 

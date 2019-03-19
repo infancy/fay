@@ -102,7 +102,7 @@ public:
         fay::image img("texture/awesomeface.png", true);
         auto triangle_tbo = create_2d(this->device, "hello", img);
 
-        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/3_uniform.vs", "gfx/test/3_uniform.fs");
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/3_uniform.vs", "gfx/test/3_uniform.fs", desc.render.backend);
         auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
@@ -205,7 +205,7 @@ public:
         fay::image img("texture/awesomeface.png", true);
         auto triangle_tbo = create_2d(this->device, "hello", img);
 
-        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/29_instancing.vs", "gfx/29_instancing.fs");
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/29_instancing.vs", "gfx/29_instancing.fs", desc.render.backend);
         auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
@@ -304,7 +304,7 @@ public:
 
     void debug_setup()
     {
-        fay::shader_desc sd = fay::scan_shader_program("light_shd", "gfx/lines.vs", "gfx/lines.fs");
+        fay::shader_desc sd = fay::scan_shader_program("light_shd", "gfx/lines.vs", "gfx/lines.fs", desc.render.backend);
         debug_shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
@@ -357,7 +357,7 @@ public:
         fay::image img("texture/awesomeface2.png");//, true);
         tex_id = create_2d(this->device, "hello", img);
 
-        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/offscreen.vs", "gfx/offscreen.fs");
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/offscreen.vs", "gfx/offscreen.fs", desc.render.backend);
         shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
@@ -439,7 +439,7 @@ public:
         mesh = fay::create_renderable(fay::Plants, device.get());
 
         {
-            fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/32_shadow_map.vs", "gfx/32_shadow_map.fs");
+            fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/32_shadow_map.vs", "gfx/32_shadow_map.fs", desc.render.backend);
             shd_id = device->create(sd);
 
             fay::pipeline_desc pd;
@@ -450,7 +450,7 @@ public:
         }
 
         {
-            fay::shader_desc sd = fay::scan_shader_program("shd2", "gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs");
+            fay::shader_desc sd = fay::scan_shader_program("shd2", "gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs", desc.render.backend);
             shd_id2 = device->create(sd);
 
             fay::pipeline_desc pd;
@@ -612,7 +612,7 @@ public:
         tex_id3 = create_2d(this->device, "normal", img3);
         tex_id4 = create_2d(this->device, "ao", img4);
 
-        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/pbr.vs", "gfx/pbr.fs");
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/pbr.vs", "gfx/pbr.fs", desc.render.backend);
         shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
@@ -1003,12 +1003,12 @@ public:
         }
 
         {
-            fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/30_phong_shading.vs", "gfx/38_g_buffer.fs", false);
+            fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/30_phong_shading.vs", "gfx/38_g_buffer.fs", desc.render.backend);
             shd_id = device->create(sd);
         }
 
         {
-            fay::shader_desc sd2 = fay::scan_shader_program("shd2", "gfx/two_passes.vs", "gfx/38_deferred_shading.fs", false);
+            fay::shader_desc sd2 = fay::scan_shader_program("shd2", "gfx/two_passes.vs", "gfx/38_deferred_shading.fs", desc.render.backend);
             shd_id2 = device->create(sd2);
         }
 
