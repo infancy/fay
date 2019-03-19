@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "fay/core/fay.h"
+#include "fay/core/range.h"
 #include "fay/render/define.h"
 #include "fay/render/pool.h"
 #include "fay/render/shader.h"
@@ -31,7 +32,7 @@ TEST(render, resource_id)
     
 }
 
-TEST(render, shader_glsl)
+TEST(render, shader_glsl_and_hlsl)
 {
     shader_desc desc;
     desc.layout =
@@ -72,16 +73,23 @@ TEST(render, shader_glsl)
         { "Parallax", texture_type::two },
     };
 
-    shader_desc test = scan_shader_program("test_render_shader", "test/test_render_glsl.vs", "test/test_render_glsl.fs");
+    shader_desc tests[2];
+    tests[0] = scan_shader_program("test_render_shader", "test/test_render_glsl.vs", "test/test_render_glsl.fs");
+    tests[1] = scan_shader_program("test_render_shader", "test/test_render_vs.hlsl", "test/test_render_fs.hlsl", true);
 
-    // ASSERT_TRUE(desc.vertex_names == test.vertex_names);
-    ASSERT_TRUE(desc.layout == test.layout);
+    for (uint i : range(2))
+    {
+        auto test = tests[i];
 
-    ASSERT_TRUE(desc.vs_uniform_block_sz == test.vs_uniform_block_sz);
-    ASSERT_TRUE(desc.fs_uniform_block_sz == test.fs_uniform_block_sz);
-    ASSERT_TRUE(desc.uniform_blocks == test.uniform_blocks);
+        // ASSERT_TRUE(desc.vertex_names == test.vertex_names);
+        ASSERT_TRUE(desc.layout == test.layout);
 
-    ASSERT_TRUE(desc.vs_samplers_sz == test.vs_samplers_sz);
-    ASSERT_TRUE(desc.fs_samplers_sz == test.fs_samplers_sz);
-    ASSERT_TRUE(desc.samplers == test.samplers);
+        ASSERT_TRUE(desc.vs_uniform_block_sz == test.vs_uniform_block_sz);
+        ASSERT_TRUE(desc.fs_uniform_block_sz == test.fs_uniform_block_sz);
+        ASSERT_TRUE(desc.uniform_blocks == test.uniform_blocks);
+
+        ASSERT_TRUE(desc.vs_samplers_sz == test.vs_samplers_sz);
+        ASSERT_TRUE(desc.fs_samplers_sz == test.fs_samplers_sz);
+        ASSERT_TRUE(desc.samplers == test.samplers);
+    }
 }

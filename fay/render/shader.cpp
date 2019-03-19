@@ -1,5 +1,6 @@
 #include <unordered_set>
 #include "fay/render/shader.h"
+#include "fay/resource/file.h"
 
 namespace fay
 {
@@ -359,10 +360,11 @@ std::string load_file_to_string(const std::string& filename)
 }
 
 // WARNING: ignore same files
-std::string add_include_files(std::string_view shader_code)
+std::string add_include_files(const std::string& shader_filepath)
 {
     std::unordered_set<std::string> included_files;
-    std::string code{ shader_code };
+    std::string directory = get_directory(shader_filepath);
+    std::string code{ load_file_to_string(shader_filepath) };
 
     while (true)
     {
@@ -373,21 +375,22 @@ std::string add_include_files(std::string_view shader_code)
         else
         {
             auto first_semicolon  = code.find('"', pound_pos);
-            auto second_semicolon = code.find('"', first_semicolon);
+            auto second_semicolon = code.find('"', first_semicolon + 1);
 
-            auto inc_filename = code.substr(first_semicolon, second_semicolon - first_semicolon);
+            auto inc_filename = code.substr(first_semicolon + 1, second_semicolon - first_semicolon - 1);
             
             std::string filecode;
             if (included_files.find(inc_filename) == included_files.end())
             {
-                included_files.emplace(std::move(inc_filename));
+                included_files.emplace(inc_filename);
 
-                filecode = load_file_to_string(inc_filename);
+                filecode = load_file_to_string(directory + inc_filename);
             }
-            code.replace(pound_pos, second_semicolon - pound_pos, std::move(filecode));
+            code.replace(pound_pos, second_semicolon - pound_pos + 1, std::move(filecode));
         }
     }
 
+    std::cout << "source_code begin:\n" << code << "\nsource_code end\n";
     return code;
 }
 
@@ -463,8 +466,10 @@ std::pair<shader_data_type, std::string_view> extracting_line_hlsl(shader_contex
 {
     if (words[0] == "struct")
     {
-        if(words[1] == "InputBlock")
+        if(words[1] == "VertexIn")
             return { shader_data_type::vertex_buffer, words[1] };
+        else if (words[1] == "VertexOut")
+            return { shader_data_type::none, {} };
         else
             return { shader_data_type::structure, words[1] };
     }
@@ -612,16 +617,11 @@ shader_desc scan_shader_program(const std::string shader_name, std::string vs_fi
     }
     */
 
-    const auto vs_text = load_text(vs_filepath);
-    const auto fs_text = load_text(fs_filepath);
+    std::string vs_code = add_include_files(vs_filepath);
+    std::string fs_code = add_include_files(fs_filepath);
 
-    std::stringstream vs_stream{};
-    std::stringstream fs_stream{};
-    vs_stream << vs_text.rdbuf();
-    fs_stream << fs_text.rdbuf();
-
-    std::string vs_code = vs_stream.str();
-    std::string fs_code = fs_stream.str();
+    std::stringstream vs_stream{ vs_code };
+    std::stringstream fs_stream{ fs_code };
 
     auto vs_ctx = extracting_context(vs_stream, is_hlsl);
     auto fs_ctx = extracting_context(fs_stream, is_hlsl);
