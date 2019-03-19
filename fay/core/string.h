@@ -86,8 +86,8 @@ inline std::string erase_white_spaces(
 
 // -------------------------------------------------------------------------------------------------
 
-// e.g. "layout (location = 0) in vec3 mPos;" -> "layout", "(", "location", "=", "0", ")", "in", "vec3", "mPos", ";"
-// e.g. " (a_b, 1.f) " -> "(", "a_b", ",", "1.f", ")"
+// e.g. layout (location = 0) in vec3 mPos; -> "layout", "(", "location", "=", "0", ")", "in", "vec3", "mPos", ";"
+// e.g. (a_b, 1.f) -> "(", "a_b", ",", "1.f", ")"
 inline std::vector<std::string_view> split(
     std::string_view str,
     bool save_special_char = true,

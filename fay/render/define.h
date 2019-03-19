@@ -711,15 +711,19 @@ struct shader_desc
 
     std::string name{ "defult" };
 
+    /*
+    union
+    {
+        std::string charcode{};
+        const char* bytecode{};
+    }
+    bool use_bytecode{};
+    */
     std::string vs{};
     std::string gs{};
     std::string fs{};
 
-    std::vector<std::string> vertex_names{};
     vertex_layout layout {};
-
-    // TODO: uniform
-    // std::vector<uniform> uniforms;
 
     uint vs_uniform_block_sz{};
     uint fs_uniform_block_sz{};

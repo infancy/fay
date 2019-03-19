@@ -1,7 +1,19 @@
+#include <unordered_set>
 #include "fay/render/shader.h"
 
 namespace fay
 {
+
+enum class shader_data_type
+{
+    none,
+
+    vertex_buffer,
+    texture,
+    sampler,
+    structure,
+    uniform_buffer,
+};
 
 struct shader_context
 {
@@ -34,7 +46,14 @@ const std::unordered_map<std::string_view, vertex_attribute> shader_vertex_map =
 
     // HLSL
 
+    { "float3 mPos", { attribute_usage::position,  attribute_format::float3, 1} },
+    { "float3 mNor", { attribute_usage::normal,    attribute_format::float3, 1} },
+    { "float2 mTex", { attribute_usage::texcoord0, attribute_format::float2, 1} },
+    { "float3 mTan", { attribute_usage::tangent,   attribute_format::float3, 1} },
+    { "float3 mBit", { attribute_usage::bitangent, attribute_format::float3, 1} },
 
+    // instance
+    { "matrix iModel", { attribute_usage::instance_model, attribute_format::float4, 4} },
 };
 
 const std::unordered_map<std::string_view, texture_type> shader_sampler_map =
@@ -65,7 +84,7 @@ class shader_uniform // uniform_block/constant_buffer
 {
 public:
     // WARNNING: std140 layout
-    const std::unordered_map<std::string_view, uniform_type> shader_uniform_map =
+    static const inline std::unordered_map<std::string_view, uniform_type> shader_uniform_map =
     {
         // GLSL
 
@@ -127,6 +146,8 @@ public:
         { "float3", uniform_type::vec3 },
         { "float4", uniform_type::vec4 },
 
+        { "matrix", uniform_type::mat4 },
+
         { "float2x2", uniform_type::mat2x2 },
         { "float2x3", uniform_type::mat2x3 }, // !!!: save as mat2x4
         { "float2x4", uniform_type::mat2x4 },
@@ -141,7 +162,7 @@ public:
 
     };
 
-    const std::unordered_map<uniform_type, uint> uniform_type_size_map =
+    static const inline std::unordered_map<uniform_type, uint> uniform_type_size_map =
     {
         { uniform_type::bvec1,  4 },
         { uniform_type::bvec2,  8 },
@@ -181,16 +202,25 @@ public:
     };
 
 public:
-    // TODO replace  'std::stringstream& stream' with 'std::string_view'
-    shader_desc::uniform_block uniform_block_info(std::stringstream& stream)
+    void parse_struct(std::string_view name, std::stringstream& stream)
     {
+        structs[std::string(name)] = extracting_block_types(stream);
+    }
 
+    shader_desc::uniform_block uniform_block_info(std::string_view name, std::stringstream& stream)
+    {
+        shader_desc::uniform_block ub;
+        ub.name = name;
+        ub.types = extracting_block_types(stream);
+        ub.size = compute_uniform_block_size(ub.types);
+
+        return ub;
     }
 
 private:
-    std::vector<uniform_type_size> uniform_block_extracting_types(std::stringstream& stream)
+    std::vector<uniform_type> extracting_block_types(std::stringstream& stream)
     {
-        std::vector<uniform_type_size> vs;
+        std::vector<uniform_type> vs;
 
         std::string line;
         std::getline(stream, line);
@@ -199,26 +229,46 @@ private:
 
         while (!stream.eof())
         {
-            std::getline(stream, line); // TODO: skip blank line
+            std::getline(stream, line);
             line = erase_white_spaces(line);
-            auto texts = split(line); // extracting_text(line);
-
-            if (texts.empty())
+            if (line.empty())
                 continue;
-
-            if (texts[0] == "}")
+            if (line.find('}') != std::string::npos) // function defines
                 break;
 
-            // TODO: have(shader_uniform_map, texts[0]);
-            DCHECK(shader_uniform_map.find(texts[0]) != shader_uniform_map.end()) << "can't parser the uniform_block: " << texts[0];
+            auto words = extracting_text(line);
+            if (words.empty())
+                continue;
 
-            vs.push_back(shader_uniform_map.at(texts[0]));
+            // 'vec3 pos' or 'Material mat'
+            std::vector<uniform_type> types;
+            if (shader_uniform_map.find(words[0]) != shader_uniform_map.end())
+            {
+                types.push_back(shader_uniform_map.at(words[0]));
+            }
+            else if (auto iter = structs.find(std::string(words[0])); iter != structs.end())
+            {
+                types = (*iter).second;
+            }
+            else
+            {
+                LOG(ERROR) << "can't parser the uniform_block: " << words[0];
+            }
+
+            uint sz = 1;
+            if (words.size() > 2)
+            {
+                sz = std::stoi(std::string(words[2])); // mat mats[2];
+            }
+            
+            for (auto i : range(sz))
+                vs.insert(vs.end(), types.begin(), types.end());
         }
 
         return vs;
     }
 
-    uint compute_uniform_block_size(const std::vector<uniform_type_size>& type_sizes)
+    uint compute_uniform_block_size(const std::vector<uniform_type>& type_sizes) const
     {
         uint total{};
 
@@ -232,7 +282,7 @@ private:
             }
         };
 
-        for (auto[type, size] : type_sizes)
+        for (auto type : type_sizes)
         {
             // first padding
             switch (type)
@@ -285,109 +335,233 @@ private:
             }
 
             // then add size
-            total += size;
+            total += uniform_type_size_map.at(type);
         }
 
         return total;
     }
 
 private:
-
+    std::unordered_map<std::string, std::vector<uniform_type>> structs;
 };
 
 inline namespace shader_func
 {
 
-// WARNING: report errors when include the same files
-std::string add_include_files(std::string_view shader_code)
+std::string load_file_to_string(const std::string& filename)
 {
+    auto file = load_text(filename);
 
+    std::stringstream str_stream{};
+    str_stream << file.rdbuf();
+
+    return str_stream.str();
 }
 
-shader_context extracting_context(std::stringstream& stream)
+// WARNING: ignore same files
+std::string add_include_files(std::string_view shader_code)
 {
+    std::unordered_set<std::string> included_files;
+    std::string code{ shader_code };
+
+    while (true)
+    {
+        auto pound_pos = code.find("#include");
+
+        if (pound_pos == std::string::npos)
+            break;
+        else
+        {
+            auto first_semicolon  = code.find('"', pound_pos);
+            auto second_semicolon = code.find('"', first_semicolon);
+
+            auto inc_filename = code.substr(first_semicolon, second_semicolon - first_semicolon);
+            
+            std::string filecode;
+            if (included_files.find(inc_filename) == included_files.end())
+            {
+                included_files.emplace(std::move(inc_filename));
+
+                filecode = load_file_to_string(inc_filename);
+            }
+            code.replace(pound_pos, second_semicolon - pound_pos, std::move(filecode));
+        }
+    }
+
+    return code;
+}
+
+#pragma region extracting_contex
+
+shader_desc::sampler generate_sampler_desc(std::string_view native_type, std::string_view name)
+{
+    DCHECK(shader_sampler_map.find(native_type) != shader_sampler_map.end()) << "can't parser the sampler: " << native_type;
+
+    shader_desc::sampler sampler{};
+    sampler.name = name;
+    sampler.type = shader_sampler_map.at(native_type);
+    
+    return sampler;
+}
+
+std::pair<shader_data_type, std::string_view> extracting_line_glsl(shader_context& ctx, const std::vector<std::string_view>& words)
+{
+    if (words[0] == "layout")
+    {
+        if (words[3] == "in") // vertex layout, e.g. layout (location = 0) in vec3 mPos;
+        {
+            DCHECK(ctx.entry_layout.size() == to_int(words[2]));
+            std::string name(words[4]);
+            name += ' ';
+            name += words[5];
+            DCHECK(shader_vertex_map.find(name) != shader_vertex_map.end()) << "can't parser the vertex layout: " << words[5];
+
+            ctx.entry_names.push_back(name);
+            ctx.entry_layout.push_back(shader_vertex_map.at(name));
+        }
+        else if (*(words.end() - 2) == "uniform") // uniform block, e.g. 'layout (std140) uniform light_paras{ ... }'
+        {
+            return { shader_data_type::uniform_buffer, words.back() };
+        }
+        else if (words[2] == "in") // layout(origin_upper_left) in vec4 gl_FragCoord;
+        {
+        }
+        else
+        {
+            LOG(ERROR) << "shouldn't be here";
+        }
+    }
+    else if (words[0] == "struct")
+    {
+        return { shader_data_type::structure, words[1] };
+    }
+    else if (words[0] == "uniform")
+    {
+        if (shader_sampler_map.find(words[1]) != shader_sampler_map.end()) // texture sampler, e.g. 'uniform sampler2D Ambient;'
+        {
+            ctx.samplers.emplace_back(generate_sampler_desc(words[1], words[2]));
+        }
+        else if (shader_uniform::shader_uniform_map.find(words[1]) != shader_uniform::shader_uniform_map.end()) // unifrom variable e.g. 'uniform vec3 LightPos;'
+        {
+            DCHECK(shader_uniform::shader_uniform_map.find(words[1]) != shader_uniform::shader_uniform_map.end()) << "can't parser the uniform variable: " << words[1];
+            // TODO
+        }
+        else
+        {
+            LOG(ERROR) << "shouldn't be here: " << words[0] << ' ' << words[1]; // TODO
+        }
+    }
+    else
+    {
+        LOG(ERROR) << "ignore: " << words[0]; // TODO
+    }
+
+    return { shader_data_type::none, {} };
+}
+
+std::pair<shader_data_type, std::string_view> extracting_line_hlsl(shader_context& ctx, const std::vector<std::string_view>& words)
+{
+    if (words[0] == "struct")
+    {
+        if(words[1] == "InputBlock")
+            return { shader_data_type::vertex_buffer, words[1] };
+        else
+            return { shader_data_type::structure, words[1] };
+    }
+    else if (words[0] == "sampler")
+    {
+
+    }
+    else if (have(words, "register"))
+    {
+        if (words[0] == "cbuffer")
+        {
+            return { shader_data_type::uniform_buffer, words[1] };
+        }
+        else // texture
+        {
+            ctx.samplers.emplace_back(generate_sampler_desc(words[0], words[1]));
+        }
+    }
+    else // parse input block
+    {
+        /*
+            struct VertexPosNormalTex
+            {
+                float3 mPos : POSITION;
+                float3 mNor : NORMAL;
+                float2 mTex : TEXCOORD0;
+            };
+        */
+        // DCHECK(ctx.entry_layout.size() == to_int(words[2]));
+
+        std::string name(words[0]);
+        name += ' ';
+        name += words[1];
+
+        if (shader_vertex_map.find(name) != shader_vertex_map.end())
+        {
+            ctx.entry_names.push_back(name);
+            ctx.entry_layout.push_back(shader_vertex_map.at(name));
+        }
+        else
+        {
+            LOG(ERROR) << "shouldn't be here: " << words[0] << ' ' << words[1];
+        }
+        
+    }
+
+    return { shader_data_type::none, {} };
+}
+
+shader_context extracting_context(std::stringstream& stream, bool is_hlsl = false)
+{
+    using namespace std;
+    function<pair<shader_data_type, string_view>(shader_context& ctx, const vector<string_view>& words)> extracting_line = is_hlsl
+        ? extracting_line_hlsl
+        : extracting_line_glsl;
+
+    shader_uniform uniform_parser;
     shader_context ctx{};
 
+    bool across_lines{};
     std::string line;
     while (!stream.eof())
     {
-        std::getline(stream, line); // TODO: skip blank line
+        std::getline(stream, line);
         line = erase_white_spaces(line);
+        if (line.empty())
+            continue;
+        if (line.find('@') != std::string::npos) // function defines
+            break;
+
         auto words = extracting_text(line);
         if (words.empty())
             continue;
 
-        if (words[0] == "layout")
+        auto pair = extracting_line(ctx, words);
+        switch (pair.first)
         {
-            if (words[3] == "in") // vertex layout, e.g. layout (location = 0) in vec3 mPos;
-            {
-                DCHECK(ctx.entry_layout.size() == to_int(words[2]));
-                std::string name(words[4]);
-                name += ' ';
-                name += words[5];
-                DCHECK(shader_vertex_map.find(name) != shader_vertex_map.end()) << "can't parser the vertex layout: " << words[5];
-
-                ctx.entry_names.push_back(name);
-                ctx.entry_layout.push_back(shader_vertex_map.at(name));
-            }
-            else if (*(words.end() - 2) == "uniform") // uniform block, e.g. 'layout (std140) uniform light_paras{ ... }'
-            {
-                auto type_size_pairs = uniform_block_extracting_types(stream);
-
-                shader_desc::uniform_block ub{};
-                ub.name = words.back();
-                ub.size = compute_uniform_block_size(type_size_pairs);
-
-                auto size = type_size_pairs.size();
-                ub.types.resize(size);
-                for (auto i : range(size))
-                    ub.types[i] = type_size_pairs[i].type;
-
-                ctx.uniform_blocks.emplace_back(std::move(ub));
-            }
-            else if (words[2] == "in") // layout(origin_upper_left) in vec4 gl_FragCoord;
-            {
-            }
-            else
-            {
-                LOG(ERROR) << "shouldn't be here";
-            }
+            case shader_data_type::vertex_buffer: // only used for HLSL
+                // do nothiing, continue parsing
+                break;
+            case shader_data_type::uniform_buffer:
+                ctx.uniform_blocks.emplace_back(uniform_parser.uniform_block_info(pair.second, stream));
+                break;
+            case shader_data_type::structure:
+                uniform_parser.parse_struct(pair.second, stream);
+                break;
+            default:
+                break;
         }
-        else if (words[0] == "uniform")
-        {
-            if (shader_sampler_map.find(words[1]) != shader_sampler_map.end())
-            {
-                // texture sampler
-                // uniform sampler2D Ambient;
-                DCHECK(shader_sampler_map.find(words[1]) != shader_sampler_map.end()) << "can't parser the sampler: " << words[1];
-
-                shader_desc::sampler sampler{};
-                sampler.name = std::string(words[2]);
-                sampler.type = shader_sampler_map.at(words[1]);
-                ctx.samplers.emplace_back(sampler);
-            }
-            else if (shader_uniform_map.find(words[1]) != shader_uniform_map.end())
-            {
-                // unifrom variable
-                // uniform vec3 LightPos;
-                DCHECK(shader_uniform_map.find(words[1]) != shader_uniform_map.end()) << "can't parser the uniform variable: " << words[1];
-                // TODO
-            }
-            else
-            {
-                LOG(ERROR) << "shouldn't be here: " << line;
-            }
-        }
-        else if (have(words, "(")) // goto: return
-        {
-            break;
-        }
-        // else if ...
     }
+
     // using aligna = alignas(8) bool;
     // goto: return
     return ctx;
 }
+
+#pragma endregion
 
 shader_desc merge_context(std::vector<shader_context>&& ctxs)
 {
@@ -396,7 +570,6 @@ shader_desc merge_context(std::vector<shader_context>&& ctxs)
 
     shader_desc desc;
 
-    desc.vertex_names = ctxs.front().entry_names;
     desc.layout = ctxs.front().entry_layout;
 
     desc.vs_uniform_block_sz = ctxs.front().uniform_blocks.size();
@@ -419,7 +592,7 @@ shader_desc merge_context(std::vector<shader_context>&& ctxs)
     return desc;
 }
 
-}
+} // namespace shader_func
 
 // TODO: scan_shader_program(const std::string shader_name, std::vector<std::string> shader)
 shader_desc scan_shader_program(const std::string shader_name, std::string vs_filepath, std::string fs_filepath, bool is_hlsl)
@@ -450,28 +623,18 @@ shader_desc scan_shader_program(const std::string shader_name, std::string vs_fi
     std::string vs_code = vs_stream.str();
     std::string fs_code = fs_stream.str();
 
-    shader_context vs_ctx{};
-    shader_context fs_ctx{};
-
-    if (is_hlsl)
-    {
-
-    }
-    else
-    {
-        vs_ctx = extracting_context(vs_stream);
-        fs_ctx = extracting_context(fs_stream);
-    }
+    auto vs_ctx = extracting_context(vs_stream, is_hlsl);
+    auto fs_ctx = extracting_context(fs_stream, is_hlsl);
 
     auto&& desc = merge_context({ vs_ctx, fs_ctx });
     desc.name = shader_name;
-    desc.vs = vs_code;
-    desc.fs = fs_code;
+    desc.vs = std::move(vs_code);
+    desc.fs = std::move(fs_code);
 
     std::cout << "\nshader " << desc.name << "'s context: \n";
 
     std::cout << "\nvertex names:\n";
-    for (const auto& str : desc.vertex_names)
+    for (const auto& str : vs_ctx.entry_names)
         std::cout << str << '\n';
 
     std::cout << "\nuniform blocks:\n";

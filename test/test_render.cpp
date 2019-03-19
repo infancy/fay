@@ -31,10 +31,9 @@ TEST(render, resource_id)
     
 }
 
-TEST(render, shader)
+TEST(render, shader_glsl)
 {
     shader_desc desc;
-    desc.vertex_names = { "vec3 mPos", "vec3 mNor", "vec2 mTex", "vec3 mTan", "vec3 mBit" };
     desc.layout =
     {
         { attribute_usage::position,  attribute_format::float3, 1},
@@ -75,7 +74,7 @@ TEST(render, shader)
 
     shader_desc test = scan_shader_program("test_render_shader", "test/test_render_glsl.vs", "test/test_render_glsl.fs");
 
-    ASSERT_TRUE(desc.vertex_names == test.vertex_names);
+    // ASSERT_TRUE(desc.vertex_names == test.vertex_names);
     ASSERT_TRUE(desc.layout == test.layout);
 
     ASSERT_TRUE(desc.vs_uniform_block_sz == test.vs_uniform_block_sz);
@@ -86,5 +85,3 @@ TEST(render, shader)
     ASSERT_TRUE(desc.fs_samplers_sz == test.fs_samplers_sz);
     ASSERT_TRUE(desc.samplers == test.samplers);
 }
-
-
