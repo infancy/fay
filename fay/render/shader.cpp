@@ -600,7 +600,7 @@ shader_desc merge_context(std::vector<shader_context>&& ctxs)
 } // namespace shader_func
 
 // TODO: scan_shader_program(const std::string shader_name, std::vector<std::string> shader)
-shader_desc scan_shader_program(const std::string shader_name, std::string vs_filepath, std::string fs_filepath, bool is_hlsl)
+shader_desc scan_shader_program(const std::string shader_name, std::string vs_filepath, std::string fs_filepath, render_backend_type backend_type)
 {
     /*
     if (buildin)
@@ -616,6 +616,14 @@ shader_desc scan_shader_program(const std::string shader_name, std::string vs_fi
         fs_stream.write(fs_filepath.data(), fs_filepath.size());
     }
     */
+
+    bool is_hlsl{ false };
+    if (backend_type == render_backend_type::d3d11)
+    {
+        is_hlsl = true;
+        vs_filepath.replace(vs_filepath.end() - 3, vs_filepath.end(), "_vs.hlsl");
+        fs_filepath.replace(fs_filepath.end() - 3, fs_filepath.end(), "_fs.hlsl");
+    }
 
     std::string vs_code = add_include_files(vs_filepath);
     std::string fs_code = add_include_files(fs_filepath);

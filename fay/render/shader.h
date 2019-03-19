@@ -8,6 +8,6 @@
 namespace fay
 {
 
-shader_desc scan_shader_program(const std::string shader_name, std::string vs_filepath, std::string fs_filepath, bool is_hlsl = false);
+shader_desc scan_shader_program(const std::string shader_name, std::string vs_filepath, std::string fs_filepath, render_backend_type backend_type);
 
 } // namespace fay

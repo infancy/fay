@@ -727,7 +727,7 @@ public:
             ctx_.buf = create(buffer_desc("backend_opengl_default_vbo", 6u, vertices, buffer_type::vertex,
                 vertex_layout{ { attribute_usage::position, fay::attribute_format::float3 }, { attribute_usage::texcoord0, fay::attribute_format::float2 } }));
 
-            auto shd_desc = scan_shader_program("backend_opengl_default_shd", "gfx/backend_opengl_default_shd.vs", "gfx/backend_opengl_default_shd.fs");
+            auto shd_desc = scan_shader_program("backend_opengl_default_shd", "gfx/backend_opengl_default_shd.vs", "gfx/backend_opengl_default_shd.fs", renderd_.backend);
             ctx_.shd = create(shd_desc);
 
             ctx_.pipe = create(pipeline_desc());

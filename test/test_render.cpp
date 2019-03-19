@@ -74,8 +74,8 @@ TEST(render, shader_glsl_and_hlsl)
     };
 
     shader_desc tests[2];
-    tests[0] = scan_shader_program("test_render_shader", "test/test_render_glsl.vs", "test/test_render_glsl.fs");
-    tests[1] = scan_shader_program("test_render_shader", "test/test_render_vs.hlsl", "test/test_render_fs.hlsl", true);
+    tests[0] = scan_shader_program("test_render_shader", "test/test_render.vs", "test/test_render.fs", render_backend_type::opengl);
+    tests[1] = scan_shader_program("test_render_shader", "test/test_render.vs", "test/test_render.fs", render_backend_type::d3d11);
 
     for (uint i : range(2))
     {
