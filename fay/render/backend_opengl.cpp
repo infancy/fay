@@ -561,7 +561,7 @@ inline namespace backend_opengl_type
             depth_enabled = desc.depth_enabled;
             depth_compare_op = compare_op_map.at(desc.depth_compare_op).opengl;
 
-            auto copy_stencil_state = [](pipeline::stencil_state dst, const pipeline_desc::stencil_state src)
+            auto copy_stencil_state = [](pipeline::stencil_state& dst, const pipeline_desc::stencil_state src)
             {
                 dst.fail_op       = stencil_op_map.at(src.fail_op).opengl;
                 dst.depth_fail_op = stencil_op_map.at(src.depth_fail_op).opengl;
@@ -579,11 +579,11 @@ inline namespace backend_opengl_type
             stencil_ref = desc.stencil_ref;
 
             // alpha-blending state
-            auto copy_blend_state = [](pipeline::blend_state dst, const pipeline_desc::blend_state src)
+            auto copy_blend_state = [](pipeline::blend_state& dst, const pipeline_desc::blend_state src)
             {
                 dst.src_factor = blend_factor_map.at(src.src_factor).opengl;
                 dst.dst_factor = blend_factor_map.at(src.dst_factor).opengl;
-                dst.blend_op       = blend_op_map.at(src.blend_op).opengl;
+                dst.blend_op   = blend_op_map.at(src.blend_op).opengl;
             };
 
             blend_enabled = desc.blend_enabled;

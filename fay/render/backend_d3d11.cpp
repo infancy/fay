@@ -457,7 +457,7 @@ struct pipeline
         depth_enabled = desc.depth_enabled;
         depth_compare_op = static_cast<D3D11_COMPARISON_FUNC>(compare_op_map.at(desc.depth_compare_op).d3d11);
 
-        auto copy_stencil_state = [](pipeline::stencil_state dst, const pipeline_desc::stencil_state src)
+        auto copy_stencil_state = [](pipeline::stencil_state& dst, const pipeline_desc::stencil_state src)
         {
             dst.fail_op       = static_cast<D3D11_STENCIL_OP>(stencil_op_map.at(src.fail_op).d3d11);
             dst.depth_fail_op = static_cast<D3D11_STENCIL_OP>(stencil_op_map.at(src.depth_fail_op).d3d11);
@@ -475,7 +475,7 @@ struct pipeline
         stencil_ref        = desc.stencil_ref;
 
         // alpha-blending state
-        auto copy_blend_state = [](pipeline::blend_state dst, const pipeline_desc::blend_state src)
+        auto copy_blend_state = [](pipeline::blend_state& dst, const pipeline_desc::blend_state src)
         {
             dst.src_factor = static_cast<D3D11_BLEND>(blend_factor_map.at(src.src_factor).d3d11);
             dst.dst_factor = static_cast<D3D11_BLEND>(blend_factor_map.at(src.dst_factor).d3d11);
@@ -836,11 +836,11 @@ public:
         ds_desc.DepthEnable      = TRUE;
         ds_desc.DepthWriteMask   = pipe.depth_enabled ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
         ds_desc.DepthFunc        = pipe.depth_compare_op;
-
+        
         ds_desc.StencilEnable    = pipe.stencil_enabled;
         ds_desc.StencilReadMask  = pipe.stencil_test_mask;
         ds_desc.StencilWriteMask = pipe.stencil_write_mask;
-
+        
         const auto& sfront = pipe.stencil_front;
         ds_desc.FrontFace.StencilFailOp      = sfront.fail_op;
         ds_desc.FrontFace.StencilDepthFailOp = sfront.depth_fail_op;
@@ -1475,4 +1475,4 @@ render_backend_ptr create_backend_d3d11(const render_desc& desc)
 
 } // namespace fay
 
-#endif
+#endif // FAY_IN_WINDOWS
