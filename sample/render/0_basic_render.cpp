@@ -32,7 +32,7 @@ public:
         fay::command_list cmd;
         cmd
             .begin_default_frame()
-            .set_viewport(0, 0, 720, 480)
+            //.set_viewport(360, 240, 720, 480)
             .set_scissor(360, 240, 720, 480)
             .clear_color({ 1.f, 0.f, 0.f, 1.f })
             .end_frame();
@@ -102,13 +102,17 @@ public:
         fay::image img("texture/awesomeface.png", true);
         auto triangle_tbo = create_2d(this->device, "hello", img);
 
-        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/3_uniform.vs", "gfx/test/3_uniform.fs", desc.render.backend);
+
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/0_basic.vs", "gfx/test/0_basic.fs", desc.render.backend);
+        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/1_buffer.vs", "gfx/test/1_buffer.fs", desc.render.backend);
+        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/2_texture.vs", "gfx/test/2_texture.fs", desc.render.backend);
+        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/3_uniform.vs", "gfx/test/3_uniform.fs", desc.render.backend);
         auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
         pd.name = "triangles";
         pd.primitive_type = fay::primitive_type::triangles;
-        pd.cull_mode = fay::cull_mode::none;
+        pd.cull_mode = fay::cull_mode::back;
         auto pipe_id = device->create(pd);
 
         paras.a = { 1.f, 0.f, 0.f, 1.f };
@@ -116,15 +120,16 @@ public:
 
         pass1
             .begin_default(pipe_id, shd_id)
-            .bind_textures({ triangle_tbo })
-            .bind_index(triangle_ib)
-            .bind_vertex(triangle_vb)
-            .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
-            .bind_uniform("flag", 1)
-            .draw_index(6, 0)
-            .bind_uniform("flag", 0)
-            .bind_uniform("window", glm::vec4(0.f, 0.f, 1080.f, 720.f))
-            .draw_index(3, 6)
+            //.bind_textures({ triangle_tbo })
+            //.bind_index(triangle_ib)
+            //.bind_vertex(triangle_vb)
+            //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
+            //.bind_uniform("flag", 1)
+            //.draw_index(6, 0)
+            //.bind_uniform("flag", 0)
+            //.bind_uniform("window", glm::vec4(0.f, 0.f, 1080.f, 720.f))
+            //.draw_index(3, 6)
+            .draw(3)
             .end_frame();
     }
 

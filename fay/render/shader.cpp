@@ -571,7 +571,7 @@ shader_context extracting_context(std::stringstream& stream, bool is_hlsl = fals
 shader_desc merge_context(std::vector<shader_context>&& ctxs)
 {
     DCHECK(ctxs.size() >= 2);
-    DCHECK(ctxs[0].entry_layout.size() > 0);
+    // DCHECK(ctxs[0].entry_layout.size() > 0);
 
     shader_desc desc;
 

@@ -585,6 +585,7 @@ struct texture_desc
     pixel_format format{};
 
     uint size{}; // used for compressed texture
+    // TODO: std::array<const void*, 6> data{};
     std::vector<const void*> data{};
 
     texture_type type{ texture_type::two };
@@ -605,8 +606,7 @@ struct texture_desc
     float max_lod{ 1000.f }; // max_float
 
     // rename: target
-    // render_target as_render_target{ render_target::none };
-    render_target as_render_target{ render_target::color }; // used as render target or depth_stencil target is depended by pixel_format
+    render_target as_render_target{ render_target::none }; // used as render target or depth_stencil target is depended by pixel_format
     uint rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target
 
     texture_desc() = default; // for texture2d

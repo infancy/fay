@@ -592,7 +592,13 @@ public:
         if (desc.as_render_target == render_target::color) //!is_dpeth_stencil_pixel_format(desc.format))
         {
            // prepare initial content pointers
-            D3D11_SUBRESOURCE_DATA* init_data{};
+            D3D11_SUBRESOURCE_DATA* init_data_ptr{ nullptr };
+            std::vector<D3D11_SUBRESOURCE_DATA> sub_data;
+            if (desc.usage == resource_usage::immutable)
+            {
+                sub_data = texture_subres_data(desc);
+                init_data_ptr = sub_data.data();
+            }
 
             // TODO: auto gen mipmaps
             // https://github.com/Microsoft/DirectXTK/wiki/DDSTextureLoader
@@ -626,7 +632,7 @@ public:
                 d3d11_tex_desc.SampleDesc.Quality = 0;
                 d3d11_tex_desc.MiscFlags = (desc.type == texture_type::cube) ? D3D11_RESOURCE_MISC_TEXTURECUBE : 0;
 
-                D3D_CHECK2(ctx_.device->CreateTexture2D(&d3d11_tex_desc, init_data, &tex.d3d11_tex2d), tex.d3d11_tex2d);
+                D3D_CHECK2(ctx_.device->CreateTexture2D(&d3d11_tex_desc, init_data_ptr, &tex.d3d11_tex2d), tex.d3d11_tex2d);
 
                 /* also need to create a separate MSAA render target texture? */
                 if (tex.rt_sample_count > 1) 
@@ -687,7 +693,7 @@ public:
                     d3d11_tex_desc.CPUAccessFlags = cpu_access_flag(tex.usage);
                 }
 
-                D3D_CHECK2(ctx_.device->CreateTexture3D(&d3d11_tex_desc, init_data, &tex.d3d11_tex3d), tex.d3d11_tex3d);
+                D3D_CHECK2(ctx_.device->CreateTexture3D(&d3d11_tex_desc, init_data_ptr, &tex.d3d11_tex3d), tex.d3d11_tex3d);
 
                 /* shader resource view for 3d texture */
                 D3D11_SHADER_RESOURCE_VIEW_DESC d3d11_srv_desc;
@@ -961,7 +967,7 @@ public:
     // render
     void begin_frame(frame_id id) override
     {
-        clear_context_state();
+        //clear_context_state();
         cmd_ = command_list_context{};
 
         D3D11_VIEWPORT vp;
@@ -994,7 +1000,8 @@ public:
             cmd_.is_offscreen = false;
             // TODO: cmd_.frm = ctx_.frm;
 
-            ctx_.context->OMSetRenderTargets(1, &ctx_.rtv, ctx_.dsv);
+            ID3D11RenderTargetView* rtvs[1]{ ctx_.rtv };
+            ctx_.context->OMSetRenderTargets(1, rtvs, ctx_.dsv);
 
             vp.Width = (FLOAT)renderd_.width;
             vp.Height = (FLOAT)renderd_.height;
@@ -1033,6 +1040,10 @@ public:
                         tex.format);
                 }
             }
+        }
+        else
+        {
+            ctx_.swapchain->Present(0, 0);
         }
 
         // log info
@@ -1299,7 +1310,8 @@ private:
         D3D_CHECK2(ctx_.device->CreateTexture2D(&ds_desc, nullptr, &ctx_.dst), ctx_.dst);
         D3D_CHECK2(ctx_.device->CreateDepthStencilView((ID3D11Resource*)ctx_.dst, nullptr, &ctx_.dsv), ctx_.dsv);
 
-        ctx_.context->OMSetRenderTargets(1, &ctx_.rtv, ctx_.dsv);
+        ID3D11RenderTargetView* rtvs[1] { ctx_.rtv };
+        ctx_.context->OMSetRenderTargets(1, rtvs, ctx_.dsv);
 
         // TODO
         ctx_.viewport.TopLeftX = 0;
@@ -1337,6 +1349,60 @@ private:
         ctx_.context->OMSetBlendState(NULL, NULL, 0xFFFFFFFF);
     }
 
+    uint row_pitch(pixel_format fmt, uint width)
+    {
+        if (is_compressed_pixel_format(fmt))
+        {
+            LOG(ERROR);
+            return 0;
+        }
+        else
+        {
+            return bytesize(fmt) * width;
+        }
+    }
+
+    std::vector<D3D11_SUBRESOURCE_DATA> texture_subres_data(const texture_desc& desc)
+    {
+        const int num_faces = (desc.type == texture_type::cube) ? 6 : 1;
+        const int num_slices = (desc.type == texture_type::array) ? desc.depth : 1;
+
+        std::vector<D3D11_SUBRESOURCE_DATA> subres_datas;
+        subres_datas.resize(num_faces * num_slices * desc.mipmaps);
+
+        int subres_index = 0;
+        for (int face_index = 0; face_index < num_faces; ++face_index)
+        {
+            for (int slice_index = 0; slice_index < num_slices; ++slice_index)
+            {
+                for (int mip_index = 0; mip_index < desc.mipmaps; ++mip_index, ++subres_index)
+                {
+                    const int mip_width =   ((desc.width >> mip_index) > 0) ?  desc.width >> mip_index : 1;
+                    const int mip_height = ((desc.height >> mip_index) > 0) ? desc.height >> mip_index : 1;
+
+                    // const sg_subimage_content* subimg_content = &(content->subimage[face_index][mip_index]);
+
+                    const int slice_size = desc.size / num_slices;
+                    const int slice_offset = slice_size * slice_index;
+
+                    const uint8_t* ptr = static_cast<const uint8_t*>(desc.data[face_index]);
+
+                    D3D11_SUBRESOURCE_DATA& subres_data = subres_datas[subres_index];
+                    subres_data.pSysMem = ptr + slice_offset;
+                    subres_data.SysMemPitch = row_pitch(desc.format, mip_width);
+                    subres_data.SysMemSlicePitch = 0;
+                    if (desc.type == texture_type::three)
+                    {
+                        // TODO
+                        // subres_data->SysMemSlicePitch = surface_pitch(desc.pixel_format, mip_width, mip_height);
+                    }
+                }
+            }
+        }
+
+        return subres_datas;
+    }
+
     ID3DBlobPtr compile_shader(const std::string& src, const char* target) 
     {
         ID3DBlob* output = NULL;
@@ -1356,8 +1422,7 @@ private:
 
         if (errors)
         {
-            // SOKOL_LOG((LPCSTR)ID3D10Blob_GetBufferPointer(errors));
-            LOG(ERROR);
+            LOG(ERROR) << static_cast<LPCSTR>(errors->GetBufferPointer());
         }
 
         return output;
@@ -1385,13 +1450,16 @@ private:
             // vb_offsets
         }
 
-        ID3D11InputLayoutPtr il;
-        D3D_CHECK2(ctx_.device->CreateInputLayout(
-            il_descs.data(), il_descs.size(), cmd_.shd.vs_blob, cmd_.shd.vs_blob_length,
-            &il), il);
+        if (il_descs.size() > 0)
+        {
+            ID3D11InputLayoutPtr il;
+            D3D_CHECK2(ctx_.device->CreateInputLayout(
+                il_descs.data(), il_descs.size(), cmd_.shd.vs_blob, cmd_.shd.vs_blob_length,
+                &il), il);
 
-        ctx_.context->IASetInputLayout(il);
-        ctx_.context->IASetVertexBuffers(0, MaxShaderBuffers, vbs, vb_strides, vb_offsets);
+            ctx_.context->IASetInputLayout(il);
+            ctx_.context->IASetVertexBuffers(0, MaxShaderBuffers, vbs, vb_strides, vb_offsets);
+        }
     }
 
     // 0 texs check

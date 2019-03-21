@@ -137,7 +137,6 @@ inline texture_desc create_texture_desc(
     wrap_mode wrap, 
     filter_mode filter)
 {
-
     fay::texture_desc desc;
 
     // TODO
@@ -198,13 +197,14 @@ inline texture_id create_readable_depth_map(const std::string& name, size_t widt
     return device->create(desc);
 }
 
-inline texture_id create_2d(render_device_ptr& device, const std::string& name, const image& img)
+inline texture_id create_2d(render_device_ptr& device, const std::string& name, const image& img, bool as_target = true)
 {
     texture_desc desc;
 
     desc.name = name;
     desc.width = img.width();
     desc.height = img.height();
+    desc.depth = 1;
     desc.format = img.format();
 
     desc.size = img.size() * img.pixel_size();
@@ -213,15 +213,18 @@ inline texture_id create_2d(render_device_ptr& device, const std::string& name, 
 
     desc.type = texture_type::two;
 
+    desc.as_render_target = as_target ? render_target::color : render_target::none;
+
     return device->create(desc);
 }
 
-inline fay::texture_id create_cubemap(render_device* device, const std::string& name, size_t width, size_t height, fay::pixel_format fmt, size_t pixel_bytesize, bool mipmap = false) // TODO: compute pixel_bytesize by help func
+inline fay::texture_id create_cubemap(render_device* device, const std::string& name, size_t width, size_t height, fay::pixel_format fmt, size_t pixel_bytesize, bool mipmap = false, bool as_target = true) // TODO: compute pixel_bytesize by help func
 {
     fay::texture_desc desc;
     desc.name = name;
     desc.width = width;
     desc.height = height;
+    desc.depth = 1;
     desc.type = fay::texture_type::cube;
     desc.format = fmt;
 
@@ -233,14 +236,18 @@ inline fay::texture_id create_cubemap(render_device* device, const std::string& 
     desc.wrap_w = wrap_mode::clamp_to_edge;
     desc.mipmap = mipmap;
 
+    desc.as_render_target = as_target ? render_target::color : render_target::none;
+
     return device->create(desc);
 }
 
+/*
 inline fay::texture_id create_cubemap(render_device* device, const std::string& name, const image& img) // TODO: compute pixel_bytesize by help func
 {
     // FIXME
     return create_cubemap(device, name, img.width(), img.height(), img.format(), img.pixel_size());
 }
+*/
 
 // -------------------------------------------------------------------------------------------------
 
