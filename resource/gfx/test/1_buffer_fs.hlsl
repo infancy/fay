@@ -1,7 +1,7 @@
-#version 330 core
-out vec4 FragColor;
+#include "test_render_struct.hlsli"
 
-void main()
+// @
+float4 main(VertexOut vOut) : SV_TARGET
 {
-   FragColor = vec4(1.0, 1.0, 1.0, 1.0f);
+   return float4(vOut.rPos.x / 1080, vOut.rPos.y / 720, 0.f, 1.f);
 }

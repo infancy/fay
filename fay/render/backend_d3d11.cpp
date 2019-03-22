@@ -162,7 +162,7 @@ semantic_name_map
 {
     { attribute_usage::position,       "POSITION" },
     { attribute_usage::normal,         "NORMAL" },
-    { attribute_usage::texcoord0,      "TEXCOORD0" },
+    { attribute_usage::texcoord0,      "TEXCOORD" },
     { attribute_usage::tangent,        "TANGENT" },
     { attribute_usage::bitangent,      "BITANGENT" },
     { attribute_usage::instance_model, "INSTANCE_MODEL" },
@@ -225,6 +225,8 @@ struct buffer // : public buffer_desc
         type = buffer_type_map.at(desc.type).d3d11;
         usage = static_cast<D3D11_USAGE>(resource_usage_map.at(desc.usage).d3d11);
 
+        stride = desc.stride; // TODO
+
         if (desc.type == buffer_type::vertex || desc.type == buffer_type::instance)
         {
             uint offset = 0;
@@ -258,8 +260,6 @@ struct buffer // : public buffer_desc
                     a.InstanceDataStepRate = 1;
                 }
             }
-
-            stride = offset;
         }
     }
 };
@@ -356,8 +356,8 @@ struct shader
     std::vector<ID3D11BufferPtr> d3d11_cbs;
 
     // shader
-    void* vs_blob{};
-    uint vs_blob_length{};
+    memory vs_blob{};
+    ID3DBlobPtr vs_blob2{};
     ID3D11VertexShaderPtr d3d11_vs{};
     ID3D11PixelShaderPtr  d3d11_ps{};
 
@@ -567,7 +567,7 @@ public:
 
         D3D11_BUFFER_DESC d3d11_desc;
         memset(&d3d11_desc, 0, sizeof(d3d11_desc));
-        d3d11_desc.ByteWidth = buf.size;
+        d3d11_desc.ByteWidth = buf.size * buf.stride;
         d3d11_desc.Usage = static_cast<D3D11_USAGE>(buf.usage);
         d3d11_desc.BindFlags = buf.type;
         d3d11_desc.CPUAccessFlags = cpu_access_flag(buf.usage);
@@ -772,9 +772,9 @@ public:
 
         // compile shader code
         {
-            const void *vs_ptr = 0, *ps_ptr = 0;
+            void *vs_ptr = 0, *ps_ptr = 0;
             SIZE_T vs_length = 0, ps_length = 0;
-            ID3DBlob *vs_blob = 0, *ps_blob = 0;
+            ID3DBlobPtr vs_blob = 0, ps_blob = 0;
 
             /*
             if (desc->vs.bytecode && desc->ps.bytecode)
@@ -806,8 +806,8 @@ public:
             D3D_CHECK2(ctx_.device->CreatePixelShader(ps_ptr, ps_length, NULL, &shd.d3d11_ps), shd.d3d11_ps);
 
             // need to store the vertex shader byte code, this is needed later in sg_create_pipeline
-            shd.vs_blob = vs_blob;
-            shd.vs_blob_length = vs_length;
+            shd.vs_blob = memory(static_cast<uint8_t*>(vs_ptr), vs_length);
+            shd.vs_blob2 = vs_blob;
         }
 
         return pid;
@@ -1454,7 +1454,7 @@ private:
         {
             ID3D11InputLayoutPtr il;
             D3D_CHECK2(ctx_.device->CreateInputLayout(
-                il_descs.data(), il_descs.size(), cmd_.shd.vs_blob, cmd_.shd.vs_blob_length,
+                il_descs.data(), il_descs.size(), cmd_.shd.vs_blob2->GetBufferPointer(), cmd_.shd.vs_blob2->GetBufferSize(),
                 &il), il);
 
             ctx_.context->IASetInputLayout(il);
