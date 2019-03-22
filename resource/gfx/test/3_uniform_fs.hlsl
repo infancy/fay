@@ -1,28 +1,29 @@
-#version 330 core
-in vec2 vTex;
-out vec4 FragColor;
+#include "test_render_struct.hlsli"
 
-uniform sampler2D Diffuse;
+Texture2D gTex : register(t0);
+SamplerState gSampler : register(s0);
 
-layout (std140) uniform color
-{
-    vec4 a;
-    vec4 b;
+cbuffer params : register(b0)
+{   
+    float4 window;
+    int flag;
 };
 
-uniform int flag;
-uniform vec4 window; // origin_xy, width, height
-
-void main()
+// @
+float4 main(VertexOut vOut) : SV_TARGET
 {
-    if(flag == 1)
-        FragColor = texture(Diffuse, vTex);
+    float4 color;
+
+   if(flag == 1)
+        color = gTex.Sample(gSampler, vOut.rTex);
     else
     {
-        float y = gl_FragCoord.y / window.w;
-        FragColor = vec4(y, y, y, 1.f);
+        float y = vOut.rPos.y / window.w;
+        color = float4(y, y, y, 1.f);
     }
 
-    if((gl_FragCoord.x < window.z / 2) && (gl_FragCoord.y < window.w / 2))
-        FragColor = vec4(1.0, 0.0, 0.0, 1.f);
+    if((vOut.rPos.x < window.z / 2) && (vOut.rPos.y < window.w / 2))
+        color = float4(1.0, 0.0, 0.0, 1.f);
+
+    return color;
 }
