@@ -1,10 +1,10 @@
-#version 330 core
-in vec2 vTex;
-out vec4 FragColor;
+#include "test_render_struct.hlsli"
 
-uniform sampler2D Diffuse;
+Texture2D gTex : register(t0);
+SamplerState gSampler : register(s0);
 
-void main()
+// @
+float4 main(VertexOut vOut) : SV_TARGET
 {
-   FragColor = texture(Diffuse, vTex);
+   return gTex.Sample(gSampler, vOut.rTex);
 }

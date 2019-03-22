@@ -483,7 +483,7 @@ std::pair<shader_data_type, std::string_view> extracting_line_hlsl(shader_contex
         {
             return { shader_data_type::uniform_buffer, words[1] };
         }
-        else // texture
+        else if(words[0].find("Texture") != std::string_view::npos)
         {
             ctx.samplers.emplace_back(generate_sampler_desc(words[0], words[1]));
         }

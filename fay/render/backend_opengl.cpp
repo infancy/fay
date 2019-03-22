@@ -784,7 +784,7 @@ public:
         texture_id pid = pool_.insert(desc); // id in the pool
         texture& tex = pool_[pid];
 
-        if (desc.as_render_target == render_target::color) //!is_dpeth_stencil_pixel_format(desc.format))
+        if (!enum_have(render_target::DepthStencil, desc.as_render_target)) //!is_dpeth_stencil_pixel_format(desc.format))
         {
             // 0. create texture id
             glActiveTexture(GL_TEXTURE0);
@@ -871,7 +871,7 @@ public:
                     pixel_internal_format(desc.format), tex.width, tex.height);
             }
         }
-        else if(enum_have(render_target::DepthStencil, desc.as_render_target))// reanme: depth_or_stencil
+        else
         {
                     /*
 
@@ -913,11 +913,7 @@ public:
             }
             */
         }
-        else
-        {
-            DCHECK(false) << "shouldn't be here";
-        }
-
+        
         glcheck_errors();
         return pid;
 	}

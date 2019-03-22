@@ -589,7 +589,7 @@ public:
         texture_id pid = pool_.insert(desc); // id in the pool
         texture& tex = pool_[pid];
 
-        if (desc.as_render_target == render_target::color) //!is_dpeth_stencil_pixel_format(desc.format))
+        if (!enum_have(render_target::DepthStencil, desc.as_render_target)) //!is_dpeth_stencil_pixel_format(desc.format))
         {
            // prepare initial content pointers
             D3D11_SUBRESOURCE_DATA* init_data_ptr{ nullptr };
@@ -717,7 +717,7 @@ public:
             d3d11_smp_desc.MaxLOD = desc.max_lod;
             D3D_CHECK2(ctx_.device->CreateSamplerState(&d3d11_smp_desc, &tex.d3d11_smp), tex.d3d11_smp);
         }
-        else if (enum_have(render_target::DepthStencil, desc.as_render_target))// reanme: depth_or_stencil
+        else
         {
             D3D11_TEXTURE2D_DESC d3d11_desc;
             memset(&d3d11_desc, 0, sizeof(d3d11_desc));
@@ -731,10 +731,6 @@ public:
             d3d11_desc.Usage = D3D11_USAGE_DEFAULT;
             d3d11_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
             D3D_CHECK2(ctx_.device->CreateTexture2D(&d3d11_desc, NULL, &tex.d3d11_texds), tex.d3d11_texds);
-        }
-        else
-        {
-            DCHECK(false) << "shouldn't be here";
         }
 
         return pid;
@@ -1203,6 +1199,7 @@ public:
 
     void draw(uint count, uint first, uint instance_count) override
     {
+        bind_all_textures();
         bind_all_vertex_instance_buffers();
 
         if (instance_count == 1) 
@@ -1218,6 +1215,7 @@ public:
     }
     void draw_index(uint count, uint first, uint instance_count) override
     {
+        bind_all_textures();
         bind_all_vertex_instance_buffers();
 
         if (instance_count == 1) 
@@ -1470,7 +1468,7 @@ private:
         ID3D11ShaderResourceView* srvs[MaxShaderTextures]{};
         ID3D11SamplerState*       smps[MaxShaderTextures]{};
 
-        for (uint i = 0; i < cmd_.shd.vs_samplers_sz; ++i)
+        for (uint i = 0; i < cmd_.tex_ids.size(); ++i)
         {
             if (cmd_.tex_ids[i])
             {

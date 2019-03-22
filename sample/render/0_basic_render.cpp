@@ -103,8 +103,8 @@ public:
         auto triangle_tbo = create_2d(this->device, "hello", img);
 
         //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/0_basic.vs", "gfx/test/0_basic.fs", desc.render.backend);
-        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/1_buffer.vs", "gfx/test/1_buffer.fs", desc.render.backend);
-        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/2_texture.vs", "gfx/test/2_texture.fs", desc.render.backend);
+        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/1_buffer.vs", "gfx/test/1_buffer.fs", desc.render.backend);
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/2_texture.vs", "gfx/test/2_texture.fs", desc.render.backend);
         //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/3_uniform.vs", "gfx/test/3_uniform.fs", desc.render.backend);
         auto shd_id = device->create(sd);
 
@@ -119,7 +119,7 @@ public:
 
         pass1
             .begin_default(pipe_id, shd_id)
-            //.bind_textures({ triangle_tbo })
+            .bind_textures({ triangle_tbo })
             .bind_index(triangle_ib)
             .bind_vertex(triangle_vb)
             //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })

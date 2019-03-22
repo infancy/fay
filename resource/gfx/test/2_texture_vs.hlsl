@@ -1,11 +1,11 @@
-#version 330 core
-layout (location = 0) in vec3 mPos;
-layout (location = 1) in vec2 mTex;
+#include "test_render_struct.hlsli"
 
-out vec2 vTex;
-
-void main()
+// @
+VertexOut main(VertexIn vIn)
 {
-   vTex = mTex;
-   gl_Position = vec4(mPos.x, mPos.y, mPos.z, 1.0);
+    VertexOut vOut;
+    vOut.rPos = float4(vIn.mPos, 1.f);
+    vOut.rTex = vIn.mTex;
+
+    return vOut;
 }
