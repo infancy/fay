@@ -9,6 +9,7 @@
 #include "fay/core/fay.h"
 #include "fay/core/memory.h"
 #include "fay/core/range.h"
+#include "fay/core/utility.h"
 
 namespace fay
 {
@@ -532,6 +533,7 @@ public:
 // vertex buffer, index buffer, instance buffer
 struct buffer_desc
 {
+public:
     std::string name { "defult" };
 
     uint    size{}; // vertex/index nums
@@ -551,6 +553,7 @@ struct buffer_desc
     // TODO: remove it
     // uint instance_rate{};
 
+public:
     buffer_desc() = default;
     buffer_desc(std::string_view name, uint size, const void* data, buffer_type type = buffer_type::index, vertex_layout layout = {})
         : name{ name }
@@ -576,6 +579,7 @@ struct buffer_desc
 
 struct texture_desc
 {
+public:
     std::string name{ "defult" };
 
 	uint width{};
@@ -609,6 +613,7 @@ struct texture_desc
     render_target as_render_target{ render_target::none }; // used as render target or depth_stencil target is depended by pixel_format
     uint rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target
 
+public:
     texture_desc() = default; // for texture2d
     texture_desc(std::string_view name, uint width, uint height, pixel_format format, texture_type type = texture_type::two, std::vector<const void*> data = { nullptr })
         : name{ name }
@@ -681,6 +686,7 @@ struct texture_desc
 // shader sources(not filepath) + uniform blocks + texutres 
 struct shader_desc
 {
+public:
     struct uniform_block
     {
         std::string name{};
@@ -709,6 +715,7 @@ struct shader_desc
         }
     };
 
+public:
     std::string name{ "defult" };
 
     /*
@@ -735,6 +742,25 @@ struct shader_desc
     std::vector<sampler> samplers{};
     //std::vector<sampler> vs_samplers{};
     //std::vector<sampler> fs_samplers{};
+
+public:
+
+    std::pair<uint, shader_stage> ub_info(const std::string& name, uint size) const
+    {
+        auto opt_idx = fay::index(uniform_blocks, [name, size](auto&& ub)
+        {
+            return (ub.name == name) && (0 == size || ub.size == size);
+        });
+
+        DCHECK(opt_idx.has_value()) << "can't find this uniform_block";
+        uint idx = opt_idx.value();
+
+        DCHECK(size == 0 || size == uniform_blocks[idx].size) << "input unifrom block size isn't match";
+
+        auto stage = (idx < vs_uniform_block_sz) ? shader_stage::vertex : shader_stage::fragment; // !!!
+
+        return { idx, stage };
+    }
 };
 
 /*

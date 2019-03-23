@@ -1,7 +1,6 @@
 #include "fay/gfx/renderable.h"
 #include "fay/render/define.h"
 
-
 namespace fay
 {
 

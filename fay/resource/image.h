@@ -103,14 +103,15 @@ public:
         void* src{};
         if (is_hdr_)
         {
-            src = stbi_loadf(filepath.c_str(), &width_, &height_, &channel_, 0);
+            src = stbi_loadf(filepath.c_str(), &width_, &height_, &channel_, 4);
         }
         else
         {
-            src = stbi_load(filepath.c_str(), &width_, &height_, &channel_, 0);
+            src = stbi_load(filepath.c_str(), &width_, &height_, &channel_, 4);
         }
         LOG_IF(ERROR, src == nullptr) << "image failed to load at path: " << filepath;
 
+        channel_ = 4; // always read 4-channel
         fmt_ = to_format(channel());
 
         resize(size(), pixel_size());

@@ -357,10 +357,10 @@ public:
         add_update_items();
 
         mesh = fay::create_raw_renderable(fay::Box, device.get());
-        mesh2 = fay::create_renderable(fay::Plants, device.get());
+        //mesh2 = fay::create_renderable(fay::Plants, device.get());
 
-        fay::image img("texture/awesomeface2.png");//, true);
-        tex_id = create_2d(this->device, "hello", img);
+        fay::image img("texture/awesomeface.png");//, true);
+        tex_id = create_2d(this->device, "hello", img, false);
 
         fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/offscreen.vs", "gfx/offscreen.fs", desc.render.backend);
         shd_id = device->create(sd);
@@ -376,7 +376,6 @@ public:
 
         offscreen_frm_id = std::get<0>(frame);
         offscreen_tex_id = std::get<1>(frame);
-        offscreen_ds_id = std::get<2>(frame);
     }
 
     void render() override
@@ -398,7 +397,7 @@ public:
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
             .bind_textures({ tex_id })
-            .bind_uniform("bAlbedo", true)
+            //.bind_uniform("bAlbedo", true)
             .bind_uniform("MVP", VP * model1)
             .draw(mesh.get())
             .bind_uniform("MVP", VP * model2)
@@ -413,7 +412,7 @@ public:
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
             .bind_textures({ offscreen_tex_id })
-            .bind_uniform("bAlbedo", true)
+            //.bind_uniform("bAlbedo", true)
             .bind_uniform("MVP", VP * model1)
             .draw(mesh.get())
             .bind_uniform("MVP", VP * model2)
@@ -421,7 +420,7 @@ public:
             .bind_uniform("MVP", VP * model3)
             .draw(mesh.get())
             .bind_uniform("MVP", VP * model)
-            .draw(mesh2.get())
+            //.draw(mesh2.get())
             .end_frame();
 
         device->execute({ pass1, pass2 });

@@ -243,21 +243,16 @@ private:
 
     void bind_uniform(const std::string& name, command::uniform uniform)
     {
-        backend_->bind_uniform(name.c_str(), uniform);
+        if(type() == render_backend_type::opengl)
+            backend_->bind_uniform(name.c_str(), uniform);
+        else if (type() == render_backend_type::d3d11)
+            bind_uniform(name, &uniform, 0u); // TODO
     }
     void bind_uniform(const std::string& name, const void* data, uint size)
     {
-        auto idx = index(ctx_.shd.uniform_blocks, [name, size](auto&& ub)
-        {
-            return (ub.name == name) && ub.size == size;
-        });
-        DCHECK(idx.has_value()) << "invaild uniform_block";
-        DCHECK(idx.value() < ctx_.shd.uniform_blocks.size());
-        DCHECK(size == ctx_.shd.uniform_blocks[idx.value()].size) << "input unifrom block size isn't match to shader";
+        auto[idx, stage] = ctx_.shd.ub_info(name, size);
 
-        auto stage = (idx.value() < ctx_.shd.vs_uniform_block_sz) ? shader_stage::vertex : shader_stage::fragment; // !!!
-
-        backend_->bind_uniform(idx.value(), data, size, stage);
+        backend_->bind_uniform(idx, data, size, stage);
     }
 
     void bind_texture(const texture_id id, const std::string& sampler_name) //const shader_desc::sampler& sampler)
@@ -378,7 +373,7 @@ private:
 
     context context_{};
 
-    command_list_context ctx_{};
+    command_list_context ctx_{}; // rename: cmd_
     std::vector<command_list> command_queue_{};
 
     // window_ptr window_{}; event

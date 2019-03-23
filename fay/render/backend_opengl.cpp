@@ -1363,11 +1363,11 @@ public:
         log_ << ("uniform block : "s + ub_name + '\n');
     }
 
-    void bind_uniform(const char* name, command::uniform uniform) override
+    void bind_uniform(const std::string& name, command::uniform uniform, shader_stage /*stage*/) override
     {
         glcheck_errors();
 
-        uniform_visitor visitor{ glGetUniformLocation(cmd_.shd.gid, name) };
+        uniform_visitor visitor{ glGetUniformLocation(cmd_.shd.gid, name.c_str()) };
 
         std::visit([visitor](auto&& t) { visitor.bind(t); }, uniform);
 

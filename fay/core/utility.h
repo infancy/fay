@@ -79,7 +79,7 @@ inline bool none_of(const Container& container, UnaryPredicate p)
 
 // template<typename Container, typename T = typename Container::value_type>
 template<typename Container, typename T>
-inline std::optional<uint32_t> index(const Container& container, T value,
+inline std::optional<uint> index(const Container& container, T value,
     typename std::enable_if_t<!std::is_invocable_r_v<bool, T, const typename Container::value_type&>>* = nullptr)
 {
     // Double Insurance
@@ -89,14 +89,14 @@ inline std::optional<uint32_t> index(const Container& container, T value,
     auto iter = find(container, std::equal_to{}, value);
     // using T = decltype(std::begin(container));
     // static_assert(std::is_same_v<decltype(iter), decltype(std::begin(container))>, "error");
-    return (iter == container.end()) ? std::nullopt : std::optional<uint32_t>{std::distance(std::begin(container), iter)};
+    return (iter == container.end()) ? std::nullopt : std::optional<uint>{std::distance(std::begin(container), iter)};
 }
 
 // TODO: concept
 
 // lambda is not a function, but a callable object
 template<typename Container, typename UnaryPredicate>
-inline std::optional<uint32_t> index(const Container& container, UnaryPredicate p,
+inline std::optional<uint> index(const Container& container, UnaryPredicate p,
     typename std::enable_if_t<std::is_invocable_r_v<bool, UnaryPredicate, const typename Container::value_type&>>* = nullptr)
     // || std::is_invocable_r_v<bool, UnaryPredicate, typename Container::value_type>
 {
@@ -104,7 +104,7 @@ inline std::optional<uint32_t> index(const Container& container, UnaryPredicate 
     //static_assert(!std::is_function_v<Lambda>, "error");
 
     auto iter = find(container, p);
-    return (iter == container.end()) ? std::nullopt : std::optional<uint32_t>{ std::distance(std::begin(container), iter) };
+    return (iter == container.end()) ? std::nullopt : std::optional<uint>{ std::distance(std::begin(container), iter) };
 }
 
 

@@ -289,7 +289,6 @@ struct texture
     float min_lod;
     float max_lod;
 
-    UINT render_target;
     uint rt_sample_count; // msaa
 
     // # then assign others
@@ -323,7 +322,7 @@ struct texture
         wrap_v = static_cast<D3D11_TEXTURE_ADDRESS_MODE>(wrap_mode_map.at(desc.wrap_v).d3d11);
         wrap_w = static_cast<D3D11_TEXTURE_ADDRESS_MODE>(wrap_mode_map.at(desc.wrap_w).d3d11);
 
-        render_target = render_target_map.at(desc.as_render_target).d3d11;
+        // render_target = render_target_map.at(desc.as_render_target).d3d11; // TODO
         rt_sample_count = desc.rt_sample_count;
     }
 };
@@ -594,7 +593,7 @@ public:
            // prepare initial content pointers
             D3D11_SUBRESOURCE_DATA* init_data_ptr{ nullptr };
             std::vector<D3D11_SUBRESOURCE_DATA> sub_data;
-            if (desc.usage == resource_usage::immutable)
+            if (desc.usage == resource_usage::immutable && desc.as_render_target != render_target::color)
             {
                 sub_data = texture_subres_data(desc);
                 init_data_ptr = sub_data.data();
@@ -615,7 +614,7 @@ public:
                 d3d11_tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
                 d3d11_tex_desc.Format = tex.format;
 
-                if (tex.render_target) // TODO
+                if (desc.as_render_target == render_target::color) // TODO
                 {
                     d3d11_tex_desc.Usage = D3D11_USAGE_DEFAULT;
                     if (tex.rt_sample_count == 1)
@@ -678,7 +677,7 @@ public:
                 d3d11_tex_desc.Depth = tex.depth;
                 d3d11_tex_desc.MipLevels = tex.mipmaps;
 
-                if (tex.render_target) 
+                if (desc.as_render_target == render_target::color)
                 {
                     d3d11_tex_desc.Format = tex.format;
                     d3d11_tex_desc.Usage = D3D11_USAGE_DEFAULT;
@@ -963,7 +962,7 @@ public:
     // render
     void begin_frame(frame_id id) override
     {
-        //clear_context_state();
+        clear_context_state();
         cmd_ = command_list_context{};
 
         D3D11_VIEWPORT vp;
@@ -1156,9 +1155,9 @@ public:
 
         log_ << ("uniform block : "s + "TODO" + '\n');
     }
-    void bind_uniform(const char* name, command::uniform uniform) override
+    void bind_uniform(const std::string& name, command::uniform uniform, shader_stage stage) override
     {
-        log_ << ("uniform  : "s + std::to_string(uniform.index()) + '\n');
+        LOG(ERROR);
     }
 
     void bind_index(const buffer_id id) override
@@ -1171,11 +1170,14 @@ public:
     }
     void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) override
     {
-        cmd_.buf_ids.push_back(id);
+        if (instance_rate == 0)
+            cmd_.buf_ids[0] = id; // vertex buffer
+        else
+            cmd_.buf_ids[1] = id; // instance buffer
 
         // FIXME
         // have to bind all attrs of buffer
-        DCHECK(pool_[cmd_.buf_ids.back()].layout.size() == attrs.size());
+        DCHECK(pool_[cmd_.buf_ids.front()].layout.size() == attrs.size());
 
         // delay all operators to 'bind_all_vertex_instance_buffers' stage
 
@@ -1502,21 +1504,21 @@ private:
         D3D11_VIEWPORT viewport;
 
         // the following arrays are used for unbinding resources, they will always contain zeroes
-        ID3D11RenderTargetView* rtvs[MaxColorAttachments];
-        ID3D11Buffer* vbs[MaxShaderBuffers];
-        UINT vb_offsets[MaxShaderBuffers];
-        UINT vb_strides[MaxShaderBuffers];
-        ID3D11Buffer* cbs[MaxShaderUniformBlocks];
-        ID3D11ShaderResourceView* srvs[MaxShaderTextures];
-        ID3D11SamplerState* smps[MaxShaderTextures];
+        ID3D11RenderTargetView* rtvs[MaxColorAttachments]{};
+        ID3D11Buffer* vbs[MaxShaderBuffers]{};
+        UINT vb_offsets[MaxShaderBuffers]{};
+        UINT vb_strides[MaxShaderBuffers]{};
+        ID3D11Buffer* cbs[MaxShaderUniformBlocks]{};
+        ID3D11ShaderResourceView* srvs[MaxShaderTextures]{};
+        ID3D11SamplerState* smps[MaxShaderTextures]{};
         // global subresourcedata array for texture updates
-        D3D11_SUBRESOURCE_DATA subres_data[MaxMipmaps * MaxTextureArrayLayers];
+        D3D11_SUBRESOURCE_DATA subres_data[MaxMipmaps * MaxTextureArrayLayers]{};
     };
 
     struct command_list_context
     {
         buffer_id index_id{};
-        std::vector<buffer_id> buf_ids{};
+        std::array<buffer_id, 2> buf_ids{};
         std::vector<texture_id> tex_ids{}; // !!!
 
         shader shd{};

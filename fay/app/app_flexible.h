@@ -345,6 +345,7 @@ inline std::tuple<frame_id, texture_id, texture_id> create_frame(render_device* 
     desc.name = name;
     desc.width = width;
     desc.height = height;
+    desc.depth = 1; // TODO
     desc.size = width * height * 4 * (fmt == pixel_format::rgba8 ? 1 : 4); // WARNNING
     desc.data = { nullptr };
     desc.type = texture_type::two;
