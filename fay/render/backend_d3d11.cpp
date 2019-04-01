@@ -58,7 +58,7 @@ using namespace std::string_literals;
     #endif 
 #endif
 
-namespace fay // TODO fay::d3d11
+namespace fay::d3d11
 {
 
 // D3D
@@ -1535,10 +1535,15 @@ private:
     resource_pool<buffer, texture, shader, pipeline, frame> pool_{};
 };
 
+} // namespace fay::d3d11
+
+namespace fay
+{
+
 // TODO: _ptr -> _up, _uptr _sp _wp
 render_backend_ptr create_backend_d3d11(const render_desc& desc)
 {
-    return std::make_unique<backend_d3d11>(desc);
+    return std::make_unique<fay::d3d11::backend_d3d11>(desc);
 }
 
 } // namespace fay

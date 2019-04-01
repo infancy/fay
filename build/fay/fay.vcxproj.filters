@@ -245,5 +245,8 @@
     <ClInclude Include="..\..\fay\gfx\light.h">
       <Filter>gfx</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\frame.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

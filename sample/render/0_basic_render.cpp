@@ -236,7 +236,7 @@ public:
     }
 };
 
-class two_passes : public fay::app
+class passes : public fay::app
 {
 public:
     fay::camera cameras_[3]
@@ -278,18 +278,10 @@ public:
     fay::pipeline_id pipe_id;
     fay::pipeline_id pipe_id2;
 
-    fay::texture_id offscreen_tex_id;
-    fay::texture_id  offscreen_ds_id;
-    fay::frame_id   offscreen_frm_id;
-    fay::texture_id offscreen_tex_id2;
-    fay::texture_id  offscreen_ds_id2;
-    fay::frame_id   offscreen_frm_id2;
-    fay::texture_id offscreen_tex_id3;
-    fay::texture_id  offscreen_ds_id3;
-    fay::frame_id   offscreen_frm_id3;
-    fay::texture_id offscreen_tex_id4;
-    fay::texture_id  offscreen_ds_id4;
-    fay::frame_id   offscreen_frm_id4;
+    fay::frame frame;
+    fay::frame frame2;
+    fay::frame frame3;
+    fay::frame frame4;
 
     render_paras paras;
     //fay::command_list pass1, pass2;
@@ -343,11 +335,11 @@ public:
 };
 
 // post_processing
-class offscreen : public two_passes
+class offscreen : public passes
 {
 public:
     // using fay::app;
-    offscreen(const fay::app_desc& _desc) : two_passes(_desc)
+    offscreen(const fay::app_desc& _desc) : passes(_desc)
     {
         desc.window.title = "post_proc";
     }
@@ -372,10 +364,7 @@ public:
         }
         pipe_id = device->create(pd);
 
-        auto frame = fay::create_frame(device.get(), "offscreen_frm", 512, 512);
-
-        offscreen_frm_id = std::get<0>(frame);
-        offscreen_tex_id = std::get<1>(frame);
+        frame = fay::create_frame(device.get(), "offscreen_frm", 512, 512);
     }
 
     void render() override
@@ -390,14 +379,14 @@ public:
         fay::command_list pass1, pass2;
 
         pass1
-            .begin_frame(offscreen_frm_id)
+            .begin_frame(frame)
             .clear_color({ 1.f, 0.f, 0.f, 1.f })
             .clear_depth()
             .clear_stencil()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
             .bind_textures({ tex_id })
-            //.bind_uniform("bAlbedo", true)
+            .bind_uniform("bAlbedo", true)
             .bind_uniform("MVP", VP * model1)
             .draw(mesh.get())
             .bind_uniform("MVP", VP * model2)
@@ -411,8 +400,8 @@ public:
             .clear_frame()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id)
-            .bind_textures({ offscreen_tex_id })
-            //.bind_uniform("bAlbedo", true)
+            .bind_textures({ frame[0] })
+            .bind_uniform("bAlbedo", true)
             .bind_uniform("MVP", VP * model1)
             .draw(mesh.get())
             .bind_uniform("MVP", VP * model2)
@@ -427,10 +416,10 @@ public:
     }
 };
 
-class shadow_map : public two_passes
+class shadow_map : public passes
 {
 public:
-    shadow_map(const fay::app_desc& _desc) : two_passes(_desc)
+    shadow_map(const fay::app_desc& _desc) : passes(_desc)
     {
         desc.window.title = "shadow_map";
     }
@@ -462,17 +451,9 @@ public:
             pipe_id2 = device->create(pd);
         }
 
-        auto frame = fay::create_depth_frame("shadowmap_frame", 1024, 1024, device.get());
-        auto frame2 = fay::create_depth_frame("shadowmap_frame2", 1024, 1024, device.get());
-        auto frame3 = fay::create_depth_frame("shadowmap_frame3", 1024, 1024, device.get());
-
-        offscreen_frm_id = std::get<0>(frame);
-        offscreen_frm_id2 = std::get<0>(frame2);
-        offscreen_frm_id3 = std::get<0>(frame3);
-
-        offscreen_ds_id = std::get<2>(frame);
-        offscreen_ds_id2 = std::get<2>(frame2);
-        offscreen_ds_id3 = std::get<2>(frame3);
+        frame  = fay::create_depth_frame("shadowmap_frame", 1024, 1024, device.get());
+        frame2 = fay::create_depth_frame("shadowmap_frame2", 1024, 1024, device.get());
+        frame3 = fay::create_depth_frame("shadowmap_frame3", 1024, 1024, device.get());
     }
 
     glm::mat4 frustum_to_ortho(glm::vec3 light_position, fay::frustum camera_frustum, glm::vec3 camera_up = glm::vec3(0.f, 1.f, 0.f))
@@ -541,7 +522,7 @@ public:
         fay::command_list pass1, pass2, pass3;
         // depth map
         pass1
-            .begin_frame(offscreen_frm_id)
+            .begin_frame(frame)
             .clear_color({ 1.f, 0.f, 0.f, 1.f }) // rgb32f
             .clear_depth()
             .clear_stencil()
@@ -551,7 +532,7 @@ public:
             .draw(mesh.get())
             .end_frame();
         pass2
-            .begin_frame(offscreen_frm_id2)
+            .begin_frame(frame2)
             .clear_color({ 1.f, 0.f, 0.f, 1.f }) // rgb32f
             .clear_depth()
             .clear_stencil()
@@ -571,8 +552,8 @@ public:
             .bind_uniform("LightPos", light->position())
             .bind_uniform("ViewPos", camera->position())
             .bind_uniform("depthSection[1]", -depthSection[1])
-            .bind_texture(offscreen_ds_id, "Shadowmap")
-            .bind_texture(offscreen_ds_id2, "Shadowmap2")
+            .bind_texture(frame.dsv(), "Shadowmap")
+            .bind_texture(frame2.dsv(), "Shadowmap2")
             .draw(mesh.get())
             // debug info
             .apply_pipeline(debug_pipe_id)
@@ -588,12 +569,12 @@ public:
     }
 };
 
-class PBR : public two_passes
+class PBR : public passes
 {
 public:
     fay::texture_id tex_id0, tex_id1, tex_id2, tex_id3, tex_id4;
 
-    PBR(const fay::app_desc& _desc) : two_passes(_desc)
+    PBR(const fay::app_desc& _desc) : passes(_desc)
     {
         desc.window.title = "PBR";
     }
@@ -696,7 +677,7 @@ public:
     }
 };
 
-class IBL : public two_passes
+class IBL : public passes
 {
 public:
     fay::texture_id tex_id0, tex_id1, tex_id2, tex_id3, tex_id4;
@@ -705,7 +686,7 @@ public:
     fay::shader_id background_shd_id;
 
 
-    IBL(const fay::app_desc& _desc) : two_passes(_desc)
+    IBL(const fay::app_desc& _desc) : passes(_desc)
     {
         desc.window.title = "PBR";
     }
@@ -738,13 +719,8 @@ public:
 
         // TODO: in_fmt, ex_fmt
         const size_t res = 512, res2 = 32, res3 = 128, res4 = 512;
-        auto frame = fay::create_cubemap_frame(device.get(), "cubemap_frame", res, res, fay::pixel_format::rgb32f, 12);
-        offscreen_frm_id = std::get<0>(frame);
-        offscreen_tex_id = std::get<1>(frame);
-
-        auto frame2 = fay::create_cubemap_frame(device.get(), "irradiance_frame", res2, res2, fay::pixel_format::rgb32f, 12);
-        offscreen_frm_id2 = std::get<0>(frame2);
-        offscreen_tex_id2 = std::get<1>(frame2);
+        frame  = fay::create_cubemap_frame(device.get(), "cubemap_frame", res, res, fay::pixel_format::rgb32f, 12);
+        frame2 = fay::create_cubemap_frame(device.get(), "irradiance_frame", res2, res2, fay::pixel_format::rgb32f, 12);
 
         fay::command_list pass, pass2;
 
@@ -765,7 +741,7 @@ public:
         };
 
         pass
-            .begin_frame(offscreen_frm_id)
+            .begin_frame(frame)
             .clear_frame()
             .set_viewport(0, 0, res, res)
             .set_scissor(0, 0, res, res)
@@ -785,7 +761,7 @@ public:
             ;
 
         pass2
-            .begin_frame(offscreen_frm_id2)
+            .begin_frame(frame2)
             .clear_frame()
             .set_viewport(0, 0, res2, res2)
             .set_scissor(0, 0, res2, res2)
@@ -799,48 +775,52 @@ public:
             .bind_uniform("model5", captureModels[5])
             .bind_uniform("proj", captureProjection)
             .bind_uniform("view", captureView)
-            .bind_texture(offscreen_tex_id, "environmentMap")
+            .bind_texture(frame[0], "environmentMap")
             .draw(mesh2.get())
             .end_frame()
             ;
 
-        offscreen_tex_id3 = fay::create_cubemap(device.get(), "prefilter_map_frame", res3, res3, fay::pixel_format::rgb32f, 12, true);
-        offscreen_ds_id3 = create_depth_stencil_map(device.get(), "prefilter_map_frame", res3, res3);
-
         const size_t maxLevel = 5;
         fay::command_list pass3[maxLevel];
-        for (size_t level = 0; level < maxLevel; ++level)
         {
-            // reisze framebuffer according to mip-level size.
-            unsigned int mipWidth = res3 * std::pow(0.5, level);
-            unsigned int mipHeight = res3 * std::pow(0.5, level);
+            auto offscreen_tex_id3 = fay::create_cubemap(device.get(), "prefilter_map_frame", res3, res3, fay::pixel_format::rgb32f, 12, true);
+            auto offscreen_ds_id3 = create_depth_stencil_map(device.get(), "prefilter_map_frame", res3, res3);
 
-            auto frame3 = fay::choose_mipmap_cubemap_frame(device.get(), "prefilter_map_frame", mipWidth, mipHeight, offscreen_tex_id3, offscreen_ds_id3, level);
-            offscreen_frm_id3 = std::get<0>(frame3);
+            for (size_t level = 0; level < maxLevel; ++level)
+            {
+                // reisze framebuffer according to mip-level size.
+                unsigned int mipWidth = res3 * std::pow(0.5, level);
+                unsigned int mipHeight = res3 * std::pow(0.5, level);
 
-            pass3[level]
-                .begin_frame(offscreen_frm_id3)
-                .clear_frame()
-                .set_viewport(0, 0, mipWidth, mipHeight)
-                .set_scissor(0, 0, mipWidth, mipHeight)
-                .apply_pipeline(pipe_id)
-                .apply_shader(prefilter_map_shd_id)
-                .bind_uniform("model0", captureModels[0])
-                .bind_uniform("model1", captureModels[1])
-                .bind_uniform("model2", captureModels[2])
-                .bind_uniform("model3", captureModels[3])
-                .bind_uniform("model4", captureModels[4])
-                .bind_uniform("model5", captureModels[5])
-                .bind_uniform("proj", captureProjection)
-                .bind_uniform("view", captureView)
-                .bind_uniform("roughness", (float)level / (float)(maxLevel - 1))
-                .bind_texture(offscreen_tex_id, "environmentMap")
-                .draw(mesh2.get())
-                .end_frame()
-                ;
+                // TODO
+                frame3 = fay::create_mipmap_cubemap_frame(device.get(), "prefilter_map_frame", mipWidth, mipHeight, offscreen_tex_id3, offscreen_ds_id3, level);
+
+                pass3[level]
+                    .begin_frame(frame3)
+                    .clear_frame()
+                    .set_viewport(0, 0, mipWidth, mipHeight)
+                    .set_scissor(0, 0, mipWidth, mipHeight)
+                    .apply_pipeline(pipe_id)
+                    .apply_shader(prefilter_map_shd_id)
+                    .bind_uniform("model0", captureModels[0])
+                    .bind_uniform("model1", captureModels[1])
+                    .bind_uniform("model2", captureModels[2])
+                    .bind_uniform("model3", captureModels[3])
+                    .bind_uniform("model4", captureModels[4])
+                    .bind_uniform("model5", captureModels[5])
+                    .bind_uniform("proj", captureProjection)
+                    .bind_uniform("view", captureView)
+                    .bind_uniform("roughness", (float)level / (float)(maxLevel - 1))
+                    .bind_texture(frame[0], "environmentMap")
+                    .draw(mesh2.get())
+                    .end_frame()
+                    ;
+            }
+
+            // frame3 = fay::frame(fay::frame_id(0), offscreen_tex_id3, offscreen_ds_id3);
         }
 
-        //
+        fay::command_list pass4;
         {
             // TODO: ctor, set_sampler, set_
             fay::texture_desc desc;
@@ -854,9 +834,9 @@ public:
             desc.wrap_u = fay::wrap_mode::clamp_to_edge;
             desc.wrap_v = fay::wrap_mode::clamp_to_edge;
             desc.mipmap = false; // TODO: default set it false
-            offscreen_tex_id4 = device->create(desc); 
-
-            offscreen_ds_id4 = create_depth_stencil_map(device.get(), "brdf_ds", res4, res4);
+            
+            auto offscreen_tex_id4 = device->create(desc); 
+            auto offscreen_ds_id4 = create_depth_stencil_map(device.get(), "brdf_ds", res4, res4);
 
             fay::frame_desc fd;
             fd.name = "brdf_frame";
@@ -864,20 +844,20 @@ public:
             fd.height = res4;
             fd.render_targets = { { offscreen_tex_id4, 0, 0 } };
             fd.depth_stencil = { offscreen_ds_id4, 0, 0 };
-            offscreen_frm_id4 = device->create(fd);
-        }
+            auto offscreen_frm_id4 = device->create(fd);
+            frame4 = fay::frame(offscreen_frm_id4, offscreen_tex_id4, offscreen_ds_id4);
 
-        fay::command_list pass4;
-        pass4
-            .begin_frame(offscreen_frm_id4)
-            .clear_frame()
-            .set_viewport(0, 0, res4, res4)
-            .set_scissor(0, 0, res4, res4)
-            .apply_pipeline(pipe_id)
-            .apply_shader(brdf_map_shd_id)
-            .draw(mesh2.get())
-            .end_frame()
-            ;
+            pass4
+                .begin_frame(frame4)
+                .clear_frame()
+                .set_viewport(0, 0, res4, res4)
+                .set_scissor(0, 0, res4, res4)
+                .apply_pipeline(pipe_id)
+                .apply_shader(brdf_map_shd_id)
+                .draw(mesh2.get())
+                .end_frame()
+                ;
+        }
 
         device->execute({ pass, pass2, pass3[0], pass3[1], pass3[2], pass3[3], pass3[4], pass4 });
     }
@@ -899,9 +879,9 @@ public:
             .bind_uniform("lightColor", glm::vec3(1.f, 1.f, 1.f))
 
             .bind_textures({ tex_id0, tex_id1, tex_id2, tex_id3, tex_id4 })
-            .bind_texture(offscreen_tex_id2, "irradianceMap")
-            .bind_texture(offscreen_tex_id3, "prefilterMap")
-            .bind_texture(offscreen_tex_id4, "brdfLUT")
+            .bind_texture(frame2[0], "irradianceMap")
+            .bind_texture(frame3[0], "prefilterMap")
+            .bind_texture(frame4[0], "brdfLUT")
             .bind_uniform("Albedo", glm::vec3(0.5f, 0.0f, 0.0f))
             .bind_uniform("Ao", 1.f)
             ;
@@ -937,7 +917,7 @@ public:
         pass
             .apply_pipeline(pipe_id)
             .apply_shader(background_shd_id)
-            .bind_texture(offscreen_tex_id, "environmentMap") // TODO: layer, level
+            .bind_texture(frame[0], "environmentMap") // TODO: layer, level
             //.bind_texture(offscreen_tex_id2, "environmentMap")
             .bind_uniform("proj", camera->persp())
             .bind_uniform("view", camera->view())
@@ -949,11 +929,11 @@ public:
     }
 };
 
-class defer_rendering : public two_passes
+class defer_rendering : public passes
 {
 public:
     // using fay::app;
-    defer_rendering(const fay::app_desc& _desc) : two_passes(_desc)
+    defer_rendering(const fay::app_desc& _desc) : passes(_desc)
     {
         desc.window.title = "post_proc";
 
@@ -1033,15 +1013,7 @@ public:
             pipe_id2 = device->create(pd);
         }
 
-        auto frame = fay::create_Gbuffer(device.get(), "offscreen_frm", 1024, 1024);
-
-        offscreen_frm_id  = std::get<0>(frame);
-        offscreen_tex_id  = std::get<1>(frame);
-        offscreen_tex_id2 = std::get<2>(frame);
-        offscreen_tex_id3 = std::get<3>(frame);
-        offscreen_ds_id   = std::get<4>(frame);
-
-        //camera = fay::camera{ glm::vec3{ 0, 0, 1.5 } };
+        frame = fay::create_Gbuffer(device.get(), "offscreen_frm", 1024, 1024);
     }
 
     void render() override
@@ -1056,7 +1028,7 @@ public:
 
         // depth map
         pass1
-            .begin_frame(offscreen_frm_id)
+            .begin_frame(frame)
             .clear_frame()
             .apply_pipeline(pipe_id)
             .apply_shader(shd_id);
@@ -1085,9 +1057,9 @@ public:
             .apply_pipeline(pipe_id2)
             .apply_shader(shd_id2)
             //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
-            .bind_texture(offscreen_tex_id, "gPosition") // TODO
-            .bind_texture(offscreen_tex_id2, "gNormal")
-            .bind_texture(offscreen_tex_id3, "gAlbedoSpec")
+            .bind_texture(frame[0], "gPosition") // TODO
+            .bind_texture(frame[1], "gNormal")
+            .bind_texture(frame[2], "gAlbedoSpec")
             .bind_uniform("MVP", MVP)
             .bind_uniform("viewPos", camera->position());
 

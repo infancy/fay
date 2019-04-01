@@ -400,6 +400,7 @@ enum class pass_type
 // TODO: uint -> size_t
 // TODO: bool() -> is_valid()
 // TODO: value -> private: value
+// TODO: using buffer_id = type_id<buffer, buffer_desc>
 #define FAY_RENDER_TYPE_ID( type )                                          \
 struct type##_id                                                            \
 {                                                                           \
@@ -1028,6 +1029,7 @@ struct command // command/encoder
 
 class renderable;
 class material;
+class frame;
 
 // TODO: rebuild(not reuse it)
 class command_list
@@ -1049,6 +1051,7 @@ public:
 
         return *this;
     }
+    command_list& begin_frame(const frame& frm);
     command_list& begin_default_frame(/*uint x, uint y, uint w, uint h*/)
     {
         add_command(command_type::begin_default_frame);

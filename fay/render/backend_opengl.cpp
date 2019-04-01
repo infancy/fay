@@ -6,7 +6,7 @@
 
 using namespace std::string_literals;
 
-namespace fay // TODO fay::opengl
+namespace fay::opengl
 {
 
 // -------------------------------------------------------------------------------------------------
@@ -1684,15 +1684,20 @@ private:
     resource_pool<buffer, texture, shader, pipeline, frame> pool_{};
 };
 
-// TODO: _ptr -> _up, _uptr _sp _wp
-render_backend_ptr create_backend_opengl(const render_desc& desc)
-{
-    return std::make_unique<backend_opengl>(desc);
-}
-
 // class device_opengl_dsa : public render_device
 
 // reference:
 // https://github.com/acdemiralp/gl
+
+} // namespace fay::opengl
+
+namespace fay
+{
+
+// TODO: _ptr -> _up, _uptr _sp _wp
+render_backend_ptr create_backend_opengl(const render_desc& desc)
+{
+    return std::make_unique<fay::opengl::backend_opengl>(desc);
+}
 
 } // namespace fay
