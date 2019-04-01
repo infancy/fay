@@ -1,6 +1,5 @@
 #include "sample_render_app.h"
 
-
 class cascade_shadow_map : public passes
 {
 public:
@@ -18,22 +17,22 @@ public:
 
         {
             fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/32_shadow_map.vs", "gfx/32_shadow_map.fs", desc.render.backend);
-            shd_id = device->create(sd);
+            shd = device->create(sd);
 
             fay::pipeline_desc pd;
             pd.name = "shadow_pipe";
             // pd.cull_mode = fay::cull_mode::front; // sometimes could improve the quality
             pd.stencil_enabled = false;
-            pipe_id = device->create(pd);
+            pipe = device->create(pd);
         }
 
         {
             fay::shader_desc sd = fay::scan_shader_program("shd2", "gfx/32_shadow_model.vs", "gfx/32_shadow_model.fs", desc.render.backend);
-            shd_id2 = device->create(sd);
+            shd2 = device->create(sd);
 
             fay::pipeline_desc pd;
             pd.name = "pipe2";
-            pipe_id2 = device->create(pd);
+            pipe2 = device->create(pd);
         }
 
         frame = fay::create_depth_frame("shadowmap_frame", 1024, 1024, device.get());
@@ -111,8 +110,8 @@ public:
             .clear_color({ 1.f, 0.f, 0.f, 1.f }) // rgb32f
             .clear_depth()
             .clear_stencil()
-            .apply_pipeline(pipe_id)
-            .apply_shader(shd_id)
+            .apply_pipeline(pipe)
+            .apply_shader(shd)
             .bind_uniform("MVP", lightSpace * transform->model_matrix())
             .draw(mesh.get())
             .end_frame();
@@ -121,14 +120,14 @@ public:
             .clear_color({ 1.f, 0.f, 0.f, 1.f }) // rgb32f
             .clear_depth()
             .clear_stencil()
-            .apply_pipeline(pipe_id)
-            .apply_shader(shd_id)
+            .apply_pipeline(pipe)
+            .apply_shader(shd)
             .bind_uniform("MVP", lightSpace2 * transform->model_matrix())
             .draw(mesh.get())
             .end_frame();
 
         pass3
-            .begin_default(pipe_id2, shd_id2)
+            .begin_default(pipe2, shd2)
             .bind_uniform("Proj", camera->persp())
             .bind_uniform("View", camera->view())
             .bind_uniform("Model", transform->model_matrix())
@@ -141,8 +140,8 @@ public:
             .bind_texture(frame2.dsv(), "Shadowmap2")
             .draw(mesh.get())
             // debug info
-            .apply_pipeline(debug_pipe_id)
-            .apply_shader(debug_shd_id)
+            .apply_pipeline(debug_pipe)
+            .apply_shader(debug_shd)
             .bind_uniform("MVP", camera->world_to_ndc())
             .draw(debug_camera.get()) // they are in the world space, doesn't need model matrix.
             .draw(debug_light.get())

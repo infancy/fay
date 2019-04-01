@@ -1,16 +1,34 @@
-#version 330 core 
-layout(location = 0) in vec3 mPos;
-layout (location = 1) in vec3 mNor;
-layout (location = 2) in vec2 mTex;
-layout (location = 3) in vec3 mTan;
-layout (location = 4) in vec3 mBit;
-
+#version 330 core
 out vec2 vTex;
 
 uniform mat4 MVP;
 
+//@
+vec2 textures[6] = vec2[]
+(
+	vec2(0.0, 0.0),
+	vec2(1.0, 0.0),
+	vec2(1.0, 1.0),
+
+	vec2(1.0, 1.0),
+    vec2(0.0, 1.0),
+	vec2(0.0, 0.0)//,
+);
+
+vec2 positions[6] = vec2[]
+(
+	vec2(-1.0,  1.0),
+	vec2( 1.0,  1.0),
+	vec2( 1.0, -1.0),
+
+	vec2( 1.0, -1.0),
+    vec2(-1.0, -1.0),
+	vec2(-1.0,  1.0)//,
+);
+
 void main()
 {
-    vTex = mTex.yx; //mPos.xy;    
-    gl_Position = MVP * vec4(mPos, 1.0);
+    vTex = textures[gl_VertexID]; 
+    
+	gl_Position = vec4(positions[gl_VertexID], 0.0, 1.0);
 }

@@ -55,17 +55,17 @@ public:
 
         {
             fay::image img("texture/awesomeface.png", true);
-            tex_id = create_2d(this->device, "hello", img);
+            tex = create_2d(this->device, "hello", img);
         }
 
         {
             fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/30_phong_shading.vs", "gfx/38_g_buffer.fs", desc.render.backend);
-            shd_id = device->create(sd);
+            shd = device->create(sd);
         }
 
         {
             fay::shader_desc sd2 = fay::scan_shader_program("shd2", "gfx/two_passes.vs", "gfx/38_deferred_shading.fs", desc.render.backend);
-            shd_id2 = device->create(sd2);
+            shd2 = device->create(sd2);
         }
 
         {
@@ -74,7 +74,7 @@ public:
                 pd.name = "shadow_pipe";
                 pd.cull_mode = fay::cull_mode::none;
             }
-            pipe_id = device->create(pd);
+            pipe = device->create(pd);
         }
         {
             fay::pipeline_desc pd;
@@ -82,7 +82,7 @@ public:
                 pd.name = "pipe2";
                 pd.cull_mode = fay::cull_mode::none;
             }
-            pipe_id2 = device->create(pd);
+            pipe2 = device->create(pd);
         }
 
         frame = fay::create_Gbuffer(device.get(), "offscreen_frm", 1024, 1024);
@@ -100,10 +100,7 @@ public:
 
         // depth map
         pass1
-            .begin_frame(frame)
-            .clear_frame()
-            .apply_pipeline(pipe_id)
-            .apply_shader(shd_id);
+            .begin_frame(frame, pipe, shd);
         for (unsigned int i = 0; i < objectPositions.size(); i++)
         {
             //glm::mat4 objectmodel = glm::mat4(50);
@@ -124,10 +121,7 @@ public:
         pass1.end_frame();
 
         pass2
-            .begin_default_frame()
-            .clear_frame()
-            .apply_pipeline(pipe_id2)
-            .apply_shader(shd_id2)
+            .begin_default(pipe2, shd2)
             //.bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(render_paras) })
             .bind_texture(frame[0], "gPosition") // TODO
             .bind_texture(frame[1], "gNormal")

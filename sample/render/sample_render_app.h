@@ -33,7 +33,6 @@ public:
 
         //pitch 0 -> -30
         fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f }, // look at the positive-x axis
-        fay::camera{ glm::vec3{ 100, 100, 0 },    180, -45,  1.f, 300.f },
     };
     fay::light lights_[3]
     {
@@ -50,8 +49,8 @@ public:
     const fay::light* light{ lights_ };
     const fay::transform* transform{ transforms_ };
 
-    fay::shader_id debug_shd_id;
-    fay::pipeline_id debug_pipe_id;
+    fay::shader_id debug_shd;
+    fay::pipeline_id debug_pipe;
 
     fay::buffer_id vbo;
     fay::buffer_id ibo;
@@ -59,12 +58,13 @@ public:
     fay::renderable_sp mesh;
     fay::renderable_sp mesh2;
     fay::renderable_sp mesh3;
-    fay::texture_id tex_id;
-    fay::texture_id tex_id2;
-    fay::shader_id shd_id;
-    fay::shader_id shd_id2;
-    fay::pipeline_id pipe_id;
-    fay::pipeline_id pipe_id2;
+    fay::texture_id tex;
+    fay::texture_id tex2;
+
+    fay::shader_id shd;
+    fay::shader_id shd2;
+    fay::pipeline_id pipe;
+    fay::pipeline_id pipe2;
 
     fay::frame frame;
     fay::frame frame2;
@@ -89,17 +89,18 @@ public:
     void debug_setup()
     {
         fay::shader_desc sd = fay::scan_shader_program("light_shd", "gfx/lines.vs", "gfx/lines.fs", desc.render.backend);
-        debug_shd_id = device->create(sd);
+        debug_shd = device->create(sd);
 
         fay::pipeline_desc pd;
         {
             pd.name = "light_pipe";
             pd.stencil_enabled = false;
             pd.primitive_type = fay::primitive_type::lines;
-            debug_pipe_id = device->create(pd);
+            debug_pipe = device->create(pd);
         }
     }
 
+    // TODO: merge to fay::app
     void update(const fay::single_input& io) override
     {
         static size_t current_mode_{};

@@ -12,6 +12,16 @@ command_list& command_list::begin_frame(const frame& frm)
     return *this;
 }
 
+command_list& command_list::begin_frame(const frame& frm, pipeline_id pipe, shader_id shd)
+{
+    begin_frame(frm);
+    clear();
+    apply_pipeline(pipe);
+    apply_shader(shd);
+
+    return *this;
+}
+
 command_list& command_list::draw(renderable* renderable)
 {
     renderable->render(*this);

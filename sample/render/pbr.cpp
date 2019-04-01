@@ -29,11 +29,11 @@ public:
         tex_id4 = create_2d(this->device, "ao", img4);
 
         fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/pbr.vs", "gfx/pbr.fs", desc.render.backend);
-        shd_id = device->create(sd);
+        shd = device->create(sd);
 
         fay::pipeline_desc pd;
         pd.name = "pipe";
-        pipe_id = device->create(pd);
+        pipe = device->create(pd);
     }
 
     void render() override
@@ -55,7 +55,7 @@ public:
         fay::command_list pass;
 
         pass
-            .begin_default(pipe_id, shd_id)
+            .begin_default(pipe, shd)
             // TODO: check uniform (blocks)
             .bind_uniform("proj", camera->persp())
             .bind_uniform("view", camera->view())
@@ -98,8 +98,8 @@ public:
         }
 
         pass
-            .apply_pipeline(debug_pipe_id)
-            .apply_shader(debug_shd_id)
+            .apply_pipeline(debug_pipe)
+            .apply_shader(debug_shd)
             .bind_uniform("MVP", camera->world_to_ndc())
             .draw(debug_light.get())
             .end_frame();
@@ -139,13 +139,13 @@ public:
         auto prefilter_map_shd_id = create_shader("prefilter_map", "gfx/IBL/cubemap.vs", "gfx/IBL/prefilter.fs", device.get());
         auto brdf_map_shd_id = create_shader("brdf_map", "gfx/IBL/brdf.vs", "gfx/IBL/brdf.fs", device.get());
         background_shd_id = create_shader("background", "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
-        shd_id = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
+        shd = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
 
         {
             fay::pipeline_desc pd;
             pd.name = "pipe";
             pd.cull_mode = fay::cull_mode::none; // TODO: default set cull_mode::none
-            pipe_id = device->create(pd);
+            pipe = device->create(pd);
         }
 
         // TODO: in_fmt, ex_fmt
@@ -173,10 +173,10 @@ public:
 
         pass
             .begin_frame(frame)
-            .clear_frame()
+            .clear()
             .set_viewport(0, 0, res, res)
             .set_scissor(0, 0, res, res)
-            .apply_pipeline(pipe_id)
+            .apply_pipeline(pipe)
             .apply_shader(generate_cube_shd_id)
             .bind_uniform("model0", captureModels[0])
             .bind_uniform("model1", captureModels[1])
@@ -193,10 +193,10 @@ public:
 
         pass2
             .begin_frame(frame2)
-            .clear_frame()
+            .clear()
             .set_viewport(0, 0, res2, res2)
             .set_scissor(0, 0, res2, res2)
-            .apply_pipeline(pipe_id)
+            .apply_pipeline(pipe)
             .apply_shader(irradiance_shd_id)
             .bind_uniform("model0", captureModels[0])
             .bind_uniform("model1", captureModels[1])
@@ -228,10 +228,10 @@ public:
 
                 pass3[level]
                     .begin_frame(frame3)
-                    .clear_frame()
+                    .clear()
                     .set_viewport(0, 0, mipWidth, mipHeight)
                     .set_scissor(0, 0, mipWidth, mipHeight)
-                    .apply_pipeline(pipe_id)
+                    .apply_pipeline(pipe)
                     .apply_shader(prefilter_map_shd_id)
                     .bind_uniform("model0", captureModels[0])
                     .bind_uniform("model1", captureModels[1])
@@ -280,10 +280,10 @@ public:
 
             pass4
                 .begin_frame(frame4)
-                .clear_frame()
+                .clear()
                 .set_viewport(0, 0, res4, res4)
                 .set_scissor(0, 0, res4, res4)
-                .apply_pipeline(pipe_id)
+                .apply_pipeline(pipe)
                 .apply_shader(brdf_map_shd_id)
                 .draw(mesh2.get())
                 .end_frame()
@@ -298,7 +298,7 @@ public:
         fay::command_list pass;
 
         pass
-            .begin_default(pipe_id, shd_id)
+            .begin_default(pipe, shd)
             // TODO: check uniform (blocks)
             .bind_uniform("proj", camera->persp())
             .bind_uniform("view", camera->view())
@@ -346,7 +346,7 @@ public:
 
         // background
         pass
-            .apply_pipeline(pipe_id)
+            .apply_pipeline(pipe)
             .apply_shader(background_shd_id)
             .bind_texture(frame[0], "environmentMap") // TODO: layer, level
             //.bind_texture(offscreen_tex_id2, "environmentMap")

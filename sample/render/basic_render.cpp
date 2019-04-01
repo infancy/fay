@@ -251,17 +251,17 @@ public:
         //mesh2 = fay::create_renderable(fay::Plants, device.get());
 
         fay::image img("texture/awesomeface.png");//, true);
-        tex_id = create_2d(this->device, "hello", img, false);
+        tex = create_2d(this->device, "hello", img, false);
 
         fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/offscreen.vs", "gfx/offscreen.fs", desc.render.backend);
-        shd_id = device->create(sd);
+        shd = device->create(sd);
 
         fay::pipeline_desc pd;
         {
             pd.name = "triangles";
             // pd.cull_mode = fay::cull_mode::none;
         }
-        pipe_id = device->create(pd);
+        pipe = device->create(pd);
 
         frame = fay::create_frame(device.get(), "offscreen_frm", 512, 512);
     }
@@ -282,9 +282,9 @@ public:
             .clear_color({ 1.f, 0.f, 0.f, 1.f })
             .clear_depth()
             .clear_stencil()
-            .apply_pipeline(pipe_id)
-            .apply_shader(shd_id)
-            .bind_textures({ tex_id })
+            .apply_pipeline(pipe)
+            .apply_shader(shd)
+            .bind_textures({ tex })
             .bind_uniform("bAlbedo", true)
             .bind_uniform("MVP", VP * model1)
             .draw(mesh.get())
@@ -295,10 +295,7 @@ public:
             .end_frame();
 
         pass2
-            .begin_default_frame()
-            .clear_frame()
-            .apply_pipeline(pipe_id)
-            .apply_shader(shd_id)
+            .begin_default(pipe, shd)
             .bind_textures({ frame[0] })
             .bind_uniform("bAlbedo", true)
             .bind_uniform("MVP", VP * model1)

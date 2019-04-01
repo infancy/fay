@@ -1052,9 +1052,19 @@ public:
         return *this;
     }
     command_list& begin_frame(const frame& frm);
+    command_list& begin_frame(const frame& frm, pipeline_id pipe, shader_id shd);
     command_list& begin_default_frame(/*uint x, uint y, uint w, uint h*/)
     {
         add_command(command_type::begin_default_frame);
+
+        return *this;
+    }
+    command_list& begin_default(const pipeline_id pipe_id, const shader_id shd_id)
+    {
+        begin_default_frame();
+        clear();
+        apply_pipeline(pipe_id);
+        apply_shader(shd_id);
 
         return *this;
     }
@@ -1092,7 +1102,7 @@ public:
         return *this;
     }
 
-    command_list& clear_frame()
+    command_list& clear()
     {
         clear_color();
         clear_depth();
@@ -1132,16 +1142,6 @@ public:
         return *this;
     }
     //command_list& apply_state(const shader_id id, const pipeline_id id);
-
-    command_list& begin_default(const pipeline_id pipe_id, const shader_id shd_id)
-    {
-        begin_default_frame();
-        clear_frame();
-        apply_pipeline(pipe_id);
-        apply_shader(shd_id);
-
-        return *this;
-    }
 
     // -------------------------------------------------------------------------------------------------
 
