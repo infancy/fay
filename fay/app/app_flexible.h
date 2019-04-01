@@ -10,6 +10,7 @@
 #include "fay/gfx/frame.h"
 #include "fay/gfx/light.h"
 #include "fay/gfx/mesh.h"
+#include "fay/render/define.h"
 #include "fay/render/device.h"
 #include "fay/render/shader.h"
 #include "fay/resource/image.h"
@@ -41,7 +42,7 @@ inline renderable_sp create_box_mesh(std::array<glm::vec3, 8> box_mesh, render_d
         {fay::attribute_usage::position,  fay::attribute_format::float3}
     };
 
-    size_t byte_size = mesh.size * mesh.layout.stride();
+    uint byte_size = mesh.size * mesh.layout.stride();
     mesh.vertices.reserve(byte_size);
     mesh.vertices.resize(byte_size);
     std::memcpy(mesh.vertices.data(), box_mesh.data(), byte_size);
@@ -131,10 +132,10 @@ inline shader_id create_shader(const std::string name, const std::string vs, con
 
 inline texture_desc create_texture_desc(
     const std::string& name, 
-    size_t width, 
-    size_t height, 
+    uint width, 
+    uint height, 
     fay::pixel_format fmt, 
-    size_t pixel_bytesize,
+    uint pixel_bytesize,
     wrap_mode wrap, 
     filter_mode filter)
 {
@@ -146,7 +147,7 @@ inline texture_desc create_texture_desc(
 }
 
 // most of the time, depth-stencil attachment is written only.
-inline texture_id create_depth_stencil_map(render_device* device, const std::string& name, size_t width, size_t height)
+inline texture_id create_depth_stencil_map(render_device* device, const std::string& name, uint width, uint height)
 {
     texture_desc desc;
 
@@ -174,7 +175,7 @@ inline texture_id create_depth_stencil_map(render_device* device, const std::str
 }
 
 // could used in shadow map
-inline texture_id create_readable_depth_map(const std::string& name, size_t width, size_t height, render_device* device)
+inline texture_id create_readable_depth_map(const std::string& name, uint width, uint height, render_device* device)
 {
     texture_desc desc;
 
@@ -219,7 +220,7 @@ inline texture_id create_2d(render_device_ptr& device, const std::string& name, 
     return device->create(desc);
 }
 
-inline fay::texture_id create_cubemap(render_device* device, const std::string& name, size_t width, size_t height, fay::pixel_format fmt, size_t pixel_bytesize, bool mipmap = false, bool as_target = false) // TODO: compute pixel_bytesize by help func
+inline fay::texture_id create_cubemap(render_device* device, const std::string& name, uint width, uint height, fay::pixel_format fmt, uint pixel_bytesize, bool mipmap = false, bool as_target = false) // TODO: compute pixel_bytesize by help func
 {
     fay::texture_desc desc;
     desc.name = name;
@@ -252,7 +253,7 @@ inline fay::texture_id create_cubemap(render_device* device, const std::string& 
 
 // -------------------------------------------------------------------------------------------------
 
-inline frame create_cubemap_frame(render_device* device, const std::string& name, size_t width, size_t height, fay::pixel_format fmt, size_t pixel_size, bool mipmap = false)
+inline frame create_cubemap_frame(render_device* device, const std::string& name, uint width, uint height, fay::pixel_format fmt, uint pixel_size, bool mipmap = false)
 {
     texture_id color_id = create_cubemap(device, name, width, height, fmt, pixel_size, mipmap);
     texture_id ds_id = create_depth_stencil_map(device, name, width, height);
@@ -278,7 +279,7 @@ inline frame create_cubemap_frame(render_device* device, const std::string& name
 }
 
 // TODO: better way
-inline frame create_mipmap_cubemap_frame(render_device* device, const std::string& name, size_t width, size_t height, texture_id color_id, texture_id ds_id, uint32_t level)
+inline frame create_mipmap_cubemap_frame(render_device* device, const std::string& name, uint width, uint height, texture_id color_id, texture_id ds_id, uint32_t level)
 {
     frame_desc fd;
     fd.name = name;
@@ -300,7 +301,7 @@ inline frame create_mipmap_cubemap_frame(render_device* device, const std::strin
     return { frm_id, color_id, ds_id };
 }
 
-inline frame create_depth_frame(const std::string& name, size_t width, size_t height, render_device* device)
+inline frame create_depth_frame(const std::string& name, uint width, uint height, render_device* device)
 {
     texture_desc desc;
 
@@ -340,7 +341,7 @@ inline frame create_depth_frame(const std::string& name, size_t width, size_t he
     return { frm_id, color_id, ds_id };
 }
 
-inline frame create_frame(render_device* device, const std::string& name, size_t width, size_t height, pixel_format fmt = pixel_format::rgba8)
+inline frame create_frame(render_device* device, const std::string& name, uint width, uint height, pixel_format fmt = pixel_format::rgba8)
 {
     texture_desc desc;
     desc.name = name;
@@ -371,7 +372,7 @@ inline frame create_frame(render_device* device, const std::string& name, size_t
     return { frm_id, color_id, ds_id };
 }
 
-inline frame create_Gbuffer(render_device* device, const std::string& name, size_t width, size_t height)
+inline frame create_Gbuffer(render_device* device, const std::string& name, uint width, uint height)
 {
     texture_desc desc;
 

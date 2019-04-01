@@ -113,7 +113,7 @@ inline void mouse_button_callback(GLFWwindow* window, int button, int action, in
 		input_.right_down = true;
 }
 
-inline void scroll_callback(GLFWwindow* window, double /*xoffset*/, double yoffset)
+inline void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset)
 {
 	input_.wheel = yoffset;
 }

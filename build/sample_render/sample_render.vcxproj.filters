@@ -2,7 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\sample\render\sample_render_main.cpp" />
-    <ClCompile Include="..\..\sample\render\0_basic_render.cpp" />
+    <ClCompile Include="..\..\sample\render\shadow.cpp" />
+    <ClCompile Include="..\..\sample\render\pbr.cpp" />
+    <ClCompile Include="..\..\sample\render\anti_aliasing.cpp" />
+    <ClCompile Include="..\..\sample\render\defered_render.cpp" />
+    <ClCompile Include="..\..\sample\render\basic_render.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\sample\render\sample_render_app.h" />

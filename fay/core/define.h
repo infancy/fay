@@ -108,48 +108,52 @@ enum class pixel_format
 
 inline uint32_t bytesize(pixel_format fmt)
 {
+    int sz{};
+
     switch (fmt)
     {
-        case fay::pixel_format::none:    return -1;
+        case fay::pixel_format::none:    sz = -1; break;
 
-        case fay::pixel_format::rgba32f: return 16;
-        case fay::pixel_format::rgb32f:  return 12;
-        case fay::pixel_format::rg32f:   return 8;
-        case fay::pixel_format::r32f:    return 4;
+        case fay::pixel_format::rgba32f: sz = 16; break;
+        case fay::pixel_format::rgb32f:  sz = 12; break;
+        case fay::pixel_format::rg32f:   sz = 8; break;
+        case fay::pixel_format::r32f:    sz = 4; break;
 
-        case fay::pixel_format::rgba16f: return 8;
-        case fay::pixel_format::rgb16f:  return 6;
-        case fay::pixel_format::rg16f:   return 4;
-        case fay::pixel_format::r16f:    return 2;
+        case fay::pixel_format::rgba16f: sz = 8; break;
+        case fay::pixel_format::rgb16f:  sz = 6; break;
+        case fay::pixel_format::rg16f:   sz = 4; break;
+        case fay::pixel_format::r16f:    sz = 2; break;
 
-        case fay::pixel_format::rgba8:   return 4;
-        case fay::pixel_format::rgb8:    return 3;
-        case fay::pixel_format::rg8:     return 2;
-        case fay::pixel_format::r8:      return 1;
+        case fay::pixel_format::rgba8:   sz = 4; break;
+        case fay::pixel_format::rgb8:    sz = 3; break;
+        case fay::pixel_format::rg8:     sz = 2; break;
+        case fay::pixel_format::r8:      sz = 1; break;
 
-        case fay::pixel_format::rgba4:   return 2;
+        case fay::pixel_format::rgba4:   sz = 2; break;
 
-        case fay::pixel_format::rgb10_a2: return 4;
-        case fay::pixel_format::rgb5_a1:  return 2;
-        case fay::pixel_format::rgb565:   return 2;
+        case fay::pixel_format::rgb10_a2: sz = 4; break;
+        case fay::pixel_format::rgb5_a1:  sz = 2; break;
+        case fay::pixel_format::rgb565:   sz = 2; break;
 
-        case fay::pixel_format::depth:        return 32;
-        case fay::pixel_format::depthstencil: return 32;
+        case fay::pixel_format::depth:        sz = 32; break;
+        case fay::pixel_format::depthstencil: sz = 32; break;
 
-        case fay::pixel_format::dxt1: return -1;
-        case fay::pixel_format::dxt3: return -1;
-        case fay::pixel_format::dxt5: return -1;
+        case fay::pixel_format::dxt1: sz = -1; break;
+        case fay::pixel_format::dxt3: sz = -1; break;
+        case fay::pixel_format::dxt5: sz = -1; break;
 
-        case fay::pixel_format::pvrtc2_rgb:  return -1;
-        case fay::pixel_format::pvrtc4_rgb:  return -1;
-        case fay::pixel_format::pvrtc2_rgba: return -1;
-        case fay::pixel_format::pvrtc4_rgba: return -1;
+        case fay::pixel_format::pvrtc2_rgb:  sz = -1; break;
+        case fay::pixel_format::pvrtc4_rgb:  sz = -1; break;
+        case fay::pixel_format::pvrtc2_rgba: sz = -1; break;
+        case fay::pixel_format::pvrtc4_rgba: sz = -1; break;
 
-        case fay::pixel_format::etc2_rgb8:  return -1;
-        case fay::pixel_format::etc2_srgb8: return -1;
+        case fay::pixel_format::etc2_rgb8:  sz = -1; break;
+        case fay::pixel_format::etc2_srgb8: sz = -1; break;
 
-        default: return -1;
+        default: sz = -1; break;
     }
+
+    return sz;
 }
 
 enum class texture_format
