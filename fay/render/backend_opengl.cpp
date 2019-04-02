@@ -1620,6 +1620,7 @@ private:
                     << "\nERROR::SHADER_COMPILATION_ERROR"
                     << "name: " << shader_name << "\ntype: " << name[type] << "\nerror: \n"
                     << error_info;
+                std::getchar();
             }
         }
         else
@@ -1632,6 +1633,7 @@ private:
                     << "\nERROR::PROGRAM_LINKING_ERROR"
                     << "\nname: " << shader_name << "\ntype: " << "PROGRAM" << "\nerror: \n"
                     << error_info;
+                std::getchar();
             }
         }
     }

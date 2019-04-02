@@ -18,6 +18,9 @@ public:
 
         mesh = fay::create_renderable(fay::Box, device.get());
 
+        fay::image img("texture/aliasing3.png");//, true);
+        tex = create_2d(this->device, "aliasing", img, false);
+
         fay::shader_desc sd  = fay::scan_shader_program("shd", "gfx/renderable.vs", "gfx/renderable.fs", desc.render.backend);
         fay::shader_desc sd2 = fay::scan_shader_program("shd2", "gfx/post_processing.vs", "gfx/FXAA.fs", desc.render.backend);
         shd  = device->create(sd);
@@ -50,11 +53,12 @@ public:
 
         pass2
             .begin_default(pipe, shd2)
-            .bind_textures({ frame[0] })
+            .bind_uniform("plane", camera->plane())
+            .bind_textures({ tex })
             .draw(6)
             .end_frame();
 
-        device->execute({ pass1, pass2 });
+        device->execute({ pass2 });
     }
 };
 

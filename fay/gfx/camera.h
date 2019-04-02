@@ -44,6 +44,11 @@ public:
             glm::radians(zoom()), aspect_, near_, far_);
     }
 
+    glm::vec2 plane() const
+    {
+        return { front_.x, front_.y };
+    }
+
     glm::mat4 ortho() const
     {
         return glm::orthoLH(-50.f, 50.f, -50.f, 50.f, 1.f, 100.f);
