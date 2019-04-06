@@ -52,9 +52,9 @@ public:
         mesh = fay::create_renderable(fay::Rei, device.get());
         mesh2 = fay::create_raw_renderable(fay::Box, device.get());
 
-        shd  = fay::create_shader(device.get(), "shd",  "gfx/phong_shading.vs", "gfx/deferred_shading_gbuffer.fs");
+        shd  = fay::create_shader(device.get(), "shd",  "gfx/phong_shading.vs",   "gfx/deferred_shading_gbuffer.fs");
         shd2 = fay::create_shader(device.get(), "shd2", "gfx/post_processing.vs", "gfx/deferred_shading.fs");
-        shd3 = fay::create_shader(device.get(), "shd3", "gfx/default.vs", "gfx/default.fs");
+        shd3 = fay::create_shader(device.get(), "shd3", "gfx/renderable.vs",      "gfx/deferred_shading_common.fs");
         shd4 = fay::create_shader(device.get(), "shd4", "gfx/post_processing.vs", "gfx/post_processing.fs");
 
         {
@@ -145,7 +145,10 @@ public:
         }
         pass2.draw(6);
 
-        pass2.apply_shader(shd3);
+        pass2
+            .apply_shader(shd3)
+            .bind_uniform("bAlbedo", false)
+            .bind_texture(frame[0], "gPosition");
         // use frame.dsv as frame2.dsv
         for (unsigned int i = 0; i < lightPositions.size(); i++)
         {
@@ -155,7 +158,6 @@ public:
 
             pass2
                 .bind_uniform("MVP", proj * view * model)
-                .bind_uniform("bAlbedo", false)
                 .bind_uniform("diffuse", lightColors[i])
                 .draw(mesh2.get());
         }

@@ -402,7 +402,7 @@ inline frame create_Gbuffer(render_device* device, const std::string& name, uint
     desc.mipmap = false;
 
     desc.as_render_target = render_target::color;
-    desc.format = pixel_format::rgb32f;
+    desc.format = pixel_format::rgba32f;
     auto color_id = device->create(desc);
 
     desc.as_render_target = render_target::color;
