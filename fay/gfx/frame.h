@@ -28,6 +28,7 @@ public:
 
     texture_id rtv(uint i) const { return colors_[i]; }
     texture_id operator[](uint i) const { return rtv(i); }
+    std::vector<texture_id> rtvs() { return colors_; }
 
     texture_id dsv() const { return ds_; }
 

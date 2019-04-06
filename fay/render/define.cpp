@@ -16,8 +16,7 @@ command_list& command_list::begin_frame(const frame& frm, pipeline_id pipe, shad
 {
     begin_frame(frm);
     clear();
-    apply_pipeline(pipe);
-    apply_shader(shd);
+    apply_state(pipe, shd);
 
     return *this;
 }

@@ -11,6 +11,7 @@ public:
 
     std::vector<glm::vec3> objectPositions;
 
+    // TODO: fay::light
     const unsigned int num_lights = 32;
     std::vector<glm::vec3> lightPositions;
     std::vector<glm::vec3> lightColors;
@@ -36,10 +37,11 @@ public:
         for (unsigned int i = 0; i < num_lights; i++)
         {
             // calculate slightly random offsets
-            float xPos = ((rand() % 100) / 100.0) * 6.0 - 3.0;
-            float yPos = ((rand() % 100) / 100.0) * 6.0 - 4.0;
-            float zPos = ((rand() % 100) / 100.0) * 6.0 - 3.0;
+            float xPos = ((rand() % 100) / 100.0) * 18.0 - 9.0;
+            float yPos = ((rand() % 100) / 100.0) * 18.0 - 9.0;
+            float zPos = ((rand() % 100) / 100.0) * 18.0 - 9.0;
             lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
+
             // also calculate random color
             float rColor = ((rand() % 100) / 200.0f) + 0.5; // between 0.5 and 1.0
             float gColor = ((rand() % 100) / 200.0f) + 0.5; // between 0.5 and 1.0
@@ -50,9 +52,10 @@ public:
         mesh = fay::create_renderable(fay::Rei, device.get());
         mesh2 = fay::create_raw_renderable(fay::Box, device.get());
 
-        shd  = fay::create_shader(device.get(), "shd", "gfx/30_phong_shading.vs", "gfx/38_g_buffer.fs");
-        shd2 = fay::create_shader(device.get(), "shd2", "gfx/post_processing.vs", "gfx/38_deferred_shading.fs");
-        shd3 = fay::create_shader(device.get(), "shd2", "gfx/post_processing.vs", "gfx/post_processing.fs");
+        shd  = fay::create_shader(device.get(), "shd",  "gfx/phong_shading.vs", "gfx/deferred_shading_gbuffer.fs");
+        shd2 = fay::create_shader(device.get(), "shd2", "gfx/post_processing.vs", "gfx/deferred_shading.fs");
+        shd3 = fay::create_shader(device.get(), "shd3", "gfx/default.vs", "gfx/default.fs");
+        shd4 = fay::create_shader(device.get(), "shd4", "gfx/post_processing.vs", "gfx/post_processing.fs");
 
         {
             fay::pipeline_desc pd;
@@ -67,6 +70,7 @@ public:
             {
                 pd.name = "light_stage_pipe";
                 pd.cull_mode = fay::cull_mode::none;
+                pd.depth_enabled = false; // why can't use frame.dsv
             }
             pipe2 = device->create(pd);
         }
@@ -79,11 +83,13 @@ public:
             auto offscreen_tex = device->create(offscreen_desc);
 
             fay::frame_desc fd("offscreen", { { offscreen_tex, 0, 0 } }, { frame.dsv(), 0, 0 });
+            fd.width = 1024;
+            fd.height = 1024;
             auto frm_id = device->create(fd);
 
             frame2 = fay::frame(frm_id, { offscreen_tex }, frame.dsv());
 
-            frame2 = fay::create_frame(device.get(), "offscreen", 1024, 1024);
+            //frame2 = fay::create_frame(device.get(), "offscreen", 1024, 1024);
         }
     }
 
@@ -100,11 +106,11 @@ public:
         pass1.begin_frame(frame, pipe, shd);
         for (unsigned int i = 0; i < objectPositions.size(); i++)
         {
-            glm::mat4 objectmodel = glm::mat4(1);
-            objectmodel = glm::translate(objectmodel, objectPositions[i]);
-            objectmodel = glm::scale(objectmodel, glm::vec3(5.f));
+            glm::mat4 model = glm::mat4(1);
+            model = glm::translate(model, objectPositions[i]);
+            model = glm::scale(model, glm::vec3(5.f));
 
-            glm::mat4 MV = view * objectmodel;
+            glm::mat4 MV = view * model;
             glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
 
             pass1
@@ -116,7 +122,9 @@ public:
         pass1.end_frame();
 
         pass2
-            .begin_frame(frame2, pipe2, shd2)
+            .begin_frame(frame2)
+            .clear_color() // WARNNING
+            .apply_state(pipe2, shd2)
             .bind_texture(frame[0], "gPosition")
             .bind_texture(frame[1], "gNormal")
             .bind_texture(frame[2], "gAlbedoSpec")
@@ -137,11 +145,24 @@ public:
         }
         pass2.draw(6);
 
+        pass2.apply_shader(shd3);
         // use frame.dsv as frame2.dsv
+        for (unsigned int i = 0; i < lightPositions.size(); i++)
+        {
+            glm::mat4 model = glm::mat4(1);
+            model = glm::translate(model, lightPositions[i]);
+            model = glm::scale(model, glm::vec3(0.2f));
+
+            pass2
+                .bind_uniform("MVP", proj * view * model)
+                .bind_uniform("bAlbedo", false)
+                .bind_uniform("diffuse", lightColors[i])
+                .draw(mesh2.get());
+        }
         pass2.end_frame();
 
         pass3
-            .begin_default(pipe, shd3)
+            .begin_default(pipe, shd4)
             .bind_uniform("offset", glm::vec2(0.f))
             .bind_texture(frame2[0], "frame")
             .draw(6)

@@ -64,6 +64,7 @@ public:
     fay::shader_id shd;
     fay::shader_id shd2;
     fay::shader_id shd3;
+    fay::shader_id shd4;
     fay::pipeline_id pipe;
     fay::pipeline_id pipe2;
 

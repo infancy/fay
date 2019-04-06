@@ -1127,13 +1127,6 @@ public:
         return *this;
     }
 
-    command_list& apply_shader(const shader_id id)
-    {
-        auto& cmd = add_command(command_type::apply_shader);
-        cmd.shd_ = id;
-
-        return *this;
-    }
     command_list& apply_pipeline(const pipeline_id id)
     {
         auto& cmd = add_command(command_type::apply_pipeline);
@@ -1141,7 +1134,20 @@ public:
 
         return *this;
     }
-    //command_list& apply_state(const shader_id id, const pipeline_id id);
+    command_list& apply_shader(const shader_id id)
+    {
+        auto& cmd = add_command(command_type::apply_shader);
+        cmd.shd_ = id;
+
+        return *this;
+    }
+    command_list& apply_state(const pipeline_id pipe, const shader_id shd)
+    {
+        apply_pipeline(pipe);
+        apply_shader(shd);
+
+        return *this;
+    }
 
     // -------------------------------------------------------------------------------------------------
 
