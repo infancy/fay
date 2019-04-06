@@ -26,10 +26,6 @@ inline buffer_sp create_buffer_sp(render_device* device, const buffer_desc desc)
     return buffer_sp(new buffer_id(id), [device](const buffer_id* ptr) { device->destroy(*ptr); delete ptr; });
 }
 
-#define glcheck_errors() CHECK(glGetError() == GL_NO_ERROR)
-
-
-
 // -------------------------------------------------------------------------------------------------
 
 // inline app_desc global_desc;
@@ -122,14 +118,15 @@ inline renderable_sp create_renderable(const std::string& model_path, render_dev
 
 // -------------------------------------------------------------------------------------------------
 
-inline shader_id create_shader(const std::string name, const std::string vs, const std::string fs, render_device* device)
+inline shader_id create_shader(render_device* device, const std::string name, const std::string vs, const std::string fs)
 {
-    auto desc = fay::scan_shader_program(name, vs, fs, device->type());
+    auto desc = fay::scan_shader_program(name, vs, fs, device->type()); // TODO: device->backend();
     return device->create(desc);
 }
 
 // -------------------------------------------------------------------------------------------------
 
+// TODO: remove
 inline texture_desc create_texture_desc(
     const std::string& name, 
     uint width, 
@@ -199,6 +196,7 @@ inline texture_id create_readable_depth_map(const std::string& name, uint width,
     return device->create(desc);
 }
 
+// TODO: remove
 inline texture_id create_2d(render_device_ptr& device, const std::string& name, const image& img, bool as_target = false)
 {
     texture_desc desc;
@@ -216,6 +214,18 @@ inline texture_id create_2d(render_device_ptr& device, const std::string& name, 
     desc.type = texture_type::two;
 
     desc.as_render_target = as_target ? render_target::color : render_target::none;
+
+    return device->create(desc);
+}
+
+inline texture_id create_texture(render_device* device, const std::string& filepath, bool as_target = false)
+{
+    fay::image img(filepath);
+    texture_desc desc(img.name(), img.width(), img.height(), img.format(), texture_type::two, { img.data() });
+
+    // not need
+    // desc.size = img.size() * img.pixel_size();
+    // desc.as_render_target = as_target ? render_target::color : render_target::none;
 
     return device->create(desc);
 }

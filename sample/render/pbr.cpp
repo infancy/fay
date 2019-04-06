@@ -134,12 +134,12 @@ public:
         fay::image env_img("texture/hdr/newport_loft.hdr");
         env_tex_id = create_2d(this->device, "equirectangularMap", env_img);
 
-        auto generate_cube_shd_id = create_shader("generate_cube", "gfx/IBL/cubemap.vs", "gfx/IBL/generate_cubemap.fs", device.get());
-        auto irradiance_shd_id = create_shader("irradiance", "gfx/IBL/cubemap.vs", "gfx/IBL/irradiance_convolution.fs", device.get());
-        auto prefilter_map_shd_id = create_shader("prefilter_map", "gfx/IBL/cubemap.vs", "gfx/IBL/prefilter.fs", device.get());
-        auto brdf_map_shd_id = create_shader("brdf_map", "gfx/IBL/brdf.vs", "gfx/IBL/brdf.fs", device.get());
-        background_shd_id = create_shader("background", "gfx/IBL/background.vs", "gfx/IBL/background.fs", device.get());
-        shd = create_shader("IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs", device.get());
+        auto generate_cube_shd_id = create_shader(device.get(), "generate_cube", "gfx/IBL/cubemap.vs", "gfx/IBL/generate_cubemap.fs");
+        auto irradiance_shd_id = create_shader(device.get(), "irradiance", "gfx/IBL/cubemap.vs", "gfx/IBL/irradiance_convolution.fs");
+        auto prefilter_map_shd_id = create_shader(device.get(), "prefilter_map", "gfx/IBL/cubemap.vs", "gfx/IBL/prefilter.fs");
+        auto brdf_map_shd_id = create_shader(device.get(), "brdf_map", "gfx/IBL/brdf.vs", "gfx/IBL/brdf.fs");
+        background_shd_id = create_shader(device.get(), "background", "gfx/IBL/background.vs", "gfx/IBL/background.fs");
+        shd = create_shader(device.get(), "IBL_PBR", "gfx/IBL/pbr.vs", "gfx/IBL/pbr.fs");
 
         {
             fay::pipeline_desc pd;

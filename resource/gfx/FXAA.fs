@@ -101,13 +101,36 @@ bool main_direction_is_horizontal(mat3 luma)
     return edgeHorizontal > edgeVertical;
 }
 
+const int ITERATION = 12;
+const float steps[ITERATION] = float[]( 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 2.0, 2.0, 2.0, 2.0, 4.0, 8.0);
+
+vec3 edge_end_point(vec2 currentUv, vec2 offset, float lumaLocalAverage, float gradientScaled)
+{
+    // 边缘端点
+    vec2 endpoint = currentUv;
+    float lumaEnd = 0.0;
+
+    for(int i = 0; i < ITERATION; ++i)
+    {
+        endpoint = endpoint + offset * steps[i];
+
+        lumaEnd = rgb2luma(texture(frame, endpoint).rgb) - lumaLocalAverage;
+
+        // 大于该方向上的阈值，认为到达了边缘的端点处
+        if(abs(lumaEnd) >= gradientScaled)
+            break;
+    }
+
+    return vec3(endpoint, lumaEnd);
+}
+
 // 阈值与最大亮度系数
 const float EDGE_THRESHOLD_MAX = 0.166;
 // 最低判断阈值
 const float EDGE_THRESHOLD_MIN = 0.0833;
 
 //#define ONE_SHOW_EDGE
-#define TWO_SHOW_MAIN_DIR
+//#define TWO_SHOW_MAIN_DIR
 
 #ifdef SHADER_TOY
 void mainImage(out vec4 FragColor, in vec2 vTex)
@@ -115,9 +138,7 @@ void mainImage(out vec4 FragColor, in vec2 vTex)
 void main()
 #endif
 {    
-    vec2 currrentUV = vTex;
-
-    mat3 luma = around_luma(currrentUV);
+    mat3 luma = around_luma(vTex);
 
     // 边缘检测
     vec3 mmd = max_min_diff_luma(luma);
@@ -139,17 +160,79 @@ void main()
     bool isHorizontal = main_direction_is_horizontal(luma);
 
 #ifdef TWO_SHOW_MAIN_DIR
-    if (isHorizontal)
-    {
+    if (isHorizontal) // 垂直？？？
         FragColor = vec4(1, 0, 0, 1);
-    }
     else
-    {
         FragColor = vec4(1, 1, 1, 1);
-    }
+
     return;
 #endif
 
+    // 寻找两端
+    // ??????
+    float lumaN = isHorizontal ? luma[0][1] : luma[1][0];
+    float lumaP = isHorizontal ? luma[2][1] : luma[1][2];
 
-	//FragColor = texture(frame, vTex);
+    float gradientN = lumaN - luma[1][1];
+    float gradientP = lumaP - luma[1][1];
+
+    bool is_negative_steepest = abs(gradientN) >= abs(gradientP);
+
+    float lumaMain = is_negative_steepest ? lumaN : lumaP;
+
+    // 平均亮度
+    float lumaLocalAverage = 0.5 * (lumaMain + luma[1][1]);
+
+    // 阈值
+    float gradientScaled = 0.25 * max( abs(gradientN), abs(gradientP) );
+
+    // 纹素尺寸
+    vec2 texelSize = 1.0 / textureSize(frame, 0);
+    float stepLength = isHorizontal ? texelSize.y : texelSize.x;
+
+    // 沿边缘方向移动半个纹素
+    vec2 currentUv = vTex;
+    if(isHorizontal)
+        currentUv.y += stepLength * 0.5; // 比如说当前是竖直线段正方向，就往上移半格到边界上
+    else
+        currentUv.x += stepLength * 0.5;
+
+    // 一个纹素偏移量
+    // ??????
+    vec2 offset = isHorizontal ? vec2(texelSize.x, 0.0) : vec2(0.0, texelSize.y);
+
+
+
+    // 线段端点
+    vec3 endN = edge_end_point(currentUv, -offset, lumaLocalAverage, gradientScaled);
+    vec2 edgeN = endN.xy;
+
+    vec3 endP = edge_end_point(currentUv,  offset, lumaLocalAverage, gradientScaled);
+    vec2 edgeP = endP.xy;
+
+    // 两侧线段长度
+    float distanceN = isHorizontal ? (vTex.x - edgeN.x) : (vTex.y - edgeN.y);
+    float distanceP = isHorizontal ? (edgeP.x - vTex.x) : (edgeP.y - vTex.y);
+
+    // 最终偏移量
+    float pixelOffset = - (min(distanceN, distanceP) / (distanceN + distanceP)) + 0.5;
+
+    // 中心和平均亮度比较
+    bool isLumaCenterSmaller = luma[0][0] < lumaLocalAverage;
+
+    // 近端点 和 中心到平均亮度的变化不一致
+    bool correctVariation = (( (distanceN < distanceP) ? endN.z : endP.z) < 0.0) != isLumaCenterSmaller;
+
+    // 如果不一致则不应用偏移量
+    float finalOffset = correctVariation ? pixelOffset : 0.0;
+
+
+
+    vec2 finalUv = vTex;
+    if(isHorizontal)
+        finalUv.y += finalOffset * stepLength;
+    else
+        finalUv.x += finalOffset * stepLength;
+
+    FragColor = vec4(texture(frame, finalUv).rgb, 1.0);
 }

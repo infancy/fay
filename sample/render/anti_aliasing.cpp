@@ -53,7 +53,7 @@ public:
 
         pass2
             .begin_default(pipe, shd2)
-            .bind_uniform("plane", camera->plane())
+            .bind_uniform("offset", camera->plane())
             .bind_textures({ tex })
             .draw(6)
             .end_frame();

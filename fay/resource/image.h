@@ -41,6 +41,7 @@ public:
 
     pixel_format format() const { return fmt_; }
 
+    std::string_view name() const { return name_; }
     std::string_view filepath() const { return filepath_; }
 
     bool is_flip_vertical() const { return is_flip_vertical_; }
@@ -55,6 +56,8 @@ protected:
     bool is_flip_vertical_{};
     // bool is_load_from_file_{};
 
+    // TODO: class image : public resource;
+    std::string name_{};
     std::string filepath_{};
 };
 
@@ -91,6 +94,7 @@ public:
     {
         LOG_IF(ERROR, filepath.empty()) << "image path is empty!";
 
+        name_ = get_filename(filepath);
         filepath_ = filepath;
         is_flip_vertical_ = flip_vertical;
         is_load_from_file_ = true;
