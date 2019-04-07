@@ -67,6 +67,8 @@ public:
     fay::shader_id shd4;
     fay::pipeline_id pipe;
     fay::pipeline_id pipe2;
+    fay::pipeline_id pipe3;
+    fay::pipeline_id pipe4;
 
     fay::frame frame;
     fay::frame frame2;

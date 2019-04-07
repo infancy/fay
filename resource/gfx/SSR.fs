@@ -6,8 +6,13 @@ out vec4 FragColor;
 uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
+uniform sampler2D gFrontBackDepth;
 
-struct Light 
+uniform vec3 lightPosition;
+uniform vec3 lightColor;
+uniform vec3 viewPos;
+/*
+layout (std140) uniform light 
 {
     vec3 Position;
     vec3 Color;
@@ -15,9 +20,8 @@ struct Light
     float Linear;
     float Quadratic;
 };
-const int NR_LIGHTS = 32;
-uniform Light lights[NR_LIGHTS];
-uniform vec3 viewPos;
+*/
+
 
 void main()
 {             
@@ -27,11 +31,27 @@ void main()
     vec3 Diffuse   = texture(gAlbedoSpec, vTex).rgb;
     float Specular = texture(gAlbedoSpec, vTex).a;
     
-    // then calculate lighting as usual
-    vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
     vec3 viewDir  = normalize(viewPos - FragPos);
 
-    FragColor = vec4(Diffuse, 1.0);
+    // ambient
+    vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
 
-    //FragColor = texture(gAlbedoSpec, vTex);
+    // diffuse
+    vec3 lightDir = normalize(lightPosition - FragPos);
+    vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * lightColor;
+    // specular
+    //vec3 halfwayDir = normalize(lightDir + viewDir);  
+    //float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
+    //vec3 specular = lightColor * spec * Specular;
+    //specular = vec3(0.0);
+    // attenuation
+    //float distance = length(lightPosition - FragPos);
+    //float attenuation = 1.0 / (1.0 + light.Linear * distance + light.Quadratic * distance * distance);
+
+    //diffuse *= attenuation;
+    //specular *= attenuation;
+    lighting += diffuse;   
+
+    lighting *= 1.3;
+    FragColor = vec4(lighting, 1.0);
 }

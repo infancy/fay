@@ -6,6 +6,7 @@ in vec2 vTex;
 layout (location = 0) out vec4 gPos;
 layout (location = 1) out vec3 gNor;
 layout (location = 2) out vec4 gAlbedoSpec;
+layout (location = 3) out vec4 gDepth;
 
 uniform bool bAlbedo;
 uniform sampler2D Albedo;
@@ -33,4 +34,6 @@ void main()
         gAlbedoSpec.rgb = albedo.rgb;
         gAlbedoSpec.a = albedo.r;
     }
+
+    gDepth.r = gl_FragCoord.z;
 }

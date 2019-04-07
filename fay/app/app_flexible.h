@@ -413,6 +413,9 @@ inline frame create_Gbuffer(render_device* device, const std::string& name, uint
     desc.format = pixel_format::rgba8;
     auto color_id3 = device->create(desc);
 
+    desc.format = pixel_format::rgba32f;
+    auto color_id4 = device->create(desc);
+
     desc.as_render_target = render_target::depth_stencil;
     desc.format = pixel_format::depthstencil; // TODO: depth_stencil;
     auto ds_id = device->create(desc);
@@ -421,11 +424,11 @@ inline frame create_Gbuffer(render_device* device, const std::string& name, uint
     fd.name = name;
     fd.width = width;
     fd.height = height;
-    fd.render_targets = { { color_id, 0, 0 }, { color_id2, 0, 0 }, { color_id3, 0, 0 } };
+    fd.render_targets = { { color_id, 0, 0 }, { color_id2, 0, 0 }, { color_id3, 0, 0 }, { color_id4, 0, 0 } };
     fd.depth_stencil = { ds_id, 0, 0 };
     auto frm_id = device->create(fd);
 
-    return { frm_id, { color_id, color_id2, color_id3 }, ds_id };
+    return { frm_id, { color_id, color_id2, color_id3, color_id4 }, ds_id };
 }
 
 // -------------------------------------------------------------------------------------------------
