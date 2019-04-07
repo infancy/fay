@@ -7,6 +7,8 @@
     <ClCompile Include="..\..\sample\render\anti_aliasing.cpp" />
     <ClCompile Include="..\..\sample\render\defered_render.cpp" />
     <ClCompile Include="..\..\sample\render\basic_render.cpp" />
+    <ClCompile Include="..\..\sample\render\reflection.cpp" />
+    <ClCompile Include="..\..\sample\render\blend.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\sample\render\sample_render_app.h" />

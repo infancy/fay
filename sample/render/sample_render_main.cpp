@@ -22,6 +22,8 @@ SAMPLE_RENDER_APP_DECL(cascade_shadow_map)
 
 SAMPLE_RENDER_APP_DECL(defered_shading)
 
+SAMPLE_RENDER_APP_DECL(SSR)
+
 SAMPLE_RENDER_APP_DECL(PBR)
 SAMPLE_RENDER_APP_DECL(IBL)
 
@@ -38,6 +40,6 @@ int main(int argc, char** argv)
     {
         // desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(defered_shading, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(SSR, desc);
     return app_->run();
 }

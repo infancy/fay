@@ -23,7 +23,7 @@ struct material // : std::enabled_shared_from_this<material>
         if (!res.occlusion.empty())          textures[3] = create_2d_(device, name + "_occlusion",          texture_usage::occlusion,          res.occlusion);
         if (!res.emissive.empty())           textures[4] = create_2d_(device, name + "_emissive",           texture_usage::emissive,           res.emissive);
 
-        base = res.base_factor;
+        albedo = res.base_factor;
         emissive = res.emissive_factor;
         metallic = res.metallic_factor;
         roughness = res.roughness_factor;
@@ -59,7 +59,7 @@ struct material // : std::enabled_shared_from_this<material>
 
     std::array<texture_id, 5> textures{};
 
-    glm::vec4 base{ 1.f };
+    glm::vec4 albedo{ 1.f };
     float metallic = 1.f;
     float roughness = 1.f;
     float normal = 1.f;

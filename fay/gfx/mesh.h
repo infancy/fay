@@ -85,6 +85,7 @@ public:
         cmd
             // TODO: span_view
             .try_bind_texture(mat_->textures[0], "Albedo")
+            .bind_uniform("albedo", mat_->albedo)
             .bind_uniform("bAlbedo", bAlbedo)
             .bind_index(ibo)
             .bind_vertex(vbo)
