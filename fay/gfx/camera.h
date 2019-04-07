@@ -44,9 +44,14 @@ public:
             glm::radians(zoom()), aspect_, near_, far_);
     }
 
-    glm::vec2 plane() const
+    glm::vec2 plane() const // rename : offset2d
     {
         return { front_.x, front_.y };
+    }
+
+    glm::vec2 depth() const
+    {
+        return { near_, far_ };
     }
 
     glm::mat4 ortho() const

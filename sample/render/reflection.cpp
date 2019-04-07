@@ -51,6 +51,8 @@ public:
 
         frame = fay::create_Gbuffer(device.get(), "Gbuffer_frm", 1024, 1024);
 
+        frame2 = fay::create_frame(device.get(), "offscreen", 1024, 1024, fay::pixel_format::rgba32f);
+
         {
             fay::texture_desc offscreen_desc("offscreen_tex", 1024, 1024, fay::pixel_format::rgba8);
             offscreen_desc.as_render_target = fay::render_target::color;
@@ -61,9 +63,7 @@ public:
             fd.height = 1024;
             auto frm_id = device->create(fd);
 
-            frame2 = fay::frame(frm_id, { offscreen_tex }, frame.dsv());
-
-            //frame2 = fay::create_frame(device.get(), "offscreen", 1024, 1024);
+            frame3 = fay::frame(frm_id, { offscreen_tex }, frame.dsv());
         }
     }
 
@@ -77,7 +77,7 @@ public:
         glm::mat4 MV = view * model;
         glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
 
-        fay::command_list pass1, pass2, pass3;
+        fay::command_list pass1, pass2, pass3, pass4; // pass[4]
 
         // depth map
         pass1
@@ -86,36 +86,45 @@ public:
             .bind_uniform("NormalMV", NormalMV)
             .bind_uniform("MVP", proj * MV)
             .draw(mesh.get())
-            .apply_shader(shd2)
-            .bind_uniform("bFront", true)
-            .draw(mesh.get())
-            .apply_pipeline(pipe2)
-            .bind_uniform("bFront", false)
-            .draw(mesh.get())
             .end_frame();
 
         pass2
-            .begin_frame(frame2)
+            .begin_frame(frame2, pipe2, shd2)
+            .bind_uniform("MV", MV)
+            .bind_uniform("NormalMV", NormalMV)
+            .bind_uniform("MVP", proj * MV)
+            .draw(mesh.get())
+            .end_frame();
+
+        pass3
+            .begin_frame(frame3)
             .clear_color() // WARNNING
             .apply_state(pipe3, shd3)
             .bind_texture(frame[0], "gPosition")
             .bind_texture(frame[1], "gNormal")
             .bind_texture(frame[2], "gAlbedoSpec")
+            .bind_texture(frame2[0], "gBackPosition")
             .bind_uniform("offset", glm::vec2(0.f))
+
             .bind_uniform("lightPosition", light->position())
             .bind_uniform("lightColor", glm::vec3(1.f, 1.f, 1.f))
             .bind_uniform("viewPos", camera->position())
+
+            .bind_uniform("Proj", camera->persp())
+            .bind_uniform("farPlane", camera->depth().y)
+            .bind_uniform("screenSize", glm::vec2(1080, 720))
+
             .draw(6)
             .end_frame();
 
-        pass3
+        pass4
             .begin_default(pipe3, shd4)
             .bind_uniform("offset", glm::vec2(0.f))
-            .bind_texture(frame2[0], "frame")
+            .bind_texture(frame3[0], "frame")
             .draw(6)
             .end_frame();
 
-        device->execute({ pass1, pass2, pass3 });
+        device->execute({ pass1, pass2, pass3, pass4 });
     }
 };
 

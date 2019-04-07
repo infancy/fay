@@ -3,18 +3,12 @@ in vec3 vPos;
 in vec3 vNor;
 in vec2 vTex;
 
-layout (location = 3) out vec4 gDepth;
+layout (location = 0) out vec4 gPos;
 
 uniform bool bFront;
 
 void main()
 {   
-    if(bFront)
-    {
-        gDepth.r = gl_FragCoord.z;
-    }
-    else
-    {
-        gDepth.g = gl_FragCoord.z;
-    }
+    gPos.rgb = vPos;
+    gPos.a = gl_FragCoord.z;
 }
