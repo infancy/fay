@@ -2,7 +2,7 @@
 
 #include <optional>
 
-#include "fay/core/fay.h"
+#include "fay/core/algorithm.h"
 #include "fay/core/range.h"
 
 namespace fay
@@ -106,8 +106,6 @@ inline std::optional<uint> index(const Container& container, UnaryPredicate p,
     auto iter = find(container, p);
     return (iter == container.end()) ? std::nullopt : std::optional<uint>{ std::distance(std::begin(container), iter) };
 }
-
-
 
 template<typename T>
 inline bool is_clamp(T val, T low, T high)

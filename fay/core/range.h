@@ -12,7 +12,7 @@ namespace fay
 // a naive implementation
 // return value of range should provide 'begin' and 'end' functions
 template<typename T>
-std::vector<T> range(T start, T end, T step)
+inline std::vector<T> range(T start, T end, T step)
 {
     static_assert(std::is_integral_v<T>, "fay::range have to use intergral type");
     
@@ -55,13 +55,13 @@ std::vector<T> range(T start, T end, T step)
 }
 
 template<typename T>
-std::vector<T> range(T start, T end)
+inline std::vector<T> range(T start, T end)
 {
     return range(start, end, T(1));
 }
 
 template<typename T>
-std::vector<T> range(T end)
+inline std::vector<T> range(T end)
 {
     return range(T(0), end, T(1));
 }
