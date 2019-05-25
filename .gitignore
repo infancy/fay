@@ -279,3 +279,5 @@ __pycache__/
 /resource/nsight_profiler.cfg
 /resource/model
 /fay/.vscode
+/build/sample_render/sample/render
+/build/fay/cpp.hint

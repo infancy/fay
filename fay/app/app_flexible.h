@@ -452,6 +452,10 @@ const inline std::string Nier_2b_1  = "model/Nier_2b/2b.obj";
 const inline std::string Nier_2b_2  = "model/Nier_2b_ik_rigged/scene.gltf";
 const inline std::string Sphere     = "model/sphere/scene.obj";
 const inline std::string Sponza     = "model/sponza/sponza.obj";
+const inline std::string Gallery    = "model/gallery/gallery.obj";
+const inline std::string Rungholt   = "model/rungholt/rungholt.obj";
+const inline std::string PowerPlant = "model/powerplant/powerplant.obj";
+const inline std::string SanMiguel  = "model/San_Miguel/san-miguel-low-poly.obj";
 //const inline std::string shadows  = "model/shadows/shadows.obj";
 
 struct render_paras

@@ -211,6 +211,8 @@ public:
 	void update()
 	{
         update_input();
+        float frame_rate = 1.0 / input.delta_time;
+        //glfwSetWindowTitle(window_, std::to_string(frame_rate).c_str());
 	}
 
 	// TODO:remove

@@ -54,7 +54,7 @@ using namespace std::string_literals;
     #define D3D_CHECK(func) (func)
     #endif 
     #ifndef D3D_CHECK2
-    #define D3D_CHECK2(func) (func)
+    #define D3D_CHECK2(func, ptr) (func)
     #endif 
 #endif
 

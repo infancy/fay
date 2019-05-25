@@ -5,15 +5,17 @@ namespace fay
 {
 
 // TODO
+/*
 template<class InputIt, class OutputIt, class BinaryOperation>
 inline void transform(InputIt first1, InputIt last1, OutputIt first2,
-	BinaryOperation binary_op)
+    BinaryOperation binary_op)
 {
-	while (first1 != last1) 
-	{
-		binary_op(*first1++, *first2++);
-	}
+    while (first1 != last1)
+    {
+        binary_op(*first1++, *first2++);
+    }
 }
+*/
 
 inline void loop(uint cnt, std::function<void()> functor)
 {

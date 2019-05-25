@@ -6,6 +6,8 @@ class gfx : public fay::app
 public:
     gfx(const fay::app_desc& _desc) : fay::app(_desc)
     {
+        desc.window.width = 3840;
+        desc.window.height = 2160;
         desc.window.title = "gfx";
 
         //scene_ = std::make_unique<fay::scene>(device.get());
@@ -28,9 +30,9 @@ public:
         //std::cin >> name;
 
         //scene_->add_model("object/Rei/Rei.obj");// + name);
-        scene_->add_model(fay::Box);
+        scene_->add_model(fay::Rungholt);
 
-        fay::shader_desc sd = fay::scan_shader_program("renderable", "gfx/renderable.vs", "gfx/renderable.fs");
+        fay::shader_desc sd = fay::scan_shader_program("renderable", "gfx/renderable.vs", "gfx/renderable.fs", fay::render_backend_type::opengl);
         sd.name = "shd"; //todo
         auto shd_id = device->create(sd);
 
@@ -48,11 +50,8 @@ public:
         paras.b = { 0.f, 1.f, 0.f, 1.f };
 
         pass1
-            .begin_default_frame()
-            .clear_frame()
-            .apply_shader(shd_id)
-            .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(fay::render_paras) })
-            .apply_pipeline(pipe_id);
+            .begin_default(pipe_id, shd_id)
+            .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(fay::render_paras) });
     }
 
     void render() override

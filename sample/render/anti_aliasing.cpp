@@ -8,7 +8,7 @@ public:
     // using fay::app;
     FXAA(const fay::app_desc& _desc) : passes(_desc)
     {
-        desc.window.title = "FXAA";
+        desc.window.title = "WBOIT";
     }
 
     void setup() override
@@ -18,7 +18,7 @@ public:
 
         mesh = fay::create_renderable(fay::Box, device.get());
 
-        fay::image img("texture/aliasing3.png");//, true);
+        fay::image img("texture/wboit.png");//, true);
         tex = create_2d(this->device, "aliasing", img, false);
 
         fay::shader_desc sd  = fay::scan_shader_program("shd", "gfx/renderable.vs", "gfx/renderable.fs", desc.render.backend);

@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_MATH_VECTOR_H
-#define FAY_MATH_VECTOR_H
 
 #include <array>
 #include <initializer_list>
@@ -115,8 +110,12 @@ using vec2i = vec<2, int>;
 using vec3i = vec<3, int>;
 using vec4i = vec<4, int>;
 
+
+
 // -------------------------------------------------------------------------------------------------
-// operator functions
+// compare
+
+
 
 template <size_t N, typename T>
 bool operator==(const vec<N, T>& x, const vec<N, T>& y)
@@ -132,6 +131,13 @@ bool operator==(const vec<N, T>& x, const vec<N, T>& y)
 // bool operator==(const vec<N, float>& x, const vec<N, float>& y)
 template <size_t N, typename T>
 bool operator!=(const vec<N, T>& x, const vec<N, T>& y) { return !(x == y); }
+
+
+
+// -------------------------------------------------------------------------------------------------
+// arithmetic functions
+
+
 
 template <size_t N, typename T>
 vec<N, T> operator-(const vec<N, T>& v) { vec<N, T> t; t -= v; return t; } // for NRVO
@@ -171,7 +177,7 @@ inline vec<N, T> operator OP(const T x, const vec<N, T>& y)          { vec<N, T>
                                                                                                               \
                                                                                                               \
 template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
-inline vec<N, T>& operator OP##=(vec<N, T>& x, const T y)          { for (auto& e : x) e OP##= y; return x; } \
+inline vec<N, T>& operator OP##=(  vec<N, T>& x, const T y)        { for (auto& e : x) e OP##= y; return x; } \
                                                                                                               \
 template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
 inline vec<N, T> operator OP(const vec<N, T>& x, const T y)          { vec<N, T> r(x); r OP##= y; return r; } 
@@ -276,5 +282,3 @@ inline std::ostream& operator<<(std::ostream& os, const vec<N, float>& v)	// TOD
 }
 
 } // namespace fay
-
-#endif // FAY_MATH_VECTOR_H

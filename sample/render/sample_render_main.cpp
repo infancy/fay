@@ -18,7 +18,7 @@ SAMPLE_RENDER_APP_DECL(offscreen)
 
 SAMPLE_RENDER_APP_DECL(FXAA)
 
-SAMPLE_RENDER_APP_DECL(cascade_shadow_map)
+SAMPLE_RENDER_APP_DECL(cascade_shadow_map) // rename: CSM
 
 SAMPLE_RENDER_APP_DECL(defered_shading)
 
@@ -40,6 +40,6 @@ int main(int argc, char** argv)
     {
         // desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(SSR, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(FXAA, desc);
     return app_->run();
 }

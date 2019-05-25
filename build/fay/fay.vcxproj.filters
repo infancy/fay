@@ -25,6 +25,9 @@
     <Filter Include="misc">
       <UniqueIdentifier>{e340ea27-1f3c-4784-8c1e-b8796ed7257a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scene">
+      <UniqueIdentifier>{2610e583-e6c5-400f-aac9-1ec2af663676}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\fay\render\render.cpp">
@@ -248,5 +251,11 @@
     <ClInclude Include="..\..\fay\gfx\frame.h">
       <Filter>gfx</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\fay\core\event.h">
+      <Filter>core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>

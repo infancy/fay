@@ -31,30 +31,32 @@ constexpr inline float Sqrt2   = 1.41421356237309504880;
 
 
 
-inline float radians(float deg) { return (Pi / 180) * deg; }
+constexpr float radians(float deg) { return (Pi / 180.f) * deg; }
 
-inline float degrees(float rad) { return (180 / Pi) * rad; }
+constexpr float degrees(float rad) { return (180.f / Pi) * rad; }
 
-// TODO: min/max(......)
-template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-inline T min(T a, T b, T c)
+template<typename T, typename... Ts, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+constexpr T min(T a, T b, Ts... c)
 {
-	return (a < b) ? (a < c ? a : c) : (b < c ? b : c);
+    std::initializer_list<T> il{ a, b, c... };
+    return *std::min_element(il.begin(), il.end());
 }
 
-template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-inline T max(T a, T b, T c)
+template<typename T, typename... Ts, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+constexpr T max(T a, T b, Ts... c)
 {
-	return (a > b) ? (a > c ? a : c) : (b > c ? b : c);
+    std::initializer_list<T> il{ a, b, c... };
+    return *std::max_element(il.begin(), il.end());
 }
 
+// TODO:remove
 template <typename T>
-/*remove*/inline T clamp(T val, T low, T high)
+constexpr T clamp(T val, T low, T high)
 {
     return std::clamp(val, low, high);
 }
 
-inline float gamma(int n)
+constexpr float gamma(int n)
 {
 	return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 }
@@ -77,13 +79,13 @@ struct equal_epsilon
 };
 
 template <typename T>
-bool is_equal(T a, T b, typename std::enable_if_t<!std::is_floating_point_v<T>>* = nullptr)
+constexpr bool is_equal(T a, T b, typename std::enable_if_t<!std::is_floating_point_v<T>>* = nullptr)
 {
 	return a == b;
 }
 
 template <typename T>
-bool is_equal(T a, T b, typename std::enable_if_t<std::is_floating_point_v<T>>* = nullptr)
+constexpr bool is_equal(T a, T b, typename std::enable_if_t<std::is_floating_point_v<T>>* = nullptr)
 {
 	// return std::fabs(a - b) <= std::max(absolute_epsilon, relative_epsilon * std::max(fabs(a), fabs(b)) );
 	return std::abs(a - b) <= equal_epsilon<T>::absolute_epsilon * fay::max(T(1), std::abs(a), std::abs(b));
