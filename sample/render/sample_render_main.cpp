@@ -9,6 +9,8 @@
 
 // extern class shadow shadow_app;
 
+SAMPLE_RENDER_APP_DECL(__sample)
+
 SAMPLE_RENDER_APP_DECL(init)
 SAMPLE_RENDER_APP_DECL(clear)
 SAMPLE_RENDER_APP_DECL(triangle)

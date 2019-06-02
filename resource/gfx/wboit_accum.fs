@@ -1,8 +1,8 @@
 #version 330 core
 
 in vec3 vPos;
-in vec2 vTex;
 in vec3 vNor;
+in vec2 vTex;
 
 uniform vec4 uLightPosition;
 uniform sampler2D Albedo;
