@@ -3,6 +3,10 @@
 namespace fay
 {
 
+
+// https://github.com/Neargye/magic_enum
+// https://github.com/aantron/better-enums
+
 /*
 auto enum_class_hash = [] (auto k)
 {

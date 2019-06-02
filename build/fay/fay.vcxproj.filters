@@ -230,9 +230,6 @@
     <ClInclude Include="..\..\fay\gfx\camera.h">
       <Filter>gfx</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\core\serialize.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\gfx\frame_graph.h">
       <Filter>gfx</Filter>
     </ClInclude>
@@ -252,6 +249,10 @@
       <Filter>gfx</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\core\event.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\serialization.h" />
+    <ClInclude Include="..\..\fay\core\poly.h">
       <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>

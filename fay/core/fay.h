@@ -47,7 +47,12 @@ using const_##type##_wp = std::weak_ptr<const type>;
 namespace fay
 {
 
-using uchar = uint8_t;
-using uint  = uint32_t;
+using uchar  = uint8_t;
+using uint   = uint32_t;
+using string = std::string;
+// template<typename T>
+// using vector<T> = std::vector<T>;
+// template<typename T>
+// using map = std::unordered_map;
 
 } // namespace fay

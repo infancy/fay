@@ -382,11 +382,49 @@ inline frame create_frame(render_device* device, const std::string& name, uint w
     return { frm_id, color_id, ds_id };
 }
 
-inline frame create_Gbuffer(render_device* device, const std::string& name, uint width, uint height)
+inline frame create_OITbuffer(render_device* device, const std::string& name, uint width, uint height)
 {
     texture_desc desc;
 
-    fay::image img("texture/container2.png", true);
+    desc.name = name;
+    desc.width = width;
+    desc.height = height;
+    desc.size = width * height * 4; // byte size
+    desc.data = { nullptr };
+    desc.type = texture_type::two;
+
+    desc.min_filter = filter_mode::linear;
+    desc.max_filter = filter_mode::linear;
+    desc.wrap_u = wrap_mode::repeat;
+    desc.wrap_v = wrap_mode::repeat;
+    desc.mipmap = false;
+
+    desc.as_render_target = render_target::color;
+    desc.format = pixel_format::rgba32f;
+    auto color_id = device->create(desc);
+
+    desc.as_render_target = render_target::color;
+    desc.format = pixel_format::rgba32f;
+    auto color_id2 = device->create(desc);
+
+    desc.as_render_target = render_target::depth_stencil;
+    desc.format = pixel_format::depthstencil; // TODO: depth_stencil;
+    auto ds_id = device->create(desc);
+
+    frame_desc fd;
+    fd.name = name;
+    fd.width = width;
+    fd.height = height;
+    fd.render_targets = { { color_id, 0, 0 }, { color_id2, 0, 0 } };
+    fd.depth_stencil = { ds_id, 0, 0 };
+    auto frm_id = device->create(fd);
+
+    return { frm_id, { color_id, color_id2 }, ds_id };
+}
+
+inline frame create_Gbuffer(render_device* device, const std::string& name, uint width, uint height)
+{
+    texture_desc desc;
 
     desc.name = name;
     desc.width = width;

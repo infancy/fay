@@ -47,7 +47,8 @@
     <ClInclude Include="..\..\fay\core\event.h" />
     <ClInclude Include="..\..\fay\core\hash.h" />
     <ClInclude Include="..\..\fay\core\memory.h" />
-    <ClInclude Include="..\..\fay\core\serialize.h" />
+    <ClInclude Include="..\..\fay\core\poly.h" />
+    <ClInclude Include="..\..\fay\core\serialization.h" />
     <ClInclude Include="..\..\fay\core\platform.h" />
     <ClInclude Include="..\..\fay\core\fay.h" />
     <ClInclude Include="..\..\fay\core\log.h" />

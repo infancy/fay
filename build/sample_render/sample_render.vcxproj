@@ -21,7 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\sample\render\basic_render.cpp" />
     <ClCompile Include="..\..\sample\render\anti_aliasing.cpp" />
-    <ClCompile Include="..\..\sample\render\blend.cpp" />
+    <ClCompile Include="..\..\sample\render\alpha_blending.cpp" />
     <ClCompile Include="..\..\sample\render\defered_render.cpp" />
     <ClCompile Include="..\..\sample\render\pbr.cpp" />
     <ClCompile Include="..\..\sample\render\reflection.cpp" />
