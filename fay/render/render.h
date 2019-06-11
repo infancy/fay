@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_RENDER_RENDER_H
-#define FAY_RENDER_RENDER_H
 
 #include "fay/core/config.h"
 #include "fay/render/define.h"
@@ -64,5 +59,3 @@ void submit(command_list cmd);
 void execute();
 
 } // namespace fay
-
-#endif // FAY_RENDER_RENDER_H

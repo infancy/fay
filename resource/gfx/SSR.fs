@@ -179,7 +179,8 @@ void main()
     while (t < maxSteps)
 	{
 		// 在屏幕空间移动，保证每次至少移动一格
-		coord = ivec2((RasterOrigin + traceDir * t).xy);
+		coord = ivec2(RasterOrigin.xy + traceDir * t);
+
 		if (coord.x > screenSize.x || coord.y > screenSize.y || coord.x < 0 || coord.y < 0)
 		{
 			break;

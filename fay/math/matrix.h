@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_MATH_MATRIX_H
-#define FAY_MATH_MATRIX_H
 
 #include "fay/math/vector.h"
 #include "fay/math/operators.h"
@@ -294,5 +289,3 @@ inline typename mat<R, C, T> transpose(const mat<C, R, T>& m)
 
 
 } // namespace fay
-
-#endif // FAY_MATH_MATRIX_H

@@ -72,6 +72,7 @@
     <ClInclude Include="..\..\fay\gfx\renderer.h" />
     <ClInclude Include="..\..\fay\gfx\frame_graph.h" />
     <ClInclude Include="..\..\fay\gfx\render_queue.h" />
+    <ClInclude Include="..\..\fay\math.h" />
     <ClInclude Include="..\..\fay\math\color.h" />
     <ClInclude Include="..\..\fay\math\geometry.h" />
     <ClInclude Include="..\..\fay\math\math.h" />
@@ -80,6 +81,7 @@
     <ClInclude Include="..\..\fay\math\quaternion.h" />
     <ClInclude Include="..\..\fay\math\shape.h" />
     <ClInclude Include="..\..\fay\math\simd.h" />
+    <ClInclude Include="..\..\fay\math\spectrum.h" />
     <ClInclude Include="..\..\fay\math\transform.h" />
     <ClInclude Include="..\..\fay\math\vector.h" />
     <ClInclude Include="..\..\fay\misc\extends.h" />
@@ -96,9 +98,6 @@
     <ClInclude Include="..\..\fay\resource\model.h" />
     <ClInclude Include="..\..\fay\resource\text.h" />
     <ClInclude Include="..\..\fay\resource\image.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

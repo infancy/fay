@@ -91,9 +91,6 @@ model_assimp::model_assimp(const std::string& filepath, render_backend_type api)
 		return;
 	}
 
-    convert_nodes(nodes_, scene->mRootNode);
-    root_node_ = nodes_.front();
-
     auto convert_vector = [this](auto& dsts, auto** srcs, size_t size)
     {
         dsts.clear();
@@ -106,6 +103,15 @@ model_assimp::model_assimp(const std::string& filepath, render_backend_type api)
 
     convert_vector(meshes_, scene->mMeshes, scene->mNumMeshes);
     convert_vector(materials_, scene->mMaterials, scene->mNumMaterials);
+
+    convert_nodes(nodes_, scene->mRootNode);
+    for (auto& node : nodes_)
+    {
+        for (auto& idx : node.meshes)
+            node.bounds.expand(meshes_[idx].bounds_);
+    }
+
+    root_node_ = nodes_.front();
 }
 
 // Pre-Order Traversal
@@ -126,7 +132,7 @@ size_t model_assimp::convert_nodes(std::vector<resource_node>& nodes, const aiNo
     for (size_t i = 0; i < aiNode->mNumChildren; ++i)
     {
         size_t index = convert_nodes(nodes, aiNode->mChildren[i]);
-        nodes[node_index].children.push_back(index); // WARNNING: avoid iterator invalidation
+        nodes[node_index].children.push_back(index); // WARNNING: not use 'auto& node' these, avoid iterator invalidation
     }
 
     return node_index;
@@ -145,6 +151,8 @@ void model_assimp::convert(resource_mesh& mesh, const aiMesh* aiMesh)
 		auto copy = [](glm::vec3& vec, aiVector3D& rhs) { vec.x = rhs.x; vec.y = rhs.y; vec.z = rhs.z; };
 
 		copy(vertex.position, aiMesh->mVertices[i]);
+
+        mesh.bounds_.expand(vertex.position);
 
         // TODO: better way
         if (aiMesh->mNormals)

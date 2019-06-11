@@ -25,8 +25,12 @@ public:
         return desc_;
     }
 
+    //void set_bounds(bounds3 bounds) { bounds_ = bounds; }
+    //bounds3 bounds() const { return bounds_; }
+
 private:
     renderable_desc desc_{};
+    //bounds3 bounds_{ 0.f, 0.f };
 };
 
 FAY_SHARED_PTR(renderable)

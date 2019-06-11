@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_MATH_TRANSFORM_H
-#define FAY_MATH_TRANSFORM_H
 
 #include "fay/math/matrix.h"
 
@@ -266,6 +261,3 @@ Transform perspective(Float fov, Float znear, Float zfar);
 
 
 } // namespace fay
-
-#endif // FAY_MATH_TRANSFORM_H
-

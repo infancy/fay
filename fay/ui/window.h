@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_GUI_WINDOW_H
-#define FAY_GUI_WINDOW_H
 
 #include "fay/core/fay.h"
 
@@ -35,5 +30,3 @@ bool keydown(int key);
 const IO& get_io();	// const ImGuiIO& gui_get_io();	
 
 } // namespace fay
-
-#endif // FAY_GUI_WINDOW_H

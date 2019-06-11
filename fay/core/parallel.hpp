@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_CORE_PARALLEL_H
-#define FAY_CORE_PARALLEL_H
 
 #include <tbb/parallel_do.h>
 #include <tbb/parallel_for.h>
@@ -52,5 +47,3 @@ inline Value parallel_reduce(RandomIterator begin, RandomIterator end, const Val
 }
 
 } // namespace fay
-
-#endif // FAY_CORE_PARALLEL_H

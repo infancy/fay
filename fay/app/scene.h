@@ -52,13 +52,22 @@ public:
         // TODO
     }
 
+    std::list<node_sp> childrens() const
+    {
+        return children_;
+    }
+
+    entity* get_entity() const
+    {
+        return entity_;
+    }
+
 private:
     std::string name_;
     entity* entity_{};
 
     node_wp parent_{};
-    std::vector<node_sp> children_;
-
+    std::list<node_sp> children_;
 };
 
 
@@ -66,8 +75,7 @@ class graphics_scene
 {
 public:
 
-    std::vector<std::tuple<transform_component*, renderable_component*>>* renderables;
-
+    std::vector<std::tuple<transform_component*, renderable_component*, bounds3_component*>>* renderables;
 };
 
 // create, manage, destroy
@@ -97,12 +105,15 @@ public:
         return model_root;
     }
 
-
+    node_sp root() const
+    {
+        return root_;
+    }
 
     graphics_scene graphics_scene_proxy()
     {
         graphics_scene gfx;
-        gfx.renderables = &(pool_.get_component_group<transform_component, renderable_component>());
+        gfx.renderables = &(pool_.get_component_group<transform_component, renderable_component, bounds3_component>());
 
         return gfx;
     }
@@ -111,20 +122,24 @@ private:
     node_sp build_tree(resource_node _resource_node, const std::vector<resource_node> nodes, const std::vector<renderable_sp>& meshes)
     {
         auto* entity = pool_.create_entity();
-        auto* comp = entity->create_component<transform_component>();
-        comp->transform = _resource_node.transform;
+
+        auto* tcomp = entity->create_component<transform_component>();
+        tcomp->transform = _resource_node.transform;
+
+        auto* bcomp = entity->create_component<bounds3_component>();
+        bcomp->bounds = _resource_node.bounds;
 
         if (auto children = _resource_node.meshes.size(); children > 0)
         {
-            auto* comp = entity->create_component<renderable_component>();
+            auto* rcomp = entity->create_component<renderable_component>();
 
             if (children == 1)
             {
-                comp->renderable = meshes[_resource_node.meshes.front()];
+                rcomp->renderable = meshes[_resource_node.meshes.front()];
             }
             else // many mesh
             {
-                comp->renderable = std::make_shared<array_mesh>(meshes, _resource_node.meshes);
+                rcomp->renderable = std::make_shared<array_mesh>(meshes, _resource_node.meshes);
             }
         }
 

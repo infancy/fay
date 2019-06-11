@@ -210,9 +210,28 @@ public:
 
 	void update()
 	{
+        static const uint length = 60;
+        static uint count{};
+        static std::array<double, length> times{};
+        static std::array<double, length> frames{};
+
         update_input();
-        float frame_rate = 1.0 / input.delta_time;
-        //glfwSetWindowTitle(window_, std::to_string(frame_rate).c_str());
+
+        times[count] = input.delta_time;
+        frames[count] = 1.0;
+
+        auto total_time = std::accumulate(times.cbegin(), times.cend(), 0.0);
+        auto total_frame = std::accumulate(frames.cbegin(), frames.cend(), 0.0);
+
+        auto frame_rate = total_frame / (total_time+ 0.0001);
+
+        auto title = std::string("FPS: ") + std::to_string(frame_rate) + " time: " + std::to_string(total_time) + " frame: " + std::to_string(total_frame);
+        glfwSetWindowTitle(window_, title.c_str());
+
+        if(++count == 60)
+        {
+            count = 0;
+        }
 	}
 
 	// TODO:remove

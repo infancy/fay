@@ -36,6 +36,7 @@ struct resource_node
 {
     std::string name{};
     glm::mat4 transform{ 1.f };
+    bounds3 bounds{};
 
     std::vector<size_t> meshes{}; // submesh in glTF
 
@@ -83,7 +84,7 @@ struct resource_mesh
     uint32_t material_index{};
     bool has_material{ true };
 
-    bounds3 bounds_;
+    bounds3 bounds_{};
 };
 
 } // namespace fay

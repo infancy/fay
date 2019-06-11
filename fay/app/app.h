@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_APP_APP_H
-#define FAY_APP_APP_H
 
 #include "fay/app/input.h"
 #include "fay/app/window.h"
@@ -166,5 +161,3 @@ class app_manager
 };
 
 } // namespace fay
-
-#endif // FAY_APP_APP_H

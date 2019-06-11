@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_APP_INPUT_H
-#define FAY_APP_INPUT_H
 
 #include "fay/core/fay.h"
 
@@ -50,5 +45,3 @@ inline const single_input& input2{ input2_ };
 */
 
 } // namespace fay
-
-#endif // FAY_APP_INPUT_H

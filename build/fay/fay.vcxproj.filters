@@ -251,12 +251,15 @@
     <ClInclude Include="..\..\fay\core\event.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\core\serialization.h" />
     <ClInclude Include="..\..\fay\core\poly.h">
       <Filter>core</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint" />
+    <ClInclude Include="..\..\fay\core\serialization.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math.h" />
+    <ClInclude Include="..\..\fay\math\spectrum.h">
+      <Filter>math</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

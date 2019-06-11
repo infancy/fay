@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_GUI_GUI_H
-#define FAY_GUI_GUI_H
 
 #include "fay/core/fay.h"
 
@@ -24,5 +19,3 @@ void gui_drawGUI();
 ImGuiIO& gui_get_io();	// const ImGuiIO& gui_get_io();	
 
 } // namespace fay
-
-#endif // FAY_GUI_GUI_H

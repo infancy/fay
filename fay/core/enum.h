@@ -3,7 +3,6 @@
 namespace fay
 {
 
-
 // https://github.com/Neargye/magic_enum
 // https://github.com/aantron/better-enums
 

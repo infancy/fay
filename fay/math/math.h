@@ -1,13 +1,16 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_MATH_MATH_H
-#define FAY_MATH_MATH_H
 
 #include <limits>
 
 #include "fay/core/fay.h"
+
+#ifdef max
+#undef max
+#endif
+
+#ifdef min
+#undef min
+#endif
 
 namespace fay
 {
@@ -92,5 +95,3 @@ constexpr bool is_equal(T a, T b, typename std::enable_if_t<std::is_floating_poi
 }
 
 } // namespace fay
-
-#endif // FAY_MATH_MATH_H

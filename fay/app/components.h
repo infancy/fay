@@ -25,7 +25,14 @@ struct transform_component : component
 {
     FAY_COMPONENT_TYPE_HASH(transform_component)
 
-    glm::mat4 transform { 1.f };
+    glm::mat4 transform{ 1.f };
+};
+
+struct bounds3_component : component
+{
+    FAY_COMPONENT_TYPE_HASH(bounds3_component)
+
+    bounds3 bounds{ 0.f, 0.f };
 };
 
 struct renderable_component : component

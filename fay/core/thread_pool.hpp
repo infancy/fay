@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_CORE_THREAD_POOL_H
-#define FAY_CORE_THREAD_POOL_H
 
 #include "fay/core/fay.h"
 
@@ -221,5 +216,3 @@ private:
 };
 
 } // namespace fay
-
-#endif // FAY_CORE_THREAD_POOL_H

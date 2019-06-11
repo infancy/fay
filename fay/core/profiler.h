@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_CORE_PROFILER_H
-#define FAY_CORE_PROFILER_H
 
 #include "fay/core/fay.h"
 
@@ -230,5 +225,3 @@ struct time_wrapper
 // std::function<decltype(wrapper)> func(wrapper);
 
 } // namespace fay
-
-#endif // FAY_CORE_PROFILER_H

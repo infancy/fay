@@ -122,6 +122,11 @@ public:
     {
     }
 
+    bool is_vaild() const
+    {
+        return min_.x <= MaxFloat || max_.x >= MinFloat;
+    }
+
     const glm::vec3& min() const { return min_; }
     const glm::vec3& max() const { return max_; }
 

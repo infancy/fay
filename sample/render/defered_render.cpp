@@ -1,7 +1,13 @@
+#include "fay/app/app_flexible.h"
+#include "fay/app/scene.h"
 #include "sample_render_app.h"
 
 class defered_shading : public passes
 {
+private:
+    fay::scene_ptr scene_;
+    fay::graphics_scene gfx_;
+
 public:
     // using fay::app;
     defered_shading(const fay::app_desc& _desc) : passes(_desc)
@@ -12,7 +18,7 @@ public:
     std::vector<glm::vec3> objectPositions;
 
     // TODO: fay::light
-    const unsigned int num_lights = 32;
+    const unsigned int num_lights = 512;
     std::vector<glm::vec3> lightPositions;
     std::vector<glm::vec3> lightColors;
 
@@ -21,7 +27,8 @@ public:
         cameras_[0] = fay::camera(glm::vec3(3.f, 3.f, -10.f));
         add_update_items();
 
-        objectPositions.push_back(glm::vec3(-5.0, -5.0, -5.0));
+        objectPositions.push_back(glm::vec3(0.f, 0.f, 0.f));
+        /*
         objectPositions.push_back(glm::vec3( 0.0, -5.0, -5.0));
         objectPositions.push_back(glm::vec3( 5.0, -5.0, -5.0));
 
@@ -32,14 +39,15 @@ public:
         objectPositions.push_back(glm::vec3(-5.0, -5.0,  5.0));
         objectPositions.push_back(glm::vec3( 0.0, -5.0,  5.0));
         objectPositions.push_back(glm::vec3( 5.0, -5.0,  5.0));
+        */
 
         srand(glfwGetTime());
         for (unsigned int i = 0; i < num_lights; i++)
         {
             // calculate slightly random offsets
-            float xPos = ((rand() % 100) / 100.0) * 18.0 - 9.0;
-            float yPos = ((rand() % 100) / 100.0) * 18.0 - 9.0;
-            float zPos = ((rand() % 100) / 100.0) * 18.0 - 9.0;
+            float xPos = ((rand() % 100) / 100.0) * 90.0 - 45.0;
+            float yPos = ((rand() % 100) / 100.0) * 90.0;// -9.0;
+            float zPos = ((rand() % 100) / 100.0) * 180.0 - 90.0;
             lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
 
             // also calculate random color
@@ -49,7 +57,10 @@ public:
             lightColors.push_back(glm::vec3(rColor, gColor, bColor));
         }
 
-        mesh = fay::create_renderable(fay::Rei, device.get());
+        scene_ = std::make_unique<fay::scene>(device.get());
+        gfx_ = scene_->graphics_scene_proxy();
+        scene_->add_model(fay::Sponza);
+
         mesh2 = fay::create_raw_renderable(fay::Box, device.get());
 
         shd  = fay::create_shader(device.get(), "shd",  "gfx/phong_shading.vs",   "gfx/deferred_shading_gbuffer.fs");
@@ -93,6 +104,27 @@ public:
         }
     }
 
+    void render_node(fay::node_sp root_node, fay::frustum box_camera, fay::command_list& cmds)
+    {
+        for (auto node : root_node->childrens())
+        {
+            auto e = node->get_entity();
+
+            auto bounds = e->get_component<fay::bounds3_component>()->bounds;
+
+            if (!(bounds.is_vaild() && box_camera.expect(bounds)))
+            {
+                auto rcomp = e->get_component<fay::renderable_component>();
+
+                if (rcomp)
+                    rcomp->renderable->render(cmds);
+            }
+
+            render_node(node, box_camera, cmds);
+        }
+    }
+
+
     void render() override
     {
         glm::mat4 view = camera->view();
@@ -116,8 +148,23 @@ public:
             pass1
                 .bind_uniform("MV", MV)
                 .bind_uniform("NormalMV", NormalMV)
-                .bind_uniform("MVP", proj * MV)
-                .draw(mesh.get());
+                .bind_uniform("MVP", proj * MV);
+
+
+            fay::frustum box_camera(camera->world_to_ndc());
+
+        //#define FAY_USEOOP
+        #ifdef FAY_USEOOP
+            render_node(scene_->root(), box_camera, cmds);
+        #else
+            for (auto& comps : *gfx_.renderables)
+            {
+                auto bounds = std::get<fay::bounds3_component*>(comps)->bounds;
+
+                //if (!(bounds.is_vaild() && box_camera.expect(bounds)))
+                    std::get<fay::renderable_component*>(comps)->renderable->render(pass1);
+            }
+        #endif // FAY_USEOOP
         }
         pass1.end_frame();
 
@@ -130,19 +177,24 @@ public:
             .bind_texture(frame[2], "gAlbedoSpec")
             .bind_uniform("offset", glm::vec2(0.f))
             .bind_uniform("viewPos", camera->position());
-        for (unsigned int i = 0; i < lightPositions.size(); i++)
+
+        for (unsigned int i = 0; i < lightPositions.size(); i += 128)
         {
             // render attenuation parameters and calculate radius
             const float constant = 1.0; // note that we don't send this to the shader, we assume it is always 1.0 (in our case)
             const float linear = 0.7;
             const float quadratic = 1.8;
 
-            pass2
-                .bind_uniform("lights[" + std::to_string(i) + "].Position", lightPositions[i])
-                .bind_uniform("lights[" + std::to_string(i) + "].Color", lightColors[i])
-                .bind_uniform("lights[" + std::to_string(i) + "].Linear", linear)
-                .bind_uniform("lights[" + std::to_string(i) + "].Quadratic", quadratic);
+            for (unsigned int j = 0; j < 128; ++j)
+            {
+                pass2
+                    .bind_uniform("lights[" + std::to_string(i + j) + "].Position", lightPositions[i + j])
+                    .bind_uniform("lights[" + std::to_string(i + j) + "].Color", lightColors[i + j])
+                    .bind_uniform("lights[" + std::to_string(i + j) + "].Linear", linear)
+                    .bind_uniform("lights[" + std::to_string(i + j) + "].Quadratic", quadratic);
+            }
         }
+
         pass2.draw(6);
 
         pass2

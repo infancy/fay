@@ -8,7 +8,7 @@ public:
     // using fay::app;
     FXAA(const fay::app_desc& _desc) : passes(_desc)
     {
-        desc.window.title = "WBOIT";
+        desc.window.title = "FXAA";
     }
 
     void setup() override
@@ -16,10 +16,7 @@ public:
         add_update_items();
         cameras_[0] = fay::camera(glm::vec3(0, 0.5f, -3));
 
-        mesh = fay::create_renderable(fay::Box, device.get());
-
-        fay::image img("texture/wboit.png");//, true);
-        tex = create_2d(this->device, "aliasing", img, false);
+        mesh = fay::create_renderable(fay::Sponza, device.get());
 
         fay::shader_desc sd  = fay::scan_shader_program("shd", "gfx/renderable.vs", "gfx/renderable.fs", desc.render.backend);
         fay::shader_desc sd2 = fay::scan_shader_program("shd2", "gfx/post_processing.vs", "gfx/FXAA.fs", desc.render.backend);
@@ -29,7 +26,8 @@ public:
         fay::pipeline_desc pd;
         {
             pd.name = "triangles";
-            // pd.cull_mode = fay::cull_mode::none;
+            //pd.cull_mode = fay::cull_mode::none;
+            //pd.primitive_type = fay::primitive_type::lines;
         }
         pipe = device->create(pd);
 
@@ -44,6 +42,7 @@ public:
 
         fay::command_list pass1, pass2;
 
+        /*
         pass1
             .begin_frame(frame, pipe, shd)
             .bind_uniform("bAlbedo", true)
@@ -53,12 +52,22 @@ public:
 
         pass2
             .begin_default(pipe, shd2)
-            .bind_uniform("offset", camera->plane())
-            .bind_textures({ tex })
+            //.bind_uniform("offset", camera->plane())
+            .bind_textures({ frame[0] })
             .draw(6)
             .end_frame();
 
-        device->execute({ pass2 });
+        device->execute({ pass1, pass2 });
+        */
+
+        pass1
+            .begin_default(pipe, shd)
+            .bind_uniform("bAlbedo", true)
+            .bind_uniform("MVP", VP * M)
+            .draw(mesh.get())
+            .end_frame();
+
+        device->execute({ pass1 });
     }
 };
 

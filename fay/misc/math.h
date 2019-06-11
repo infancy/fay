@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_MATH_H
-#define FAY_MATH_H
 
 #include <glm.h>
 
@@ -24,7 +19,5 @@ using vec4 = vec4f;
 #endif
 
 } // namespace fay
-
-#endif // FAY_MATH_H
 
 

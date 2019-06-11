@@ -119,7 +119,9 @@ public:
     {
         if (indices.empty())
         {
-            list_ = list;
+            //list_ = list;
+            for (auto& renderable : list)
+                list_.push_back(renderable);
         }
         else
         {
@@ -135,7 +137,7 @@ public:
     }
 
 private:
-    std::vector<renderable_sp> list_;
+    std::list<renderable_sp> list_;
 };
 
 } // namespace fay

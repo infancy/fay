@@ -1,7 +1,4 @@
-//#define SHADER_TOY
 
-#ifdef SHADER_TOY
-#else
     #version 330 core
     in vec2 vTex;
     out vec4 FragColor;
@@ -13,7 +10,6 @@
     };
 
     uniform sampler2D frame;
-#endif
 
 //@
 float rgb2luma(vec3 rgb) 
@@ -132,11 +128,7 @@ const float EDGE_THRESHOLD_MIN = 0.0833;
 //#define ONE_SHOW_EDGE
 //#define TWO_SHOW_MAIN_DIR
 
-#ifdef SHADER_TOY
-void mainImage(out vec4 FragColor, in vec2 vTex)
-#else
 void main()
-#endif
 {    
     mat3 luma = around_luma(vTex);
 

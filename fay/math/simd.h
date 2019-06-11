@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_MATH_SIMD_H
-#define FAY_MATH_SIMD_H
 
 #include "fay/math/math.h"
 
@@ -253,5 +248,3 @@ float dot(const vec4& lhs, const vec4& rhs)
 }
 
 } // namespace fay
-
-#endif // FAY_MATH_SIMD_H

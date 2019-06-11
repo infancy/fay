@@ -1,9 +1,4 @@
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-#ifndef FAY_MATH_OPERATORS_H
-#define FAY_MATH_OPERATORS_H
 
 namespace fay
 {
@@ -84,6 +79,4 @@ struct arithmetic : additive<T, U, multiplicative<T, U>>
 #undef FAY_BINARY_OPERATOR
 
 } // namespace fay
-
-#endif // FAY_MATH_OPERATORS_H
 

@@ -6,8 +6,8 @@ class gfx : public fay::app
 public:
     gfx(const fay::app_desc& _desc) : fay::app(_desc)
     {
-        desc.window.width = 3840;
-        desc.window.height = 2160;
+        desc.window.width = 1080;
+        desc.window.height = 720;
         desc.window.title = "gfx";
 
         //scene_ = std::make_unique<fay::scene>(device.get());
@@ -30,7 +30,7 @@ public:
         //std::cin >> name;
 
         //scene_->add_model("object/Rei/Rei.obj");// + name);
-        scene_->add_model(fay::Rungholt);
+        scene_->add_model(fay::Sponza);
 
         fay::shader_desc sd = fay::scan_shader_program("renderable", "gfx/renderable.vs", "gfx/renderable.fs", fay::render_backend_type::opengl);
         sd.name = "shd"; //todo
@@ -46,6 +46,17 @@ public:
         }
         auto pipe_id = device->create(pd);
 
+        {
+            fay::shader_desc sd = fay::scan_shader_program("light_shd", "gfx/lines.vs", "gfx/lines.fs", desc.render.backend);
+            debug_shd = device->create(sd);
+
+            fay::pipeline_desc pd;
+            pd.name = "light_pipe";
+            pd.stencil_enabled = false;
+            pd.primitive_type = fay::primitive_type::lines;
+            debug_pipe = device->create(pd);
+        }
+
         paras.a = { 1.f, 0.f, 0.f, 1.f };
         paras.b = { 0.f, 1.f, 0.f, 1.f };
 
@@ -54,24 +65,67 @@ public:
             .bind_uniform_block("color", fay::memory{ (uint8_t*)&paras, sizeof(fay::render_paras) });
     }
 
+    void render_node(fay::node_sp root_node, fay::frustum box_camera, fay::command_list& cmds)
+    {
+        for (auto node : root_node->childrens())
+        {
+            auto e = node->get_entity();
+
+            auto bounds = e->get_component<fay::bounds3_component>()->bounds;
+
+            if (!(bounds.is_vaild() && box_camera.expect(bounds)))
+            {
+                auto rcomp = e->get_component<fay::renderable_component>();
+
+                if (rcomp)
+                    rcomp->renderable->render(cmds);
+            }
+
+            render_node(node, box_camera, cmds);
+        }
+    }
+
     void render() override
     {
         // draw
-        MVP = camera.world_to_ndc() * transform.model_matrix();
+        MVP = camera.world_to_ndc();// *transform.model_matrix();
 
         auto cmds = pass1;
         cmds.bind_uniform("MVP", MVP);
 
-        /*
-        // submit, 
-    void flush_to(command_list& cmd)
-    {
-        for (auto& mesh : render_list)
-            mesh->device(cmd);
-    }
-        */
+        fay::frustum box_camera(camera.world_to_ndc());
+
+    //#define FAY_USEOOP
+    #ifdef FAY_USEOOP
+        render_node(scene_->root(), box_camera, cmds);
+    #else
         for (auto& comps : *gfx_.renderables)
-            std::get<1>(comps)->renderable->render(cmds);
+        {
+            auto bounds = std::get<fay::bounds3_component*>(comps)->bounds;
+
+            if (!(bounds.is_vaild() && box_camera.expect(bounds)))
+                std::get<fay::renderable_component*>(comps)->renderable->render(cmds);
+        }
+    #endif // FAY_USEOOP
+
+        /*
+        cmds
+            .apply_pipeline(debug_pipe)
+            .apply_shader(debug_shd)
+            .bind_uniform("MVP", camera.world_to_ndc());
+
+        bool flag{ true };
+        for (auto& comps : *gfx_.renderables)
+        {
+            auto bounds = std::get<fay::bounds3_component*>(comps)->bounds;
+
+            auto debug_bounds = create_box_mesh(bounds, device.get());
+
+            if(flag = !flag; flag)
+                debug_bounds->render(cmds);
+        }
+        */
+
 
         cmds.end_frame();
 
@@ -82,7 +136,7 @@ public:
     // TODO: add to scene
     fay::camera cameras_[2]
     {
-        fay::camera{ glm::vec3{  0, 20, 50 } },
+        fay::camera{ glm::vec3{   0, 0, -10 } },
         fay::camera{ glm::vec3{ 100, 0, 50 } },
     };
     fay::light lights_[2]
@@ -99,6 +153,8 @@ public:
     const fay::light& light{ lights_[0] };
     const fay::transform& transform{ transforms_[0] };
 
+    fay::shader_id debug_shd;
+    fay::pipeline_id debug_pipe;
 
     fay::scene_ptr scene_;
     fay::graphics_scene gfx_;

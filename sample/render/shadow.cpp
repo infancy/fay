@@ -10,6 +10,7 @@ public:
 
     void setup() override
     {
+        cameras_[0] = fay::camera(glm::vec3{ 0, 20, -80 }, 90, 0, 1.f, 500.f);
         add_update_items();
         debug_setup();
 
@@ -70,6 +71,14 @@ public:
     {
         return (z - _near) / (_far - _near);
     }
+
+    /*
+    void render_depth_map(...);
+
+    for(...)
+        render_depth_map(...);
+    
+    */
 
     void render() override
     {
@@ -140,6 +149,7 @@ public:
             .bind_texture(frame2.dsv(), "Shadowmap2")
             .draw(mesh.get())
             // debug info
+            /*
             .apply_pipeline(debug_pipe)
             .apply_shader(debug_shd)
             .bind_uniform("MVP", camera->world_to_ndc())
@@ -147,6 +157,7 @@ public:
             .draw(debug_light.get())
             .draw(debug_camera2.get())
             .draw(debug_light2.get())
+            */
             .end_frame();
 
         device->execute({ pass1, pass2, pass3 });
