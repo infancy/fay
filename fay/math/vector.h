@@ -12,6 +12,7 @@ namespace fay
 
 #define FAY_VEC_FUNCTIONS                                                         \
 using value_type             = typename std::array<T, N>::value_type;             \
+using size_type              = typename std::array<T, N>::size_type;              \
 using pointer                = typename std::array<T, N>::pointer;                \
 using const_pointer          = typename std::array<T, N>::const_pointer;          \
 using reference              = typename std::array<T, N>::reference;              \
@@ -47,8 +48,11 @@ const_iterator         cend()    const noexcept { return a_.cend(); }           
 const_reverse_iterator crbegin() const noexcept { return a_.crbegin(); }          \
 const_reverse_iterator crend()   const noexcept { return a_.crend(); }            \
                                                                                   \
+constexpr size_type    size()    const noexcept { return a_.size(); }             \
+                                                                                  \
 reference       operator[](size_t i)       { return a_[i]; }                      \
 const_reference operator[](size_t i) const { return a_[i]; }
+
 
 template <size_t N_, typename T = float>
 struct vec
@@ -117,6 +121,8 @@ using vec4i = vec<4, int>;
 
 
 
+// TODO: don't support '==', '!=' operators
+
 template <size_t N, typename T>
 bool operator==(const vec<N, T>& x, const vec<N, T>& y)
 {
@@ -152,35 +158,55 @@ inline vec<N, T>& operator +=(vec<N, T>& x, const vec<N, U>& y)
 	return x;
 }
 template <size_t N, typename T, typename U>
-inline vec<N, T>& operator +=(vec<N, T>& x, const U y) { for (auto& e : x) e += y; return x; }
-template <size_t N, typename T, typename U>
 inline vec<N, T> operator +(const vec<N, T>& x, const vec<N, U>& y) { vec<N, T> t(x); t += y; return t; }
+
+template <size_t N, typename T, typename U>
+inline vec<N, T>& operator +=(vec<N, T>& x, const U y) { for (auto& e : x) e += y; return x; }
 template <size_t N, typename T, typename U>
 inline vec<N, T> operator +(const vec<N, T>& x, const U& y) { vec<N, T> t(x); t += y; return t; }
 template <size_t N, typename T, typename U>
 inline vec<N, T> operator +(const U& x, const vec<N, T>& y) { vec<N, T> t(y); t += x; return t; }
 */
 
+/*
+// move to test code
+e.g.
+vec4 u, v;
+u += v;
+w = u + v;
+
+float f{};
+v += f;
+x  = v + f;
+y  = f + v;
+*/
+
+// std::transform(x.begin(), x.end(), 
+//                y.begin(),/* y.end(), */
+//                x.begin(), [](const T x, const T y) { return x OP y; });
+
 #define FAY_VEC_ARITHMETIC( OP )                                                                              \
-template <size_t N, typename T, typename U>                                                                   \
-inline vec<N, T>& operator OP##=(vec<N, T>& x, const vec<N, U>& y)                                            \
+template <size_t N, typename T>                                                                               \
+inline vec<N, T>& operator OP##=(vec<N, T>& x, const vec<N, T>& y)                                            \
 {                                                                                                             \
 	for (size_t i = 0; i < N; ++i)                                                                            \
 		x[i] OP##= y[i];                                                                                      \
 	return x;                                                                                                 \
 }                                                                                                             \
-template <size_t N, typename T, typename U>                                                                   \
-inline vec<N, T> operator OP(const vec<N, T>& x, const vec<N, U>& y) { vec<N, T> r(x); r OP##= y; return r; } \
+template <size_t N, typename T>                                                                               \
+inline vec<N, T> operator OP(const vec<N, T>& x, const vec<N, T>& y) { vec<N, T> r(x); r OP##= y; return r; } \
                                                                                                               \
-template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
-inline vec<N, T> operator OP(const T x, const vec<N, T>& y)          { vec<N, T> r(x); r OP##= y; return r; } \
                                                                                                               \
                                                                                                               \
 template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
 inline vec<N, T>& operator OP##=(  vec<N, T>& x, const T y)        { for (auto& e : x) e OP##= y; return x; } \
                                                                                                               \
 template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
-inline vec<N, T> operator OP(const vec<N, T>& x, const T y)          { vec<N, T> r(x); r OP##= y; return r; } 
+inline vec<N, T> operator OP(const vec<N, T>& x, const T y)          { vec<N, T> r(x); r OP##= y; return r; } \
+                                                                                                              \
+template <size_t N, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                        \
+inline vec<N, T> operator OP(const T x, const vec<N, T>& y)          { vec<N, T> r(x); r OP##= y; return r; }
+
 
 FAY_VEC_ARITHMETIC( + )
 FAY_VEC_ARITHMETIC( - )
@@ -224,6 +250,7 @@ void sqrt(const vec<N, T>& v)
 	//
 }
 */
+
 // x dot y != x * y
 template <size_t N, typename T>
 T dot(const vec<N, T>& v0, const vec<N, T>& v1)

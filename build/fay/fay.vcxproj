@@ -52,13 +52,13 @@
     <ClInclude Include="..\..\fay\core\platform.h" />
     <ClInclude Include="..\..\fay\core\fay.h" />
     <ClInclude Include="..\..\fay\core\log.h" />
-    <ClInclude Include="..\..\fay\core\parallel.hpp" />
+    <ClInclude Include="..\..\fay\core\parallel.h" />
     <ClInclude Include="..\..\fay\core\profiler.h" />
     <ClInclude Include="..\..\fay\core\range.h" />
     <ClInclude Include="..\..\fay\core\reflection.h" />
     <ClInclude Include="..\..\fay\core\string.h" />
     <ClInclude Include="..\..\fay\core\thread.h" />
-    <ClInclude Include="..\..\fay\core\thread_pool.hpp" />
+    <ClInclude Include="..\..\fay\core\thread_pool.h" />
     <ClInclude Include="..\..\fay\core\time.h" />
     <ClInclude Include="..\..\fay\core\type.h" />
     <ClInclude Include="..\..\fay\core\utility.h" />

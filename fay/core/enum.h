@@ -14,6 +14,18 @@ auto enum_class_hash = [] (auto k)
 };
 */
 
+/*
+struct enum_
+{
+public:
+    enum enum_t
+    {
+        ...
+    };
+};
+
+*/
+
 struct enum_class_hash
 {
     template <typename T>

@@ -6,6 +6,8 @@
 namespace fay
 {
 
+// most times, could think matrix as float array[][], like mat4x3 is float[4][3].
+
 // mat<C, R, T>
 
 // if you use like m[i][j], it is similar to a two-dimensional array[C][R]

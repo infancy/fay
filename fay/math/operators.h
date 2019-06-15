@@ -4,20 +4,20 @@ namespace fay
 {
 
 //template <typename T>
-struct operators
+struct operator_t
 {
 	// empty
 };
 
 /*
 TODO:
-template <typename T, typename U, typename Base = operators>
+template <typename T, typename U, typename Base = operator_t>
 struct totally_ordered
 {
 };
 */
 
-template <typename T, typename Base = operators>
+template <typename T, typename Base = operator_t>
 struct totally_ordered : Base
 {
 	// static_assert...==, <
@@ -49,11 +49,11 @@ friend T operator OP(const U& x, const T& y) { T t(y); t OP##= x; return t; }
 
 #define FAY_BINARY_OPERATOR( OP )                                             \
 friend T operator OP(const T& x, const T& y) { T t(x); t OP##= y; return t; } \
-friend T operator OP(const U& x, const T& y) { T t(x); t OP##= y; return t; } \
                                                                               \
+friend T operator OP(const U& x, const T& y) { T t(x); t OP##= y; return t; } \
 friend T operator OP(const T& x, const U& y) { T t(x); t OP##= y; return t; }
 
-template <typename T, typename U, typename Base = operators>
+template <typename T, typename U, typename Base = operator_t>
 struct additive : Base
 {
 	// static_assert...+=T, -=T, +=U, -=U
@@ -61,7 +61,7 @@ struct additive : Base
 	FAY_BINARY_OPERATOR(-);
 };
 
-template <typename T, typename U, typename Base = operators>
+template <typename T, typename U, typename Base = operator_t>
 struct multiplicative : Base
 {
 	// static_assert...*=T, /=T, *=U, /=U
@@ -69,7 +69,7 @@ struct multiplicative : Base
 	FAY_BINARY_OPERATOR(/);
 };
 
-template <typename T, typename U, typename Base = operators>
+template <typename T, typename U, typename Base = operator_t>
 struct arithmetic : additive<T, U, multiplicative<T, U>>
 {
 	// static_assert...+=T, -=T, *=T, /=T, +=U, -=U, *=U, /=U

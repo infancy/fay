@@ -77,12 +77,6 @@
     <ClInclude Include="..\..\fay\core\log.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\core\thread_pool.hpp">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\core\parallel.hpp">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\math\math.h">
       <Filter>math</Filter>
     </ClInclude>
@@ -260,6 +254,12 @@
     <ClInclude Include="..\..\fay\math.h" />
     <ClInclude Include="..\..\fay\math\spectrum.h">
       <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\parallel.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\thread_pool.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

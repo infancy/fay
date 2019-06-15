@@ -29,6 +29,7 @@ struct window_desc	// TODO: merge to config?
     bool resizable = false; // resize the window.
     bool accept_drop_files = false; // drag-and-drop files into the window
 
+    // TODO: cursor_mode_t cursor_mode
 	cursor_mode cursor_mode_v{ cursor_mode::hidden };
 
     //

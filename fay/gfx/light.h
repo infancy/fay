@@ -3,6 +3,8 @@
 #include "fay/core/fay.h"
 #include "fay/math/geometry.h"
 
+// Physical Lights in UE4: https://zhuanlan.zhihu.com/p/69248316
+
 namespace fay
 {
 
