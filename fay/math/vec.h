@@ -284,9 +284,45 @@ vec<3, T>& cross(const vec<4, T>& v0, const vec<4, T>& v1)
 
 
 // -------------------------------------------------------------------------------------------------
+// trigonometric
+
+
+
+template <size_t N, typename T>
+inline vec<N, T> vectorize(const vec<N, T>& v, std::function<T(T)> func)
+{
+    vec<N, T> r(v);
+
+    for (auto& i : r)
+        i = func(i);
+
+    return r;
+}
+
+template <size_t N, typename T> inline vec<N, T> radians(const vec<N, T>& v) { return vectorize(v, fay::radians); }
+template <size_t N, typename T> inline vec<N, T> degrees(const vec<N, T>& v) { return vectorize(v, fay::degrees); }
+
+template <size_t N, typename T> inline vec<N, T> sin(const vec<N, T>& v) { return vectorize(v, std::sin); }
+template <size_t N, typename T> inline vec<N, T> cos(const vec<N, T>& v) { return vectorize(v, std::cos); }
+template <size_t N, typename T> inline vec<N, T> tan(const vec<N, T>& v) { return vectorize(v, std::tan); }
+
+
+
+// -------------------------------------------------------------------------------------------------
+// type
+
+
+
+// to_glm
+
+// to_fay
+
+
+
+// -------------------------------------------------------------------------------------------------
 // output
 
-
+// TODO: std::format
 
 template <size_t N, typename T> // typename = std::enable_if_t<!std::is_floating_point_v<T>, void>>
 inline std::ostream& operator<<(std::ostream& os, const vec<N, T>& v)

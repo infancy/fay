@@ -80,16 +80,10 @@
     <ClInclude Include="..\..\fay\math\math.h">
       <Filter>math</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\math\matrix.h">
-      <Filter>math</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\math\simd.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\math\transform.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\math\vector.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\math\operators.h">
@@ -105,9 +99,6 @@
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\math\color.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\math\quaternion.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fay\math\shape.h">
@@ -260,6 +251,27 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\core\thread_pool.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\random.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\array.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\vector.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\container.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\vec.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\mat.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\quat.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

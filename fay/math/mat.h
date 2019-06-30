@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fay/math/vector.h"
+#include "fay/math/vec.h"
 #include "fay/math/operators.h"
 
 namespace fay
@@ -288,6 +288,5 @@ inline typename mat<R, C, T> transpose(const mat<C, R, T>& m)
 
 // inverse
 // 基于高斯消元的LU分解极其各种针对特殊形状矩阵的变种
-
 
 } // namespace fay

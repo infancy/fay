@@ -94,22 +94,24 @@ struct equal_epsilon
 };
 
 template <typename T>
-constexpr bool is_equal(T x, T y, typename std::enable_if_t<!std::is_floating_point_v<T>, T>* = nullptr)
+constexpr bool is_equal(T x, T y, T epsilon = fay::equal_epsilon<T>::absolute_epsilon)
 {
-	return x == y;
+    if constexpr (std::is_floating_point_v<T>)
+        // return std::fabs(x - y) <= std::max(absolute_epsilon, relative_epsilon * std::max(fabs(x), fabs(y)) );
+        return std::abs(x - y) <= epsilon * fay::max(T(1), std::abs(x), std::abs(y));
+    else
+        return x == y;
+
+    // else if constexpr (std::is_arithmetic_v<T>)
+    //     return x == y;
+    // else
+    //     static_assert(false, "T of is_equal<T> must be arithmetic type"); // ???
 }
 
 template <typename T>
-constexpr bool is_equal(T x, T y, typename std::enable_if_t<std::is_floating_point_v<T>, T>* = nullptr)
+constexpr bool not_equal(T x, T y, T epsilon = fay::equal_epsilon<T>::absolute_epsilon)
 {
-	// return std::fabs(x - y) <= std::max(absolute_epsilon, relative_epsilon * std::max(fabs(x), fabs(y)) );
-	return std::abs(x - y) <= equal_epsilon<T>::absolute_epsilon * fay::max(T(1), std::abs(x), std::abs(y));
-}
-
-template <typename T>
-constexpr bool not_equal(T x, T y)
-{
-    return !is_equal(x, y);
+    return !is_equal(x, y, epsilon);
 }
 
 } // namespace fay

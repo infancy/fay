@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fay/math/matrix.h"
+#include "fay/math/mat.h"
 
 namespace fay
 {
@@ -192,7 +192,7 @@ inline mat<4, 4, T> scale(const mat<4, 4, T>& m, const vec<3, T>& v)
 
 */
 template<typename T>
-inline mat<4, 4, T> rotate_x(T theta)
+inline mat<4, 4, T> rotatex(T theta)
 {
 	T rad = radians(theta);
 	T sinTheta = std::sin(rad), cosTheta = std::cos(rad);
@@ -207,7 +207,7 @@ inline mat<4, 4, T> rotate_x(T theta)
 	return t;
 }
 template<typename T>
-inline mat<4, 4, T> rotate_y(T theta)
+inline mat<4, 4, T> rotatey(T theta)
 {
 	T x = v.x, y = v.y, z = v.z;
 
@@ -220,7 +220,7 @@ inline mat<4, 4, T> rotate_y(T theta)
 	return t;
 }
 template<typename T>
-inline mat<4, 4, T> rotate_z(T theta)
+inline mat<4, 4, T> rotatez(T theta)
 {
 	T x = v.x, y = v.y, z = v.z;
 
@@ -254,7 +254,7 @@ Transform rotateX(Float theta);
 Transform rotateY(Float theta);
 Transform rotateZ(Float theta);
 
-Transform look_at(const Point3f &pos, const Point3f &look, const Vector3f &up);
+Transform lookat(const Point3f &pos, const Point3f &look, const Vector3f &up);
 Transform orthographic(Float znear, Float zfar);
 Transform perspective(Float fov, Float znear, Float zfar);
 */

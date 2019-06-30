@@ -11,6 +11,8 @@ using namespace fay;
 
 TEST(hash, fnv_hash)
 {
+    // TODO: #define HASH_ASSERT \ static_assert...ASSERT_TRUE...template
+
     using fnv = fnv<uint64_t>;
     //auto h1 = compile_value < (0xcbf29ce484222325ull ^ uint64_t('F')) * 0x100000001b3ull>();
     //auto hash = compile_value<fnv::hash("F")>();
