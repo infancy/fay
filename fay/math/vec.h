@@ -10,6 +10,10 @@ namespace fay
 
 // vec<N, T>
 
+// TODO: change handmade code with std::algorithm
+// std::copy(il.begin(), il.end(), a_.begin());
+// std::fill(v.begin(), v.end(), -1);
+
 #define FAY_VEC_FUNCTIONS                                                         \
 using value_type             = typename std::array<T, N>::value_type;             \
 using size_type              = typename std::array<T, N>::size_type;              \
@@ -25,7 +29,7 @@ using const_reverse_iterator = typename std::array<T, N>::const_reverse_iterator
 constexpr vec() = default;                                                        \
 constexpr explicit vec(const std::initializer_list<T>&/*&&*/ il) /*: a_{}*/       \
 {                                                                                 \
-	DCHECK(il.size() <= N);	/* TODO: DCHECK */                                    \
+	DCHECK(il.size() <= N);	                                                      \
 	auto p = a_.begin(); auto q = il.begin();                                     \
 	for (; q != il.end(); ++p, ++q)                                               \
 		*p = *q;                                                                  \
@@ -71,6 +75,8 @@ struct vec<2, T>
 	{
 		std::array<T, N> a_{};
 		struct { T x, y; };
+        struct { T r, s; };
+        struct { T u, v; };
 	};
 
 	FAY_VEC_FUNCTIONS
@@ -100,7 +106,6 @@ struct vec<4, T>
 		struct { T x, y, z, w; };
 		struct { T r, g, b, a; };
 		//struct { vec3 xyz; };
-		//struct { vec3 rgb; };
 		//struct { vec2 xy; vec2 zw; };
 	};
 
@@ -286,8 +291,12 @@ vec<3, T>& cross(const vec<4, T>& v0, const vec<4, T>& v1)
 // -------------------------------------------------------------------------------------------------
 // trigonometric
 
+// template<Ragne range, Function func>
+// constexpr range vectorize(const range& rg, func f)
 
-
+// template <
+// 	   size_t N, 
+//     template<R, Args...> typename F>
 template <size_t N, typename T>
 inline vec<N, T> vectorize(const vec<N, T>& v, std::function<T(T)> func)
 {
@@ -309,7 +318,7 @@ template <size_t N, typename T> inline vec<N, T> tan(const vec<N, T>& v) { retur
 
 
 // -------------------------------------------------------------------------------------------------
-// type
+// typecast
 
 
 
@@ -343,5 +352,12 @@ inline std::ostream& operator<<(std::ostream& os, const vec<N, float>& v)	// TOD
 	os << " ]";
 	return os;
 }
+
+
+
+// -------------------------------------------------------------------------------------------------
+// chain call
+
+// d(c(b(a(...))))   vs   ... | a | b | c | d
 
 } // namespace fay

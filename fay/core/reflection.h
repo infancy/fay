@@ -5,6 +5,7 @@
 namespace fay
 {
 
+// https://github.com/fffaraz/awesome-cpp#reflection
 // https://github.com/Neargye/nameof
 
 template<typename T>

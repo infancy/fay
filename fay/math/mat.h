@@ -19,6 +19,9 @@ namespace fay
 template <size_t C, size_t R, typename T = float>
 struct mat
 {
+	static_assert(R > 0, "Column number must be positive.");
+	static_assert(C > 0, "Row number must be positive.");
+
 	enum { N = C * R };
 	union
 	{
@@ -28,6 +31,8 @@ struct mat
 
 	using col_type = vec<R, T>; // sub_array_type
 	using row_type = vec<C, T>;
+	
+	using this_type              = mat<C, R, T>;
 	using value_type             = typename vec<N, T>::value_type;
 	using pointer                = typename vec<N, T>::pointer;
 	using const_pointer          = typename vec<N, T>::const_pointer;
@@ -40,27 +45,10 @@ struct mat
 	using const_reference = typename vec<C, vec<R, T>>::const_reference;
 
 	constexpr mat() {} /*= default;*/
-	constexpr explicit mat(const std::initializer_list<T>& il)
-	{
-		DCHECK(il.size() <= N);	/* TODO: DCHECK */
-		auto p = a_.begin(); auto q = il.begin();
-		for (; q != il.end(); ++p, ++q)
-			*p = *q;
-	}
-	constexpr explicit mat(const std::initializer_list<col_type>& il)
-	{
-		DCHECK(il.size() <= N);	/* TODO: DCHECK */
-		auto p = m_.begin(); auto q = il.begin();
-		for (; q != il.end(); ++p, ++q)
-			*p = *q;
-	}
-	constexpr explicit mat(const T& s)  
-	{ 
-		// WARNING: not fill
-		for (size_t i = 0; i < C && i < R; ++i)
-			m_[i][i] = s;
-	}
-	constexpr explicit mat(const T* p)  { for (auto& e : a_) e = *p++; }
+	constexpr explicit mat(const T& s);
+	constexpr explicit mat(const T* p) { for (auto& e : a_) e = *p++; }
+	constexpr explicit mat(const std::initializer_list<T>& il)        : a_{ il } { DCHECK(il.size() <= N); }
+	constexpr explicit mat(const std::initializer_list<col_type>& il) : m_{ il } { DCHECK(il.size() <= R); }
 
 	void fill(const T& s) { for (auto& e : a_) e = s; }
 
@@ -97,6 +85,14 @@ using mat3x4 = mat<3, 4, float>;
 using mat4x2 = mat<4, 2, float>;
 using mat4x3 = mat<4, 3, float>;
 using mat4x4 = mat<4, 4, float>;
+
+// WARNING: only fill diagonal element
+template <size_t C, size_t R, typename T>
+constexpr mat<C, R, T>::mat(const T& s)  
+{
+	for (size_t i = 0; i < C && i < R; ++i)
+		m_[i][i] = s;
+}
 
 
 
@@ -288,5 +284,22 @@ inline typename mat<R, C, T> transpose(const mat<C, R, T>& m)
 
 // inverse
 // 基于高斯消元的LU分解极其各种针对特殊形状矩阵的变种
+
+
+
+// -------------------------------------------------------------------------------------------------
+// chain call
+
+
+
+	/*
+	this_type& translate(T x, T y, T z);
+	this_type& rotate();
+	this_type& scale(T x, T y, T z);
+	this_type& scale(T u);
+	this_type& rotatex();
+	this_type& rotatey();
+	this_type& rotatez();
+	*/
 
 } // namespace fay

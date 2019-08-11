@@ -3,8 +3,8 @@
 #include <fstream>
 
 #include <glm/glm.hpp>
-#include <stb/stb_image.h>
-#include <stb/stb_image_write.h>
+#include <stb_image.h>
+#include <stb_image_write.h>
 
 #include "fay/core/define.h"
 #include "fay/math/math.h"

@@ -7,10 +7,7 @@
     <ClCompile Include="..\..\test\core_type.cpp" />
     <ClCompile Include="..\..\test\core_string.cpp" />
     <ClCompile Include="..\..\test\core_memory.cpp" />
-    <ClCompile Include="..\..\test\test_render.cpp" />
-    <ClCompile Include="..\..\test\test_resource.cpp" />
     <ClCompile Include="..\..\test\core_hash.cpp" />
-    <ClCompile Include="..\..\test\core_ecs.cpp" />
     <ClCompile Include="..\..\test\math_vec_mat.cpp" />
     <ClCompile Include="..\..\test\math_math.cpp" />
     <ClCompile Include="..\..\test\test_core.cpp" />

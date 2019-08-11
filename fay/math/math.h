@@ -89,8 +89,9 @@ constexpr float gamma(int n)
 template <typename T>
 struct equal_epsilon
 {
-	static constexpr T absolute_epsilon = std::numeric_limits<T>::epsilon();
-	static constexpr T relative_epsilon = std::numeric_limits<T>::epsilon();
+    // todo: static constexpr
+	static const inline T absolute_epsilon = std::numeric_limits<T>::epsilon();
+	static const inline T relative_epsilon = std::numeric_limits<T>::epsilon();
 };
 
 template <typename T>

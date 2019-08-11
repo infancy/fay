@@ -282,3 +282,4 @@ __pycache__/
 /build/sample_render/sample/render
 /build/fay/cpp.hint
 /fay/demo.h
+/.vscode

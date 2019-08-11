@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\test\core_hash.cpp" />
-    <ClCompile Include="..\..\test\core_ecs.cpp" />
     <ClCompile Include="..\..\test\core_memory.cpp" />
     <ClCompile Include="..\..\test\core_type.cpp" />
     <ClCompile Include="..\..\test\core_utility.cpp" />
@@ -30,8 +29,6 @@
     <ClCompile Include="..\..\test\math_math.cpp" />
     <ClCompile Include="..\..\test\math_vec_mat.cpp" />
     <ClCompile Include="..\..\test\test_core.cpp" />
-    <ClCompile Include="..\..\test\test_render.cpp" />
-    <ClCompile Include="..\..\test\test_resource.cpp" />
     <ClCompile Include="..\..\test\test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -41,7 +38,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{62A188DD-2295-4610-9F3D-07BC831642F6}</ProjectGuid>
     <RootNamespace>test</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -83,11 +80,10 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Library\lib_64d.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\Library\lib_64.props" />
+    <Import Project="..\..\..\lib_64.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />

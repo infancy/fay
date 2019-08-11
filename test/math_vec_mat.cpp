@@ -2,8 +2,8 @@
 #include <gtest/gtest.h>
 
 #include "fay/core/profiler.h"
-#include "fay/math/vector.h"
-#include "fay/math/matrix.h"
+#include "fay/math/vec.h"
+#include "fay/math/mat.h"
 
 using namespace std;
 using namespace fay;
@@ -85,6 +85,9 @@ TEST(math, vector_operator)
 	v1 += v1;
 	ASSERT_EQ(v1 == v2, true);
 }
+
+// -------------------------------------------------------------------------------------------------
+// mat
 
 TEST(math, matrix_construct)
 {

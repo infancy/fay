@@ -369,10 +369,10 @@ enum class blend_op
 enum class blend_mask
 {
 	none  = 0x10,  // special value for all channels disabled
-	red   = 1 << 0,
-	green = 1 << 1,
-	blue  = 1 << 2,
-	alpha = 1 << 3,
+	red   = 0b0001,
+	green = 0b0010,
+	blue  = 0b0100,
+	alpha = 0b1000,
 	rgb   = red | green | blue,
 	rgba  = red | green | blue | alpha, // all channels enabled
 };

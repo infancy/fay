@@ -18,6 +18,15 @@ inline int to_int(std::string_view str)   { return std::stoi(std::string{str}); 
 
 // to_string(enum class e)
 
+template <typename T>
+inline std::string to_string(T t)
+{
+    if constexpr(std::is_same_v<T, std::string>)
+        return t;
+    else
+        return std::to_string(t);
+}
+
 // -------------------------------------------------------------------------------------------------
 
 // TODO: strings : string + vector<string_view>

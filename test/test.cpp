@@ -7,7 +7,7 @@ GTEST_API_ int main(int argc, char **argv)
 
 #define FAY_TEST_SOMEONE
 #ifdef FAY_TEST_SOMEONE
-    char filter[] = "--gtest_filter=core.*";
+    char filter[] = "--gtest_filter=math.*";
     argv[argc++] = filter;
 #endif // FAY_TEST_SOMEONE
 
