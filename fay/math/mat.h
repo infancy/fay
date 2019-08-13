@@ -6,25 +6,25 @@
 namespace fay
 {
 
-// WARNNING: just think of mat<Row, Col, float> as a two-dimensional array, like float m[Row][Col];
+// WARNNING: just think of mat<R, C, float> as a two-dimensional array, like float m[R][C];
 // most times, could think matrix as float array[][], like mat4x3 is float[4][3].
 // TODO???: Horizontal, Vertical
-template <size_t Row, size_t Col, typename T = float>
+template <size_t R, size_t C, typename T = float>
 struct mat
 {
-	static_assert(Row > 0, "Row number must be positive.");
-	static_assert(Col > 0, "Column number must be positive.");
+	static_assert(R > 0, "Row number must be positive.");
+	static_assert(C > 0, "Column number must be positive.");
 
-	enum { N = Row * Col };
+	enum { N = R * C };
 	union
 	{
 		vec<N, T> a_{};
-		vec<Row, vec<Col, T>> m_;
+		vec<R, vec<C, T>> m_;
 	};
 
-    using row_type               = vec<Col, T>; // sub_array_type
-	using col_type               = vec<Row, T>;
-	using this_type              = mat<Row, Col, T>;
+    using row_type               = vec<C, T>; // sub_array_type
+	using col_type               = vec<R, T>;
+	using this_type              = mat<R, C, T>;
 	using value_type             = typename vec<N, T>::value_type;
     using size_type              = typename vec<N, T>::size_type;
 	using pointer                = typename vec<N, T>::pointer; 
@@ -33,17 +33,19 @@ struct mat
 	using const_iterator         = typename vec<N, T>::const_iterator;
 	using reverse_iterator       = typename vec<N, T>::reverse_iterator;
 	using const_reverse_iterator = typename vec<N, T>::const_reverse_iterator;
-    using reference              = typename vec<Row, vec<Col, T>>::reference;
-    using const_reference        = typename vec<Row, vec<Col, T>>::const_reference;
+    using reference              = typename vec<R, vec<C, T>>::reference;
+    using const_reference        = typename vec<R, vec<C, T>>::const_reference;
 
 	constexpr mat() {} /*= default;*/
+
+    // todo: explicit cast
     
     // WARNING: not fill!
 	constexpr explicit mat(const T& s);
     constexpr explicit mat(const T* p) : a_{ p } {}
     // WARNING: mat4(2) != mat4{ 2 }
 	constexpr explicit mat(const std::initializer_list<T>& il)        : a_{ il } { DCHECK(il.size() <= N); }
-	constexpr explicit mat(const std::initializer_list<row_type>& il) : m_{ il } { DCHECK(il.size() <= Col); }
+	constexpr explicit mat(const std::initializer_list<row_type>& il) : m_{ il } { DCHECK(il.size() <= C); }
 
 	void fill(const T& s) { for (auto& e : a_) e = s; }
 
@@ -87,10 +89,10 @@ template<typename T>
 using matrix4 = mat<4, 4, T>;
 
 // WARNING: only fill diagonal element
-template <size_t Row, size_t Col, typename T>
-constexpr mat<Row, Col, T>::mat(const T& s)
+template <size_t R, size_t C, typename T>
+constexpr mat<R, C, T>::mat(const T& s)
 {
-	for (size_t i = 0; i < Row && i < Col; ++i)
+	for (size_t i = 0; i < R && i < C; ++i)
 		m_[i][i] = s;
 }
 
@@ -101,34 +103,34 @@ constexpr mat<Row, Col, T>::mat(const T& s)
 
 
 
-template <size_t Row, size_t Col, typename T>
-bool operator==(const mat<Row, Col, T>& x, const mat<Row, Col, T>& y) { return x.a_ == y.a_; }
-template <size_t Row, size_t Col, typename T>
-bool operator!=(const mat<Row, Col, T>& x, const mat<Row, Col, T>& y) { return x.a_ != y.a_; }
+template <size_t R, size_t C, typename T>
+bool operator==(const mat<R, C, T>& x, const mat<R, C, T>& y) { return x.a_ == y.a_; }
+template <size_t R, size_t C, typename T>
+bool operator!=(const mat<R, C, T>& x, const mat<R, C, T>& y) { return x.a_ != y.a_; }
 
-template <size_t Row, size_t Col, typename T>
-mat<Row, Col, T> operator-(const mat<Row, Col, T>& v) { mat<Row, Col, T> r; r -= v; return r; } // for NRVO
+template <size_t R, size_t C, typename T>
+mat<R, C, T> operator-(const mat<R, C, T>& v) { mat<R, C, T> r; r -= v; return r; } // for NRVO
 
 #define FAY_MAT_ADDITIVE_T( OP )                                                                                          \
-template <size_t Row, size_t Col, typename T>                                                                                 \
-inline mat<Row, Col, T>& operator OP##=(mat<Row, Col, T>& x, const mat<Row, Col, T>& y) { x.a_ OP##= y.a_; return x; }                \
+template <size_t R, size_t C, typename T>                                                                                 \
+inline mat<R, C, T>& operator OP##=(mat<R, C, T>& x, const mat<R, C, T>& y) { x.a_ OP##= y.a_; return x; }                \
                                                                                                                           \
-template <size_t Row, size_t Col, typename T>                                                                                 \
-inline mat<Row, Col, T> operator OP(const mat<Row, Col, T>& x, const mat<Row, Col, T>& y) { mat<Row, Col, T> r(x); r OP##= y; return r; }
+template <size_t R, size_t C, typename T>                                                                                 \
+inline mat<R, C, T> operator OP(const mat<R, C, T>& x, const mat<R, C, T>& y) { mat<R, C, T> r(x); r OP##= y; return r; }
 
 FAY_MAT_ADDITIVE_T(+)
 FAY_MAT_ADDITIVE_T(-)
 // WARNNING: can't use FAY_MAT_ADDITIVE_T in '*' and '/'
 
 #define FAY_MAT_ARITHMETIC_U( OP )                                                                                  \
-template <size_t Row, size_t Col, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                    \
-inline mat<Row, Col, T>& operator OP##=(mat<Row, Col, T>& x, const T y) { x.a_ OP##= y; return x; }                         \
+template <size_t R, size_t C, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                    \
+inline mat<R, C, T>& operator OP##=(mat<R, C, T>& x, const T y) { x.a_ OP##= y; return x; }                         \
                                                                                                                     \
-template <size_t Row, size_t Col, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                    \
-inline mat<Row, Col, T> operator OP(const mat<Row, Col, T>& x, const T y) { mat<Row, Col, T> r(x); r OP##= y; return r; }       \
+template <size_t R, size_t C, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                    \
+inline mat<R, C, T> operator OP(const mat<R, C, T>& x, const T y) { mat<R, C, T> r(x); r OP##= y; return r; }       \
                                                                                                                     \
-template <size_t Row, size_t Col, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                    \
-inline mat<Row, Col, T> operator OP(const T x, const mat<Row, Col, T>& y) { mat<Row, Col, T> r(y); r OP##= x; return r; }
+template <size_t R, size_t C, typename T> /*, typename U, bool = std::is_arithmetic<U>::value>*/                    \
+inline mat<R, C, T> operator OP(const T x, const mat<R, C, T>& y) { mat<R, C, T> r(y); r OP##= x; return r; }
 
 FAY_MAT_ARITHMETIC_U(+)
 FAY_MAT_ARITHMETIC_U(-)
@@ -145,37 +147,37 @@ FAY_MAT_ARITHMETIC_U(/)
 
 
 
-template <size_t Row, size_t Col, typename T>
-inline mat<Col, Row, T> transpose(const mat<Row, Col, T>& m);
+template <size_t R, size_t C, typename T>
+inline mat<C, R, T> transpose(const mat<R, C, T>& m);
 
-template <size_t Row, size_t Col, typename T>
-inline typename mat<Row, Col, T>::col_type
-operator*(const mat<Row, Col, T>& m, const typename mat<Row, Col, T>::row_type& v)
+template <size_t R, size_t C, typename T>
+inline typename mat<R, C, T>::col_type
+operator*(const mat<R, C, T>& m, const typename mat<R, C, T>::row_type& v)
 {
-    typename mat<Row, Col, T>::col_type rst{};
+    typename mat<R, C, T>::col_type rst{};
 
-	for (size_t i = 0; i < Row; ++i)
+	for (size_t i = 0; i < R; ++i)
 		rst[i] = dot(m[i], v);
 
 	return rst;
 }
 
-template <size_t Row, size_t Col, typename T>
-inline typename mat<Row, Col, T>::row_type
-operator*(const typename mat<Row, Col, T>::col_type& v, const mat<Row, Col, T>& m)
+template <size_t R, size_t C, typename T>
+inline typename mat<R, C, T>::row_type
+operator*(const typename mat<R, C, T>::col_type& v, const mat<R, C, T>& m)
 {
 	return transpose(m) * v;
 }
 
-template <size_t Row, size_t M, size_t Col, typename T>
-inline mat<Row, Col, T> operator*(const mat<Row, M, T>& m0, const mat<M, Col, T>& m1)
+template <size_t R, size_t M, size_t C, typename T>
+inline mat<R, C, T> operator*(const mat<R, M, T>& m0, const mat<M, C, T>& m1)
 {
-    mat<Row, Col, T> rst{};
+    mat<R, C, T> rst{};
 
 	auto mt = transpose(m1);
 
-	for (size_t i = 0; i < Row; ++i)
-		for (size_t j = 0; j < Col; ++j)
+	for (size_t i = 0; i < R; ++i)
+		for (size_t j = 0; j < C; ++j)
 			rst[i][j] = dot(m0[i], mt[j]);
 
 	return rst;
@@ -188,13 +190,13 @@ inline mat<Row, Col, T> operator*(const mat<Row, M, T>& m0, const mat<M, Col, T>
 
 
 
-template <size_t Row, size_t Col, typename T>
-inline mat<Col, Row, T> transpose(const mat<Row, Col, T>& m)
+template <size_t R, size_t C, typename T>
+inline mat<C, R, T> transpose(const mat<R, C, T>& m)
 {
-	mat<Col, Row, T> rst{};
+	mat<C, R, T> rst{};
 
-    for (int i = 0; i < Col; ++i)
-        for (int j = 0; j < Row; ++j)
+    for (int i = 0; i < C; ++i)
+        for (int j = 0; j < R; ++j)
             rst[i][j] = m[j][i];
 
     return rst;
@@ -249,7 +251,7 @@ inline mat<Col, Row, T> transpose(const mat<Row, Col, T>& m)
 
    math:                          memory:                        real:
 
-   $ Row = A * B $                  $ Row = A * B $                  $ Row = A * B $
+   $ R = A * B $                  $ R = A * B $                  $ R = A * B $
 
            | b b b b                      | b b b b                      | b b b b
            | - - - -                      | - - - -                      | - - - -
@@ -282,7 +284,7 @@ inline mat<Col, Row, T> transpose(const mat<Row, Col, T>& m)
 
    math:                          memory:                        real:
 
-   $ Row = A * B $                  $ Row^T = A^T * B^T $            $ Row^T = B^T * A^T $
+   $ R = A * B $                  $ R^T = A^T * B^T $            $ R^T = B^T * A^T $
 
                                             - - - >
            | b b b b                        b - - -                      | a - - -
