@@ -27,6 +27,7 @@ using reverse_iterator       = typename std::array<T, N>::reverse_iterator;     
 using const_reverse_iterator = typename std::array<T, N>::const_reverse_iterator; \
                                                                                   \
 constexpr vec() = default;                                                        \
+/* WARNING: vec4(2) != vec4{ 2 } */                                               \
 constexpr explicit vec(const std::initializer_list<T>&/*&&*/ il) /*: a_{}*/       \
 {                                                                                 \
 	DCHECK(il.size() <= N);	                                                      \

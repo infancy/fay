@@ -142,6 +142,7 @@ inline mat<4, 4, T> scale(const vec<3, T>& v)
 		0, 0, z, 0,
 		0, 0, 0, 1
 	};
+
 	return t;
 }
 template<typename T>
@@ -197,7 +198,8 @@ inline mat<4, 4, T> rotatex(T theta)
 	T rad = radians(theta);
 	T sinTheta = std::sin(rad), cosTheta = std::cos(rad);
 
-	mat<4, 4, T> t{
+	mat<4, 4, T> t
+    {
 		1,         0,        0, 0, 
 		0,  cosTheta, sinTheta, 0, 
 		0, -sinTheta, cosTheta, 0,
@@ -239,12 +241,14 @@ inline mat<4, 4, T> rotate(const vec<3, T>& axis, T theta)
 {
 	T x = v.x, y = v.y, z = v.z;
 
-	mat<4, 4, T> t{
+	mat<4, 4, T> t
+    {
 		x, 0, 0, 0,
 		0, y, 0, 0,
 		0, 0, z, 0,
 		0, 0, 0, 1
 	};
+
 	return t;
 }
 
