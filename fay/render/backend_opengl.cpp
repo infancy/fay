@@ -10,7 +10,7 @@ namespace fay::opengl
 {
 
 // -------------------------------------------------------------------------------------------------
-// helper macros
+#pragma region helper macros
 
 // static FAY_FORCE_INLINE void check_errors() { CHECK(glGetError() == GL_NO_ERROR); }
 // TODO: in debug mode forces turned on error check, while in release it is optional.
@@ -99,10 +99,12 @@ void APIENTRY glDebugOutput(
 #define glcheck_errors()
 #endif
 
+#pragma endregion
+
+
+
 // -------------------------------------------------------------------------------------------------
 // helper function & type
-
-
 
 inline namespace backend_opengl_func
 {
@@ -673,6 +675,8 @@ inline namespace backend_opengl_type
     };
 }
 
+
+
 class backend_opengl : public render_backend
 {
 public:
@@ -694,10 +698,15 @@ public:
                       0, nullptr, GL_TRUE); 
             */
         }
+
+        std::printf("OpenGL Vendor£º  %s\n", glGetString(GL_VENDOR));
+        std::printf("OpenGL Renderer£º%s\n", glGetString(GL_RENDERER));
+        std::printf("OpenGL Version£º %s\n", glGetString(GL_VERSION));
     #endif // FAY_DEBUG
 
         // TODO: add to render_desc
         glEnable(GL_PROGRAM_POINT_SIZE); // The point size can be modify in vertex shader
+        // WARNING: OpenGL 4.5 or higher
         glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE); // D3D style
         glEnable(GL_CULL_FACE);
         glEnable(GL_SCISSOR_TEST);
@@ -1692,6 +1701,8 @@ private:
 // https://github.com/acdemiralp/gl
 
 } // namespace fay::opengl
+
+
 
 namespace fay
 {

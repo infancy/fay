@@ -123,9 +123,10 @@ public:
             .bind_textures({ triangle_tbo })
             .bind_index(triangle_ib)
             .bind_vertex(triangle_vb)
-            .bind_uniform_block("params", fay::memory{ (uint8_t*)&paras1, sizeof(render_paras) })
+            // TODO: rename bind_uniform/bind_buffer
+            .bind_uniform_block("para", fay::memory{ (uint8_t*)&paras1, sizeof(render_paras) })
             .draw_index(6, 0)
-            .bind_uniform_block("params", fay::memory{ (uint8_t*)&paras2, sizeof(render_paras) })
+            .bind_uniform_block("para", fay::memory{ (uint8_t*)&paras2, sizeof(render_paras) })
             .draw_index(3, 6)
             //.draw(6)
             .end_frame();

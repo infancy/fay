@@ -109,12 +109,14 @@ static const std::unordered_map<std::string, obj_keyword> keyword
     { "Ks", obj_keyword::Ks },
     { "Ke", obj_keyword::Ke },
 
+    // TODO: rename obj_keyword::map_d to obj_keyword::map_alpha
     { "map_Ka", obj_keyword::map_Ka },
     { "map_Kd", obj_keyword::map_Kd },
     { "map_Ks", obj_keyword::map_Ks },
     { "map_Ke", obj_keyword::map_Ke },
     { "map_d",  obj_keyword::map_d },
 
+    // TODO: rename obj_keyword::map_bump to obj_keyword::map_normal
     { "bump",     obj_keyword::map_bump },
     { "map_bump", obj_keyword::map_bump },
     { "map_Bump", obj_keyword::map_bump },

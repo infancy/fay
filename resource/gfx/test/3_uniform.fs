@@ -4,14 +4,14 @@ out vec4 FragColor;
 
 uniform sampler2D Diffuse;
 
-layout (std140) uniform color
+layout (std140) uniform para
 {
-    vec4 a;
-    vec4 b;
+    vec4 window;
+    int flag;
 };
 
-uniform int flag;
-uniform vec4 window; // origin_xy, width, height
+//uniform int flag;
+//uniform vec4 window; // origin_xy, width, height
 
 void main()
 {

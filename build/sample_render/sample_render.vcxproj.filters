@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\sample\render\sample_render_main.cpp" />
     <ClCompile Include="..\..\sample\render\shadow.cpp" />
     <ClCompile Include="..\..\sample\render\pbr.cpp" />
     <ClCompile Include="..\..\sample\render\anti_aliasing.cpp" />
@@ -10,6 +9,7 @@
     <ClCompile Include="..\..\sample\render\reflection.cpp" />
     <ClCompile Include="..\..\sample\render\alpha_blending.cpp" />
     <ClCompile Include="..\..\sample\render\__sample.cpp" />
+    <ClCompile Include="..\..\sample\render\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\sample\render\sample_render_app.h" />

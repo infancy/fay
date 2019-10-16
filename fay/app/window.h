@@ -143,11 +143,11 @@ public:
         {
             case render_backend_type::opengl:
                 desc_.is_backend_opengl = true;
-                create_window_and_glcontext(4, 3); // TODO: choose opengl version by itself
+                create_window_and_glcontext(4, 6); // TODO: choose opengl version by itself
                 break;
             case render_backend_type::opengl_dsa:
                 desc_.is_backend_opengl = true;
-                create_window_and_glcontext(4, 5);
+                create_window_and_glcontext(4, 6);
                 break;
             case render_backend_type::d3d11:
                 create_window();

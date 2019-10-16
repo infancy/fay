@@ -1,8 +1,48 @@
 #include "fay/resource/image.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image.h>
+#include <stb_image_write.h>
+
 namespace fay
 {
 
+image::image(const std::string& filepath, bool flip_vertical)
+{
+    LOG_IF(ERROR, filepath.empty()) << "image path is empty!";
+
+    name_ = get_filename(filepath);
+    filepath_ = filepath;
+    is_flip_vertical_ = flip_vertical;
+    is_load_from_file_ = true;
+    is_hdr_ = get_filetype(filepath) == "hdr";
+
+    if (flip_vertical)
+        stbi_set_flip_vertically_on_load(true);
+
+    // TODO: color_space
+    void* src{};
+    if (is_hdr_)
+    {
+        src = stbi_loadf(filepath.c_str(), &width_, &height_, &channel_, 4);
+    }
+    else
+    {
+        src = stbi_load(filepath.c_str(), &width_, &height_, &channel_, 4);
+    }
+    LOG_IF(ERROR, src == nullptr) << "image failed to load at path: " << filepath;
+
+    channel_ = 4; // always read 4-channel
+    fmt_ = to_format(channel());
+
+    resize(size(), pixel_size());
+    memcpy(data(), src, size() * pixel_size());
+
+    stbi_image_free(src);
+}
+
+// -------------------------------------------------------------------------------------------------
 // inline image load_image(const std::string& filepath)
 
 // quality: 1 ~ 100

@@ -5,6 +5,9 @@
 namespace fay
 {
 
+inline namespace shader_type
+{
+
 enum class shader_data_type
 {
     none,
@@ -18,13 +21,12 @@ enum class shader_data_type
 
 struct shader_context
 {
-    vertex_layout entry_layout{}; // use in vs, gs, fs
+    vertex_layout entry_layout{}; // std::vector<vertex_attribute> export_layout{};
     std::vector<std::string> entry_names{};
 
-    //std::vector<vertex_attribute> export_layout{};
     std::vector<shader_desc::sampler> samplers{};
-    //std::vector<std::string> uniforms{};
-    std::vector<shader_desc::uniform_block> uniform_blocks{};
+    std::vector<shader_desc::uniform_block> uniform_blocks{}; // rename : uniforms
+    //std::vector<shader_desc::uniform_block> buffers{}; // big object
 };
 
 // TODO:skip '//'
@@ -76,6 +78,7 @@ const std::unordered_map<std::string_view, texture_type> shader_sampler_map =
 };
 
 
+// TODO£º container | have£¨something);
 auto have = [](const std::vector<std::string_view>& vs, std::string_view v)
 {
     return any_of(vs, std::equal_to{}, v);
@@ -261,7 +264,7 @@ private:
             {
                 sz = std::stoi(std::string(words[2])); // mat mats[2];
             }
-            
+
             for (auto i : range(sz))
                 vs.insert(vs.end(), types.begin(), types.end());
         }
@@ -289,50 +292,50 @@ private:
             switch (type)
             {
 
-                case uniform_type::bvec1:
-                case uniform_type::ivec1:
-                case uniform_type::uvec1:
-                case uniform_type::vec1:
+            case uniform_type::bvec1:
+            case uniform_type::ivec1:
+            case uniform_type::uvec1:
+            case uniform_type::vec1:
 
-                    // try_padding(4);
-                    break;
+                // try_padding(4);
+                break;
 
-                case uniform_type::bvec2:
-                case uniform_type::ivec2:
-                case uniform_type::uvec2:
-                case uniform_type::vec2:
-                case uniform_type::mat2:
-                case uniform_type::mat2x2:
-                case uniform_type::mat3x2:
-                case uniform_type::mat4x2:
+            case uniform_type::bvec2:
+            case uniform_type::ivec2:
+            case uniform_type::uvec2:
+            case uniform_type::vec2:
+            case uniform_type::mat2:
+            case uniform_type::mat2x2:
+            case uniform_type::mat3x2:
+            case uniform_type::mat4x2:
 
-                    try_padding(8);
-                    break;
+                try_padding(8);
+                break;
 
-                case uniform_type::bvec3:
-                case uniform_type::ivec3:
-                case uniform_type::uvec3:
-                case uniform_type::vec3:
-                case uniform_type::mat3:
-                case uniform_type::mat2x3:
-                case uniform_type::mat3x3:
-                case uniform_type::mat4x3:
+            case uniform_type::bvec3:
+            case uniform_type::ivec3:
+            case uniform_type::uvec3:
+            case uniform_type::vec3:
+            case uniform_type::mat3:
+            case uniform_type::mat2x3:
+            case uniform_type::mat3x3:
+            case uniform_type::mat4x3:
 
-                case uniform_type::bvec4:
-                case uniform_type::ivec4:
-                case uniform_type::uvec4:
-                case uniform_type::vec4:
-                case uniform_type::mat4:
-                case uniform_type::mat2x4:
-                case uniform_type::mat3x4:
-                case uniform_type::mat4x4:
+            case uniform_type::bvec4:
+            case uniform_type::ivec4:
+            case uniform_type::uvec4:
+            case uniform_type::vec4:
+            case uniform_type::mat4:
+            case uniform_type::mat2x4:
+            case uniform_type::mat3x4:
+            case uniform_type::mat4x4:
 
-                    try_padding(16);
-                    break;
+                try_padding(16);
+                break;
 
-                case uniform_type::none:
-                default:
-                    break;
+            case uniform_type::none:
+            default:
+                break;
             }
 
             // then add size
@@ -345,6 +348,8 @@ private:
 private:
     std::unordered_map<std::string, std::vector<uniform_type>> structs;
 };
+
+}
 
 inline namespace shader_func
 {
@@ -390,7 +395,7 @@ std::string add_include_files(const std::string& shader_filepath)
         }
     }
 
-    std::cout << "source_code begin:\n" << code << "\nsource_code end\n";
+    std::cout << "\n-------------------source_code with include file begin: " << shader_filepath << "\n\n" << code << "\n\n-------------------------source_code end\n\n";
     return code;
 }
 
@@ -407,7 +412,8 @@ shader_desc::sampler generate_sampler_desc(std::string_view native_type, std::st
     return sampler;
 }
 
-std::pair<shader_data_type, std::string_view> extracting_line_glsl(shader_context& ctx, const std::vector<std::string_view>& words)
+std::pair<shader_data_type, std::string_view> 
+    extracting_line_glsl(shader_context& ctx, const std::vector<std::string_view>& words)
 {
     if (words[0] == "layout")
     {
@@ -446,8 +452,8 @@ std::pair<shader_data_type, std::string_view> extracting_line_glsl(shader_contex
         }
         else if (shader_uniform::shader_uniform_map.find(words[1]) != shader_uniform::shader_uniform_map.end()) // unifrom variable e.g. 'uniform vec3 LightPos;'
         {
+            LOG(ERROR) << "shouldn't use uniform variable: " << words[0] << ' ' << words[1]; // TODO
             DCHECK(shader_uniform::shader_uniform_map.find(words[1]) != shader_uniform::shader_uniform_map.end()) << "can't parser the uniform variable: " << words[1];
-            // TODO
         }
         else
         {
@@ -458,11 +464,13 @@ std::pair<shader_data_type, std::string_view> extracting_line_glsl(shader_contex
     {
         LOG(ERROR) << "ignore: " << words[0]; // TODO
     }
-
+    
+    // most times, directly add to ctx
     return { shader_data_type::none, {} };
 }
 
-std::pair<shader_data_type, std::string_view> extracting_line_hlsl(shader_context& ctx, const std::vector<std::string_view>& words)
+std::pair<shader_data_type, std::string_view> 
+    extracting_line_hlsl(shader_context& ctx, const std::vector<std::string_view>& words)
 {
     if (words[0] == "struct")
     {
@@ -521,10 +529,7 @@ std::pair<shader_data_type, std::string_view> extracting_line_hlsl(shader_contex
 
 shader_context extracting_context(std::stringstream& stream, bool is_hlsl = false)
 {
-    using namespace std;
-    function<pair<shader_data_type, string_view>(shader_context& ctx, const vector<string_view>& words)> extracting_line = is_hlsl
-        ? extracting_line_hlsl
-        : extracting_line_glsl;
+    auto extracting_line = is_hlsl ? extracting_line_hlsl : extracting_line_glsl;
 
     shader_uniform uniform_parser;
     shader_context ctx{};
@@ -625,6 +630,7 @@ shader_desc scan_shader_program(const std::string shader_name, std::string vs_fi
         fs_filepath.replace(fs_filepath.end() - 3, fs_filepath.end(), "_fs.hlsl");
     }
 
+    std::cout << "==================================\n";
     std::string vs_code = add_include_files(vs_filepath);
     std::string fs_code = add_include_files(fs_filepath);
 
@@ -639,7 +645,7 @@ shader_desc scan_shader_program(const std::string shader_name, std::string vs_fi
     desc.vs = std::move(vs_code);
     desc.fs = std::move(fs_code);
 
-    std::cout << "\nshader " << desc.name << "'s context: \n";
+    std::cout << "\n-----------------------\n\nshader " << desc.name << "'s context: \n";
 
     std::cout << "\nvertex names:\n";
     for (const auto& str : vs_ctx.entry_names)
@@ -652,6 +658,8 @@ shader_desc scan_shader_program(const std::string shader_name, std::string vs_fi
     std::cout << "\n samplers:\n";
     for (const auto& sampler : desc.samplers)
         std::cout << sampler.name << '\n';
+
+    std::cout << "==================================\n\n";
 
     return desc;
 }
