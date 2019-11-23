@@ -108,7 +108,7 @@ constexpr bool is_not_void_v = is_not_void<T>::value;
 // -------------------------------------------------------------------------------------------------
 // return_type
 
-template <typename R, typename... ArgTypes>
+template <typename R, typename... Args>
 using return_type = R;
 
 // consteval

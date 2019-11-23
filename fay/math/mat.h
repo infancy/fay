@@ -44,8 +44,8 @@ struct mat
 	constexpr explicit mat(const T& s);
     constexpr explicit mat(const T* p) : a_{ p } {}
     // WARNING: mat4(2) != mat4{ 2 }
-	constexpr explicit mat(const std::initializer_list<T>& il)        : a_{ il } { DCHECK(il.size() <= N); }
-	constexpr explicit mat(const std::initializer_list<row_type>& il) : m_{ il } { DCHECK(il.size() <= C); }
+	constexpr explicit mat(std::initializer_list<T> il)        : a_{ il } { DCHECK(il.size() <= N); }
+	constexpr explicit mat(std::initializer_list<row_type> il) : m_{ il } { DCHECK(il.size() <= C); }
 
 	void fill(const T& s) { for (auto& e : a_) e = s; }
 

@@ -50,6 +50,7 @@ namespace fay
 using uchar  = uint8_t;
 using uint   = uint32_t;
 using string = std::string;
+// static_assert(sizeof(int) >= 4, "byte size of int should big than 4");
 // template<typename T>
 // using vector<T> = std::vector<T>;
 // template<typename T>

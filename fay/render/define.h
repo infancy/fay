@@ -480,7 +480,7 @@ class vertex_layout
 {
 public:
     vertex_layout() {}
-    vertex_layout(const std::initializer_list<vertex_attribute> il) : attrs(il) {}
+    vertex_layout(std::initializer_list<vertex_attribute> il) : attrs(il) {}
 
     uint size() { return (uint)attrs.size(); }
     bool operator==(const vertex_layout&& layout) const { return attrs == layout.attrs; }

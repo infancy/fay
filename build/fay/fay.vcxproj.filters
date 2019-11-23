@@ -28,6 +28,9 @@
     <Filter Include="scene">
       <UniqueIdentifier>{2610e583-e6c5-400f-aac9-1ec2af663676}</UniqueIdentifier>
     </Filter>
+    <Filter Include="container">
+      <UniqueIdentifier>{9157fb6d-3853-45cf-a347-7ac9a29de5c2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\fay\render\render.cpp">
@@ -149,9 +152,6 @@
     <ClInclude Include="..\..\fay\core\string.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\misc\stencil.h">
-      <Filter>misc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\core\range.h">
       <Filter>core</Filter>
     </ClInclude>
@@ -255,15 +255,6 @@
     <ClInclude Include="..\..\fay\math\random.h">
       <Filter>math</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\core\array.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\core\vector.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fay\core\container.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\math\vec.h">
       <Filter>math</Filter>
     </ClInclude>
@@ -273,5 +264,32 @@
     <ClInclude Include="..\..\fay\math\quat.h">
       <Filter>math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\fay\container\container.h">
+      <Filter>container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\container\array.h">
+      <Filter>container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\container\deque.h">
+      <Filter>container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\container\vector.h">
+      <Filter>container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\base_.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\container\_sequence.h">
+      <Filter>container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\math\tensor.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\misc\template.h">
+      <Filter>misc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>

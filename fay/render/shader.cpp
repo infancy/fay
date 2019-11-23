@@ -417,6 +417,7 @@ std::pair<shader_data_type, std::string_view>
 {
     if (words[0] == "layout")
     {
+        // fixme: layout(early_fragment_tests) in; skip it when include files
         if (words[3] == "in") // vertex layout, e.g. layout (location = 0) in vec3 mPos;
         {
             DCHECK(ctx.entry_layout.size() == to_int(words[2]));
@@ -630,9 +631,14 @@ shader_desc scan_shader_program(const std::string shader_name, std::string vs_fi
         fs_filepath.replace(fs_filepath.end() - 3, fs_filepath.end(), "_fs.hlsl");
     }
 
+    //TODO: for code in shds ...
+
     std::cout << "==================================\n";
     std::string vs_code = add_include_files(vs_filepath);
     std::string fs_code = add_include_files(fs_filepath);
+
+    // TODO: skip no sence lines, like 'layout(early_fragment_tests) in;'
+    // vs_code = extracting_target_info(vs_code);
 
     std::stringstream vs_stream{ vs_code };
     std::stringstream fs_stream{ fs_code };

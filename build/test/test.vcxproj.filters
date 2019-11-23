@@ -9,9 +9,11 @@
     <ClCompile Include="..\..\test\core_memory.cpp" />
     <ClCompile Include="..\..\test\core_hash.cpp" />
     <ClCompile Include="..\..\test\math_vec_mat.cpp" />
-    <ClCompile Include="..\..\test\math_math.cpp" />
-    <ClCompile Include="..\..\test\test_core.cpp" />
     <ClCompile Include="..\..\test\math_bounds.cpp" />
+    <ClCompile Include="..\..\test\cantainer_.cpp" />
+    <ClCompile Include="..\..\test\test_template.cpp" />
+    <ClCompile Include="..\..\test\core_.cpp" />
+    <ClCompile Include="..\..\test\math_.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\test\test.h" />

@@ -24,7 +24,7 @@ namespace fay
 
    <-----------------------------><-----------------------------><-----------------------------><----------------------------->
 
-   (2). Direct3D                                                 HLSL(in math same as Direct3D, but you need to hold memory and order by yourself)
+   (2). Direct3D                                                 HLSL(in math same as Direct3D, but you can hold memory and order by yourself)
 
    math(V * M):                   memory(V * M):                 mul(V, M):                     mul(M, V):
                                                       
@@ -124,7 +124,9 @@ inline mat<4, 4, T> translate(const mat<4, 4, T>& m, const vec<3, T>& v)
 	// mat<4, 4, T> r(m);
 	// r[3] = m[0] * v.x + m[1] * v.y + m[2] * v.z + m[3] * 1;
 	// return r;
-	mat<4, 4, T> t{1}; t[3] = vec<4, T>{ v.x, v.y, v.z, 1 };
+	mat<4, 4, T> t{1}; 
+    t[3] = vec<4, T>{ v.x, v.y, v.z, 1 };
+
 	return m * t;
 }
 
@@ -189,7 +191,7 @@ inline mat<4, 4, T> scale(const mat<4, 4, T>& m, const vec<3, T>& v)
    cosTheta, -sinTheta, 0, 0,
    sinTheta,  cosTheta, 0, 0,
           0,         0, 1, 0,
-	  0,         0, 0, 1,
+	      0,         0, 0, 1,
 
 */
 template<typename T>

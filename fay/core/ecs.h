@@ -10,7 +10,7 @@ namespace fay
 {
 
 template <typename T, typename Tuple>
-inline T* get_component(Tuple &t)
+inline T* get_component(Tuple& t)
 {
     return std::get<T*>(t);
 }
@@ -140,7 +140,7 @@ private:
     friend class entity_pool;
 
     uint64_t hash_;
-    uint64_t pool_index_{}; // used in destroying this entity in entity_pool
+    uint64_t pool_index_{}; // used when destroying this entity in entity_pool
 
     entity_pool* pool_{};
     std::unordered_map<component_type_id, component*> components_;
@@ -168,6 +168,7 @@ public:
             entity_to_index_[entity.hash()] = entities_.size();
             groups_.push_back(std::make_tuple(entity.get_component<Ts>()...));
             entities_.push_back(&entity);
+            // entity_to_index_[entity.hash()] = entities_.size() - 1;
         }
     }
 
@@ -278,7 +279,7 @@ public:
     template <typename... Ts>
     std::vector<std::tuple<Ts*...>>& get_component_group()
     {
-        auto group_id = component_mapping::group_id<Ts...>();
+        constexpr auto group_id = component_mapping::group_id<Ts...>();
 
         auto iter = entity_groups_.find(group_id);
         if (iter == entity_groups_.end())
