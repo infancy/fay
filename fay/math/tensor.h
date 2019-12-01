@@ -74,10 +74,17 @@ struct base_tensor_<T, 1, 4>
 template <typename T, size_t R_, size_t C_>
 struct tensor : base_tensor_<T, R_, C_>, sequence<tensor<T, R_, C_>>
 {
-    // TODO: fay::tensor<0> a;
-    static_assert(R > 0 && C > 0);
+    // TODO: fay::tensor<T> a;
+    static_assert(R_ > 0 && C_ > 0);
 
 public:
+    using base_type = base_tensor_<T, R_, C_>;
+    using base_type::C;
+    using base_type::R;
+    using base_type::N;
+    using base_type::m_;
+    using base_type::a_;
+
     using size_type = size_t;
     using difference_type = ptrdiff_t;
     using value_type = T;
@@ -97,13 +104,14 @@ public:
     // TODO£ºremove£¿£¿£¿
     constexpr explicit tensor(std::initializer_list<value_type> il) /*: a_{ il }*/
     {
-        DCHECK(il.size() <= N);
-        auto p = a_; auto q = il.begin(); // The rest is defalut value
-        for (; q != il.end(); ++p, ++q)
-            *p = *q;
+        if (il.size() > N) 
+            throw std::out_of_range("fay::tensor::tensor(std::initializer_list<value_type> il)");
+
+        // the rest is defalut value
+        std::copy(il.begin(), il.end(), a_);
     }
     constexpr explicit tensor(const_reference v) { fill(v); }
-    constexpr explicit tensor(const_pointer   p) { for (auto& e : a_) e = *p++; }
+    constexpr explicit tensor(const_pointer   p, size_type n = 0) { std::copy(p, p + (n > 0 ? n : N), a_); }
 
     // set
     constexpr void fill(const_reference v) { std::fill_n(a_, N, v); }

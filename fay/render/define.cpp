@@ -21,6 +21,7 @@ command_list& command_list::begin_frame(const frame& frm, pipeline_id pipe, shad
     return *this;
 }
 
+// TODO: add command_list& command_list::draw(renderable& renderable)
 command_list& command_list::draw(renderable* renderable)
 {
     renderable->render(*this);

@@ -288,6 +288,12 @@
     <ClInclude Include="..\..\fay\misc\template.h">
       <Filter>misc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\fay\core\heap.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\container\flat.h">
+      <Filter>container</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

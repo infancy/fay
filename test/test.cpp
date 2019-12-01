@@ -7,7 +7,8 @@ GTEST_API_ int main(int argc, char **argv)
 
 #define FAY_TEST_SOMEONE
 #ifdef FAY_TEST_SOMEONE
-    char filter[] = "--gtest_filter=math.*";
+    // https://stackoverflow.com/questions/14018434/how-to-specify-multiple-exclusion-filters-in-gtest-filter
+    char filter[] = "--gtest_filter=static_array.*:tensor.*";
     argv[argc++] = filter;
 #endif // FAY_TEST_SOMEONE
 

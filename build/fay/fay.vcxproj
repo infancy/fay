@@ -42,6 +42,7 @@
     <ClInclude Include="..\..\fay\container\array.h" />
     <ClInclude Include="..\..\fay\container\container.h" />
     <ClInclude Include="..\..\fay\container\deque.h" />
+    <ClInclude Include="..\..\fay\container\flat.h" />
     <ClInclude Include="..\..\fay\container\_sequence.h" />
     <ClInclude Include="..\..\fay\container\vector.h" />
     <ClInclude Include="..\..\fay\core\algorithm.h" />
@@ -52,6 +53,7 @@
     <ClInclude Include="..\..\fay\core\enum.h" />
     <ClInclude Include="..\..\fay\core\event.h" />
     <ClInclude Include="..\..\fay\core\hash.h" />
+    <ClInclude Include="..\..\fay\core\heap.h" />
     <ClInclude Include="..\..\fay\core\memory.h" />
     <ClInclude Include="..\..\fay\core\poly.h" />
     <ClInclude Include="..\..\fay\core\serialization.h" />

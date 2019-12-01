@@ -29,4 +29,60 @@ inline void loop(uint cnt, std::function<void(uint)> functor)
         functor(i);
 }
 
+#pragma region equal
+
+// one func don't do two different things
+// bool is_seq_equal(const Sequence& a0, const Sequence& a1, std::optional<size_t> count)
+
+// TODO???
+//template<Sequence T0, Sequence T1>
+//inline bool operator==(const T0& a, const T1& b, size_t count) noexcept
+
+//! a[0...count] == b[0...count]
+template<typename T0, typename T1>
+// requires T0::value_type == T1::value_type
+/*constexpr*/
+inline bool is_seq_equal(const T0& a, const T1& b, size_t count) noexcept
+{
+    DCHECK(count > 0);
+    DCHECK(std::size(a) >= count);
+    DCHECK(std::size(b) >= count);
+
+    return std::equal(std::begin(a), std::begin(a) + count, std::begin(b));
+}
+
+
+
+//! a.size() == b.size() and a[i] == b[i]
+//! WARNING: can't directly use {...} in is_seq_equal(...);
+template<typename T0, typename T1>
+/*constexpr*/
+inline bool is_seq_equal(const T0& a, const T1& b) noexcept
+{
+    if (std::size(a) != std::size(b))
+        return false;
+
+    return std::equal(std::begin(a), std::end(a), std::begin(b));
+}
+
+
+
+template<typename T0, typename T1>
+/*constexpr*/
+inline bool not_seq_equal(const T0& a, const T1& b, size_t count) noexcept
+{
+    return !is_seq_equal(a, b, count);
+}
+
+
+
+template<typename T0, typename T1>
+/*constexpr*/
+inline bool not_seq_equal(const T0& a, const T1& b) noexcept
+{
+    return !is_seq_equal(a, b);
+}
+
+#pragma endregion equal
+
 } // namespace fay

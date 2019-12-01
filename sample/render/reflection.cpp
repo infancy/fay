@@ -20,9 +20,10 @@ public:
 
         shd = fay::create_shader(device.get(),  "shd",  "gfx/phong_shading.vs", "gfx/deferred_shading_gbuffer.fs");
         shd2 = fay::create_shader(device.get(), "shd2", "gfx/phong_shading.vs", "gfx/deferred_shading_depth.fs");
-        shd3 = fay::create_shader(device.get(), "shd3", "gfx/post_processing.vs", "gfx/SSR.fs");
+        shd3 = fay::create_shader(device.get(), "shd3", "gfx/post_processing.vs", "gfx/SSR.fs"); // when use post_processing.vs, vertex data are build inside shader code.
         shd4 = fay::create_shader(device.get(), "shd4", "gfx/post_processing.vs", "gfx/post_processing.fs");
 
+        // TODO: pipe = device->create(pipeline_desc{ .name = ..., .cull_mode = ...});
         {
             fay::pipeline_desc pd;
             {
@@ -66,20 +67,21 @@ public:
             frame3 = fay::frame(frm_id, { offscreen_tex }, frame.dsv());
         }
     }
-
+    
     void render() override
     {
         glm::mat4 model = glm::mat4(1);
         model = glm::scale(model, glm::vec3(0.8f));
         glm::mat4 view = camera->view();
         glm::mat4 proj = camera->persp();
+        // TODO: auto mvp = camera->world_to_ndc() * scale(0.8f);
 
         glm::mat4 MV = view * model;
         glm::mat3 NormalMV = glm::mat3(glm::transpose(glm::inverse(MV)));
 
         fay::command_list pass1, pass2, pass3, pass4; // pass[4]
 
-        // depth map
+        // render GBuffer
         pass1
             .begin_frame(frame, pipe, shd)
             .bind_uniform("MV", MV)
@@ -88,6 +90,7 @@ public:
             .draw(mesh.get())
             .end_frame();
 
+        // render backPosition
         pass2
             .begin_frame(frame2, pipe2, shd2)
             .bind_uniform("MV", MV)
@@ -96,16 +99,20 @@ public:
             .draw(mesh.get())
             .end_frame();
 
+        // offscreen render
         pass3
             .begin_frame(frame3)
             .clear_color() // WARNNING
             .apply_state(pipe3, shd3)
+            // bind GBuffer and BackPosition data
             .bind_texture(frame[0], "gPosition")
             .bind_texture(frame[1], "gNormal")
             .bind_texture(frame[2], "gAlbedoSpec")
             .bind_texture(frame2[0], "gBackPosition")
-            .bind_uniform("offset", glm::vec2(0.f))
 
+            // TODO: handmade uniform data of glsl to generate C++ code
+            // TODO: reflect uniform data of glsl to generate C++ code
+            .bind_uniform("offset", glm::vec2(0.f))
             .bind_uniform("lightPosition", light->position())
             .bind_uniform("lightColor", glm::vec3(1.f, 1.f, 1.f))
             .bind_uniform("viewPos", camera->position())

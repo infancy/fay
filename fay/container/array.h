@@ -1,17 +1,5 @@
 #pragma once
 
-// https://github.com/llvm-mirror/libcxx/blob/master/include/array
-// https://github.com/microsoft/STL/blob/master/stl/inc/array
-// https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/include/std/array
-// https://github.com/electronicarts/EASTL/blob/master/include/EASTL/array.h
-// https://github.com/boostorg/array/blob/develop/include/boost/array.hpp
-
-// https://github.com/fffaraz/awesome-cpp#frameworks
-// https://github.com/abseil/abseil-cpp/blob/master/absl/container/fixed_array.h
-// https://github.com/facebook/folly/blob/master/folly/container/Array.h
-
-
-
 // #include <fay/core/fay.h>
 #include <fay/container/container.h>
 
@@ -20,71 +8,9 @@ namespace fay
 
 #pragma region static_array/stack_array
 
-#pragma region internal
-
-// template <typename T, size_t R = 1, size_t C = 1>
-template <typename T, size_t N_>
-struct base_array_
-{
-    enum { N = N_ };
-    union
-    {
-        // all of anonymous union's data members must be public
-        T a_[N]{};
-        // T m_[R][C]{};
-    };
-};
-
-template <typename T>
-struct base_array_<T, 2>
-{
-    enum { N = 2 };
-    union
-    {
-        struct { T x, y; };
-        struct { T s, t; };
-        struct { T u, v; };
-
-        T a_[N]{};
-    };
-};
-
-template <typename T>
-struct base_array_<T, 3>
-{
-    enum { N = 3 };
-    union
-    {
-        struct { T x, y, z; };
-        struct { T r, g, b; };
-
-        T a_[N]{};
-    };
-};
-
-template <typename T>
-struct base_array_<T, 4>
-{
-    enum { N = 4 };
-    union
-    {
-        struct { T x, y, z, w; };
-        struct { T r, g, b, a; };
-        //struct { array3 xyz; };
-        //struct { array2 xy; array2 zw; };
-
-        T a_[N]{};
-    };
-};
-
-#pragma endregion
-
-#pragma region interface
-
 template <typename T, size_t N>
-struct array : base_array_<T, N>, sequence<array<T, N>>
+struct array : sequence<array<T, N>>
 {
-    // TODO: fay::array<0> a;
     static_assert(N > 0);
 
 public:
@@ -101,20 +27,34 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 public:
-    // TODO: make fay::array to be a aggregate
+    constexpr array() = default;
+    constexpr explicit array(const_reference v) { fill(v); }
 
     // WARNING!!! array(n) != array{ n }
-    // TODO£ºremove£¿£¿£¿
-    constexpr explicit array(std::initializer_list<value_type> il) /*: a_{ il }*/
+    constexpr explicit array(std::initializer_list<value_type> il) : array(il.begin(), il.size())
     {
-        DCHECK(il.size() <= N);
-        auto p = a_; auto q = il.begin(); // The rest is defalut value
-        for (; q != il.end(); ++p, ++q)
-            *p = *q;
+        if (il.size() > N) 
+            throw std::out_of_range("fay::array::array(std::initializer_list<value_type> il): il is too long");
     }
-    constexpr explicit array(const_reference v) { fill(v); }
-    constexpr explicit array(const_pointer   p) { for (auto& e : a_) e = *p++; }
 
+    //! Sequence must have 'begin' and 'size' method
+    template<typename Sequence>
+    constexpr explicit array(const Sequence& c) : array(std::cbegin(c), std::size(c)) {}
+    template<typename Sequence>
+    constexpr explicit array(const Sequence& c, size_type n) : array(std::cbegin(c), n) { DCHECK(n <= std::size(c)); }
+
+public:
+    //! if n >= N, all elems are init by [*p, *(p+N))
+    //! if n <  N, the front elems are same, the rest are defalut value
+    constexpr explicit array(const_pointer p, size_type n) 
+    {
+        if (n <= 0)
+            throw std::invalid_argument("fay::array::array(const_pointer p, size_type n): para 'n' isn't positive");
+
+        std::copy(p, p + std::min(n, N), a_); // TODO: deque and list
+    }
+
+public:
     // set
     constexpr void fill(const_reference v) { std::fill_n(a_, N, v); }
 
@@ -153,8 +93,11 @@ public:
     const_reverse_iterator crbegin() const noexcept { return rbegin(); }
     const_reverse_iterator crend()   const noexcept { return rend(); }
     */
+
+private:
+    // because in the beginning provides user-define ctor, fay::array is not a aggregate anymore
+    T a_[N]{};
 };
-#pragma endregion
 
 #pragma endregion
 
@@ -184,6 +127,7 @@ public:
     }
 
 private:
+    // TODO: heap_value, heap_aray
     size_type sz_;
     std::unique_ptr<T[]> a_;
 };

@@ -33,7 +33,7 @@ public:
             pd.cull_mode = fay::cull_mode::none;
             pd.blend_enabled = true;
             pd.blend_rgb   = { fay::blend_factor::one, fay::blend_factor::one, fay::blend_op::add };
-            pd.blend_alpha = { fay::blend_factor::zero, fay::blend_factor::one_minus_src_alpha, fay::blend_op::add }; // TODO: one_sub_src_alpha
+            pd.blend_alpha = { fay::blend_factor::zero, fay::blend_factor::one_minus_src_alpha, fay::blend_op::add }; // TODO: one_sub_src
             pipe = device->create(pd);
         }
 

@@ -1,12 +1,12 @@
 #version 330 core
-in vec2 vTex;
+in vec2 vTex; // 后处理时的光栅化坐标
 
 out vec4 FragColor;
 
 uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
-uniform sampler2D gBackPosition;
+uniform sampler2D gBackPosition; // 使用 cull_mode::front 剔除正面, 渲染背面得到的背面坐标, 主要用来结合正面坐标计算物体的厚度
 
 uniform vec3 lightPosition;
 uniform vec3 lightColor;

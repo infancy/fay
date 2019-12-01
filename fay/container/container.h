@@ -60,6 +60,7 @@ struct associative : container<associative<Derived>>
 
 };
 
+// array, vector, deque, list...
 template<typename Derived> // template<Sequence Seq>
 struct sequence : container<sequence<Derived>>
 {

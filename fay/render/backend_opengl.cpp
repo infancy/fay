@@ -721,6 +721,7 @@ public:
 
         // create context default offscreen fbo
         {
+            // TODO: sample character picture
             float vertices[] =
             {
                  1.0f,  1.f, 0.f,   1.f, 1.f,  // right top

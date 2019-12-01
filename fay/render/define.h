@@ -401,6 +401,7 @@ enum class pass_type
 // TODO: bool() -> is_valid()
 // TODO: value -> private: value
 // TODO: using buffer_id = type_id<buffer, buffer_desc>
+// TODO: base_type_id, frame : base_type_id
 #define FAY_RENDER_TYPE_ID( type )                                          \
 struct type##_id                                                            \
 {                                                                           \
@@ -1032,6 +1033,7 @@ class material;
 class frame;
 
 // TODO: rebuild(not reuse it)
+// rename: render_cmds???
 class command_list
 {
 public:
@@ -1252,6 +1254,8 @@ public:
     }
     */
     command_list& draw(renderable* renderable);
+    // command_list& draw_post_processing(); // No vertex data required
+    // Implementation details_: when use post_processing.vs, vertex data are build inside shader code.
 
     // command_list& draw_indirect();
     // command_list& draw_indexed_indirect();
@@ -1262,6 +1266,7 @@ public:
     const std::vector<command>& commands_() const { return cmds_; }
 
 private:
+    // TODO: rename: add_command_
     command& add_command(command_type type)
     {
         cmds_.emplace_back(type);

@@ -59,6 +59,7 @@ protected:
     std::string filepath_{};
 };
 
+// read-only view
 class image_view;
 
 // base_image
