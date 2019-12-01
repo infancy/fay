@@ -105,11 +105,13 @@ struct is_not_void : is_not_void_<std::remove_cv_t<T>> {};
 template <typename T>
 constexpr bool is_not_void_v = is_not_void<T>::value;
 
-// -------------------------------------------------------------------------------------------------
-// return_type
 
+
+// return_type
 template <typename R, typename... Args>
 using return_type = R;
+
+
 
 // consteval
 

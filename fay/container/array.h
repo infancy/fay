@@ -69,8 +69,8 @@ public:
     const_pointer   data() const noexcept { return a_; }
 
     // capaciiity
-    constexpr size_type    size()    const noexcept { return N; }
-    constexpr bool         emptry()  const noexcept { return false; }
+    constexpr size_type size()   const noexcept { return N; }
+    constexpr bool      emptry() const noexcept { return false; }
 
     /*
     // iterators

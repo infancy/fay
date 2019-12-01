@@ -9,6 +9,7 @@
 // -------------------------------------------------------------------------------------------------
 
 #define ASSERT_EQUAL(left_, ...) ASSERT_TRUE(fay::is_seq_equal(left_, std::vector<int>(__VA_ARGS__)))
+#define ASSERT_EQUAL2(left_, ...) ASSERT_TRUE(fay::is_seq_equal(left_, __VA_ARGS__))
 
 #pragma region template_test
 
@@ -89,24 +90,64 @@ TEST(static_array, array4_init)
 
 TEST(static_array, data)
 {
-    array4 a0{ 1, 2, 3, 4 };
+    /*const*/ array4 a{ 1, 2, 3, 4 };
 
-    ASSERT_TRUE(!a0.emptry());
-    ASSERT_TRUE(a0.size() == 4);
+    ASSERT_TRUE(!a.emptry());
+    ASSERT_TRUE(a.size() == 4);
 
-    ASSERT_TRUE(a0[0] == a0.at(0));
-    ASSERT_TRUE(a0[3] == a0.at(3));
+    // get
+    ASSERT_TRUE(a[0] == a.at(0));
+    ASSERT_TRUE(a[3] == a.at(3));
 
-    ASSERT_TRUE(a0[0] == a0.front());
-    ASSERT_TRUE(a0[3] == a0.back());
+    ASSERT_TRUE(a[0] == a.front());
+    ASSERT_TRUE(a[3] == a.back());
 
-    ASSERT_TRUE(a0.data()             == a0.begin());
-    ASSERT_TRUE(a0.data() + a0.size() == a0.end());
+    ASSERT_TRUE(a.data()             == a.begin());
+    ASSERT_TRUE(a.data() + a.size() == a.end());
 
-    ASSERT_TRUE(*(a0.data())             == *(a0.rend()));
-    ASSERT_TRUE(*(a0.data() + a0.size()) == *(a0.rbegin()));
+    ASSERT_TRUE(a.front() == *(a.rend() - 1));
+    ASSERT_TRUE(a.back()  == *(a.rbegin()));
+    // ASSERT_TRUE(*(a.data() + a.size()) == *(a.rbegin())); // interesting
+
+    // set
+    array4 b{ 5, 6, 7, 8 };
+    a.front() = b[0];
+    a[1]      = b[1];
+    a.at(2)   = b[2];
+    a.back()  = b[3];
+    ASSERT_EQUAL2(a, b);
+
+    array4 c{ 9, 10, 11, 12 };
+    *(a.begin())    = c[0];
+    *(a.rend() - 2) = c[1];
+    *(a.end() - 2)  = c[2];
+    *(a.rbegin())   = c[3];
+    ASSERT_EQUAL2(a, c);
 }
 
+/*
+TEST(static_array, const)
+{
+    const array4 a{ 1, 2, 3, 4 };
+    
+    static_assert(std::is_const_v<const int&>);
+    static_assert(std::is_const_v<decltype(a.data())> == false);
+
+    static_assert(std::is_const_v<decltype(a[0])>);
+    static_assert(std::is_const_v<decltype(a.at(0))>);
+
+    static_assert(std::is_const_v<decltype(a.front())>);
+    static_assert(std::is_const_v<decltype(a.back())>);
+
+    static_assert(std::is_const_v<decltype(a.begin())>);
+    static_assert(std::is_const_v<decltype(a.rbegin())>);
+    static_assert(std::is_const_v<decltype(a.crbegin())>);
+
+    static_assert(std::is_const_v<decltype(a.end())>);
+    static_assert(std::is_const_v<decltype(a.rend())>);
+    static_assert(std::is_const_v<decltype(a.crend())>);
+}
+*/
 
 #pragma endregion
 

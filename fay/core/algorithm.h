@@ -38,24 +38,12 @@ inline void loop(uint cnt, std::function<void(uint)> functor)
 //template<Sequence T0, Sequence T1>
 //inline bool operator==(const T0& a, const T1& b, size_t count) noexcept
 
-//! a[0...count] == b[0...count]
-template<typename T0, typename T1>
-// requires T0::value_type == T1::value_type
-/*constexpr*/
-inline bool is_seq_equal(const T0& a, const T1& b, size_t count) noexcept
-{
-    DCHECK(count > 0);
-    DCHECK(std::size(a) >= count);
-    DCHECK(std::size(b) >= count);
-
-    return std::equal(std::begin(a), std::begin(a) + count, std::begin(b));
-}
-
 
 
 //! a.size() == b.size() and a[i] == b[i]
 //! WARNING: can't directly use {...} in is_seq_equal(...);
 template<typename T0, typename T1>
+// requires T0::value_type == T1::value_type
 /*constexpr*/
 inline bool is_seq_equal(const T0& a, const T1& b) noexcept
 {
@@ -64,17 +52,6 @@ inline bool is_seq_equal(const T0& a, const T1& b) noexcept
 
     return std::equal(std::begin(a), std::end(a), std::begin(b));
 }
-
-
-
-template<typename T0, typename T1>
-/*constexpr*/
-inline bool not_seq_equal(const T0& a, const T1& b, size_t count) noexcept
-{
-    return !is_seq_equal(a, b, count);
-}
-
-
 
 template<typename T0, typename T1>
 /*constexpr*/

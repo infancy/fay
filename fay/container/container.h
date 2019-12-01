@@ -39,8 +39,8 @@ public:
 
     auto& front()       noexcept { return *(derived()->begin()); }
     auto& front() const noexcept { return *(derived()->begin()); }
-    auto& back()        noexcept { return *(derived()->end());   }
-    auto& back()  const noexcept { return *(derived()->end());   }
+    auto& back()        noexcept { return *(derived()->end() - 1);   }
+    auto& back()  const noexcept { return *(derived()->end() - 1);   }
 
 private:
     template<typename T>
