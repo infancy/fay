@@ -87,17 +87,26 @@ TEST(static_array, array4_init)
     //test_init_4<array4>();
 }
 
-/*
-TEST(static_array, copy)
+TEST(static_array, data)
 {
-    array2 a2{ 1, 2 };
-    array3 a3{ 1, 2, 3 };
-    array4 a4{ 1, 2, 3, 4 };
+    array4 a0{ 1, 2, 3, 4 };
 
-    array4 c0{ a2.data(), 2 };
-    array4 c1( a3.data(), 3);
+    ASSERT_TRUE(!a0.emptry());
+    ASSERT_TRUE(a0.size() == 4);
+
+    ASSERT_TRUE(a0[0] == a0.at(0));
+    ASSERT_TRUE(a0[3] == a0.at(3));
+
+    ASSERT_TRUE(a0[0] == a0.front());
+    ASSERT_TRUE(a0[3] == a0.back());
+
+    ASSERT_TRUE(a0.data()             == a0.begin());
+    ASSERT_TRUE(a0.data() + a0.size() == a0.end());
+
+    ASSERT_TRUE(*(a0.data())             == *(a0.rend()));
+    ASSERT_TRUE(*(a0.data() + a0.size()) == *(a0.rbegin()));
 }
-*/
+
 
 #pragma endregion
 

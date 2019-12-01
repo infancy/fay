@@ -27,7 +27,7 @@ public:
     //using const_reverse_iterator = const typename Derived_::reverse_iterator;
 
 public:
-    auto rbegin()        noexcept { return reverse<decltype(derived()->end())>  (derived()->end());   } // ->std::reverse_iterator<decltyp(auto)>
+    auto rbegin()        noexcept { return reverse<decltype(derived()->end())>  (derived()->end());   }
     auto rbegin()  const noexcept { return reverse<decltype(derived()->end())>  (derived()->end());   }
     auto rend()          noexcept { return reverse<decltype(derived()->begin())>(derived()->begin()); }
     auto rend()    const noexcept { return reverse<decltype(derived()->begin())>(derived()->begin()); }
@@ -37,13 +37,10 @@ public:
     auto cend()    const noexcept { return derived()->end();    }
     auto crend()   const noexcept { return derived()->rend();   }
 
-    //auto at() . . . { . . . return operator[](i); }
-    // operator[]
-
-    auto front()       noexcept { return *(derived()->begin()); }
-    auto front() const noexcept { return *(derived()->begin()); }
-    auto back()        noexcept { return *(derived()->end());   }
-    auto back()  const noexcept { return *(derived()->end());   }
+    auto& front()       noexcept { return *(derived()->begin()); }
+    auto& front() const noexcept { return *(derived()->begin()); }
+    auto& back()        noexcept { return *(derived()->end());   }
+    auto& back()  const noexcept { return *(derived()->end());   }
 
 private:
     template<typename T>
@@ -79,10 +76,16 @@ template<typename Derived> // template<Sequence Seq>
 struct sequence : container<sequence<Derived>>
 {
 public:
+    using size_type = size_t;
+
     auto begin()       noexcept { return derived()->data(); }
     auto begin() const noexcept { return derived()->data(); }
     auto end()         noexcept { return derived()->data() + derived()->size(); }
     auto end()   const noexcept { return derived()->data() + derived()->size(); }
+
+    // TODO: derived name
+    auto& at(size_type i)       { if (i >= derived()->size()) throw std::out_of_range("fay::sequence::at"); return derived()->operator[](i); }
+    auto& at(size_type i) const { if (i >= derived()->size()) throw std::out_of_range("fay::sequence::at"); return derived()->operator[](i); }
 
 private:
     //using Derived = Derived_;

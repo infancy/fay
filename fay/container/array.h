@@ -17,12 +17,12 @@ public:
     FAY_SEQUENCE_tYPE_ALIAS
 
 public:
-    // can not use 'array a', 'array a{}', always init by something 
+    //! WARNING!!! can not use 'array a', 'array a{}', always init by something 
     //constexpr array() = default;
 
     constexpr explicit array(const_reference v) { fill(v); }
 
-    // WARNING!!! array(n) != array{ n }
+    //! WARNING!!! array(n) != array{ n }
     constexpr explicit array(std::initializer_list<value_type> il) : array(il.begin(), il.size())
     {
         if (il.size() > N) 
@@ -52,8 +52,9 @@ public:
     constexpr void fill(const_reference v) { std::fill_n(a_, N, v); }
 
     // get
-    reference       operator[](size_type i)       noexcept { return a_[i]; }
-    const_reference operator[](size_type i) const noexcept { return a_[i]; }
+    reference       operator[](size_type i)       { return a_[i]; }
+    const_reference operator[](size_type i) const { return a_[i]; }
+
     /*
     reference       at(size_type i)       { if (i >= N) throw std::out_of_range("fay::array::at"); return a_[i]; }
     const_reference at(size_type i) const { if (i >= N) throw std::out_of_range("fay::array::at"); return a_[i]; }
@@ -63,12 +64,14 @@ public:
     reference       back()        noexcept { return a_[N - 1]; }
     const_reference back()  const noexcept { return a_[N - 1]; }
     */
+
     pointer         data()       noexcept { return a_; }
     const_pointer   data() const noexcept { return a_; }
 
     // capaciiity
     constexpr size_type    size()    const noexcept { return N; }
     constexpr bool         emptry()  const noexcept { return false; }
+
     /*
     // iterators
     iterator               begin()         noexcept { return       iterator(data()); }
