@@ -10,11 +10,10 @@ namespace fay
 // allocate count * sizeof(T) bytes
 template<typename T>
 inline T* allocate(size_t count)
-{	// allocate array of count elements
-    DCHECK(count > 0) <<
-        "allocate(size_t n): 'count' is 0";
-    DCHECK(count < (static_cast<size_t>(-1) / sizeof(T))) <<
-        "allocate(size_t n): 'count' exceeds maximum supported size";
+{	
+    DCHECK(count > 0) << "allocate(size_t n): 'count' is 0";
+    DCHECK(count < (static_cast<size_t>(-1) / sizeof(T))) << "allocate(size_t n): 'count' exceeds maximum supported size";
+
     return static_cast<T*>(::operator new(count * sizeof(T)));
 }
 
@@ -25,7 +24,8 @@ inline void deallocate(void* ptr) //, size_t count)
 
 template<typename T, typename... Args>
 void construct(const T* ptr, Args&&... args)
-{	// new((void*)U) U{args}, construct U(Args...) at ptr
+{	
+    // new((void*)U) U{args}, construct U(Args...) at ptr
     ::new(const_cast<void*>(static_cast<const volatile void*>(ptr)))
         T{ std::forward<Args>(args)... };
 }
@@ -42,7 +42,9 @@ void destruct(const T* ptr)
 // is_standard_layout 
 // is_trivial
 
-// rename: memory_block
+// TODO: heap_value, heap_array
+
+// rename: buffer
 // TODO: shared_memory
 // template<typename D = allocator>
 class memory

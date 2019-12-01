@@ -43,7 +43,7 @@ void test_init_4()
 
 #pragma endregion
 
-#define ASSERT_EQUAL(left_, right_) ASSERT_TRUE(fay::is_seq_equal(left_, right_))
+#define ASSERT_EQUAL(left_, ...) ASSERT_TRUE(fay::is_seq_equal(left_, std::vector<int>(__VA_ARGS__)))
 
 #pragma region static_array
 
@@ -56,27 +56,27 @@ TEST(static_array, array4_init)
     auto zero = { 0, 0, 0, 0 };
     auto one  = { 1, 1, 1, 1 };
 
-    array4 default_;  ASSERT_EQUAL(default_, zero);
-    array4 value_{};  ASSERT_EQUAL(value_, one);
+    array4 default_; ASSERT_EQUAL(default_, zero);
+    array4 value_{}; ASSERT_EQUAL(value_, zero);
 
     // direct-list
-    array4 a0{ 0 };  ASSERT_EQUAL(a0, zero);
-    array4 a1{ 1 };  ASSERT_EQUAL(a1, one);
-    array4 a2{ 1, 2 };
-    array4 a3{ 1, 2, 3 };
-    array4 a4{ 1, 2, 3, 4 };
+    array4 a0{ 0 };          ASSERT_EQUAL(a0, zero);
+    array4 a1{ 1 };          ASSERT_EQUAL(a1, { 1, 0, 0, 0 });
+    array4 a2{ 1, 2 };       ASSERT_EQUAL(a2, { 1, 2, 0, 0 });
+    array4 a3{ 1, 2, 3 };    ASSERT_EQUAL(a3, { 1, 2, 3, 0 });
+    array4 a4{ 1, 2, 3, 4 }; ASSERT_EQUAL(a4, { 1, 2, 3, 4 });
     //array4 a5{ 1, 2, 3, 4, 5 };
 
     // fill
-    array4 f0(0);
-    array4 f1(1);
+    array4 f0(0); ASSERT_EQUAL(f0, zero);
+    array4 f1(1); ASSERT_EQUAL(f1, one);
 
     // sequence
-    array4 s0{ a3 };
-    array4 s1(a3);
+    array4 s0{ a3 }; ASSERT_EQUAL(s0, { 1, 2, 3, 0 });
+    array4 s1(a3);   ASSERT_EQUAL(s1, { 1, 2, 3, 0 });
 
-    array4 t0{ a4, 3 };
-    array4 t1(a4, 3);
+    array4 t0{ a4, 3 }; ASSERT_EQUAL(t0, { 1, 2, 3, 0 });
+    array4 t1(a4, 3);   ASSERT_EQUAL(t1, { 1, 2, 3, 0 });
 
     // pointer
     //array4 p0{ a4.data(), 3 };
