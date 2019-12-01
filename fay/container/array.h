@@ -3,8 +3,6 @@
 // #include <fay/core/fay.h>
 #include <fay/container/container.h>
 
-using std::cbegin;
-
 namespace fay
 {
 
@@ -16,6 +14,7 @@ struct array : sequence<array<T, N>>
     static_assert(N > 0);
 
 public:
+
     FAY_SEQUENCE_tYPE_ALIAS
 
 public:

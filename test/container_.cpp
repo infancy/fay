@@ -14,33 +14,39 @@
 #pragma region template_test
 
 template<typename seq>
-void test_init_4()
+void test_init()
 {
-    seq default_;
-    seq value_{};
+    auto zero = { 0, 0, 0, 0 };
+    auto one = { 1, 1, 1, 1 };
+
+    // seq default_; error
+    // seq value_{}; error
+    // seq va(); // function define
 
     // direct-list
-    seq a0{ 0 };
-    seq a1{ 1 };
-    seq a2{ 1, 2 };
-    seq a3{ 1, 2, 3 };
-    seq a4{ 1, 2, 3, 4 };
-    //seq a5{ 1, 2, 3, 4, 5 };
+    seq a0{ 0 };          ASSERT_EQUAL(a0, { 0, 0, 0, 0 });
+    seq a1{ 1 };          ASSERT_EQUAL(a1, { 1, 0, 0, 0 });
+    seq a2{ 1, 2 };       ASSERT_EQUAL(a2, { 1, 2, 0, 0 });
+    seq a3{ 1, 2, 3 };    ASSERT_EQUAL(a3, { 1, 2, 3, 0 });
+    seq a4{ 1, 2, 3, 4 }; ASSERT_EQUAL(a4, { 1, 2, 3, 4 });
+    //seq a5{ 1, 2, 3, 4, 5 }; error
 
     // fill
-    seq f0(0);
-    seq f1(1);
+    seq f0(0); ASSERT_EQUAL(f0, zero);
+    seq f1(1); ASSERT_EQUAL(f1, one);
 
     // sequence
-    seq s0{ a3 };
-    seq s1(a3);
+    //seq s0{ a3 }; not recommended
+    //seq t0{ a4, 3 }; not recommended
 
-    seq t0{ a4, 3 };
-    seq t1(a4, 3);
+    seq s1(a3); ASSERT_EQUAL(s1, { 1, 2, 3, 0 });
+    seq s2(a4, 3); ASSERT_EQUAL(s2, { 1, 2, 3, 0 });
+    //seq s3(a4.data(), 3); ASSERT_EQUAL(s3, { 1, 2, 3, 0 });
+    seq s4(a4.cbegin(), a4.cbegin() + 3); ASSERT_EQUAL(s4, { 1, 2, 3, 0 });
 
     // pointer
     //seq p0{ a4.data(), 3 };
-    //seq p0(a4.data(), 3);
+    //seq p1(a4.data(), 3);
 }
 
 #pragma endregion
@@ -87,7 +93,7 @@ TEST(static_array, array4_init)
     //array4 p0{ a4.data(), 3 };
     //array4 p1(a4.data(), 3);
 
-    //test_init_4<array4>();
+    test_init<array4>();
 }
 
 TEST(static_array, data)
@@ -174,26 +180,7 @@ using seq4 = fay::tensor<int, 1, 4>;
 
 TEST(tensor, init)
 {
-    //seq4 a0;
-    seq4 a0{};
-    seq4 a1{ 0 };
-    seq4 a2{ 1 };
-
-    seq2 a3i{ 1, 2 };
-    seq3 a3j{ 1, 2, 3 };
-    seq4 a3k{ 1, 2, 3, 4 };
-    seq4 a4{ a3i.x, a3i.y, a3j.z, a3k.w };
-    //seq4 a33{ 1, 1, 1, 1, 1 };
-
-    seq4 b0(0);
-    seq4 b1(1);
-
-    seq4 c0{ a3i.data(), 2 };
-    seq4 c1( a3j.data(), 3);
-    seq2 c2{ a3k.data() };
-    seq3 c3( a3k.data());
-
-    seq4 d1{ a3k };
+    test_init<seq4>();
 }
 
 #pragma endregion

@@ -47,6 +47,9 @@ using const_##type##_wp = std::weak_ptr<const type>;
 namespace fay
 {
 
+using std::begin;
+using std::cbegin;
+
 using uchar  = uint8_t;
 using uint   = uint32_t;
 using string = std::string;
