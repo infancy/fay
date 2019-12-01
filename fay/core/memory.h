@@ -42,7 +42,7 @@ void destruct(const T* ptr)
 // is_standard_layout 
 // is_trivial
 
-// TODO: heap_value, heap_array
+// TODO: fixed heap_value, heap_array
 
 // rename: buffer
 // TODO: shared_memory

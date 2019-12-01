@@ -148,8 +148,8 @@ public:
             .bind_texture(frame.dsv(), "Shadowmap")
             .bind_texture(frame2.dsv(), "Shadowmap2")
             .draw(mesh.get())
+
             // debug info
-            /*
             .apply_pipeline(debug_pipe)
             .apply_shader(debug_shd)
             .bind_uniform("MVP", camera->world_to_ndc())
@@ -157,7 +157,7 @@ public:
             .draw(debug_light.get())
             .draw(debug_camera2.get())
             .draw(debug_light2.get())
-            */
+
             .end_frame();
 
         device->execute({ pass1, pass2, pass3 });

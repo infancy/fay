@@ -58,8 +58,8 @@ TEST(static_array, array4_init)
     auto zero = { 0, 0, 0, 0 };
     auto one  = { 1, 1, 1, 1 };
 
-    // array4 default_; ASSERT_EQUAL(default_, zero);
-    // array4 value_{}; ASSERT_EQUAL(value_, zero);
+    // array4 default_; error
+    // array4 value_{}; error
     // array4 va(); // function define
 
     // direct-list
@@ -68,18 +68,20 @@ TEST(static_array, array4_init)
     array4 a2{ 1, 2 };       ASSERT_EQUAL(a2, { 1, 2, 0, 0 });
     array4 a3{ 1, 2, 3 };    ASSERT_EQUAL(a3, { 1, 2, 3, 0 });
     array4 a4{ 1, 2, 3, 4 }; ASSERT_EQUAL(a4, { 1, 2, 3, 4 });
-    //array4 a5{ 1, 2, 3, 4, 5 };
+    //array4 a5{ 1, 2, 3, 4, 5 }; error
 
     // fill
     array4 f0(0); ASSERT_EQUAL(f0, zero);
     array4 f1(1); ASSERT_EQUAL(f1, one);
 
     // sequence
-    array4 s0{ a3 }; ASSERT_EQUAL(s0, { 1, 2, 3, 0 });
-    array4 s1(a3);   ASSERT_EQUAL(s1, { 1, 2, 3, 0 });
+    //array4 s0{ a3 }; not recommended
+    //array4 t0{ a4, 3 }; not recommended
 
-    array4 t0{ a4, 3 }; ASSERT_EQUAL(t0, { 1, 2, 3, 0 });
-    array4 t1(a4, 3);   ASSERT_EQUAL(t1, { 1, 2, 3, 0 });
+    array4 s1(a3); ASSERT_EQUAL(s1, { 1, 2, 3, 0 });
+    array4 s2(a4, 3); ASSERT_EQUAL(s2, { 1, 2, 3, 0 });
+    //array4 s3(a4.data(), 3); ASSERT_EQUAL(s3, { 1, 2, 3, 0 });
+    array4 s4(a4.cbegin(), a4.cbegin() + 3); ASSERT_EQUAL(s4, { 1, 2, 3, 0 });
 
     // pointer
     //array4 p0{ a4.data(), 3 };
