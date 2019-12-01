@@ -8,8 +8,9 @@
 
 // -------------------------------------------------------------------------------------------------
 
-// TODO: template_test
-#pragma region static_array
+#define ASSERT_EQUAL(left_, ...) ASSERT_TRUE(fay::is_seq_equal(left_, std::vector<int>(__VA_ARGS__)))
+
+#pragma region template_test
 
 template<typename seq>
 void test_init_4()
@@ -37,13 +38,13 @@ void test_init_4()
     seq t1(a4, 3);
 
     // pointer
-    seq p0{ a4.data(), 3 };
-    seq p0(a4.data(), 3);
+    //seq p0{ a4.data(), 3 };
+    //seq p0(a4.data(), 3);
 }
 
 #pragma endregion
 
-#define ASSERT_EQUAL(left_, ...) ASSERT_TRUE(fay::is_seq_equal(left_, std::vector<int>(__VA_ARGS__)))
+
 
 #pragma region static_array
 
@@ -56,11 +57,12 @@ TEST(static_array, array4_init)
     auto zero = { 0, 0, 0, 0 };
     auto one  = { 1, 1, 1, 1 };
 
-    array4 default_; ASSERT_EQUAL(default_, zero);
-    array4 value_{}; ASSERT_EQUAL(value_, zero);
+    // array4 default_; ASSERT_EQUAL(default_, zero);
+    // array4 value_{}; ASSERT_EQUAL(value_, zero);
+    // array4 va(); // function define
 
     // direct-list
-    array4 a0{ 0 };          ASSERT_EQUAL(a0, zero);
+    array4 a0{ 0 };          ASSERT_EQUAL(a0, { 0, 0, 0, 0 });
     array4 a1{ 1 };          ASSERT_EQUAL(a1, { 1, 0, 0, 0 });
     array4 a2{ 1, 2 };       ASSERT_EQUAL(a2, { 1, 2, 0, 0 });
     array4 a3{ 1, 2, 3 };    ASSERT_EQUAL(a3, { 1, 2, 3, 0 });
@@ -99,6 +101,8 @@ TEST(static_array, copy)
 
 #pragma endregion
 
+
+
 #pragma region dynamic_array
 
 TEST(dynamic_array, init)
@@ -108,34 +112,36 @@ TEST(dynamic_array, init)
 
 #pragma endregion
 
+
+
 #pragma region tensor
 
-using vec2 = fay::tensor<int, 1, 2>;
-using vec3 = fay::tensor<int, 1, 3>;
-using vec4 = fay::tensor<int, 1, 4>;
+using seq2 = fay::tensor<int, 1, 2>;
+using seq3 = fay::tensor<int, 1, 3>;
+using seq4 = fay::tensor<int, 1, 4>;
 
 TEST(tensor, init)
 {
-    //vec4 a0;
-    vec4 a0{};
-    vec4 a1{ 0 };
-    vec4 a2{ 1 };
+    //seq4 a0;
+    seq4 a0{};
+    seq4 a1{ 0 };
+    seq4 a2{ 1 };
 
-    vec2 a3i{ 1, 2 };
-    vec3 a3j{ 1, 2, 3 };
-    vec4 a3k{ 1, 2, 3, 4 };
-    vec4 a4{ a3i.x, a3i.y, a3j.z, a3k.w };
-    //vec4 a33{ 1, 1, 1, 1, 1 };
+    seq2 a3i{ 1, 2 };
+    seq3 a3j{ 1, 2, 3 };
+    seq4 a3k{ 1, 2, 3, 4 };
+    seq4 a4{ a3i.x, a3i.y, a3j.z, a3k.w };
+    //seq4 a33{ 1, 1, 1, 1, 1 };
 
-    vec4 b0(0);
-    vec4 b1(1);
+    seq4 b0(0);
+    seq4 b1(1);
 
-    vec4 c0{ a3i.data(), 2 };
-    vec4 c1( a3j.data(), 3);
-    vec2 c2{ a3k.data() };
-    vec3 c3( a3k.data());
+    seq4 c0{ a3i.data(), 2 };
+    seq4 c1( a3j.data(), 3);
+    seq2 c2{ a3k.data() };
+    seq3 c3( a3k.data());
 
-    vec4 d1{ a3k };
+    seq4 d1{ a3k };
 }
 
 #pragma endregion

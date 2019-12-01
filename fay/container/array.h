@@ -14,20 +14,12 @@ struct array : sequence<array<T, N>>
     static_assert(N > 0);
 
 public:
-    using size_type              = size_t;
-    using difference_type        = ptrdiff_t;
-    using value_type             = T;
-    using reference              = value_type&;
-    using const_reference        = const value_type&;
-    using pointer                = value_type*;
-    using const_pointer          = const value_type*;
-    using iterator               = value_type*;
-    using const_iterator         = const value_type*;
-    using reverse_iterator       = std::reverse_iterator<iterator>;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    FAY_SEQUENCE_tYPE_ALIAS
 
 public:
-    constexpr array() = default;
+    // can not use 'array a', 'array a{}', always init by something 
+    //constexpr array() = default;
+
     constexpr explicit array(const_reference v) { fill(v); }
 
     // WARNING!!! array(n) != array{ n }
@@ -43,13 +35,14 @@ public:
     template<typename Sequence>
     constexpr explicit array(const Sequence& c, size_type n) : array(std::cbegin(c), n) { DCHECK(n <= std::size(c)); }
 
-public:
+private:
+    // TODO: wait for C++20
     //! if n >= N, all elems are init by [*p, *(p+N))
     //! if n <  N, the front elems are same, the rest are defalut value
     constexpr explicit array(const_pointer p, size_type n) 
     {
         if (n <= 0)
-            throw std::invalid_argument("fay::array::array(const_pointer p, size_type n): para 'n' isn't positive");
+            throw std::invalid_argument("fay::array::array(const_pointer p, size_type n): para 'n' isn't positive, is it used 'array a{}' ???");
 
         std::copy(p, p + std::min(n, N), a_); // TODO: deque and list
     }
