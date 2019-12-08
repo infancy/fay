@@ -64,35 +64,41 @@ TEST(static_array, array4_init)
     auto zero = { 0, 0, 0, 0 };
     auto one  = { 1, 1, 1, 1 };
 
-    // array4 default_; error
-    // array4 value_{}; error
+    array4 default_; ASSERT_EQUAL(default_, zero); // warning: init all elem by 0
+    array4 value_{}; ASSERT_EQUAL(value_,   zero); // warning: init all elem by 0
     // array4 va(); // function define
 
     // direct-list
-    array4 a0{ 0 };          ASSERT_EQUAL(a0, { 0, 0, 0, 0 });
-    array4 a1{ 1 };          ASSERT_EQUAL(a1, { 1, 0, 0, 0 });
+    array4 a0{ 0, 0, 0, 0 }; ASSERT_EQUAL(a0, { 0, 0, 0, 0 }); // use 'array4 a0{ 0 };' will have runtime warning
+    array4 a1{ 1, 0, 0, 0 }; ASSERT_EQUAL(a1, { 1, 0, 0, 0 }); // use 'array4 a0{ 1 };' will have runtime warning
     array4 a2{ 1, 2 };       ASSERT_EQUAL(a2, { 1, 2, 0, 0 });
     array4 a3{ 1, 2, 3 };    ASSERT_EQUAL(a3, { 1, 2, 3, 0 });
     array4 a4{ 1, 2, 3, 4 }; ASSERT_EQUAL(a4, { 1, 2, 3, 4 });
     //array4 a5{ 1, 2, 3, 4, 5 }; error
 
     // fill
+    // fay::array have a std::initializer_list ctor, so have to use '()' style ctor to call
     array4 f0(0); ASSERT_EQUAL(f0, zero);
     array4 f1(1); ASSERT_EQUAL(f1, one);
 
     // sequence
-    //array4 s0{ a3 }; not recommended
-    //array4 t0{ a4, 3 }; not recommended
+    array4 s0{ a3 };    ASSERT_EQUAL(s0, { 1, 2, 3, 0 });
+    array4 s1{ a4, 3 }; ASSERT_EQUAL(s1, { 1, 2, 3, 0 });
 
-    array4 s1(a3); ASSERT_EQUAL(s1, { 1, 2, 3, 0 });
-    array4 s2(a4, 3); ASSERT_EQUAL(s2, { 1, 2, 3, 0 });
     //array4 s3(a4.data(), 3); ASSERT_EQUAL(s3, { 1, 2, 3, 0 });
-    array4 s4(a4.cbegin(), a4.cbegin() + 3); ASSERT_EQUAL(s4, { 1, 2, 3, 0 });
+    array4 s4{ a4.cbegin(), a4.cbegin() + 3 }; ASSERT_EQUAL(s4, { 1, 2, 3, 0 });
 
     // pointer
     //array4 p0{ a4.data(), 3 };
     //array4 p1(a4.data(), 3);
 
+    // copy
+    array4 c0{ a4 }; ASSERT_EQUAL2(c0, a4);
+    array4 c1 = a4; ASSERT_EQUAL2(c1, a4);
+    // move
+    array4 m0{ array4(1) }; ASSERT_EQUAL2(m0, one);
+    array4 m1 = array4(1);  ASSERT_EQUAL2(m1, one);
+    
     test_init<array4>();
 }
 
@@ -100,7 +106,7 @@ TEST(static_array, data)
 {
     /*const*/ array4 a{ 1, 2, 3, 4 };
 
-    ASSERT_TRUE(!a.emptry());
+    ASSERT_TRUE(!a.empty());
     ASSERT_TRUE(a.size() == 4);
 
     // get

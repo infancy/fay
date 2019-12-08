@@ -6,9 +6,7 @@
 namespace fay
 {
 
-// WARNNING: just think of mat<R, C, float> as a two-dimensional array, like float m[R][C];
-// most times, could think matrix as float array[][], like mat4x3 is float[4][3].
-// TODO???: Horizontal, Vertical
+// NOTE: just think of mat<R, C, float> as float m[R][C] with many methods.
 template <size_t R, size_t C, typename T = float>
 struct mat
 {

@@ -87,8 +87,10 @@ struct base_tensor_<T, 1, 4>
 
 #pragma region interface
 
+// TODO: rename to vec, remove T m_[R][C]
+// template <scaler T, size_t R_, size_t C_>
 template <typename T, size_t R_, size_t C_>
-struct tensor : base_tensor_<T, R_, C_>, sequence<tensor<T, R_, C_>>
+struct tensor : base_tensor_<T, R_, C_>, sequence<T, tensor<T, R_, C_>>
 {
     // TODO: fay::tensor<T> a;
     static_assert(R_ > 0 && C_ > 0);

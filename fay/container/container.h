@@ -20,13 +20,6 @@ template<typename Derived> // template<Container C>
 struct container
 {
 public:
-    //using const_value_type       = const typename Derived::valye_type;
-    //using const_pointer          = const typename Derived_::pointer;
-    //using cosnt_reference        = const typename Derived_::reference;
-    //using const_iterator         = const typename Derived_::iterator;
-    //using const_reverse_iterator = const typename Derived_::reverse_iterator;
-
-public:
     auto rbegin()        noexcept { return reverse<decltype(derived()->end())>  (derived()->end());   }
     auto rbegin()  const noexcept { return reverse<decltype(derived()->end())>  (derived()->end());   }
     auto rend()          noexcept { return reverse<decltype(derived()->begin())>(derived()->begin()); }
@@ -39,8 +32,8 @@ public:
 
     auto& front()       noexcept { return *(derived()->begin()); }
     auto& front() const noexcept { return *(derived()->begin()); }
-    auto& back()        noexcept { return *(derived()->end() - 1);   }
-    auto& back()  const noexcept { return *(derived()->end() - 1);   }
+    auto& back()        noexcept { return *(derived()->end() - 1); }
+    auto& back()  const noexcept { return *(derived()->end() - 1); }
 
 private:
     template<typename T>
@@ -50,6 +43,8 @@ private:
     const Derived* derived() const noexcept { return (Derived*)this; }
 };
 
+
+
 template<typename Derived> // template<Associative Seq>
 struct associative : container<associative<Derived>>
 {
@@ -58,26 +53,39 @@ struct associative : container<associative<Derived>>
 
 
 
-#define FAY_SEQUENCE_tYPE_ALIAS \
-using size_type              = size_t; \
-using difference_type        = ptrdiff_t; \
-using value_type             = T; \
-using reference              = value_type&; \
-using const_reference        = const value_type&; \
-using pointer                = value_type*; \
-using const_pointer          = const value_type*; \
-using iterator               = value_type*; \
-using const_iterator         = const value_type*; \
+#define FAY_SEQUENCE_tYPE_ALIAS                                 \
+using size_type              = size_t;                          \
+using difference_type        = ptrdiff_t;                       \
+using value_type             = T;                               \
+using reference              = value_type&;                     \
+using const_reference        = const value_type&;               \
+using pointer                = value_type*;                     \
+using const_pointer          = const value_type*;               \
+using iterator               = value_type*;                     \
+using const_iterator         = const value_type*;               \
 using reverse_iterator       = std::reverse_iterator<iterator>; \
 using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 // array, vector, deque, list...
-template<typename Derived> // template<Sequence Seq>
-struct sequence : container<sequence<Derived>>
+template<typename T, typename Derived> // template<Sequence Seq>
+struct sequence : container<sequence<T, Derived>>
 {
 public:
-    using size_type = size_t;
+    FAY_SEQUENCE_tYPE_ALIAS
 
+/*
+public:
+    constexpr explicit sequence(const_pointer first, const_pointer last)
+    {
+        auto diff = std::distance(first, last);
+        DCHECK(diff > 0) << "range isn't valid, is it used 'tensor t{}' ???";
+        DCHECK(diff <= N);
+
+        std::copy(first, last, derived()->data()); // TODO: deque and list
+    }
+*/
+
+public:
     auto begin()       noexcept { return derived()->data(); }
     auto begin() const noexcept { return derived()->data(); }
     auto end()         noexcept { return derived()->data() + derived()->size(); }
