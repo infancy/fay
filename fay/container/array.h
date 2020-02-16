@@ -26,7 +26,8 @@ public:
         if(il.size() == 1) LOG(WARNING) << "shouldn't use 'array a{ n }' style ctor";
     }
 
-    constexpr explicit array(const_reference v) { fill(v); }
+    // not use 'array a(fill_value)'
+    // constexpr explicit array(const_reference v) { fill(v); }
 
     //! Sequence must have 'begin' and 'end' method
     template<typename Sequence>
@@ -82,14 +83,14 @@ private:
 // TODO: heap_value
 
 template<typename T>
-class heap_array : public sequence<T, heap_array<T>>
+/*TODO: constexpr */class heap_array : public sequence<T, heap_array<T>>
 {
 public:
     using this_type = heap_array<T>;
     FAY_SEQUENCE_tYPE_ALIAS
 
 public:
-    explicit heap_array(size_type size, value_type value = value_type{}) :
+    explicit heap_array(fay::size_ size, value_type value = value_type{}) :
         sz_{ size },
         a_{ std::make_unique<T[]>(sz_) }
     {
@@ -98,7 +99,7 @@ public:
         fill(value);
     }
 
-    explicit heap_array(size_type size, std::initializer_list<value_type> il) :
+    explicit heap_array(fay::size_ size, std::initializer_list<value_type> il) :
         sz_{ size },
         a_{ std::make_unique<T[]>(sz_) }
     {

@@ -49,6 +49,12 @@ void test_init()
     //seq p1(a4.data(), 3);
 }
 
+template<typename seq>
+void test_data()
+{
+    // todo
+}
+
 #pragma endregion
 
 
@@ -64,15 +70,21 @@ TEST(static_array, array4_init)
     auto zero = { 0, 0, 0, 0 };
     auto one  = { 1, 1, 1, 1 };
 
-    array4 default_; ASSERT_EQUAL(default_, zero); // warning: init all elem by 0
-    array4 value_{}; ASSERT_EQUAL(value_,   zero); // warning: init all elem by 0
+    array4 default_; ASSERT_EQUAL(default_, zero); // warning: init all elem by 0, not use
+    array4 value_{}; ASSERT_EQUAL(value_,   zero); // warning: init all elem by 0, recommend
     // array4 va(); // function define
 
-    // direct-list
-    array4 a0{ 0, 0, 0, 0 }; ASSERT_EQUAL(a0, { 0, 0, 0, 0 }); // use 'array4 a0{ 0 };' will have runtime warning
-    array4 a1{ 1, 0, 0, 0 }; ASSERT_EQUAL(a1, { 1, 0, 0, 0 }); // use 'array4 a0{ 1 };' will have runtime warning
+ // direct-list
+ // array4 a0{ 0 };          ASSERT_EQUAL(a0, { 0, 0, 0, 0 }); // use 'array4 a0{ 0 };' will have runtime warning
+ // array4 a1{ 1 };          ASSERT_EQUAL(a1, { 1, 0, 0, 0 }); // use 'array4 a0{ 1 };' will have runtime warning
     array4 a2{ 1, 2 };       ASSERT_EQUAL(a2, { 1, 2, 0, 0 });
     array4 a3{ 1, 2, 3 };    ASSERT_EQUAL(a3, { 1, 2, 3, 0 });
+
+    // recommend:
+    array4 a0{ 0, 0, 0, 0 }; ASSERT_EQUAL(a0, { 0, 0, 0, 0 }); // use 'array4 a0{ 0 };' will have runtime warning
+    array4 a1{ 1, 0, 0, 0 }; ASSERT_EQUAL(a1, { 1, 0, 0, 0 }); // use 'array4 a0{ 1 };' will have runtime warning
+    array4 a2{ 1, 2, 0, 0 }; ASSERT_EQUAL(a2, { 1, 2, 0, 0 });
+    array4 a3{ 1, 2, 3, 0 }; ASSERT_EQUAL(a3, { 1, 2, 3, 0 });
     array4 a4{ 1, 2, 3, 4 }; ASSERT_EQUAL(a4, { 1, 2, 3, 4 });
     //array4 a5{ 1, 2, 3, 4, 5 }; error
 
@@ -80,6 +92,10 @@ TEST(static_array, array4_init)
     // fay::array have a std::initializer_list ctor, so have to use '()' style ctor to call
     array4 f0(0); ASSERT_EQUAL(f0, zero);
     array4 f1(1); ASSERT_EQUAL(f1, one);
+
+    // recommend:
+    array4 f0{}; f.fill(0); ASSERT_EQUAL(f0, zero);
+    array4 f1{}; f.fill(1); ASSERT_EQUAL(f1, one);
 
     // sequence
     array4 s0{ a3 };    ASSERT_EQUAL(s0, { 1, 2, 3, 0 });
@@ -169,10 +185,22 @@ TEST(static_array, const)
 
 #pragma region dynamic_array
 
+/*
 TEST(dynamic_array, init)
 {
-    //fay::array<int> an(1);
+    fay::array<int> a0{ 0sz }; // error
+    fay::array<int> a1{ 1sz };
+    fay::array<int> a1{ 1sz, 1 };
+    fay::array<int> a1{ 1sz, {1} };
+    fay::array<int> a4{ 4sz, 1 };
+    fay::array<int> a4{ 4sz, {1, 2, 3, 4} };
+
+    // not provided
+    // fay::array<int> a3{1, 2, 3};
+    // fay::array<int> a4{1, 2, 3, 4};
+
 }
+*/
 
 #pragma endregion
 
