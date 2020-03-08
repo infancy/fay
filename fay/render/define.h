@@ -1032,8 +1032,8 @@ class renderable;
 class material;
 class frame;
 
-// TODO: rebuild(not reuse it)
-// rename: render_cmds???
+// WARNING: rebuild(not reuse it)
+// rename: render_cmds or render_list???
 class command_list
 {
 public:
@@ -1041,7 +1041,7 @@ public:
     // std::vector<resource_desc> resources;
     // std::vector<command_desc> commands;
 
-    command_list() {}
+    command_list() {} // TODO: remove default ctor, always give cmds a name
     command_list(std::string name) : name_(std::move(name)) {}
 
     // -------------------------------------------------------------------------------------------------

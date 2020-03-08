@@ -8,6 +8,18 @@
 namespace fay
 {
 
+template<typename X, typename Y>
+struct pair
+{
+    union
+    {
+        struct { X x; Y y; };
+        struct { X k; Y v; };
+        struct { X name; Y value; };
+        struct { X first; Y second; };
+    };
+};
+
 template<typename Container, typename UnaryPredicate>
 inline decltype(auto) find(const Container& container, UnaryPredicate p)
 {
@@ -110,7 +122,7 @@ inline std::optional<uint> index(const Container& container, UnaryPredicate p,
 template<typename T>
 inline bool is_clamp(T val, T low, T high)
 {
-    return (val >= low) && (val <= high);
+    return (val >= low) && (val <= high); // (val >= low) && (val < high)???
 };
 
 } // namespace fay

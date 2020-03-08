@@ -26,7 +26,7 @@ enum class math_feature
 // -------------------------------------------------------------------------------------------------
 // render
 
-
+#pragma region render
 
 enum class render_feature 
 {
@@ -59,10 +59,12 @@ enum class render_backend_type
 };
 // TODO: FAY_ENUM_CLASS_OPERATOR( render_backend_type )
 
-
+#pragma endregion
 
 // -------------------------------------------------------------------------------------------------
 // resource
+
+#pragma region resource
 
 // TODO: struct pixel_format { ... };
 enum class pixel_format
@@ -106,7 +108,7 @@ enum class pixel_format
     etc2_srgb8,
 };
 
-inline uint32_t bytesize(pixel_format fmt)
+inline uint32_t bytesize(pixel_format fmt) // rename: bsize???
 {
     int sz{};
 
@@ -169,5 +171,7 @@ enum class model_format
 {
     none, obj, fbx, gltf, blend, unknown, count
 };
+
+#pragma endregion
 
 } // namespace fay

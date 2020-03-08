@@ -13,16 +13,16 @@
 #include <algorithm>
 #include <array>
 #include <functional>
-#include <limits>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <unordered_map>
-#include <vector>
 #include <utility>
+#include <vector>
 
 // #include <boost/noncopyable.hpp>
 #include <glog/logging.h>
@@ -47,13 +47,52 @@ using const_##type##_wp = std::weak_ptr<const type>;
 namespace fay
 {
 
+// try to avoid implicit behavior, express expected behavior explicitly
+
+// ???
 using std::begin;
 using std::cbegin;
 
 using uchar  = uint8_t;
+using ushort = uint16_t;
 using uint   = uint32_t;
+using ulong  = uint32_t;
+using ullong = uint64_t;
+
+using size = uint64_t; // not named as "size_t", in order not to confuse with "std::size_t"
+
 using string = std::string;
-// static_assert(sizeof(int) >= 4, "byte size of int should big than 4");
+using string_view = std::string_view;
+
+
+
+class size_
+{
+public:
+    constexpr explicit size_(const size sz) : sz_{ sz } 
+    {
+        DLOG_IF(ERROR, sz == 0);
+        DLOG_IF(ERROR, sz > (uint32_t)-1);
+    }
+
+    constexpr size value() const noexcept { return sz_; }
+
+private:
+    size sz_{};
+};
+
+static_assert(std::is_same_v<size, unsigned long long int>);
+
+constexpr size_ operator ""sz(size sz) { return size_(sz); }
+
+
+
+// static_assert(sizeof(int) >= 4,    "byte size of int should big than 4");
+// static_assert(sizeof(long) >= 4);
+
+// static_assert(sizeof(ulong) >= 8, "byte size of ullong should big than 8");
+// static_assert(sizeof(ullong) >= 16, "byte size of ullong should big than 16");
+
 // template<typename T>
 // using vector<T> = std::vector<T>;
 // template<typename T>

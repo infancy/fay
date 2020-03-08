@@ -5,6 +5,8 @@
 namespace fay
 {
 
+// TODO: constexpr flat_map
+
 /*
 template<typename T>
 concept Container = requires(T&& t) 
@@ -54,7 +56,7 @@ struct associative : container<associative<Derived>>
 
 
 #define FAY_SEQUENCE_tYPE_ALIAS                                 \
-using size_type              = size_t;                          \
+using size_type              = fay::size;                       \
 using difference_type        = ptrdiff_t;                       \
 using value_type             = T;                               \
 using reference              = value_type&;                     \

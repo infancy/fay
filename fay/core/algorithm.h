@@ -43,6 +43,7 @@ inline void loop(uint cnt, std::function<void(uint)> functor)
 //! a.size() == b.size() and a[i] == b[i]
 //! WARNING: can't directly use {...} in is_seq_equal(...);
 template<typename T0, typename T1>
+// requires T0 and T1 is seq, then rename to is_equal
 // requires T0::value_type == T1::value_type
 /*constexpr*/
 inline bool is_seq_equal(const T0& a, const T1& b) noexcept
