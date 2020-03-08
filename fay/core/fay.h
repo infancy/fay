@@ -59,33 +59,31 @@ using uint   = uint32_t;
 using ulong  = uint32_t;
 using ullong = uint64_t;
 
-using size = uint64_t; // not named as "size_t", in order not to confuse with "std::size_t"
-
 using string = std::string;
 using string_view = std::string_view;
 
 
+static_assert(std::is_same_v<size_t, unsigned long long int>);
+static_assert(std::is_same_v<size_t, uint64_t>);
 
-class size_
+// not named as "size_t", in order not to confuse with "std::size_t"
+class size
 {
 public:
-    constexpr explicit size_(const size sz) : sz_{ sz } 
+    constexpr explicit size(const size_t sz) : sz_{ sz } 
     {
         DLOG_IF(ERROR, sz == 0);
         DLOG_IF(ERROR, sz > (uint32_t)-1);
     }
 
-    constexpr size value() const noexcept { return sz_; }
+    constexpr size_t value() const noexcept { return sz_; }
+    constexpr operator size_t() const noexcept { return sz_; }
 
 private:
-    size sz_{};
+    size_t sz_{};
 };
 
-static_assert(std::is_same_v<size, unsigned long long int>);
-
-constexpr size_ operator ""sz(size sz) { return size_(sz); }
-
-
+constexpr size operator ""sz(size_t sz) { return size(sz); }
 
 // static_assert(sizeof(int) >= 4,    "byte size of int should big than 4");
 // static_assert(sizeof(long) >= 4);

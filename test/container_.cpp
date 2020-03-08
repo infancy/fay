@@ -94,8 +94,8 @@ TEST(static_array, array4_init)
     array4 f1(1); ASSERT_EQUAL(f1, one);
 
     // recommend:
-    array4 f0{}; f.fill(0); ASSERT_EQUAL(f0, zero);
-    array4 f1{}; f.fill(1); ASSERT_EQUAL(f1, one);
+    array4 f2{}; f2.fill(0); ASSERT_EQUAL(f2, zero);
+    array4 f3{}; f3.fill(1); ASSERT_EQUAL(f3, one);
 
     // sequence
     array4 s0{ a3 };    ASSERT_EQUAL(s0, { 1, 2, 3, 0 });

@@ -90,7 +90,7 @@ public:
     FAY_SEQUENCE_tYPE_ALIAS
 
 public:
-    explicit heap_array(fay::size_ size, value_type value = value_type{}) :
+    explicit heap_array(fay::size size, value_type value = value_type{}) :
         sz_{ size },
         a_{ std::make_unique<T[]>(sz_) }
     {
@@ -99,7 +99,7 @@ public:
         fill(value);
     }
 
-    explicit heap_array(fay::size_ size, std::initializer_list<value_type> il) :
+    explicit heap_array(fay::size size, std::initializer_list<value_type> il) :
         sz_{ size },
         a_{ std::make_unique<T[]>(sz_) }
     {
