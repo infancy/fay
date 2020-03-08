@@ -67,6 +67,8 @@ using reverse_iterator       = std::reverse_iterator<iterator>; \
 using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 // array, vector, deque, list...
+// template<typename Derived>
+// struct sequence : container<sequence<Derived>>
 template<typename T, typename Derived> // template<Sequence Seq>
 struct sequence : container<sequence<T, Derived>>
 {
@@ -92,11 +94,13 @@ public:
     auto end()   const noexcept { return derived()->data() + derived()->size(); }
 
     // TODO: derived name
-    auto& at(size_type i)       { if (i >= derived()->size()) throw std::out_of_range("fay::sequence::at"); return derived()->operator[](i); }
-    auto& at(size_type i) const { if (i >= derived()->size()) throw std::out_of_range("fay::sequence::at"); return derived()->operator[](i); }
+    auto& at(size_type i)       { check_at(i); return derived()->operator[](i); }
+    auto& at(size_type i) const { check_at(i); return derived()->operator[](i); }
 
 private:
     //using Derived = Derived_;
+
+    void check_at(size_type i) { if (i >= derived()->size()) throw std::out_of_range("fay::sequence::check_at"); }
 
           Derived* derived()       noexcept { return (Derived*)this; }
     const Derived* derived() const noexcept { return (Derived*)this; }

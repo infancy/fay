@@ -14,6 +14,7 @@
     <ClCompile Include="..\..\test\core_.cpp" />
     <ClCompile Include="..\..\test\math_.cpp" />
     <ClCompile Include="..\..\test\container_.cpp" />
+    <ClCompile Include="..\..\test\core_ecs.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\test\test.h" />

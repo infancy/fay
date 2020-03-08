@@ -43,15 +43,16 @@ TEST(ecs, ecs)
 {
     entity_pool pool;
     auto a = pool.create_entity();
-    a->create_component<AComponent>(1);
+    a->create_component<AComponent>(1); // add_component
     a->create_component<BComponent>(20);
 
+    // cache
     auto& group_ab = pool.get_component_group<AComponent, BComponent>();
     auto& group_ba = pool.get_component_group<BComponent, AComponent>();
     auto& group_bc = pool.get_component_group<BComponent, CComponent>();
 
     //a->create_component<AComponent>(40); // replacing the before value
-    a->get_component<AComponent>()->v = 10;
+    a->get_component<AComponent>()->v = 10; // a.get<AComponent*>()->v = 10;
 
     ASSERT_TRUE(group_ab.size() == 1 && group_ba.size() == 1);
     for (auto& e : group_ab)
