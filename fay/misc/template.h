@@ -1,3 +1,6 @@
+#if defined(_MSC_VER)
+#define NOMINMAX
+#endif
 #pragma once
 
 // #include <fay/core/fay.h>

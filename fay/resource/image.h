@@ -14,10 +14,12 @@ namespace fay
 enum class color_space
 {
     linear,
-    sRGB
+    gamma,
+    sRGB // remove???
 };
 
-// WARNNING: use "user_directory/filename" is enough, don't add file type like ".png", ".jpg".
+// WARNNING: use "directory/filename" is enough, don't add file type like ".png", ".jpg".
+// TODO: save_image_paras
 bool save_image(const std::string& file_path_name, int width, int height, int format, bool flip_vertically,
     const uint8_t* pixel, int quality = 80);
 
@@ -28,13 +30,18 @@ class image_context
 public:
     image_context() = default;
 
+    // TODO: uint
     uint32_t width()   const { return width_; }
     uint32_t height()  const { return height_; }
     uint32_t size()    const { return width_ * height_; } // WARNNING: pixel nums, not byte nums
 
+    // TODO: memory alignment???
+    uint32_t byte_size()    const { return size() * pixel_size(); }
+
     // TODO: remove
     uint32_t channel() const { return channel_; }
 
+    // single pixel size
     size_t pixel_size() const { return channel_ * (is_hdr_ ? 4 : 1); }
 
     pixel_format format() const { return fmt_; }
@@ -55,6 +62,7 @@ protected:
     // bool is_load_from_file_{};
 
     // TODO: class image : public resource;
+    // or TODO: class image : public file;
     std::string name_{};
     std::string filepath_{};
 };

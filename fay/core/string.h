@@ -1,14 +1,17 @@
 #pragma once
 
 #include <cctype>
+//#include <format>
 #include <string>
+#include <fmt/format.h>
 
+#include "fay/core/fay.h"
 #include "fay/core/utility.h" // TODO: algorithm
 
 namespace fay
 {
 
-// -------------------------------------------------------------------------------------------------
+#pragma region convert
 
 // from_char, to_char, to_string
 
@@ -27,11 +30,97 @@ inline std::string to_string(T t)
         return std::to_string(t);
 }
 
-// -------------------------------------------------------------------------------------------------
+#pragma endregion convert
+
+
+
+#pragma region strings/string_views
 
 // TODO: strings : string + vector<string_view>
 
-// -------------------------------------------------------------------------------------------------
+#pragma endregion strings/string_views
+
+
+
+#pragma region create regex pattern
+
+using fmt::format;
+
+// https://en.cppreference.com/w/cpp/regex/ecmascript
+// TODO: raw string literal
+class regex_pattern
+{
+public:
+    regex_pattern& operator+=(const regex_pattern& right)
+    {
+        pattern_ += right.pattern_;
+    }
+    regex_pattern& operator+=(const string& sub_pattern)
+    {
+        pattern_ += sub_pattern;
+    }
+
+    regex_pattern& match(const string& sub_pattern, uint sz)
+    { 
+        operator+=(sub_pattern);
+        time(sz);
+    }
+
+    regex_pattern& match(const string& sub_pattern, uint min, uint max)
+    { 
+        operator+=(sub_pattern);
+        time(min, max);
+    }
+
+    regex_pattern& number(uint sz) 
+    { 
+        match_number(); 
+        time(sz); 
+    }
+
+    //! max must bigger than min, unless max is -1, which means infinity
+    regex_pattern& number(int min, int max) 
+    {
+        match_number();
+        time(min, max); 
+    }
+
+    void time(uint sz) 
+    {
+        //pattern_ += format("{}{}{}", '{', sz, '}');
+        pattern_ += format("{{}}", sz);
+    }
+
+    void time(int min, int max)
+    {
+        DCHECK(min >= 0);
+        DCHECK(max > min || max == -1);
+
+        // (0, -1) => *, (1, -1) => +, (0, 1) => ?
+
+        if (max == -1)
+        {
+            pattern_ += format("{{},}", min);
+        }
+        else
+        {
+            pattern_ += format("{{},{}}", min, max);
+        }
+    }
+
+private:
+    void match_number() { pattern_ += "\\d"; }
+
+
+private:
+    string pattern_{};
+};
+
+#pragma endregion create regex pattern
+
+
+
+#pragma region erase/extracting
 
 // return string_view(like return raw pointer)
 
@@ -148,5 +237,7 @@ inline std::vector<std::string_view> extracting_text(std::string_view str)
 {
     return split(str, false);
 }
+
+#pragma endregion
 
 } // namespace fay

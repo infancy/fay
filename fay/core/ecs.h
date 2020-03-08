@@ -25,12 +25,13 @@ public:
 };
 
 using component_type_id = uint64_t;
-using component_group_id = uint64_t; // component_type_group_id
+using component_group_id = uint64_t; // component_type_group_id; dynamic_bitset, 0000....ffff; remove into entity_pool
 
 #define FAY_COMPONENT_TYPE_HASH(type) \
 static constexpr inline component_type_id type_id_{ fnv<component_type_id>::hash(#type) }; \
 static constexpr component_type_id type_id() { return type_id_; }
 
+// TODO: simplify it
 struct component_mapping
 {
     template <typename T>
@@ -121,20 +122,11 @@ public:
     template <typename T>
     void destroy_component();
 
-    auto& components()
-    {
-        return components_;
-    }
+    auto& components() {  return components_; }
 
-    entity_pool* pool()
-    {
-        return pool_;
-    }
+    entity_pool* pool() { return pool_; }
 
-    component_type_id hash() const
-    {
-        return hash_;
-    }
+    component_type_id hash() const { return hash_; }
 
 private:
     friend class entity_pool;
@@ -143,11 +135,14 @@ private:
     uint64_t pool_index_{}; // used when destroying this entity in entity_pool
 
     entity_pool* pool_{};
-    std::unordered_map<component_type_id, component*> components_;
+    std::unordered_map<component_type_id, component*> components_; // TODO: component* => ptr of comps_array_ptr + index(id)
 };
 
 using entity_ptr = std::unique_ptr<entity>;
 
+
+
+// class base_entity_group_
 class base_entity_group
 {
 public:
@@ -157,6 +152,7 @@ public:
 };
 
 template <typename... Ts>
+// class entity_group_ : public base_entity_group_
 class entity_group : public base_entity_group
 {
 public:
@@ -228,6 +224,8 @@ private:
     std::unordered_map<uint64_t, size_t> entity_to_index_{}; // hash_to_index
 };
 
+
+
 class entity_pool
 {
 public:
@@ -257,18 +255,20 @@ public:
             comp->~T();
             return new(comp) T{ std::forward<Ts>(ts)... };
             */
-            LOG(ERROR) << "shouldn't create component that already exist";
+            LOG(ERROR) << "can't create component that already exist"; 
+            // TODO: component_warpper or just exist it??? little to use, and can create child node to around it
             return nullptr;
         }
         else
         {
             auto* comp = new T{ std::forward<Ts>(ts)... };
             components_.emplace_back(comp);
-            entity.components_.insert({ type_id, comp });
+            entity.components_.insert({ type_id, comp }); // TODO: move to entity::create_component???
 
             auto iter = component_group_sets_.find(type_id);
             if (iter != component_group_sets_.end())
-                for (auto group_id : iter->second) // for(auto id : component_set)
+                // auto component_set = iter->second; for(auto id : component_set) ...
+                for (auto group_id : iter->second)
                     entity_groups_[group_id]->add_entity(entity);
 
             return comp;
@@ -294,44 +294,11 @@ public:
                 group->add_entity(*entity);
         }
 
-        auto* group = static_cast<entity_group<Ts...>*>(entity_groups_[group_id].get());
+        entity_group<Ts...>* group = static_cast<entity_group<Ts...>*>(entity_groups_[group_id].get());
         return group->groups();
     }
 
     void clear_groups();
-
-private:
-    using component_group_sets = std::unordered_map<component_type_id, std::unordered_set<component_group_id>>;
-    // if constexpr(sizeof...(args) == 1)
-
-    template <typename... Us>
-    struct GroupRegisters;
-
-    template <typename U, typename... Us>
-    struct GroupRegisters<U, Us...>
-    {
-        static void register_group(component_group_sets& sets, component_group_id group_id)
-        {
-            sets[component_mapping::type_id<U>()].insert(group_id);
-            GroupRegisters<Us...>::register_group(sets, group_id);
-        }
-    };
-
-    template <typename U>
-    struct GroupRegisters<U>
-    {
-        static void register_group(component_group_sets& sets, component_group_id group_id)
-        {
-            sets[component_mapping::type_id<U>()].insert(group_id);
-        }
-    };
-
-    // auto group_id = component_mapping::group_id<Ts...>();
-    template <typename U, typename... Us>
-    void register_group(component_group_id group_id)
-    {
-        GroupRegisters<U, Us...>::register_group(component_group_sets_, group_id);
-    }
 
 private:
     // object_pool<entity> entity_pool_;
@@ -343,10 +310,47 @@ private:
     std::vector<entity_ptr> entities_;
     uint64_t cookie{};
 
+private:
+    using component_group_sets = std::unordered_map<component_type_id, std::unordered_set<component_group_id>>;
+
     // cache
     component_group_sets component_group_sets_; // component_set<group_id>
+    // like ArcheType in Unity
     std::unordered_map<component_group_id, std::unique_ptr<base_entity_group>> entity_groups_; // group_id
+
+    // Recursion into iteration: if constexpr(sizeof...(args) == 1)
+    template <typename... Us>
+    struct GroupRegisters;
+
+    template <typename U>
+    struct GroupRegisters<U>
+    {
+        static void register_group(component_group_sets& sets, component_group_id group_id)
+        {
+            sets[component_mapping::type_id<U>()].insert(group_id);
+        }
+    };
+
+    template <typename U, typename... Us>
+    struct GroupRegisters<U, Us...>
+    {
+        static void register_group(component_group_sets& sets, component_group_id group_id)
+        {
+            // typeof<U>::id()
+            sets[component_mapping::type_id<U>()].insert(group_id);
+            GroupRegisters<Us...>::register_group(sets, group_id);
+        }
+    };
+
+    // auto group_id = component_mapping::group_id<Ts...>();
+    template <typename U, typename... Us>
+    void register_group(component_group_id group_id)
+    {
+        GroupRegisters<U, Us...>::register_group(component_group_sets_, group_id);
+    }
 };
+
+
 
 // TODO: Ts -> Args
 template <typename T, typename... Ts>

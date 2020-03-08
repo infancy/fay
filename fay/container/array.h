@@ -20,6 +20,7 @@ public:
 public:
     constexpr array() = default;
 
+    // WARNING: never provide dangerous interfaces without "unsafe", "uncheck", "ambiguous"
     constexpr explicit array(std::initializer_list<value_type> il) : array(il.begin(), il.end()) 
     { 
         DCHECK(il.size() <= sz_);
