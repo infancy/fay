@@ -61,6 +61,7 @@ using ullong = uint64_t;
 
 using string = std::string;
 using string_view = std::string_view;
+using namespace std::string_literals;
 
 
 static_assert(std::is_same_v<size_t, unsigned long long int>);
@@ -83,7 +84,9 @@ private:
     size_t sz_{};
 };
 
-constexpr size operator ""sz(size_t sz) { return size(sz); }
+// https://zh.cppreference.com/w/cpp/language/user_literal
+// constexpr size operator "" _sz(size_t sz) { return size(sz); }
+constexpr size operator "" sz(size_t sz) { return size(sz); }
 
 // static_assert(sizeof(int) >= 4,    "byte size of int should big than 4");
 // static_assert(sizeof(long) >= 4);

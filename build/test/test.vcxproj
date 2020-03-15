@@ -31,7 +31,7 @@
     <ClCompile Include="..\..\test\math_.cpp" />
     <ClCompile Include="..\..\test\math_vec_mat.cpp" />
     <ClCompile Include="..\..\test\core_.cpp" />
-    <ClCompile Include="..\..\test\test.cpp" />
+    <ClCompile Include="..\..\test\main.cpp" />
     <ClCompile Include="..\..\test\test_template.cpp" />
   </ItemGroup>
   <ItemGroup>

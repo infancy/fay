@@ -17,6 +17,52 @@ TEST(string, file)
 	ASSERT_EQ("obj",   get_filetype(filepath));
 }
 
+
+#pragma region regex
+
+// a concept express
+TEST(string, regex)
+{
+    // [a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+
+    regex_pattern email_0
+    {
+        "[a-zA-Z0-9_-]+"
+        "@"
+        "[a-zA-Z0-9_-]+"
+        "(\.[a-zA-Z0-9_-]+)" 
+        "+"
+    };
+
+    regex_pattern email_1
+    {
+        { "a-zA-Z0-9_-", "+" },
+        { "@" },
+        { "a-zA-Z0-9_-", "+" },
+        { 
+            { 
+                { "\." },
+                { "a-zA-Z0-9_-", "+" } 
+            }, "+"
+        }
+    };
+
+    regex_pattern email_2
+        .match("a-zA-Z0-9_-", "+")
+        .match("@")
+        .match("a-zA-Z0-9_-", "+")
+        .begin_group()
+            .match("\.")
+            .match("a-zA-Z0-9_-", "+")
+        .end_group("+");
+
+    regex_pattern phone_num_0
+    {
+        { "a", "|", "B" }
+    };
+}
+
+#pragma endregion regex
+
 // -----------------------------------------------------------------------------
 
 TEST(string, erase_front_word)

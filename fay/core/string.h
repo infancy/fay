@@ -48,9 +48,29 @@ using fmt::format;
 
 // https://en.cppreference.com/w/cpp/regex/ecmascript
 // TODO: raw string literal
+
+// conceptual/experiment feature, not use it
 class regex_pattern
 {
 public:
+    //static constexpr std::string email{ "aa" };
+    static const inline std::string email_0{ "^\w+([-+.]\w+)*"  "@"  "\w+([-.]\w+)*"  "\.\w+"  "([-.]\w+)*$" };
+    static const inline std::string email_1{ "^[a-zA-Z0-9_-]+"  "@"  "[a-zA-Z0-9_-]+"  "(\.[a-zA-Z0-9_-]+)+$" };
+    static const inline std::string email{ "aa" };
+    static const inline std::string email{ "aa" };
+
+public:
+
+    #pragma region ctor
+
+
+
+    #pragma endregion ctor
+
+
+
+    #pragma region method
+
     regex_pattern& operator+=(const regex_pattern& right)
     {
         pattern_ += right.pattern_;
@@ -59,6 +79,21 @@ public:
     {
         pattern_ += sub_pattern;
     }
+
+
+    //! any without '\n'
+    regex_pattern& any(uint times) { pattern_ += "."; }
+
+    //! [\f\n\r\t\v]
+    regex_pattern& any_white(uint times) { pattern_ += "\s"; }
+
+
+
+    // default greedy matching
+    // "aabab".match("a.*b") => "aabab"/"aab"
+    regex_pattern& lazy() { pattern_ += "?"; }
+
+
 
     regex_pattern& match(const string& sub_pattern, uint sz)
     { 
@@ -78,6 +113,16 @@ public:
         time(sz); 
     }
 
+    regex_pattern& not_number(uint sz)
+    {
+    }
+
+    //! [^\f\n\r\t\v]
+    regex_pattern& not_white(const string& sub_pattern, uint sz)
+    {
+        pattern_ += "\S";
+    }
+
     //! max must bigger than min, unless max is -1, which means infinity
     regex_pattern& number(int min, int max) 
     {
@@ -85,13 +130,13 @@ public:
         time(min, max); 
     }
 
-    void time(uint sz) 
+    regex_pattern& time(uint sz)
     {
         //pattern_ += format("{}{}{}", '{', sz, '}');
         pattern_ += format("{{}}", sz);
     }
 
-    void time(int min, int max)
+    regex_pattern& time(int min, int max)
     {
         DCHECK(min >= 0);
         DCHECK(max > min || max == -1);
@@ -108,8 +153,23 @@ public:
         }
     }
 
+    regex_pattern& maybe()
+    {
+        return time(0, 1);
+    }
+
+    #pragma endregion method
+
 private:
     void match_number() { pattern_ += "\\d"; }
+
+
+    #pragma region error handle
+    //! ^*, $*
+
+    #pragma endregion 
+
+
 
 
 private:
