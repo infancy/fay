@@ -47,6 +47,7 @@ inline std::string to_string(T t)
 using fmt::format;
 
 // https://en.cppreference.com/w/cpp/regex/ecmascript
+// https://github.com/VerbalExpressions/CppVerbalExpressions
 // TODO: raw string literal
 
 // conceptual/experiment feature, not use it

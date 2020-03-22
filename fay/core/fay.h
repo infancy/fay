@@ -67,6 +67,7 @@ using namespace std::string_literals;
 static_assert(std::is_same_v<size_t, unsigned long long int>);
 static_assert(std::is_same_v<size_t, uint64_t>);
 
+// TODO: Compatible with future standards "std::size"
 // not named as "size_t", in order not to confuse with "std::size_t"
 class size
 {

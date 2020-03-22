@@ -31,6 +31,9 @@
     <Filter Include="container">
       <UniqueIdentifier>{9157fb6d-3853-45cf-a347-7ac9a29de5c2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="base">
+      <UniqueIdentifier>{88527735-53f3-4061-ae13-e7bfdaa919e7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\fay\render\render.cpp">
@@ -293,6 +296,18 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\container\flat.h">
       <Filter>container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\app\object.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\app\actor.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\core\wrapper.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\misc\regex.h">
+      <Filter>misc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
