@@ -13,7 +13,9 @@ namespace fay
 
 // https://github.com/boost-experimental/te
 // https://github.com/ldionne/dyno
+// https://github.com/iboB/dynamix
 
+// https://github.com/jbcoe/polymorphic_value
 
 
 // run-time polymorphism (type erasure) library

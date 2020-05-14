@@ -41,7 +41,7 @@ inline std::string to_string(T t)
 #pragma endregion strings/string_views
 
 
-
+/*
 #pragma region create regex pattern
 
 using fmt::format;
@@ -57,8 +57,8 @@ public:
     //static constexpr std::string email{ "aa" };
     static const inline std::string email_0{ "^\w+([-+.]\w+)*"  "@"  "\w+([-.]\w+)*"  "\.\w+"  "([-.]\w+)*$" };
     static const inline std::string email_1{ "^[a-zA-Z0-9_-]+"  "@"  "[a-zA-Z0-9_-]+"  "(\.[a-zA-Z0-9_-]+)+$" };
-    static const inline std::string email{ "aa" };
-    static const inline std::string email{ "aa" };
+    //static const inline std::string email{ "aa" };
+    //static const inline std::string email{ "aa" };
 
 public:
 
@@ -178,7 +178,7 @@ private:
 };
 
 #pragma endregion create regex pattern
-
+*/
 
 
 #pragma region erase/extracting

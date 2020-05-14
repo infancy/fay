@@ -5,7 +5,7 @@
 #include "fay/core/utility.h"
 #include "fay/render/backend.h"
 #include "fay/render/define.h"
-#include "fay/render/pool.h"
+#include "fay/render/render_pool.h"
 
 namespace fay
 {
@@ -28,7 +28,7 @@ public:
     {
         create_check(desc); 
 
-        auto id = backend_->create(desc);
+        auto id = backend_->create(desc); // backend_id
         auto desc_id = desc_.insert(id.value, desc);
         
         DCHECK(id == desc_id);

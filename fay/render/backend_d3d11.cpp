@@ -998,14 +998,14 @@ public:
             ID3D11RenderTargetView* rtvs[1]{ ctx_.rtv };
             ctx_.context->OMSetRenderTargets(1, rtvs, ctx_.dsv);
 
-            vp.Width = (FLOAT)renderd_.width;
-            vp.Height = (FLOAT)renderd_.height;
+            vp.Width = (FLOAT)render_desc_.width;
+            vp.Height = (FLOAT)render_desc_.height;
             vp.MaxDepth = 1.0f;
 
             rect.left = 0;
             rect.top = 0;
-            rect.right = renderd_.width;
-            rect.bottom = renderd_.height;
+            rect.right = render_desc_.width;
+            rect.bottom = render_desc_.height;
         }
 
         /* set viewport and scissor rect to cover whole screen */
@@ -1017,7 +1017,7 @@ public:
     void end_frame() override
     {
         // resolve MSAA render target into texture
-        if (cmd_.is_offscreen && renderd_.enable_msaa)
+        if (cmd_.is_offscreen && render_desc_.enable_msaa)
         {
             for (int i = 0; i < cmd_.frm.d3d11_rtvs.size(); ++i)
             {
@@ -1235,9 +1235,9 @@ public:
 private:
     bool create_device()
     {
-        if (renderd_.enable_msaa)
+        if (render_desc_.enable_msaa)
         {
-            ctx_.sample_desc.Count = renderd_.multiple_sample_count;
+            ctx_.sample_desc.Count = render_desc_.multiple_sample_count;
             ctx_.sample_desc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
         }
         else
@@ -1253,8 +1253,8 @@ private:
         DXGI_SWAP_CHAIN_DESC scd;
         {
             ZeroMemory(&scd, sizeof(scd));
-            scd.BufferDesc.Width = renderd_.width;
-            scd.BufferDesc.Height = renderd_.height;
+            scd.BufferDesc.Width = render_desc_.width;
+            scd.BufferDesc.Height = render_desc_.height;
             scd.BufferDesc.RefreshRate.Numerator = 60;
             scd.BufferDesc.RefreshRate.Denominator = 1;
             scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -1263,7 +1263,7 @@ private:
             scd.SampleDesc = ctx_.sample_desc;
             scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
             scd.BufferCount = 1;
-            scd.OutputWindow = static_cast<HWND>(renderd_.d3d_handle);
+            scd.OutputWindow = static_cast<HWND>(render_desc_.d3d_handle);
             scd.Windowed = TRUE;
             scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
             scd.Flags = 0;
@@ -1290,14 +1290,14 @@ private:
 
     bool resize_render_target()
     {
-        D3D_CHECK(ctx_.swapchain->ResizeBuffers(1, renderd_.width, renderd_.height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
+        D3D_CHECK(ctx_.swapchain->ResizeBuffers(1, render_desc_.width, render_desc_.height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
         D3D_CHECK2(ctx_.swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&ctx_.rtt), ctx_.rtt);
         D3D_CHECK2(ctx_.device->CreateRenderTargetView((ID3D11Resource*)ctx_.rtt, nullptr, &ctx_.rtv), ctx_.rtv);
 
         D3D11_TEXTURE2D_DESC ds_desc;
         {
-            ds_desc.Width = renderd_.width;
-            ds_desc.Height = renderd_.height;
+            ds_desc.Width = render_desc_.width;
+            ds_desc.Height = render_desc_.height;
             ds_desc.MipLevels = 1;
             ds_desc.ArraySize = 1;
             ds_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -1316,8 +1316,8 @@ private:
         // TODO
         ctx_.viewport.TopLeftX = 0;
         ctx_.viewport.TopLeftY = 0;
-        ctx_.viewport.Width = static_cast<float>(renderd_.width);
-        ctx_.viewport.Height = static_cast<float>(renderd_.height);
+        ctx_.viewport.Width = static_cast<float>(render_desc_.width);
+        ctx_.viewport.Height = static_cast<float>(render_desc_.height);
         ctx_.viewport.MinDepth = 0.0f;
         ctx_.viewport.MaxDepth = 1.0f;
 

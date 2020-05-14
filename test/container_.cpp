@@ -110,7 +110,7 @@ TEST(static_array, array4_init)
 
     // copy
     array4 c0{ a4 }; ASSERT_EQUAL2(c0, a4);
-    array4 c1 = a4; ASSERT_EQUAL2(c1, a4);
+    array4 c1 = a4;  ASSERT_EQUAL2(c1, a4);
     // move
     array4 m0{ array4(1) }; ASSERT_EQUAL2(m0, one);
     array4 m1 = array4(1);  ASSERT_EQUAL2(m1, one);

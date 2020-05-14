@@ -15,8 +15,19 @@ struct pair
     {
         struct { X x; Y y; };
         struct { X k; Y v; };
-        struct { X name; Y value; };
+        struct { X key; Y value; };
         struct { X first; Y second; };
+    };
+};
+
+template<typename X, typename Y, typename Z>
+struct triple
+{
+    union
+    {
+        struct { X x; Y y; Z z };
+        struct { X v0; Y v1; Z v2; };
+        struct { X first; Y second; Z third; };
     };
 };
 

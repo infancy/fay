@@ -1,7 +1,4 @@
-//#ifdef FAY_IN_WINDOWS
-
 #include <sstream>
-
 #include "fay/render/backend.h"
 
 using namespace std::string_literals;
@@ -106,7 +103,8 @@ void APIENTRY glDebugOutput(
 // -------------------------------------------------------------------------------------------------
 // helper function & type
 
-inline namespace backend_opengl_func
+// backend_opengl_func
+inline namespace func
 {
     void gl_enabled(GLenum cap, bool flag)
     {
@@ -286,12 +284,14 @@ inline namespace backend_opengl_func
     }
 }
 
-inline namespace backend_opengl_type
+// backend_opengl_type
+inline namespace type
 {
     // -------------------------------------------------------------------------------------------------
     // helper types
 
-    struct vertex_attribute_gl
+    // rename
+    struct vertex_attribute
     {
         GLuint        index;      // 0, 1, 2, 3
         GLint         size;       // float3 : 3, byte4: 4
@@ -348,7 +348,7 @@ inline namespace backend_opengl_type
 
         // used for vertex buffer, instance buffer
         GLsizei     stride{};
-        std::vector<vertex_attribute_gl> layout{};
+        std::vector<vertex_attribute> layout{};
 
         // then assign others
         GLuint gid{}; // union { GLuint vbo; GLuint ibo; };
@@ -376,8 +376,8 @@ inline namespace backend_opengl_type
                     //a.format = da.format();
 
                     a.index = i; // i_, ix, ic, ii
-                    a.type       = vertex_attribute_gl::attribute_type(da.format());
-                    a.normalized = vertex_attribute_gl::need_normalized(da.format());
+                    a.type       = vertex_attribute::attribute_type(da.format());
+                    a.normalized = vertex_attribute::need_normalized(da.format());
 
                     auto[num, byte] = attribute_format_map.at(da.format());
                     a.size = num;
@@ -737,15 +737,15 @@ public:
             ctx_.buf = create(buffer_desc("backend_opengl_default_vbo", 6u, vertices, buffer_type::vertex,
                 vertex_layout{ { attribute_usage::position, fay::attribute_format::float3 }, { attribute_usage::texcoord0, fay::attribute_format::float2 } }));
 
-            auto shd_desc = scan_shader_program("backend_opengl_default_shd", "gfx/backend_opengl_default_shd.vs", "gfx/backend_opengl_default_shd.fs", renderd_.backend);
+            auto shd_desc = scan_shader_program("backend_opengl_default_shd", "gfx/backend_opengl_default_shd.vs", "gfx/backend_opengl_default_shd.fs", render_desc_.backend);
             ctx_.shd = create(shd_desc);
 
             ctx_.pipe = create(pipeline_desc());
 
             // TODO: event system
-            //glfwGetFramebufferSize(window_, &renderd_.width, &renderd_.height);
+            //glfwGetFramebufferSize(window_, &render_desc_.width, &render_desc_.height);
 
-            texture_desc tex_desc("backend_opengl_default_tbo", renderd_.width, renderd_.height, pixel_format::rgba8);
+            texture_desc tex_desc("backend_opengl_default_tbo", render_desc_.width, render_desc_.height, pixel_format::rgba8);
             ctx_.tex = create(tex_desc);
             auto ds_id = create(tex_desc.set_target(render_target::depth_stencil));
 
@@ -753,7 +753,7 @@ public:
         }
 
         // TODO: global msaa???
-        if (renderd_.enable_msaa)
+        if (render_desc_.enable_msaa)
             gl_try_enable(GL_SAMPLE_BUFFERS);
 
         glcheck_errors();
@@ -762,6 +762,7 @@ public:
     {
         glDeleteVertexArrays(1, &ctx_.vao);
     }
+
 
 	// resource creation, updating and destruction
 	buffer_id   create(const   buffer_desc& desc) override
@@ -873,7 +874,7 @@ public:
 
             // (4. create renderbuffer for MSAA)
             if ((desc.as_render_target == render_target::color) &&
-                (renderd_.anti_aliasing == anti_aliasing::MSAA))
+                (render_desc_.anti_aliasing == anti_aliasing::MSAA))
             {
                 glGenRenderbuffers(1, &tex.msaa_rbo);
                 glBindRenderbuffer(GL_RENDERBUFFER, tex.msaa_rbo);
@@ -911,7 +912,7 @@ public:
             // TODO : GL_DEPTH24_STENCIL8
             //GLenum gl_depth_format = _sg_gl_depth_attachment_format(img->format);
 
-            if (renderd_.anti_aliasing == anti_aliasing::MSAA)
+            if (render_desc_.anti_aliasing == anti_aliasing::MSAA)
             {
                 glRenderbufferStorageMultisample(GL_RENDERBUFFER, tex.rt_sample_count, 
                     pixel_internal_format(desc.format), tex.width, tex.height);
@@ -1020,7 +1021,7 @@ public:
 
         const auto& rts = frm.render_targets;
 
-        if (!(renderd_.anti_aliasing == anti_aliasing::MSAA))
+        if (!(render_desc_.anti_aliasing == anti_aliasing::MSAA))
         { // attach texture
             for (int i = 0; i < rts.size(); ++i)
             {
@@ -1045,7 +1046,7 @@ public:
         }
 
         // if ues MSAA, create MSAA resolve framebuffers to read data from tex.msaa_rbo to tex.tbo
-        if (renderd_.anti_aliasing == anti_aliasing::MSAA)
+        if (render_desc_.anti_aliasing == anti_aliasing::MSAA)
         {
             for (int i = 0; i < rts.size(); ++i)
             {
@@ -1094,6 +1095,7 @@ public:
         pool_.erase(id);
 	}
 
+
 	// render
     void begin_frame(frame_id id) override
     {
@@ -1129,8 +1131,8 @@ public:
             //glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, pool_[ctx_.frm].fbo);
 
-            glViewport(0, 0, renderd_.width, renderd_.height);
-            glScissor(0, 0, renderd_.width, renderd_.height);
+            glViewport(0, 0, render_desc_.width, render_desc_.height);
+            glScissor(0, 0, render_desc_.width, render_desc_.height);
         }
 
         glcheck_errors();
@@ -1142,7 +1144,7 @@ public:
         glcheck_errors();
 
         // if use MSAA in offscreen render, copy data from tex.rbo to tex.tbo
-        if (cmd_.is_offscreen && renderd_.enable_msaa)
+        if (cmd_.is_offscreen && render_desc_.enable_msaa)
         {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, cmd_.frm.fbo);
 
@@ -1168,8 +1170,8 @@ public:
             // copy default offscreen frame to default frame.
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            glViewport(0, 0, renderd_.width, renderd_.height);
-            glScissor(0, 0, renderd_.width, renderd_.height);
+            glViewport(0, 0, render_desc_.width, render_desc_.height);
+            glScissor(0, 0, render_desc_.width, render_desc_.height);
 
             apply_shader(ctx_.shd);
             apply_pipeline(ctx_.pipe, { true, true, true, true });
@@ -1372,7 +1374,6 @@ public:
         glcheck_errors();
         log_ << ("uniform block : "s + ub_name + '\n');
     }
-
     void bind_uniform(const std::string& name, command::uniform uniform, shader_stage /*stage*/) override
     {
         glcheck_errors();
@@ -1455,6 +1456,7 @@ public:
         log_ << ("texture  : "s + pool_[id].name + '\n');
     }
 
+
     void update(buffer_id id, const void* data, int size) override
     {
 
@@ -1465,7 +1467,6 @@ public:
     {
         glcheck_errors();
     }
-
 
 
     void draw(uint count, uint first, uint instance_count) override
@@ -1576,6 +1577,7 @@ public:
     }
     */
 
+
 private:
 
     // create shader
@@ -1658,7 +1660,9 @@ private:
 
     }
 
+
 private:
+    // rename: this_context
 	struct context
 	{
         GLuint vao{}; // todo: opengl3.3+ must have a default VAO
@@ -1670,6 +1674,7 @@ private:
         frame_id frm{}; // default offscreen framebuffer
 	};
 
+    // rename: render_command_context
     struct command_list_context
     {
         buffer_id index_id{};
@@ -1695,6 +1700,8 @@ private:
     std::stringstream log_;
     resource_pool<buffer, texture, shader, pipeline, frame> pool_{};
 };
+
+
 
 // class device_opengl_dsa : public render_device
 

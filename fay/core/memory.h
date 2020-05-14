@@ -4,8 +4,18 @@
 
 #include "fay/core/fay.h"
 
+#pragma region reference
+
+// https://zhuanlan.zhihu.com/p/96089089
+
+#pragma endregion reference
+
+
+
 namespace fay
 {
+
+#pragma region allocate/deallocate, construct/destruct
 
 // allocate count * sizeof(T) bytes
 template<typename T>
@@ -19,12 +29,14 @@ inline T* allocate(size_t count)
 
 inline void deallocate(void* ptr) //, size_t count)
 {
+    DCHECK(ptr != nullptr) << "ptr is null";
     ::operator delete(ptr);
 }
 
 template<typename T, typename... Args>
 void construct(const T* ptr, Args&&... args)
-{	
+{
+    DCHECK(ptr != nullptr) << "ptr is null";
     // new((void*)U) U{args}, construct U(Args...) at ptr
     ::new(const_cast<void*>(static_cast<const volatile void*>(ptr)))
         T{ std::forward<Args>(args)... };
@@ -33,8 +45,11 @@ void construct(const T* ptr, Args&&... args)
 template<typename T>
 void destruct(const T* ptr)
 {
+    DCHECK(ptr != nullptr) << "ptr is null";
     ptr->~T();
 }
+
+#pragma endregion allocate / deallocate, construct / destruct
 
 // inline auto memory_deleter = [](void* ptr) { ::operator delete(ptr); };
 
@@ -44,7 +59,7 @@ void destruct(const T* ptr)
 
 // TODO: fixed heap_value, heap_array
 
-// rename: buffer
+// rename: buffer/memory_block
 // TODO: shared_memory
 // template<typename D = allocator>
 class memory

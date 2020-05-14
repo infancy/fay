@@ -458,7 +458,8 @@ struct attribute_detail // rename: attribute_num_bytesize
     size_t size; // num * sizeof(T)
 };
 
-// nums, bytes of attribute_format
+// TODO: rename vertex_attribute_format_map
+// nums, total bytes of attribute_format
 const /*inline*/ static enum_class_map<attribute_format, attribute_detail>
 attribute_format_map
 {
@@ -945,6 +946,7 @@ struct resource_set
     // texture sampler
 };
 
+// render_command_type
 enum class command_type
 {
     none,
@@ -984,6 +986,7 @@ enum class command_type
     // copy_data, update_resource, apply_state(binding_state)
 };
 
+// render_command
 struct command // command/encoder
 {
     using uniform = std::variant<bool, int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4>;

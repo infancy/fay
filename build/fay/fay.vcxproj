@@ -22,6 +22,9 @@
     <ClCompile Include="..\..\fay\app\window.cpp" />
     <ClCompile Include="..\..\fay\core\ecs.cpp" />
     <ClCompile Include="..\..\fay\render\backend_d3d11.cpp" />
+    <ClCompile Include="..\..\fay\render\backend_d3d12.cpp" />
+    <ClCompile Include="..\..\fay\render\backend_swift.cpp" />
+    <ClCompile Include="..\..\fay\render\backend_vulkan.cpp" />
     <ClCompile Include="..\..\fay\render\define.cpp" />
     <ClCompile Include="..\..\fay\render\device.cpp" />
     <ClCompile Include="..\..\fay\render\render.cpp" />
@@ -36,6 +39,7 @@
     <ClInclude Include="..\..\fay\app\actor.h" />
     <ClInclude Include="..\..\fay\app\app.h" />
     <ClInclude Include="..\..\fay\app\components.h" />
+    <ClInclude Include="..\..\fay\app\immediate_render.h" />
     <ClInclude Include="..\..\fay\app\input.h" />
     <ClInclude Include="..\..\fay\app\object.h" />
     <ClInclude Include="..\..\fay\app\scene.h" />
@@ -48,12 +52,14 @@
     <ClInclude Include="..\..\fay\container\_sequence.h" />
     <ClInclude Include="..\..\fay\container\vector.h" />
     <ClInclude Include="..\..\fay\core\algorithm.h" />
+    <ClInclude Include="..\..\fay\core\any.h" />
     <ClInclude Include="..\..\fay\core\base_.h" />
     <ClInclude Include="..\..\fay\core\config.h" />
     <ClInclude Include="..\..\fay\core\define.h" />
     <ClInclude Include="..\..\fay\core\ecs.h" />
     <ClInclude Include="..\..\fay\core\enum.h" />
     <ClInclude Include="..\..\fay\core\event.h" />
+    <ClInclude Include="..\..\fay\core\function.h" />
     <ClInclude Include="..\..\fay\core\hash.h" />
     <ClInclude Include="..\..\fay\core\heap.h" />
     <ClInclude Include="..\..\fay\core\memory.h" />
@@ -101,10 +107,11 @@
     <ClInclude Include="..\..\fay\misc\regex.h" />
     <ClInclude Include="..\..\fay\misc\template.h" />
     <ClInclude Include="..\..\fay\render\backend.h" />
+    <ClInclude Include="..\..\fay\render\backend_d3d_.h" />
     <ClInclude Include="..\..\fay\render\define.h" />
     <ClInclude Include="..\..\fay\render\device.h" />
     <ClInclude Include="..\..\fay\render\native_type.h" />
-    <ClInclude Include="..\..\fay\render\pool.h" />
+    <ClInclude Include="..\..\fay\render\render_pool.h" />
     <ClInclude Include="..\..\fay\render\render.h" />
     <ClInclude Include="..\..\fay\render\shader.h" />
     <ClInclude Include="..\..\fay\resource\define.h" />
@@ -112,6 +119,7 @@
     <ClInclude Include="..\..\fay\resource\model.h" />
     <ClInclude Include="..\..\fay\resource\text.h" />
     <ClInclude Include="..\..\fay\resource\image.h" />
+    <ClInclude Include="..\..\fay\test\test.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

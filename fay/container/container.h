@@ -6,6 +6,7 @@ namespace fay
 {
 
 // https://github.com/mitsuba-renderer/enoki/blob/master/include/enoki/array_base.h
+// https://github.com/foonathan/array
 
 // TODO: constexpr flat_map
 
