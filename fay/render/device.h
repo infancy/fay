@@ -14,7 +14,7 @@ namespace fay
 class render_device
 {
 public:
-    render_device() {} 
+    //render_device() {} 
     render_device(const render_desc& desc);
     ~render_device() = default;
 
@@ -28,12 +28,7 @@ public:
     {
         create_check(desc); 
 
-        auto id = backend_->create(desc); // backend_id
-        auto desc_id = desc_.insert(id.value, desc);
-        
-        DCHECK(id == desc_id);
-        return id;
-        // TODO???: cache the buffer_desc
+        return backend_->create(desc);
     }
     /*
     texture_id  create(const  texture_desc& desc)
@@ -64,9 +59,9 @@ public:
     template<typename Handle>
     void destroy(Handle id)
     {
-        DCHECK(desc_.have(id));
+        DCHECK(pool_.contains(id));
         backend_->destroy(id);
-        desc_.erase(id);
+        //pool_.erase(id);
     }
 
     /*
@@ -95,7 +90,7 @@ public:
     template<typename Handle>
     bool query_valid(Handle id)
     {
-        return desc_.have(id);
+        return pool_.contains(id);
     }
 
     // render
@@ -170,7 +165,7 @@ private:
 
         ctx_.is_offscreen = true;
         ctx_.frm_id = id;
-        ctx_.frm = desc_[id];
+        ctx_.frm = pool_.get(id);
 
         backend_->begin_frame(id);
     }
@@ -236,7 +231,7 @@ private:
         DCHECK(query_valid(id)) << "invalid id";
 
         ctx_.shd_id = id;
-        ctx_.shd = desc_[id];
+        ctx_.shd = pool_.get(id);
 
         backend_->apply_shader(id);
     }
@@ -264,7 +259,7 @@ private:
         auto idx = index(ctx_.shd.samplers, [sampler_name](auto&& sampler) { return sampler.name == sampler_name; });
 
         DCHECK(idx.has_value()) << "unknown texture sampler";
-        DCHECK(ctx_.shd.samplers[idx.value()].type == desc_[id].type) << "texture's type and sampler's isn't matching";
+        DCHECK(ctx_.shd.samplers[idx.value()].type == pool_.get(id).type) << "texture's type and sampler's isn't matching";
 
         auto stage = (idx.value() < ctx_.shd.vs_samplers_sz) ? shader_stage::vertex : shader_stage::fragment; // !!!
 
@@ -315,7 +310,7 @@ private:
     {
         DCHECK(query_valid(id)) << "invalid id";
 
-        ctx_.index_count = desc_[id].size; // ???: cache
+        ctx_.index_count = pool_.get(id).size; // ???: cache
         backend_->bind_index(id);
     }
     void bind_buffer(const buffer_id id, const std::vector<attribute_usage>& attrs, size_t instance_rate);
@@ -380,7 +375,7 @@ private:
 
     // window_ptr window_{}; event
     render_backend_ptr backend_{};
-    resource_pool<buffer_desc, texture_desc, shader_desc, pipeline_desc, frame_desc> desc_{}; // TODO: rename desc_pool_
+    render_desc_pool& pool_;
 };
 
 using render_device_ptr = std::unique_ptr<render_device>;

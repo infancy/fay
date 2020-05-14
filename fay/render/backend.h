@@ -69,16 +69,17 @@ public:
     virtual void bind_uniform(uint ub_index, const void* data, uint size, shader_stage stage = shader_stage::none) = 0;
     virtual void bind_texture(const texture_id id, int tex_index, const std::string& sampler, shader_stage stage = shader_stage::none) = 0;
 
-    virtual void bind_resource() = 0;
+    // virtual void bind_resource() = 0;
 
     virtual void draw(uint count, uint first, uint instance_count) = 0;
     virtual void draw_index(uint count, uint first, uint instance_count) = 0;
 
 protected:
     // low level api, mainly for d3d12, vulkan and metal
-    virtual void acquire_next_image() = 0;
+    virtual void acquire_next_image() {}
 
 protected:
+    friend class render_device;
     // interface provided for render_device
     virtual render_desc_pool& get_render_desc_pool() = 0;
 

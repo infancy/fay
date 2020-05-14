@@ -25,7 +25,7 @@ struct triple
 {
     union
     {
-        struct { X x; Y y; Z z };
+        struct { X x; Y y; Z z; };
         struct { X v0; Y v1; Z v2; };
         struct { X first; Y second; Z third; };
     };

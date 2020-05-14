@@ -73,8 +73,6 @@ class pool :
 {
 };
 
-*/
-
 template<typename Buffer, typename Texture, typename Shader, typename Pipeline, typename Frame>
 class resource_pool // pool
 {
@@ -132,13 +130,19 @@ private:
     std::unordered_map<uint, Frame>    frame_map;
 };
 
-
+*/
 
 // common interface for render_device
 class render_desc_pool
 {
 public:
     // get_desc
+    virtual bool contains(  buffer_id id) = 0;
+    virtual bool contains( texture_id id) = 0;
+    virtual bool contains(  shader_id id) = 0;
+    virtual bool contains(pipeline_id id) = 0;
+    virtual bool contains(   frame_id id) = 0;
+
     virtual const   buffer_desc& get(  buffer_id id) = 0;
     virtual const  texture_desc& get( texture_id id) = 0;
     virtual const   shader_desc& get(  shader_id id) = 0;
@@ -149,7 +153,7 @@ public:
 };
 
 template<typename Buffer, typename Texture, typename Shader, typename Pipeline, typename Frame>
-class resource_pool_ : public render_desc_pool
+class resource_pool : public render_desc_pool
 {
 public:
     template<typename Descriptor, typename Value>
@@ -158,6 +162,7 @@ public:
         const Descriptor desc;
         Value value;
 
+        desc_value_pair_() {}
         desc_value_pair_(Descriptor desc) : desc{ desc }, value{ desc } {}
     };
 
@@ -168,6 +173,8 @@ public:
     using    frame_pair = desc_value_pair_<   frame_desc, Frame>;
 
 public:
+    resource_pool() {}
+
     buffer_id   insert(const   buffer_desc& desc) { uint pid = ++cnt[0];   buffer_map.emplace(pid, desc); return   buffer_id(pid); }
     texture_id  insert(const  texture_desc& desc) { uint pid = ++cnt[1];  texture_map.emplace(pid, desc); return  texture_id(pid); }
     shader_id   insert(const   shader_desc& desc) { uint pid = ++cnt[2];   shader_map.emplace(pid, desc); return   shader_id(pid); }
@@ -182,8 +189,11 @@ public:
     frame_id    insert(uint pid, const    frame_desc& desc) {    frame_map.emplace(pid, desc); return    frame_id(pid); }
     */
 
-    template<typename Handle>
-    bool contain(Handle id) const { const auto& map = get_map(id); return map.find(id.value) != map.end(); }
+    virtual bool contains(  buffer_id id) { return contains_(id); }
+    virtual bool contains( texture_id id) { return contains_(id); }
+    virtual bool contains(  shader_id id) { return contains_(id); }
+    virtual bool contains(pipeline_id id) { return contains_(id); }
+    virtual bool contains(   frame_id id) { return contains_(id); }
 
     // interface provided for render_device
     virtual const   buffer_desc& get(  buffer_id id) override { return   buffer_map[id.value].desc; }
@@ -193,11 +203,11 @@ public:
     virtual const    frame_desc& get(   frame_id id) override { return    frame_map[id.value].desc; }
 
     // TODO: add const
-    buffer_pair&   operator[](  buffer_id id) { return   buffer_map[id.value]; }
-    texture_pair&  operator[]( texture_id id) { return  texture_map[id.value]; }
-    shader_pair&   operator[](  shader_id id) { return   shader_map[id.value]; }
-    pipeline_pair& operator[](pipeline_id id) { return pipeline_map[id.value]; }
-    frame_pair&    operator[](   frame_id id) { return    frame_map[id.value]; }
+    Buffer&   operator[](  buffer_id id) { return   buffer_map[id.value].value; }
+    Texture&  operator[]( texture_id id) { return  texture_map[id.value].value; }
+    Shader&   operator[](  shader_id id) { return   shader_map[id.value].value; }
+    Pipeline& operator[](pipeline_id id) { return pipeline_map[id.value].value; }
+    Frame&    operator[](   frame_id id) { return    frame_map[id.value].value; }
 
     // TODO: cache them
     // Or don't make this improvement, after all, maybe there's little performance boost.
@@ -208,6 +218,9 @@ public:
     void erase(   frame_id id) {    frame_map.erase(id.value); }
 
 private:
+    template<typename Handle>
+    bool contains_(Handle id) const { const auto& map = get_map(id); return map.find(id.value) != map.end(); }
+
     constexpr auto& get_map(  buffer_id id) { return buffer_map;   }
     constexpr auto& get_map( texture_id id) { return texture_map;  }
     constexpr auto& get_map(  shader_id id) { return shader_map;   }
@@ -237,6 +250,7 @@ inline namespace type
 
 struct buffer
 {
+    buffer() {}
     buffer(buffer_desc desc)
     {
 
@@ -245,6 +259,7 @@ struct buffer
 
 struct texture
 {
+    texture() {}
     texture(texture_desc desc)
     {
 
@@ -253,6 +268,7 @@ struct texture
 
 struct shader
 {
+    shader() {}
     shader(shader_desc desc)
     {
 
@@ -261,6 +277,7 @@ struct shader
 
 struct pipeline
 {
+    pipeline() {}
     pipeline(pipeline_desc desc)
     {
 
@@ -269,6 +286,7 @@ struct pipeline
 
 struct frame
 {
+    frame() {}
     frame(frame_desc desc)
     {
 

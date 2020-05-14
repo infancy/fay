@@ -19,6 +19,7 @@ inline namespace type
 
 struct buffer
 {
+    buffer() {}
     buffer(buffer_desc desc)
     {
 
@@ -27,6 +28,7 @@ struct buffer
 
 struct texture
 {
+    texture() {}
     texture(texture_desc desc)
     {
 
@@ -35,6 +37,7 @@ struct texture
 
 struct shader
 {
+    shader() {}
     shader(shader_desc desc)
     {
 
@@ -43,6 +46,7 @@ struct shader
 
 struct pipeline
 {
+    pipeline() {}
     pipeline(pipeline_desc desc)
     {
 
@@ -51,11 +55,13 @@ struct pipeline
 
 struct frame
 {
+    frame() {}
     frame(frame_desc desc)
     {
 
     }
 };
+
 
 }
 
@@ -108,7 +114,7 @@ private:
     };
     context ctx_;
 
-    using render_pool = resource_pool_<buffer, texture, shader, pipeline, frame>;
+    using render_pool = resource_pool<buffer, texture, shader, pipeline, frame>;
     render_pool pool_;
 
 public:
@@ -125,7 +131,7 @@ public:
     {
         // or id = buffer_pool.insert(besc), generate buffer by itself ???
         buffer_id pid = pool_.insert(desc); // id in the pool
-        auto& [desc, buf] = pool_[pid];
+        buffer& buf = pool_[pid];
 
 
 
@@ -168,7 +174,7 @@ public:
     virtual void bind_uniform(uint ub_index, const void* data, uint size, shader_stage stage = shader_stage::none) override {}
     virtual void bind_texture(const texture_id id, int tex_index, const std::string& sampler, shader_stage stage = shader_stage::none) override {}
 
-    virtual void bind_resource() override {}
+    //virtual void bind_resource() override {}
 
     virtual void draw(uint count, uint first, uint instance_count) override {}
     virtual void draw_index(uint count, uint first, uint instance_count) override {}

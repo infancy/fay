@@ -86,7 +86,7 @@ FAY_SMART_COM_PTR(ID3D11RasterizerState);
 FAY_SMART_COM_PTR(ID3D11DepthStencilState);
 FAY_SMART_COM_PTR(ID3D11BlendState);
 
-namespace backend_d3d11_func
+inline namespace func
 {
 
 D3D_FEATURE_LEVEL feature_level(uint32_t major, uint32_t minor)
@@ -152,9 +152,8 @@ UINT8 color_write_mask(blend_mask mask)
 }
 
 }
-using namespace backend_d3d11_func;
 
-namespace backend_d3d11_type
+inline namespace type
 {
 
 const inline enum_class_map<attribute_usage, const char*>
@@ -541,7 +540,6 @@ struct frame
 };
 
 }
-using namespace backend_d3d11_type;
 
 
 
@@ -1231,6 +1229,11 @@ public:
 
         log_ << "draw_index\n\n";
     }
+
+
+protected:
+    // interface provided for render_device
+    virtual render_desc_pool& get_render_desc_pool() override { return pool_; }
 
 private:
     bool create_device()

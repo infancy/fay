@@ -81,9 +81,6 @@
     <ClCompile Include="..\..\fay\render\backend_vulkan.cpp">
       <Filter>render</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fay\render\backend_swift.cpp">
-      <Filter>render</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\core\fay.h">

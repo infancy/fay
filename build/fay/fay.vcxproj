@@ -23,7 +23,6 @@
     <ClCompile Include="..\..\fay\core\ecs.cpp" />
     <ClCompile Include="..\..\fay\render\backend_d3d11.cpp" />
     <ClCompile Include="..\..\fay\render\backend_d3d12.cpp" />
-    <ClCompile Include="..\..\fay\render\backend_swift.cpp" />
     <ClCompile Include="..\..\fay\render\backend_vulkan.cpp" />
     <ClCompile Include="..\..\fay\render\define.cpp" />
     <ClCompile Include="..\..\fay\render\device.cpp" />

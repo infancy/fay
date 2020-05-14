@@ -1578,6 +1578,10 @@ public:
     */
 
 
+protected:
+    // interface provided for render_device
+    virtual render_desc_pool& get_render_desc_pool() override { return pool_; }
+
 private:
 
     // create shader
