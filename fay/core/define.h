@@ -55,7 +55,7 @@ enum class render_feature
 
 enum class render_backend_type
 {
-	none, opengl, opengl_dsa, d3d11, count
+	none, opengl, opengl_dsa, d3d11, d3d12, vulkan, count
 };
 // TODO: FAY_ENUM_CLASS_OPERATOR( render_backend_type )
 

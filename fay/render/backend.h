@@ -92,6 +92,7 @@ using render_backend_ptr = std::unique_ptr<render_backend>;
 
 render_backend_ptr create_backend_opengl(const render_desc& desc);
 render_backend_ptr create_backend_d3d11(const render_desc& desc);
+render_backend_ptr create_backend_d3d12(const render_desc& desc);
 
 inline render_backend_ptr create_render_backend(const render_desc& desc)
 {
@@ -101,6 +102,8 @@ inline render_backend_ptr create_render_backend(const render_desc& desc)
             return create_backend_opengl(desc);
         case render_backend_type::d3d11:
             return create_backend_d3d11(desc);
+        case render_backend_type::d3d12:
+            return create_backend_d3d12(desc);
         case render_backend_type::none:
         default:
             LOG(ERROR) << "render_device: no render_backend";

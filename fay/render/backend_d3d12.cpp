@@ -112,10 +112,10 @@ private:
         ID3D12Fence* mFence;
         UINT64 mFenceValue;
     };
-    context ctx_;
+    context ctx_{};
 
     using render_pool = resource_pool<buffer, texture, shader, pipeline, frame>;
-    render_pool pool_;
+    render_pool pool_{};
 
 public:
     backend_d3d12(const render_desc& desc) : 
@@ -129,18 +129,49 @@ public:
 
     buffer_id   create(const   buffer_desc& desc) override
     {
-        // or id = buffer_pool.insert(besc), generate buffer by itself ???
-        buffer_id pid = pool_.insert(desc); // id in the pool
+        auto pid = pool_.insert(desc);
         buffer& buf = pool_[pid];
 
 
 
         return pid;
     }
-    virtual  texture_id create(const  texture_desc& desc) override {}
-    virtual   shader_id create(const   shader_desc& desc) override {}
-    virtual pipeline_id create(const pipeline_desc& desc) override {}
-    virtual    frame_id create(const    frame_desc& desc) override {}
+    virtual  texture_id create(const  texture_desc& desc) override
+    {
+        auto pid = pool_.insert(desc);
+        texture& buf = pool_[pid];
+
+
+
+        return pid;
+    }
+    virtual   shader_id create(const   shader_desc& desc) override
+    {
+        auto pid = pool_.insert(desc);
+        shader& buf = pool_[pid];
+
+
+
+        return pid;
+    }
+    virtual pipeline_id create(const pipeline_desc& desc) override
+    {
+        auto pid = pool_.insert(desc);
+        pipeline& buf = pool_[pid];
+
+
+
+        return pid;
+    }
+    virtual    frame_id create(const    frame_desc& desc) override
+    {
+        auto pid = pool_.insert(desc);
+        frame& buf = pool_[pid];
+
+
+
+        return pid;
+    }
 
     virtual void update(buffer_id id, const void* data, int size) override {}
     virtual void update(texture_id id, const void* data) override {}
@@ -186,8 +217,21 @@ protected:
 protected:
     // interface provided for render_device
     virtual render_desc_pool& get_render_desc_pool() override { return pool_; }
-};
+
+}; // class backend_d3d12
 
 } // namespace fay::d3d12
+
+
+
+namespace fay
+{
+
+render_backend_ptr create_backend_d3d12(const render_desc& desc)
+{
+    return std::make_unique<fay::d3d12::backend_d3d12>(desc);
+}
+
+} // namespace fay
 
 #endif // FAY_IN_WINDOWS

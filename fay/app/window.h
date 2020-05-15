@@ -150,6 +150,7 @@ public:
                 create_window_and_glcontext(4, 6);
                 break;
             case render_backend_type::d3d11:
+            case render_backend_type::d3d12:
                 create_window();
                 break;
             default:

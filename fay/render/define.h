@@ -900,7 +900,7 @@ struct frame_desc
 struct render_desc
 {
     std::string name{ "default" };
-    render_backend_type backend{ render_backend_type::opengl };
+    render_backend_type backend{ render_backend_type::d3d12 };
 
     // feature
     anti_aliasing anti_aliasing{};
