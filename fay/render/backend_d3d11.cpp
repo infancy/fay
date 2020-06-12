@@ -1,90 +1,9 @@
-// #include "fay/core/fay.h"
-#include "fay/render/backend.h"
+#include "fay/render/backend_d3d_.h"
 
 #ifdef FAY_IN_WINDOWS
 
-#define CINTERFACE
-#define COBJMACROS
-#define D3D11_NO_HELPERS
-#define WIN32_LEAN_AND_MEAN
-
-#include <comdef.h>
-#include <d3d11.h>
-//#include <d3d11shader.h>
-#include <d3dcompiler.h>
-#include <dxgi.h>
-//#include <d3d11_4.h>
-//#include <dxgi1_6.h>
-#include <windows.h>
-#include <windowsx.h>
-
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "d3dcompiler.lib")
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "dxguid.lib")
-//#pragma comment(lib, "dxguid.lib")
-//#pragma comment(lib, "winmm.lib")
-
-
-using namespace std::string_literals;
-
-#define FAY_SMART_COM_PTR(_a) _COM_SMARTPTR_TYPEDEF(_a, __uuidof(_a))
-
-#ifdef FAY_DEBUG
-    #ifndef D3D_CHECK
-    #define D3D_CHECK(func)	\
-	    { \
-		    HRESULT hr = (func); \
-		    if(FAILED(hr)) \
-		    { \
-                char hr_msg[512]; \
-                FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, hr, 0, hr_msg, ARRAYSIZE(hr_msg), nullptr); \
-                std::string error_msg = "\nError!\nline: "s + std::to_string(__LINE__) + "\nhr: " + std::to_string(hr) + "\nfunc: " + #func + "\nerror msg: " + hr_msg; \
-                LOG(ERROR) << error_msg; \
-		    } \
-	    }
-    #endif
-    #ifndef D3D_CHECK2
-    #define D3D_CHECK2(func, ptr) \
-            D3D_CHECK(func) \
-            { if(!ptr) LOG(ERROR) << "nullptr: "s + #ptr; }
-    #endif
-#else
-    #ifndef D3D_CHECK
-    #define D3D_CHECK(func) (func)
-    #endif 
-    #ifndef D3D_CHECK2
-    #define D3D_CHECK2(func, ptr) (func)
-    #endif 
-#endif
-
-namespace fay::d3d11
+namespace fay::d3d
 {
-
-// D3D
-
-FAY_SMART_COM_PTR(IUnknown);
-FAY_SMART_COM_PTR(ID3DBlob);
-
-FAY_SMART_COM_PTR(ID3D11Device);
-FAY_SMART_COM_PTR(ID3D11DeviceContext);
-FAY_SMART_COM_PTR(IDXGISwapChain);
-
-FAY_SMART_COM_PTR(ID3D11Buffer);
-FAY_SMART_COM_PTR(ID3D11Texture2D);
-FAY_SMART_COM_PTR(ID3D11Texture3D);
-FAY_SMART_COM_PTR(ID3D11SamplerState);
-FAY_SMART_COM_PTR(ID3D11ShaderResourceView);
-FAY_SMART_COM_PTR(ID3D11RenderTargetView);
-FAY_SMART_COM_PTR(ID3D11DepthStencilView);
-
-FAY_SMART_COM_PTR(ID3D11VertexShader);
-FAY_SMART_COM_PTR(ID3D11PixelShader);
-
-FAY_SMART_COM_PTR(ID3D11InputLayout);
-FAY_SMART_COM_PTR(ID3D11RasterizerState);
-FAY_SMART_COM_PTR(ID3D11DepthStencilState);
-FAY_SMART_COM_PTR(ID3D11BlendState);
 
 inline namespace func
 {
@@ -323,6 +242,15 @@ struct texture
 
         // render_target = render_target_map.at(desc.as_render_target).d3d11; // TODO
         rt_sample_count = desc.rt_sample_count;
+    }
+};
+
+struct respack
+{
+    respack() {}
+    respack(respack_desc desc)
+    {
+
     }
 };
 
@@ -1253,6 +1181,7 @@ private:
     #ifdef FAY_DEBUG
         create_flags |= D3D11_CREATE_DEVICE_DEBUG;
     #endif
+
         DXGI_SWAP_CHAIN_DESC scd;
         {
             ZeroMemory(&scd, sizeof(scd));
@@ -1271,13 +1200,14 @@ private:
             scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
             scd.Flags = 0;
         }
+
         D3D_FEATURE_LEVEL feature_level;
         HRESULT hr = D3D11CreateDeviceAndSwapChain(
-            nullptr,                       // pAdapter (use default)
+            nullptr,                    // pAdapter (use default)
             D3D_DRIVER_TYPE_HARDWARE,   // DriverType
-            nullptr,                       // Software
+            nullptr,                    // Software
             create_flags,               // Flags
-            nullptr,                       // pFeatureLevels
+            nullptr,                    // pFeatureLevels
             0,                          // FeatureLevels
             D3D11_SDK_VERSION,          // SDKVersion
             &scd,                       // pSwapChainDesc
@@ -1535,7 +1465,7 @@ private:
     command_list_context cmd_{};
 
     context ctx_{};
-    resource_pool<buffer, texture, shader, pipeline, frame> pool_{};
+    resource_pool<buffer, texture, respack, shader, pipeline, frame> pool_{};
 };
 
 } // namespace fay::d3d11
@@ -1548,7 +1478,7 @@ namespace fay
 // TODO: _ptr -> _up, _uptr _sp _wp
 render_backend_ptr create_backend_d3d11(const render_desc& desc)
 {
-    return std::make_unique<fay::d3d11::backend_d3d11>(desc);
+    return std::make_unique<fay::d3d::backend_d3d11>(desc);
 }
 
 } // namespace fay

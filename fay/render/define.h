@@ -30,6 +30,8 @@ constexpr inline uint MaxVertexAttributes     = 16;
 constexpr inline uint MaxMipmaps              = 16;
 constexpr inline uint MaxTextureArrayLayers   = 128;
 
+#pragma region enum
+
 // -------------------------------------------------------------------------------------------------
 // render features
 
@@ -233,6 +235,7 @@ enum class shader_stage
 	fragment,
 
     mesh,
+    compute,
 };
 
 enum class uniform_type
@@ -391,7 +394,9 @@ enum class pass_type
     all = graphics | compute | blit,
 };
 
-// ------------------------------------------------
+#pragma endregion enum
+
+#pragma region desc
 
 // buffer, texture, shader, uniform, pso
 // device, context, effect, pass
@@ -414,6 +419,7 @@ struct type##_id                                                            \
 
 FAY_RENDER_TYPE_ID(buffer)
 FAY_RENDER_TYPE_ID(texture)
+FAY_RENDER_TYPE_ID(respack)
 FAY_RENDER_TYPE_ID(shader)
 FAY_RENDER_TYPE_ID(pipeline)
 FAY_RENDER_TYPE_ID(frame)
@@ -686,10 +692,29 @@ public:
     }
 };
 
+
+// RootSignature/DescriptorSetLayout
+// shader_resource/resource_set/resource_pack/resource_package/resource_bundle/resource_collection
+struct respack_desc
+{
+    std::string name{ "defult" };
+
+    buffer_id index{};
+    // buffer_id vertex{ 0 }; array<buffer_id, ...> instances;
+    std::vector<buffer_id>  buffers{}; // buffers[0] is default vertex buffer
+
+    std::vector<texture_id> textures{};
+    std::vector<buffer_id>  uniform_buffers{}; // buffers[0] is default vertex buffer
+    // texture sampler
+};
+
+
+
+// shader_metadata
 // shader sources(not filepath) + uniform blocks + texutres 
 struct shader_desc
 {
-public:
+public: // type define
     struct uniform_block
     {
         std::string name{};
@@ -865,12 +890,23 @@ struct pipeline_desc
     blend_mask blend_write_mask{ blend_mask::rgba };
 };
 
+
+
 struct attachment_desc
 {
     texture_id tex_id{};
     // union { int face; int layer; int slice; };
     uint layer{}; // texture::two(0), texture::cube(0~5), texture::array/three(0~depth-1) // slice
     uint level{}; // mipmap_level
+};
+
+struct state_desc
+{
+    std::string name{ "defult" };
+
+    shader_id shd_id{};
+    pipeline_id pipe_id{};
+    // frame_id frm_id{}; // use 0 as the framebuffer by default 
 };
 
 /*
@@ -923,28 +959,9 @@ struct render_desc
 
 // clear_op
 
-struct state_desc
-{
-    std::string name{ "defult" };
 
-    shader_id shd_id{};
-    pipeline_id pipe_id{};
-    // frame_id frm_id{}; // use 0 as the framebuffer by default 
-};
+#pragma endregion desc
 
-/*
-    low level api: descriptor table/set
-*/
-struct resource_set
-{
-    std::string name{ "defult" };
-
-    buffer_id index{};
-    // buffer_id vertex{ 0 }; array<buffer_id, ...> instances;
-    std::vector<buffer_id> buffers{}; // buffers[0] is default vertex buffer
-    std::vector<texture_id> textures{};
-    // texture sampler
-};
 
 // render_command_type
 enum class command_type
@@ -964,20 +981,24 @@ enum class command_type
     set_scissor,
     // set_view
 
-    apply_shader,
-    apply_pipeline,
-    // apply_state,
-
     bind_index,
     bind_buffer, 
     bind_named_texture,
     bind_textures,
+    // shared memory(PushConstant)
     bind_uniform,
     bind_uniform_block,
-    // bind_resource_set,
+
+    // bind resource index to pipeline
+    bind_respack, // bind_resource, update_descriptor_set, bind_shader_params
+
+    apply_shader,
+    apply_pipeline,
+    // apply_state,
 
     update_buffer,
     update_texture,
+    update_respacck,
 
     draw,
     draw_index,
@@ -985,6 +1006,8 @@ enum class command_type
     readback, // blit
     // copy_data, update_resource, apply_state(binding_state)
 };
+
+#pragma region command
 
 // render_command
 struct command // command/encoder
@@ -997,11 +1020,12 @@ struct command // command/encoder
 
     // std::any, std::variant, union para { ... }
     int          int_{};
-    uint    uint_{};
+    uint        uint_{};
     float      float_{};
 
     buffer_id   buf_{};
     texture_id  tex_{};
+    respack_id  res_{};
     shader_id   shd_{};
     pipeline_id pip_{};
     frame_id    frm_{};
@@ -1036,12 +1060,12 @@ class material;
 class frame;
 
 // WARNING: rebuild(not reuse it)
-// rename: render_cmds or render_list???
+// rename: render_cmds or render_command_list???
 class command_list
 {
 public:
     // std::vector<state_desc> states;
-    // std::vector<resource_desc> resources;
+    // std::vector<respack_desc> resources;
     // std::vector<command_desc> commands;
 
     command_list() {} // TODO: remove default ctor, always give cmds a name
@@ -1132,6 +1156,13 @@ public:
         return *this;
     }
 
+    command_list& apply_shader(const shader_id id)
+    {
+        auto& cmd = add_command(command_type::apply_shader);
+        cmd.shd_ = id;
+
+        return *this;
+    }
     command_list& apply_pipeline(const pipeline_id id)
     {
         auto& cmd = add_command(command_type::apply_pipeline);
@@ -1139,10 +1170,10 @@ public:
 
         return *this;
     }
-    command_list& apply_shader(const shader_id id)
+    command_list& apply_pipeline(const pipeline_id pipe, const shader_id shd)
     {
-        auto& cmd = add_command(command_type::apply_shader);
-        cmd.shd_ = id;
+        apply_pipeline(pipe);
+        apply_shader(shd);
 
         return *this;
     }
@@ -1225,10 +1256,19 @@ public:
     //command_list& bind_instance(const buffer_id id, std::vector<uint> attrs = {}, std::vector<uint> slots = {});
     //command_list& bind_resource(const buffer_id id, const std::vector<buffer_id> buffers, const std::vector<texture_id> textures);
 
+    command_list& bind_respack(const respack_id id)
+    {
+        auto& cmd = add_command(command_type::bind_respack);
+        cmd.res_ = id;
+
+        return *this;
+    }
+
     // TODO: bind_vertex_attribute, allocate_vertex_data
 
     // command_list& update_buffer(const buffer_id id, const void* data, uint size); // cache the data
     // command_list& update_texture(const texture_id id, const void* data, uint size);
+    // command_list& update_respack(const respack_id id, /*...*/);
 
     // WARNNING: if count is 0, it will be computed by device automatically
     // WARNNING: if instance_count is 0, use 'draw', else use 'draw_instance'
@@ -1290,7 +1330,9 @@ private:
     std::string name_{ "defult" };
     // pass_type type{};
 
-    std::vector<command> cmds_{};
+    std::vector<command> cmds_{}; // don't need command_list_pool, just move it.
 };
+
+#pragma endregion command
 
 } // namespace fay

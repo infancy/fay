@@ -6,7 +6,6 @@ namespace fay
 {
 
 // https://github.com/mitsuba-renderer/enoki/blob/master/include/enoki/array_base.h
-// https://github.com/foonathan/array
 
 // https://zhuanlan.zhihu.com/p/96089089
 

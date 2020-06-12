@@ -38,6 +38,7 @@ public:
     }
 };
 
+// texture
 class triangle : public fay::app
 {
 public:

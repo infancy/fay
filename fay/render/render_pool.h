@@ -139,12 +139,14 @@ public:
     // get_desc
     virtual bool contains(  buffer_id id) = 0;
     virtual bool contains( texture_id id) = 0;
+    virtual bool contains( respack_id id) = 0;
     virtual bool contains(  shader_id id) = 0;
     virtual bool contains(pipeline_id id) = 0;
     virtual bool contains(   frame_id id) = 0;
 
     virtual const   buffer_desc& get(  buffer_id id) = 0;
     virtual const  texture_desc& get( texture_id id) = 0;
+    virtual const  respack_desc& get( respack_id id) = 0;
     virtual const   shader_desc& get(  shader_id id) = 0;
     virtual const pipeline_desc& get(pipeline_id id) = 0;
     virtual const    frame_desc& get(   frame_id id) = 0;
@@ -152,7 +154,7 @@ public:
     // virtual frame_desc& get(frame_id id, uint elem_index) = 0;
 };
 
-template<typename Buffer, typename Texture, typename Shader, typename Pipeline, typename Frame>
+template<typename Buffer, typename Texture, typename Respack, typename Shader, typename Pipeline, typename Frame>
 class resource_pool : public render_desc_pool
 {
 public:
@@ -168,6 +170,7 @@ public:
 
     using   buffer_pair = desc_value_pair_<  buffer_desc, Buffer>;
     using  texture_pair = desc_value_pair_< texture_desc, Texture>;
+    using  respack_pair = desc_value_pair_< respack_desc, Respack>;
     using   shader_pair = desc_value_pair_<  shader_desc, Shader>;
     using pipeline_pair = desc_value_pair_<pipeline_desc, Pipeline>;
     using    frame_pair = desc_value_pair_<   frame_desc, Frame>;
@@ -177,9 +180,10 @@ public:
 
     buffer_id   insert(const   buffer_desc& desc) { uint pid = ++cnt[0];   buffer_map.emplace(pid, desc); return   buffer_id(pid); }
     texture_id  insert(const  texture_desc& desc) { uint pid = ++cnt[1];  texture_map.emplace(pid, desc); return  texture_id(pid); }
-    shader_id   insert(const   shader_desc& desc) { uint pid = ++cnt[2];   shader_map.emplace(pid, desc); return   shader_id(pid); }
-    pipeline_id insert(const pipeline_desc& desc) { uint pid = ++cnt[3]; pipeline_map.emplace(pid, desc); return pipeline_id(pid); }
-    frame_id    insert(const    frame_desc& desc) { uint pid = ++cnt[4];    frame_map.emplace(pid, desc); return    frame_id(pid); }
+    respack_id  insert(const  respack_desc& desc) { uint pid = ++cnt[2];  respack_map.emplace(pid, desc); return  respack_id(pid); }
+    shader_id   insert(const   shader_desc& desc) { uint pid = ++cnt[3];   shader_map.emplace(pid, desc); return   shader_id(pid); }
+    pipeline_id insert(const pipeline_desc& desc) { uint pid = ++cnt[4]; pipeline_map.emplace(pid, desc); return pipeline_id(pid); }
+    frame_id    insert(const    frame_desc& desc) { uint pid = ++cnt[5];    frame_map.emplace(pid, desc); return    frame_id(pid); }
 
     /*
     buffer_id   insert(uint pid, const   buffer_desc& desc) {   buffer_map.emplace(pid, desc); return   buffer_id(pid); }
@@ -189,15 +193,17 @@ public:
     frame_id    insert(uint pid, const    frame_desc& desc) {    frame_map.emplace(pid, desc); return    frame_id(pid); }
     */
 
-    virtual bool contains(  buffer_id id) { return contains_(id); }
-    virtual bool contains( texture_id id) { return contains_(id); }
-    virtual bool contains(  shader_id id) { return contains_(id); }
-    virtual bool contains(pipeline_id id) { return contains_(id); }
-    virtual bool contains(   frame_id id) { return contains_(id); }
+    virtual bool contains(  buffer_id id) override { return contains_(id); }
+    virtual bool contains( texture_id id) override { return contains_(id); }
+    virtual bool contains( respack_id id) override { return contains_(id); }
+    virtual bool contains(  shader_id id) override { return contains_(id); }
+    virtual bool contains(pipeline_id id) override { return contains_(id); }
+    virtual bool contains(   frame_id id) override { return contains_(id); }
 
     // interface provided for render_device
     virtual const   buffer_desc& get(  buffer_id id) override { return   buffer_map[id.value].desc; }
     virtual const  texture_desc& get( texture_id id) override { return  texture_map[id.value].desc; }
+    virtual const  respack_desc& get( respack_id id) override { return  respack_map[id.value].desc; }
     virtual const   shader_desc& get(  shader_id id) override { return   shader_map[id.value].desc; }
     virtual const pipeline_desc& get(pipeline_id id) override { return pipeline_map[id.value].desc; }
     virtual const    frame_desc& get(   frame_id id) override { return    frame_map[id.value].desc; }
@@ -205,6 +211,7 @@ public:
     // TODO: add const
     Buffer&   operator[](  buffer_id id) { return   buffer_map[id.value].value; }
     Texture&  operator[]( texture_id id) { return  texture_map[id.value].value; }
+    Respack&  operator[]( respack_id id) { return  respack_map[id.value].value; }
     Shader&   operator[](  shader_id id) { return   shader_map[id.value].value; }
     Pipeline& operator[](pipeline_id id) { return pipeline_map[id.value].value; }
     Frame&    operator[](   frame_id id) { return    frame_map[id.value].value; }
@@ -213,6 +220,7 @@ public:
     // Or don't make this improvement, after all, maybe there's little performance boost.
     void erase(  buffer_id id) {   buffer_map.erase(id.value); }
     void erase( texture_id id) {  texture_map.erase(id.value); }
+    void erase( respack_id id) {  respack_map.erase(id.value); }
     void erase(  shader_id id) {   shader_map.erase(id.value); }
     void erase(pipeline_id id) { pipeline_map.erase(id.value); }
     void erase(   frame_id id) {    frame_map.erase(id.value); }
@@ -223,21 +231,24 @@ private:
 
     constexpr auto& get_map(  buffer_id id) { return buffer_map;   }
     constexpr auto& get_map( texture_id id) { return texture_map;  }
+    constexpr auto& get_map( respack_id id) { return respack_map;  }
     constexpr auto& get_map(  shader_id id) { return shader_map;   }
     constexpr auto& get_map(pipeline_id id) { return pipeline_map; }
     constexpr auto& get_map(   frame_id id) { return frame_map;    }
 
     constexpr auto& get_map(  buffer_id id) const { return buffer_map;   }
     constexpr auto& get_map( texture_id id) const { return texture_map;  }
+    constexpr auto& get_map( respack_id id) const { return respack_map;  }
     constexpr auto& get_map(  shader_id id) const { return shader_map;   }
     constexpr auto& get_map(pipeline_id id) const { return pipeline_map; }
     constexpr auto& get_map(   frame_id id) const { return frame_map;    }
 
 private:
-    std::array<uint, 5> cnt{ 0, 0, 0, 0, 0 };
+    std::array<uint, 6> cnt{ 0, 0, 0, 0, 0, 0 };
 
     std::unordered_map<uint,   buffer_pair>   buffer_map;
     std::unordered_map<uint,  texture_pair>  texture_map;
+    std::unordered_map<uint,  respack_pair>  respack_map;
     std::unordered_map<uint,   shader_pair>   shader_map;
     std::unordered_map<uint, pipeline_pair> pipeline_map;
     std::unordered_map<uint,    frame_pair>    frame_map;
@@ -261,6 +272,15 @@ struct texture
 {
     texture() {}
     texture(texture_desc desc)
+    {
+
+    }
+};
+
+struct respack
+{
+    respack() {}
+    respack(respack_desc desc)
     {
 
     }

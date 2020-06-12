@@ -155,6 +155,15 @@ private:
     std::vector<transform*> transforms_;
 };
 
+
+
+// https://gamedev.stackexchange.com/questions/58080/how-can-i-use-opengl-and-d3d-to-render-to-the-same-window-at-the-same-time
+class multi_app : public app
+{
+
+};
+
+
 class app_manager
 {
 

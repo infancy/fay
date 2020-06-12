@@ -30,15 +30,18 @@ public:
     // resource creation, updating and destruction
     virtual   buffer_id create(const   buffer_desc& desc) = 0;
     virtual  texture_id create(const  texture_desc& desc) = 0;
+    virtual  respack_id create(const  respack_desc& desc) {}
     virtual   shader_id create(const   shader_desc& desc) = 0;
     virtual pipeline_id create(const pipeline_desc& desc) = 0;
     virtual    frame_id create(const    frame_desc& desc) = 0;
 
     virtual void update( buffer_id id, const void* data, int size) = 0;
     virtual void update(texture_id id, const void* data) = 0;
+    virtual void update(respack_id id, const void* data) {}
 
     virtual void destroy(  buffer_id id) = 0;
     virtual void destroy( texture_id id) = 0;
+    virtual void destroy( respack_id id) {}
     virtual void destroy(  shader_id id) = 0;
     virtual void destroy(pipeline_id id) = 0;
     virtual void destroy(   frame_id id) = 0;
@@ -69,7 +72,7 @@ public:
     virtual void bind_uniform(uint ub_index, const void* data, uint size, shader_stage stage = shader_stage::none) = 0;
     virtual void bind_texture(const texture_id id, int tex_index, const std::string& sampler, shader_stage stage = shader_stage::none) = 0;
 
-    // virtual void bind_resource() = 0;
+    virtual void bind_respack() {}
 
     virtual void draw(uint count, uint first, uint instance_count) = 0;
     virtual void draw_index(uint count, uint first, uint instance_count) = 0;

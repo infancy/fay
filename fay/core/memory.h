@@ -51,6 +51,10 @@ void destruct(const T* ptr)
 
 #pragma endregion allocate / deallocate, construct / destruct
 
+
+
+#pragma region memory
+
 // inline auto memory_deleter = [](void* ptr) { ::operator delete(ptr); };
 
 // TODO
@@ -107,6 +111,11 @@ public:
     uint32_t size()       { return size_; }
     uint32_t size() const { return size_; }
 
+    void copy_to(void* dst) const
+    {
+        std::memcpy(dst, (void*)(data_.get()), size_);
+    }
+
 private:
     // std::unique_ptr<void, decltype(memory_deleter)> data_{ nullptr, memory_deleter }; /*[](void* ptr) { ::operator delete(ptr); }*/
     // std::unique_ptr<uint8_t, decltype(deallocate)> data_{ nullptr, deallocate }; /*[](void* ptr) { ::operator delete(ptr); }*/
@@ -119,5 +128,28 @@ inline memory copy_memory(const T& data)
 {
     return memory(&data, sizeof(T));
 }
+
+#pragma endregion memory
+
+
+
+#pragma region buffer
+
+class buffer
+{
+public:
+
+
+    void copy_to(void* dst)
+    {
+
+    }
+
+private:
+    void* data_;
+    size_t size_;
+};
+
+#pragma endregion buffer
 
 } // namespace fay

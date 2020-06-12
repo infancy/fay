@@ -81,6 +81,12 @@
     <ClCompile Include="..\..\fay\render\backend_vulkan.cpp">
       <Filter>render</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\fay\render\render_graph.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fay\render\backend_WebGPU.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fay\core\fay.h">
@@ -333,8 +339,11 @@
     <ClInclude Include="..\..\fay\render\render_pool.h">
       <Filter>render</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint" />
+    <ClInclude Include="..\..\fay\render\render_graph.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\gfx\effect.h">
+      <Filter>gfx</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -24,10 +24,12 @@
     <ClCompile Include="..\..\fay\render\backend_d3d11.cpp" />
     <ClCompile Include="..\..\fay\render\backend_d3d12.cpp" />
     <ClCompile Include="..\..\fay\render\backend_vulkan.cpp" />
+    <ClCompile Include="..\..\fay\render\backend_webgpu.cpp" />
     <ClCompile Include="..\..\fay\render\define.cpp" />
     <ClCompile Include="..\..\fay\render\device.cpp" />
     <ClCompile Include="..\..\fay\render\render.cpp" />
     <ClCompile Include="..\..\fay\render\backend_opengl.cpp" />
+    <ClCompile Include="..\..\fay\render\render_graph.cpp" />
     <ClCompile Include="..\..\fay\render\shader.cpp" />
     <ClCompile Include="..\..\fay\resource\image.cpp" />
     <ClCompile Include="..\..\fay\resource\model.cpp" />
@@ -79,6 +81,7 @@
     <ClInclude Include="..\..\fay\core\utility.h" />
     <ClInclude Include="..\..\fay\core\wrapper.h" />
     <ClInclude Include="..\..\fay\gfx\camera.h" />
+    <ClInclude Include="..\..\fay\gfx\effect.h" />
     <ClInclude Include="..\..\fay\gfx\frame.h" />
     <ClInclude Include="..\..\fay\gfx\gfx_scene.h" />
     <ClInclude Include="..\..\fay\gfx\light.h" />
@@ -110,6 +113,7 @@
     <ClInclude Include="..\..\fay\render\define.h" />
     <ClInclude Include="..\..\fay\render\device.h" />
     <ClInclude Include="..\..\fay\render\native_type.h" />
+    <ClInclude Include="..\..\fay\render\render_graph.h" />
     <ClInclude Include="..\..\fay\render\render_pool.h" />
     <ClInclude Include="..\..\fay\render\render.h" />
     <ClInclude Include="..\..\fay\render\shader.h" />
@@ -119,9 +123,6 @@
     <ClInclude Include="..\..\fay\resource\text.h" />
     <ClInclude Include="..\..\fay\resource\image.h" />
     <ClInclude Include="..\..\fay\test\test.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

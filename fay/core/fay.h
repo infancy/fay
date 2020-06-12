@@ -10,13 +10,17 @@
 #include <cstdlib>
 #include <cstring>
 
+// TODO: eastl
 #include <algorithm>
 #include <array>
+#include <concepts>
 #include <functional>
 #include <iostream>
 #include <limits>
 #include <memory>
 #include <numeric>
+#include <ranges>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -26,6 +30,10 @@
 
 // #include <boost/noncopyable.hpp>
 #include <glog/logging.h>
+#define FAY_CHECK CHECK
+#define FAY_DCHECK DCHECK
+#define FAY_LOG LOG
+#define FAY_DLOG DLOG
 
 #if defined(FAY_IN_MSVC)
 #pragma warning(disable : 4305)  // double constant assigned to float

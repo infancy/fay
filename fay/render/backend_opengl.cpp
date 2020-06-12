@@ -3,6 +3,10 @@
 
 using namespace std::string_literals;
 
+// https://docs.unity3d.com/Manual/SL-PlatformDifferences.html
+// https://veldrid.dev/articles/backend-differences.html
+// https://urho3d.github.io/documentation/1.6/_a_p_i_differences.html
+
 namespace fay::opengl
 {
 
@@ -447,6 +451,15 @@ inline namespace type
 
             render_target = render_target_map.at(desc.as_render_target).opengl;
             rt_sample_count  = desc.rt_sample_count;
+        }
+    };
+
+    struct respack
+    {
+        respack() {}
+        respack(respack_desc desc)
+        {
+
         }
     };
 
@@ -1129,7 +1142,7 @@ public:
         {
             cmd_.is_offscreen = false;
             //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glBindFramebuffer(GL_FRAMEBUFFER, pool_[ctx_.frm].fbo);
+            glBindFramebuffer(GL_FRAMEBUFFER, pool_[ctx_.frm].fbo); // actually bind to ctx default offscreen frame
 
             glViewport(0, 0, render_desc_.width, render_desc_.height);
             glScissor(0, 0, render_desc_.width, render_desc_.height);
@@ -1165,15 +1178,14 @@ public:
             }
             glcheck_errors();
         }
-        else if (!cmd_.is_offscreen)
+        else if (!cmd_.is_offscreen) // copy default offscreen frame to default frame.
         {
-            // copy default offscreen frame to default frame.
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
             glViewport(0, 0, render_desc_.width, render_desc_.height);
             glScissor(0, 0, render_desc_.width, render_desc_.height);
 
-            apply_shader(ctx_.shd);
+            apply_shader(ctx_.shd); // ctx's shader, flip texture from y axis
             apply_pipeline(ctx_.pipe, { true, true, true, true });
             bind_vertex(ctx_.buf, {}, {}, 0);
             bind_texture(ctx_.tex, 0, "offscreen", shader_stage::fragment);
@@ -1702,7 +1714,7 @@ private:
     context ctx_{};
     command_list_context cmd_{};
     std::stringstream log_;
-    resource_pool<buffer, texture, shader, pipeline, frame> pool_{};
+    resource_pool<buffer, texture, respack, shader, pipeline, frame> pool_{};
 };
 
 

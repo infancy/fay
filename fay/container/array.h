@@ -3,6 +3,15 @@
 // #include <fay/core/fay.h>
 #include <fay/container/container.h>
 
+
+#pragma region reference
+
+// https://github.com/foonathan/array
+// https://github.com/abseil/abseil-cpp/blob/master/absl/container/fixed_array.h
+
+#pragma endregion reference
+
+
 namespace fay
 {
 

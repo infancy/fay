@@ -10,6 +10,10 @@
 namespace fay
 {
 
+// left-hand coordinate system
+// z from 0 to 1
+// texture coordinates start from the upper left corner
+
 // command translate, validation layer
 class render_device
 {
@@ -337,6 +341,7 @@ private:
         backend_->draw_index(count, first, instance_count);
     }
 
+private:
     // execute
     void execute_command_list(const command_list& cmds);
 
@@ -349,10 +354,13 @@ private:
         render_backend_type type{};
         //pipeline_id default_pipe{};
     };
+    context context_{};
 
+
+    // think it as GPU drive's command list?
     struct command_list_context
     {
-        uint vertex_count{};
+        uint vertex_count{}; 
         uint index_count{};
 
         shader_id   shd_id{};
@@ -367,15 +375,19 @@ private:
 
         //bool first_vertex_buffer{ true };
     };
+    command_list_context ctx_{}; // rename: cur_cmd_
 
-    context context_{};
-
-    command_list_context ctx_{}; // rename: cmd_
     std::vector<command_list> command_queue_{};
 
     // window_ptr window_{}; event
     render_backend_ptr backend_{};
     render_desc_pool& pool_;
+};
+
+// for openGL, D3D11
+class classic_render_device : public render_device
+{
+
 };
 
 using render_device_ptr = std::unique_ptr<render_device>;

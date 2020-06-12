@@ -96,10 +96,10 @@ void render_device::bind_buffer(const buffer_id id, const std::vector<attribute_
     if(desc.type == buffer_type::vertex)
         ctx_.vertex_count = desc.size;
 
-    std::vector<size_t> attrs_, slots_;
 
     const auto& buf_layout = pool_.get(id).layout;
     const auto& shd_layout = ctx_.shd.layout;
+    std::vector<size_t> attrs_, slots_;
 
     if (usages.size() == 0)
     {
@@ -122,30 +122,30 @@ void render_device::bind_buffer(const buffer_id id, const std::vector<attribute_
 
         for (auto usage : usages)
         {
-            auto idx0 = index(buf_layout, [usage](const vertex_attribute& attr)
+            auto buf_idx = index(buf_layout, [usage](const vertex_attribute& attr)
             {
                 return attr.usage() == usage;
             });
-            DCHECK(idx0.has_value()) << "invaild vertex attribute";
+            DCHECK(buf_idx.has_value()) << "invaild vertex attribute";
 
-            auto idx1 = index(shd_layout, [usage](const vertex_attribute& attr)
+            auto shd_idx = index(shd_layout, [usage](const vertex_attribute& attr)
             {
                 return attr.usage() == usage;
             });
-            DCHECK(idx1.has_value()) << "invaild vertex attribute";
+            DCHECK(shd_idx.has_value()) << "invaild vertex attribute";
 
-            DCHECK(buf_layout[idx0.value()] == shd_layout[idx1.value()]) << "not same vertex attribute";
+            DCHECK(buf_layout[buf_idx.value()] == shd_layout[shd_idx.value()]) << "not same vertex attribute";
 
-            attrs_.push_back(idx0.value());
-            slots_.push_back(idx1.value());
+            attrs_.push_back(buf_idx.value());
+            slots_.push_back(shd_idx.value());
 
             // WARNING: not complete
             if (usage == attribute_usage::instance_model)
             {
                 for (size_t i : range(1, 4))
                 {
-                    attrs_.push_back(idx0.value() + i);
-                    slots_.push_back(idx1.value() + i);
+                    attrs_.push_back(buf_idx.value() + i);
+                    slots_.push_back(shd_idx.value() + i);
                 }
             }
         }
@@ -161,6 +161,8 @@ void render_device::execute_command_list(const command_list& cmds)
 {
     const auto& cs = cmds.commands_();
 
+    // check cmds
+    {
     DCHECK(cs.size() > 2);
 
     DCHECK(
@@ -168,14 +170,14 @@ void render_device::execute_command_list(const command_list& cmds)
         (cs.back().type_ == command_type::end_frame))
         << "first cmd must be begin_xx_frame and last cmd must be end_frame";
 
-    DCHECK(std::none_of(++cs.cbegin(), --cs.cend(), [](const command& cmd) 
-    {
-        return 
-            (cmd.type_ == command_type::begin_default_frame) ||
-            (cmd.type_ == command_type::begin_frame) ||
-            (cmd.type_ == command_type::end_frame);
-    })) << "cmds in the middle can't be begin_xx_frame or end_frame";
-
+    DCHECK(std::none_of(++cs.cbegin(), --cs.cend(), [](const command& cmd)
+        {
+            return
+                (cmd.type_ == command_type::begin_default_frame) ||
+                (cmd.type_ == command_type::begin_frame) ||
+                (cmd.type_ == command_type::end_frame);
+        })) << "cmds in the middle can't be begin_xx_frame or end_frame";
+    }
     // TOCHECK
 
     // TODO: better way
