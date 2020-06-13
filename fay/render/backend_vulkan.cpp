@@ -26,6 +26,14 @@ struct texture
     }
 };
 
+struct respack
+{
+    respack() {}
+    respack(const respack_desc& desc)
+    {
+    }
+};
+
 struct shader
 {
     shader() {}
@@ -64,7 +72,7 @@ private:
     };
     context ctx_{};
 
-    using render_pool = resource_pool<buffer, texture, shader, pipeline, frame>;
+    using render_pool = resource_pool<buffer, texture, respack, shader, pipeline, frame>;
     render_pool pool_{};
 
 public:

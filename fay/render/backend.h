@@ -30,14 +30,14 @@ public:
     // resource creation, updating and destruction
     virtual   buffer_id create(const   buffer_desc& desc) = 0;
     virtual  texture_id create(const  texture_desc& desc) = 0;
-    virtual  respack_id create(const  respack_desc& desc) {}
+    virtual  respack_id create(const  respack_desc& desc) { return respack_id{ 0 }; }
     virtual   shader_id create(const   shader_desc& desc) = 0;
     virtual pipeline_id create(const pipeline_desc& desc) = 0;
     virtual    frame_id create(const    frame_desc& desc) = 0;
 
     virtual void update( buffer_id id, const void* data, int size) = 0;
     virtual void update(texture_id id, const void* data) = 0;
-    virtual void update(respack_id id, const void* data) {}
+    virtual void update(respack_id id, const respack_desc& update_desc) {}
 
     virtual void destroy(  buffer_id id) = 0;
     virtual void destroy( texture_id id) = 0;

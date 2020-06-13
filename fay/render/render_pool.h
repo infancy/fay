@@ -200,7 +200,7 @@ public:
     virtual bool contains(pipeline_id id) override { return contains_(id); }
     virtual bool contains(   frame_id id) override { return contains_(id); }
 
-    // interface provided for render_device
+    //! get desc
     virtual const   buffer_desc& get(  buffer_id id) override { return   buffer_map[id.value].desc; }
     virtual const  texture_desc& get( texture_id id) override { return  texture_map[id.value].desc; }
     virtual const  respack_desc& get( respack_id id) override { return  respack_map[id.value].desc; }
@@ -208,6 +208,7 @@ public:
     virtual const pipeline_desc& get(pipeline_id id) override { return pipeline_map[id.value].desc; }
     virtual const    frame_desc& get(   frame_id id) override { return    frame_map[id.value].desc; }
 
+    //! get data
     // TODO: add const
     Buffer&   operator[](  buffer_id id) { return   buffer_map[id.value].value; }
     Texture&  operator[]( texture_id id) { return  texture_map[id.value].value; }
@@ -217,7 +218,7 @@ public:
     Frame&    operator[](   frame_id id) { return    frame_map[id.value].value; }
 
     // TODO: cache them
-    // Or don't make this improvement, after all, maybe there's little performance boost.
+    // or don't make this improvement, after all, maybe there's little performance boost.
     void erase(  buffer_id id) {   buffer_map.erase(id.value); }
     void erase( texture_id id) {  texture_map.erase(id.value); }
     void erase( respack_id id) {  respack_map.erase(id.value); }

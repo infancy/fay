@@ -90,7 +90,9 @@ FAY_SMART_COM_PTR(ID3D11DepthStencilState);
 FAY_SMART_COM_PTR(ID3D11BlendState);
 
 
+FAY_SMART_COM_PTR(ID3D12Device);
 FAY_SMART_COM_PTR(ID3D12Device6);
+FAY_SMART_COM_PTR(ID3D12Debug);
 FAY_SMART_COM_PTR(ID3D12Debug3);
 FAY_SMART_COM_PTR(ID3D12DebugDevice1);
 FAY_SMART_COM_PTR(ID3D12CommandQueue);
@@ -123,6 +125,7 @@ const D3D_FEATURE_LEVEL D3D_FEATURE_LEVELS[] =
 
 #pragma region utility function
 
+/*
 IDXGIAdapter3Ptr FindAdapter()
 {
 
@@ -132,6 +135,7 @@ IDXGISwapChain4Ptr CreateSwapChain()
 {
 
 }
+*/
 
 #pragma endregion
 

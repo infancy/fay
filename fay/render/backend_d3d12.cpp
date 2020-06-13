@@ -88,6 +88,8 @@ struct descriptor
 
     uint32_t heap_offset;
     uint32_t root_parameter_index;
+
+    descriptor() {}
 };
 
 // RootSignature
@@ -125,7 +127,7 @@ struct respack
 
 struct shader
 {
-    std::vector<respack_layout> respack_layouts; // TODO: cache them
+    //std::vector<respack_layout> respack_layouts; // TODO: cache them
 
     shader() {}
     shader(shader_desc desc)
@@ -165,6 +167,11 @@ private:
     {
         IDXGIAdapter3Ptr adapter;
         D3D_FEATURE_LEVEL featureLevel;
+
+        IDXGIAdapter_(IDXGIAdapter3Ptr adapter, D3D_FEATURE_LEVEL featureLevel) :
+            adapter { adapter },
+            featureLevel{ featureLevel }
+        {}
     };
 
     struct Queue_
@@ -193,7 +200,7 @@ private:
     #ifdef FAY_DEBUG
         ID3D12DebugDevice1Ptr mDebugDevice;
     #endif
-        ID3D12Device6Ptr mDevice;
+        ID3D12DevicePtr mDevice;
         Queue_ mGraphicsQueue; // use the graphics queue as present queue
         //Queue_ mPresentQueue;
         ID3D12CommandAllocatorPtr mCommandAllocator;
@@ -261,7 +268,7 @@ private:
 
         dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 
-        ID3D12Debug3Ptr debugController;
+        ID3D12DebugPtr debugController;
         ThrowIfFailed(
             D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
 
@@ -533,6 +540,7 @@ private:
 
     bool resize_render_target()
     {
+        return false;
     }
 
 public:
@@ -633,6 +641,18 @@ public:
 
     virtual void update(buffer_id id, const void* data, int size) override {}
     virtual void update(texture_id id, const void* data) override {}
+    virtual void update(respack_id id, const respack_desc& update_desc) override
+    {
+        const auto& create_desc = pool_.get(id);
+        respack& pack = pool_[id];
+
+        // check
+
+        if (update_desc.uniform_buffers.size() > 0)
+        {
+
+        }
+    }
 
     virtual void destroy(buffer_id id) override {}
     virtual void destroy(texture_id id) override {}
