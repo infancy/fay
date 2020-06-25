@@ -104,7 +104,7 @@ namespace detail
     inline hasher hasher_;
 }
 
-uint64_t hash_ints()
+inline uint64_t hash_ints()
 {
 
 
