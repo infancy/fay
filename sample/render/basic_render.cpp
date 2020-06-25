@@ -38,6 +38,117 @@ public:
     }
 };
 
+// swapchain_
+// frame_
+// pipeline_
+
+class shader_ : public fay::app
+{
+public:
+    struct render_paras
+    {
+        glm::vec4 window{};
+        int flag;
+    };
+
+    fay::buffer_id buf_id;
+
+    render_paras paras1, paras2;
+    fay::command_list pass1, pass2;
+
+public:
+    // using fay::app;
+    shader_(const fay::app_desc& _desc) : fay::app(_desc)
+    {
+        desc.window.title = "triangle";
+    }
+
+    void setup() override
+    {
+        float vertices[] =
+        {
+             0.6f,  0.45f, 0.5f,  1.f, 0.f, // right top
+             0.6f, -0.45f, 0.5f,  1.f, 1.f, // right bottom
+            -0.6f, -0.45f, 0.5f,  0.f, 1.f, // left bottom
+            -0.6f,  0.45f, 0.5f,  0.f, 0.f, // left top
+
+            -0.85f, -0.95f, 0.5f,  1.f, 1.f, // right bottom
+            -0.95f, -0.95f, 0.5f,  0.f, 1.f, // left bottom
+            -0.90f,  0.95f, 0.5f,  0.f, 0.f, // left top
+        };
+        unsigned int indices[] =
+        {  // note that we start from 0!
+            0, 1, 3,  // first Triangle
+            1, 2, 3,   // second Triangle
+
+            4, 5, 6
+        };
+        fay::buffer_desc bd;
+        {
+            bd.name = "triangle_vb";
+            bd.size = 7;// sizeof(vertices);
+            bd.stride = 20; // TODO: do it by helper functions;
+            bd.data = vertices;
+            bd.type = fay::buffer_type::vertex;
+
+            bd.layout =
+            {
+                {fay::attribute_usage::position,  fay::attribute_format::float3},
+                {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
+            };
+        }
+        fay::buffer_desc id("triangle_ib", 9, indices);
+        auto triangle_vb = device->create(bd);
+        auto triangle_ib = device->create(id);
+
+        fay::image img("texture/awesomeface.png", true);
+        auto triangle_tbo = create_2d(this->device, "hello", img);
+
+        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/0_basic.vs", "gfx/test/0_basic.fs", desc.render.backend);
+        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/1_buffer.vs", "gfx/test/1_buffer.fs", desc.render.backend);
+        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/2_texture.vs", "gfx/test/2_texture.fs", desc.render.backend);
+        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/3_uniform.vs", "gfx/test/3_uniform.fs", desc.render.backend);
+        auto shd_id = device->create(sd);
+
+        fay::pipeline_desc pd;
+        pd.name = "triangles";
+        pd.primitive_type = fay::primitive_type::triangles;
+        pd.cull_mode = fay::cull_mode::none;
+        auto pipe_id = device->create(pd);
+
+        paras1.window = glm::vec4(0.f, 0.f, 1080.f, 720.f);
+        paras1.flag = 1;
+
+        paras2.window = glm::vec4(0.f, 0.f, 1080.f, 720.f);
+        paras2.flag = 0;
+
+        pass1
+            .begin_default(pipe_id, shd_id)
+            .bind_textures({ triangle_tbo })
+            .bind_index(triangle_ib)
+            .bind_vertex(triangle_vb)
+            // TODO: rename bind_uniform/bind_buffer
+            .bind_uniform_block("para", fay::memory{ (uint8_t*)&paras1, sizeof(render_paras) })
+            .draw_index(6, 0)
+            .bind_uniform_block("para", fay::memory{ (uint8_t*)&paras2, sizeof(render_paras) })
+            .draw_index(3, 6)
+            //.draw(6)
+            .end_frame();
+    }
+
+    void render() override
+    {
+        device->execute(pass1);
+    }
+};
+
+// vertex_index_
+// uniform_
+// texture_
+// 
+
+// buffer_texture_
+
 // texture
 class triangle : public fay::app
 {

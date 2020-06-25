@@ -75,32 +75,6 @@ UINT8 color_write_mask(blend_mask mask)
 inline namespace type
 {
 
-const inline enum_class_map<attribute_usage, const char*>
-semantic_name_map
-{
-    { attribute_usage::position,       "POSITION" },
-    { attribute_usage::normal,         "NORMAL" },
-    { attribute_usage::texcoord0,      "TEXCOORD" },
-    { attribute_usage::tangent,        "TANGENT" },
-    { attribute_usage::bitangent,      "BITANGENT" },
-    { attribute_usage::instance_model, "INSTANCE_MODEL" },
-};
-
-const inline enum_class_map<attribute_format, DXGI_FORMAT>
-vertex_format_map
-{
-    { attribute_format::float1, DXGI_FORMAT_R32_FLOAT },
-    { attribute_format::float2, DXGI_FORMAT_R32G32_FLOAT },
-    { attribute_format::float3, DXGI_FORMAT_R32G32B32_FLOAT },
-    { attribute_format::float4, DXGI_FORMAT_R32G32B32A32_FLOAT },
-
-    { attribute_format::short2, DXGI_FORMAT_R16G16_SINT },
-    { attribute_format::short4, DXGI_FORMAT_R16G16B16A16_SINT },
-
-    { attribute_format::byte4,  DXGI_FORMAT_R8G8B8A8_SINT },
-    { attribute_format::ubyte4, DXGI_FORMAT_R8G8B8A8_UINT },
-};
-
 struct buffer // : public buffer_desc
 {
     // init by buffer_desc
@@ -145,10 +119,9 @@ struct buffer // : public buffer_desc
 
         stride = desc.stride; // TODO
 
-        if (desc.type == buffer_type::vertex || desc.type == buffer_type::instance)
+        if (desc.is_vertex_or_instance())
         {
             uint offset = 0;
-
             for (uint i = 0; i < desc.layout.size(); ++i)
             {
                 auto& da = desc.layout[i];
@@ -158,9 +131,8 @@ struct buffer // : public buffer_desc
                 a.SemanticIndex = da.index();
                 a.Format = vertex_format_map.at(da.format());
 
-                // a.InputSlot = 0;
                 a.AlignedByteOffset = offset; 
-                    offset += attribute_format_map.at(da.format()).size;
+                offset += attribute_format_map.at(da.format()).size;
 
                 // a.InputSlotClass = desc.type == buffer_type::vertex ? D3D11_INPUT_PER_VERTEX_DATA : D3D11_INPUT_PER_INSTANCE_DATA;
                 // a.InstanceDataStepRate = 0;
@@ -370,6 +342,7 @@ struct pipeline
         // primitive type
         primitive_type = static_cast<D3D_PRIMITIVE_TOPOLOGY>(primitive_type_map.at(desc.primitive_type).d3d11);
 
+
         // rasterization state
         alpha_to_coverage_enabled = desc.alpha_to_coverage_enabled;
         cull_mode              = static_cast<D3D11_CULL_MODE>(cull_mode_map.at(desc.cull_mode).d3d11);
@@ -379,9 +352,11 @@ struct pipeline
         depth_bias_slope_scale = desc.depth_bias_slope_scale;
         depth_bias_clamp       = desc.depth_bias_clamp;
 
+
         // depth-stencil state
         depth_enabled = desc.depth_enabled;
         depth_compare_op = static_cast<D3D11_COMPARISON_FUNC>(compare_op_map.at(desc.depth_compare_op).d3d11);
+
 
         auto copy_stencil_state = [](pipeline::stencil_state& dst, const pipeline_desc::stencil_state src)
         {
@@ -399,6 +374,7 @@ struct pipeline
         stencil_test_mask  = desc.stencil_test_mask;
         stencil_write_mask = desc.stencil_write_mask;
         stencil_ref        = desc.stencil_ref;
+
 
         // alpha-blending state
         auto copy_blend_state = [](pipeline::blend_state& dst, const pipeline_desc::blend_state src)
@@ -420,6 +396,8 @@ struct pipeline
         blend_write_mask = color_write_mask(desc.blend_write_mask);
     }
 };
+
+
 
 struct attachment
 {
@@ -477,7 +455,7 @@ public:
     backend_d3d11(const render_desc& desc)
         : render_backend(desc)
     {
-        create_device();
+        create_device_command();
         resize_render_target();
     }
     ~backend_d3d11()
@@ -787,6 +765,7 @@ public:
         memset(&bs_desc, 0, sizeof(bs_desc));
         bs_desc.AlphaToCoverageEnable                 = pipe.alpha_to_coverage_enabled;
         bs_desc.IndependentBlendEnable                = FALSE;
+        // TODO
         bs_desc.RenderTarget[0].BlendEnable           = pipe.blend_enabled;
 
         bs_desc.RenderTarget[0].SrcBlend              = pipe.blend_rgb.src_factor;
@@ -1164,7 +1143,7 @@ protected:
     virtual render_desc_pool& get_render_desc_pool() override { return pool_; }
 
 private:
-    bool create_device()
+    bool create_device_command()
     {
         if (render_desc_.enable_msaa)
         {

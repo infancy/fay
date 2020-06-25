@@ -76,7 +76,12 @@ constexpr float gamma(int n)
 	return (n * MachineEpsilon) / (1 - n * MachineEpsilon);
 }
 
+constexpr uint32_t round_up(uint32_t value, uint32_t multiple)
+{
+    FAY_DCHECK(multiple > 0);
 
+    return ((value + multiple - 1) / multiple) * multiple;
+}
 
 // -------------------------------------------------------------------------------------------------
 // numeric

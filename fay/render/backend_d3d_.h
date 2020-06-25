@@ -58,6 +58,8 @@ using namespace std::string_literals;
 namespace fay::d3d
 {
 
+#pragma region com_ptr
+
 FAY_SMART_COM_PTR(IUnknown);
 FAY_SMART_COM_PTR(ID3DBlob);
 
@@ -110,7 +112,11 @@ FAY_SMART_COM_PTR(ID3D12CommandSignature);
 //FAY_SMART_COM_PTR(ID3D12DeviceRaytracingPrototype);
 //FAY_SMART_COM_PTR(ID3D12CommandListRaytracingPrototype);
 
-#pragma region utility data
+#pragma endregion com_ptr
+
+
+
+#pragma region enum
 
 const D3D_FEATURE_LEVEL D3D_FEATURE_LEVELS[] =
 {
@@ -123,7 +129,52 @@ const D3D_FEATURE_LEVEL D3D_FEATURE_LEVELS[] =
 
 #pragma endregion
 
-#pragma region utility function
+
+
+#pragma region type
+
+const inline enum_class_map<attribute_usage, const char*>
+semantic_name_map
+{
+    { attribute_usage::position,       "POSITION" },
+    { attribute_usage::normal,         "NORMAL" },
+    { attribute_usage::tangent,        "TANGENT" },
+    { attribute_usage::bitangent,      "BITANGENT" },
+    { attribute_usage::texcoord0,      "TEXCOORD" },
+    { attribute_usage::instance_model, "INSTANCE_MODEL" },
+};
+
+const inline enum_class_map<attribute_format, DXGI_FORMAT>
+vertex_format_map
+{
+    { attribute_format::float1, DXGI_FORMAT_R32_FLOAT },
+    { attribute_format::float2, DXGI_FORMAT_R32G32_FLOAT },
+    { attribute_format::float3, DXGI_FORMAT_R32G32B32_FLOAT },
+    { attribute_format::float4, DXGI_FORMAT_R32G32B32A32_FLOAT },
+
+    { attribute_format::short2, DXGI_FORMAT_R16G16_SINT },
+    { attribute_format::short4, DXGI_FORMAT_R16G16B16A16_SINT },
+
+    { attribute_format::byte4,  DXGI_FORMAT_R8G8B8A8_SINT },
+    { attribute_format::ubyte4, DXGI_FORMAT_R8G8B8A8_UINT },
+};
+
+const inline enum_class_map<primitive_type, D3D_PRIMITIVE_TOPOLOGY>
+primitive_topology_map
+{
+    { primitive_type::points,         D3D_PRIMITIVE_TOPOLOGY_POINTLIST },
+    { primitive_type::lines,          D3D_PRIMITIVE_TOPOLOGY_LINELIST },
+    { primitive_type::line_strip,     D3D_PRIMITIVE_TOPOLOGY_LINESTRIP },
+    { primitive_type::triangles,      D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST },
+    { primitive_type::triangle_strip, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP },
+};
+
+
+#pragma endregion
+
+
+
+#pragma region function
 
 /*
 IDXGIAdapter3Ptr FindAdapter()

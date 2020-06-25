@@ -122,8 +122,12 @@ public:
 
         // clear_viewport, clear_scissor -> -(y+h)+frame.width
 
+        backend_->begin();
+
         for (const auto& cmds : command_queue_)
             execute_command_list(cmds);
+
+        backend_->end();
 
         command_queue_.clear();
     }
@@ -169,7 +173,7 @@ private:
 
         ctx_.is_offscreen = true;
         ctx_.frm_id = id;
-        ctx_.frm = pool_.get(id);
+        ctx_.frm = pool_.desc(id);
 
         backend_->begin_frame(id);
     }
@@ -235,7 +239,7 @@ private:
         DCHECK(query_valid(id)) << "invalid id";
 
         ctx_.shd_id = id;
-        ctx_.shd = pool_.get(id);
+        ctx_.shd = pool_.desc(id);
 
         backend_->apply_shader(id);
     }
@@ -263,7 +267,7 @@ private:
         auto idx = index(ctx_.shd.samplers, [sampler_name](auto&& sampler) { return sampler.name == sampler_name; });
 
         DCHECK(idx.has_value()) << "unknown texture sampler";
-        DCHECK(ctx_.shd.samplers[idx.value()].type == pool_.get(id).type) << "texture's type and sampler's isn't matching";
+        DCHECK(ctx_.shd.samplers[idx.value()].type == pool_.desc(id).type) << "texture's type and sampler's isn't matching";
 
         auto stage = (idx.value() < ctx_.shd.vs_samplers_sz) ? shader_stage::vertex : shader_stage::fragment; // !!!
 
@@ -314,7 +318,7 @@ private:
     {
         DCHECK(query_valid(id)) << "invalid id";
 
-        ctx_.index_count = pool_.get(id).size; // ???: cache
+        ctx_.index_count = pool_.desc(id).size; // ???: cache
         backend_->bind_index(id);
     }
     void bind_buffer(const buffer_id id, const std::vector<attribute_usage>& attrs, size_t instance_rate);

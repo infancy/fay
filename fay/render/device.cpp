@@ -14,7 +14,7 @@ render_device::render_device(const render_desc& desc) :
 
     // TODO: create other with "id=0"
     ctx_.pipe_id = create(pipeline_desc());
-    ctx_.pipe = pool_.get(ctx_.pipe_id);
+    ctx_.pipe = pool_.desc(ctx_.pipe_id);
     // make device have a old_pipe
     backend_->apply_pipeline(ctx_.pipe_id, {true, true, true, true});
 
@@ -35,7 +35,7 @@ void render_device::apply_pipeline(const pipeline_id id)
 
     const auto old = ctx_.pipe; // const auto& old = ctx_.pipe;
     ctx_.pipe_id = id;
-    ctx_.pipe = pool_.get(ctx_.pipe_id);
+    ctx_.pipe = pool_.desc(ctx_.pipe_id);
     const auto& now = ctx_.pipe;
     
     std::array<bool, 4> flags{};
@@ -88,7 +88,7 @@ void render_device::bind_buffer(const buffer_id id, const std::vector<attribute_
 {
     DCHECK(query_valid(id)) << "invalid id";
 
-    auto desc = pool_.get(id);
+    auto desc = pool_.desc(id);
     DCHECK(
         (desc.type == buffer_type::vertex && instance_rate == 0) ||
         (desc.type == buffer_type::instance /*&& instance_rate * desc.size <= ctx_.vertex_count*/)); // TODO???: draw_instance before bind_instance
@@ -97,7 +97,7 @@ void render_device::bind_buffer(const buffer_id id, const std::vector<attribute_
         ctx_.vertex_count = desc.size;
 
 
-    const auto& buf_layout = pool_.get(id).layout;
+    const auto& buf_layout = pool_.desc(id).layout;
     const auto& shd_layout = ctx_.shd.layout;
     std::vector<size_t> attrs_, slots_;
 
@@ -183,7 +183,7 @@ void render_device::execute_command_list(const command_list& cmds)
     // TODO: better way
     ctx_ = {};
     ctx_.pipe_id = pipeline_id(1);
-    ctx_.pipe = pool_.get(ctx_.pipe_id);
+    ctx_.pipe = pool_.desc(ctx_.pipe_id);
 
     for (const auto& cmd : cs)
         execute_command(cmd);

@@ -48,6 +48,9 @@ public:
 
     // render
 
+    virtual void begin() {}
+    virtual void end() {}
+
     // WARNNING: use 0 as default frame(rather than invalid value) by limitations of command_list
     virtual void begin_frame(frame_id id) = 0;
     virtual void end_frame() = 0;
@@ -62,6 +65,7 @@ public:
     virtual void apply_pipeline(const pipeline_id id, std::array<bool, 4>) = 0;
     virtual void apply_shader(const shader_id id) = 0;
 
+    virtual void bind_respack(const respack_id& id) {}
     virtual void bind_index(const buffer_id id) = 0;
     virtual void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) = 0;
 
@@ -71,8 +75,6 @@ public:
     virtual void bind_uniform(const std::string& name, command::uniform uniform, shader_stage stage = shader_stage::none) = 0;
     virtual void bind_uniform(uint ub_index, const void* data, uint size, shader_stage stage = shader_stage::none) = 0;
     virtual void bind_texture(const texture_id id, int tex_index, const std::string& sampler, shader_stage stage = shader_stage::none) = 0;
-
-    virtual void bind_respack() {}
 
     virtual void draw(uint count, uint first, uint instance_count) = 0;
     virtual void draw_index(uint count, uint first, uint instance_count) = 0;

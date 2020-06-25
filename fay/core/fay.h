@@ -36,10 +36,12 @@
 #define FAY_DLOG DLOG
 
 #if defined(FAY_IN_MSVC)
-#pragma warning(disable : 4305)  // double constant assigned to float
-#pragma warning(disable : 4244)  // int -> float conversion
-#pragma warning(disable : 4843)  // double -> float conversion
+#pragma warning(disable : 4100)  // 'identifier' : unreferenced formal parameter
+#pragma warning(disable : 4189)  // 'identifier' : local variable is initialized but not referenced
 #pragma warning(disable : 4201)  // nonstandard extension used : nameless struct/union
+#pragma warning(disable : 4244)  // int -> float conversion
+#pragma warning(disable : 4305)  // double constant assigned to float
+#pragma warning(disable : 4843)  // double -> float conversion
 #endif
 
 #define FAY_UNIQUE_PTR( type ) \
@@ -66,6 +68,8 @@ using ushort = uint16_t;
 using uint   = uint32_t;
 using ulong  = uint32_t;
 using ullong = uint64_t;
+
+using int_t  = int64_t;
 
 using string = std::string;
 using string_view = std::string_view;

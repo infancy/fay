@@ -144,19 +144,38 @@ public:
     virtual bool contains(pipeline_id id) = 0;
     virtual bool contains(   frame_id id) = 0;
 
-    virtual const   buffer_desc& get(  buffer_id id) = 0;
-    virtual const  texture_desc& get( texture_id id) = 0;
-    virtual const  respack_desc& get( respack_id id) = 0;
-    virtual const   shader_desc& get(  shader_id id) = 0;
-    virtual const pipeline_desc& get(pipeline_id id) = 0;
-    virtual const    frame_desc& get(   frame_id id) = 0;
+    virtual const   buffer_desc& desc(  buffer_id id) = 0;
+    virtual const  texture_desc& desc( texture_id id) = 0;
+    virtual const  respack_desc& desc( respack_id id) = 0;
+    virtual const   shader_desc& desc(  shader_id id) = 0;
+    virtual const pipeline_desc& desc(pipeline_id id) = 0;
+    virtual const    frame_desc& desc(   frame_id id) = 0;
     
     // virtual frame_desc& get(frame_id id, uint elem_index) = 0;
 };
 
-template<typename Buffer, typename Texture, typename Respack, typename Shader, typename Pipeline, typename Frame>
-class resource_pool : public render_desc_pool
+/*
+template<typename Descriptor, typename Implement>
+struct desc_value_pair_
 {
+    union
+    {
+        struct
+        {
+            Descriptor desc;
+            Implement  impl;
+        };
+        struct : Descriptor, Implement {} composite;
+    };
+    desc_value_pair_() {}
+    desc_value_pair_(Descriptor desc) : desc{ desc }, impl{ desc } {}
+};
+*/
+
+template<typename Buffer, typename Texture, typename Respack, typename Shader, typename Pipeline, typename Frame>
+class resource_pool : public render_desc_pool // , public base_pool<Buffer>, public base_pool<Texture>...
+{
+// private:
 public:
     template<typename Descriptor, typename Value>
     struct desc_value_pair_
@@ -168,12 +187,12 @@ public:
         desc_value_pair_(Descriptor desc) : desc{ desc }, value{ desc } {}
     };
 
-    using   buffer_pair = desc_value_pair_<  buffer_desc, Buffer>;
-    using  texture_pair = desc_value_pair_< texture_desc, Texture>;
-    using  respack_pair = desc_value_pair_< respack_desc, Respack>;
-    using   shader_pair = desc_value_pair_<  shader_desc, Shader>;
+    using   buffer_pair = desc_value_pair_<  buffer_desc,   Buffer>;
+    using  texture_pair = desc_value_pair_< texture_desc,  Texture>;
+    using  respack_pair = desc_value_pair_< respack_desc,  Respack>;
+    using   shader_pair = desc_value_pair_<  shader_desc,   Shader>;
     using pipeline_pair = desc_value_pair_<pipeline_desc, Pipeline>;
-    using    frame_pair = desc_value_pair_<   frame_desc, Frame>;
+    using    frame_pair = desc_value_pair_<   frame_desc,    Frame>;
 
 public:
     resource_pool() {}
@@ -201,12 +220,12 @@ public:
     virtual bool contains(   frame_id id) override { return contains_(id); }
 
     //! get desc
-    virtual const   buffer_desc& get(  buffer_id id) override { return   buffer_map[id.value].desc; }
-    virtual const  texture_desc& get( texture_id id) override { return  texture_map[id.value].desc; }
-    virtual const  respack_desc& get( respack_id id) override { return  respack_map[id.value].desc; }
-    virtual const   shader_desc& get(  shader_id id) override { return   shader_map[id.value].desc; }
-    virtual const pipeline_desc& get(pipeline_id id) override { return pipeline_map[id.value].desc; }
-    virtual const    frame_desc& get(   frame_id id) override { return    frame_map[id.value].desc; }
+    virtual const   buffer_desc& desc(  buffer_id id) override { return   buffer_map[id.value].desc; }
+    virtual const  texture_desc& desc( texture_id id) override { return  texture_map[id.value].desc; }
+    virtual const  respack_desc& desc( respack_id id) override { return  respack_map[id.value].desc; }
+    virtual const   shader_desc& desc(  shader_id id) override { return   shader_map[id.value].desc; }
+    virtual const pipeline_desc& desc(pipeline_id id) override { return pipeline_map[id.value].desc; }
+    virtual const    frame_desc& desc(   frame_id id) override { return    frame_map[id.value].desc; }
 
     //! get data
     // TODO: add const
@@ -216,6 +235,9 @@ public:
     Shader&   operator[](  shader_id id) { return   shader_map[id.value].value; }
     Pipeline& operator[](pipeline_id id) { return pipeline_map[id.value].value; }
     Frame&    operator[](   frame_id id) { return    frame_map[id.value].value; }
+
+
+    virtual const  texture_pair& pair(texture_id id) { return  texture_map[id.value]; }
 
     // TODO: cache them
     // or don't make this improvement, after all, maybe there's little performance boost.

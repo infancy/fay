@@ -14,6 +14,8 @@
 namespace fay
 {
 
+#pragma region const
+
 // enum { ... };
 // TODO: const_t, const32_t, constant...
 constexpr inline uint InvalidId               = 0;
@@ -29,6 +31,8 @@ constexpr inline uint MaxUniformBlocksMembers = 16;
 constexpr inline uint MaxVertexAttributes     = 16;
 constexpr inline uint MaxMipmaps              = 16;
 constexpr inline uint MaxTextureArrayLayers   = 128;
+
+#pragma endregion const
 
 #pragma region enum
 
@@ -51,6 +55,7 @@ enum class anti_aliasing
 // render types
 
 // A resource usage hint describing the update strategy of buffers and images.
+// rename: ...
 enum class resource_usage
 {
     // none,
@@ -78,7 +83,22 @@ enum class buffer_type
 	//index16,
 	index,
     instance,
+
+    indirect = 0x00000004,
+
+    uniform_cbv = 0x00000020,
+
+    storage_srv = 0x00000040,
+    storage_uav = 0x00000080,
+    uniform_texel_srv = 0x00000100,
+    storage_texel_uav = 0x00000200,
+
+    counter_uav = 0x00000400,
+
+    transfer_src_ = 0x00000008,
+    transfer_dst_ = 0x00000010,
 };
+FAY_ENUM_CLASS_OPERATORS(buffer_type)
 
 enum class /*vertex_*/attribute_usage
 {
@@ -133,9 +153,10 @@ enum class /*vertex_*/attribute_format
 
 enum class texture_type
 {
+    one,
 	two,
-	cube,
 	three,
+    cube,
 	array,
 	//data,	// ues 2d texture as array of data
 	//array_data
@@ -166,6 +187,7 @@ struct texture_type_ // : enum_class<texture_type_>
     enums e;
 };
 
+// TODO: rename or remove
 enum class texture_usage
 {
     base_color,
@@ -180,6 +202,26 @@ enum class texture_usage
     unknown3,
 };
 
+enum class texture_usage_
+{
+    undefined = 0x00000000,
+
+    sampled_texture = 0x00000004,
+    storage_texture = 0x00000008,
+
+    color_attachment = 0x00000010,
+    depth_stencil_attachment = 0x00000020,
+
+    present = 0x00000100,
+
+    resolve_src_ = 0x00000040,
+    resolve_dst_ = 0x00000080,
+
+    transfer_src_ = 0x00000001,
+    transfer_dst_ = 0x00000002,
+};
+FAY_ENUM_CLASS_OPERATORS(texture_usage_)
+
 enum class render_target
 {
     none          = 0b0000,
@@ -187,6 +229,7 @@ enum class render_target
     depth         = 0b0010,
     stencil       = 0b0100,
     depth_stencil = 0b1000,
+    depth_or_stencil = depth | stencil | depth_stencil,
     DepthStencil  = depth | stencil | depth_stencil
 };
 FAY_ENUM_CLASS_OPERATORS(render_target)
@@ -231,11 +274,13 @@ enum class shader_stage
     none,
 
 	vertex,
+    hull,
+    domn,
 	geometry,
 	fragment,
 
-    mesh,
     compute,
+    mesh,
 };
 
 enum class uniform_type
@@ -308,6 +353,13 @@ enum class cull_mode
 	none,
 	front,
 	back,
+};
+
+enum class fill_mode
+{
+    none,
+    wireframe,
+    solid,
 };
 
 // used for depth and stencil tests
@@ -426,6 +478,8 @@ FAY_RENDER_TYPE_ID(frame)
 
 #undef FAY_RENDER_TYPE_ID
 
+
+
 // a matrix instance : { fay::attribute_usage::instance_matrix,  fay::attribute_format::floatx, 16 }
 class vertex_attribute
 {
@@ -460,8 +514,8 @@ private:
 
 struct attribute_detail // rename: attribute_num_bytesize
 {
-    size_t num;
-    size_t size; // num * sizeof(T)
+    size_t num; // count
+    size_t size; // num * sizeof(T), btsz
 };
 
 // TODO: rename vertex_attribute_format_map
@@ -539,23 +593,34 @@ public:
     }
 };
 
-// vertex buffer, index buffer, instance buffer
+// vertex buffer, index buffer, indirect buffer, uniform buffer
 struct buffer_desc
 {
 public:
     std::string name { "defult" };
 
     uint    size{}; // vertex/index nums
+
+    // TODO: const byte* data
     const void* data{}; // data's length is size * layout.stride()
+    int_t       btsz{}; // bytes, byte size, padding it???
+    // size, count, num, byte_size, byte_count
+    int_t       count{}; // count() * stride() == btsz, size * stride == bytes
+
     // TODO: remove
     uint    stride{}; // byte sizes of single element. WARNNING: fay can't check if this value is right or not.
 
     buffer_type type     {};
     resource_usage usage { resource_usage::immutable };
 
+
     // used for vertex buffer, instance buffer
     // TODO: improve
     vertex_layout layout{};
+
+    // used for buffer_type::uniform_texel_srv
+    pixel_format pixel_format{};
+
 
     // only used for instance buffer
     // instance buffer update data per instance(or more), instead of updating per vertex.
@@ -563,6 +628,7 @@ public:
     // uint instance_rate{};
 
 public:
+    // set/get
     buffer_desc() = default;
     buffer_desc(std::string_view name, uint size, const void* data, buffer_type type = buffer_type::index, vertex_layout layout = {})
         : name{ name }
@@ -584,7 +650,31 @@ public:
                 break;
         }
     }
+
+    uint vertex_index_size()
+    {
+
+    }
+
+    bool is_vertex_or_instance() const { return type == buffer_type::vertex || type == buffer_type::instance; }
+
+    //int_t count() { return size; }
+
+private:
+    struct vertex_buffer
+    {
+
+    };
+
+    struct struct_buffer
+    {
+
+    };
 };
+
+// buffer_id create_vertex_buffer(...)
+
+
 
 struct texture_desc
 {
@@ -603,6 +693,8 @@ public:
 
     texture_type type{ texture_type::two };
     texture_usage _usage{}; // TODO: rename
+    texture_usage_ usage_{};
+
 	resource_usage usage{ resource_usage::immutable }; // update_rate rate
     // resource_state state{ resource_state::empty };
 
@@ -620,7 +712,7 @@ public:
 
     // rename: target
     render_target as_render_target{ render_target::none }; // used as render target or depth_stencil target is depended by pixel_format
-    uint rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target
+    uint rt_sample_count{ 1 }; // only used when texture is used as render_target or depth_stencil target, if rt_sample_count > 1, use MSAA
 
 public:
     texture_desc() = default; // for texture2d
@@ -693,6 +785,7 @@ public:
 };
 
 
+
 // RootSignature/DescriptorSetLayout
 // shader_resource/resource_set/resource_pack/resource_package/resource_bundle/resource_collection
 struct respack_desc
@@ -704,9 +797,14 @@ struct respack_desc
     std::vector<buffer_id>  buffers{}; // buffers[0] is default vertex buffer
 
     std::vector<texture_id> textures{};
-    std::vector<buffer_id>  uniform_buffers{}; // buffers[0] is default vertex buffer
+    std::vector<buffer_id>  uniform_buffers{};
+    //std::vector<buffer_id>  storage_buffers_srv{};
+    //std::vector<buffer_id>  storage_buffers_uav{};
+    //...
     // texture sampler
 };
+
+
 
 
 
@@ -714,7 +812,64 @@ struct respack_desc
 // shader sources(not filepath) + uniform blocks + texutres 
 struct shader_desc
 {
-public: // type define
+public:
+    struct uniform_block;
+    struct sampler;
+
+public:
+    std::string name{ "defult" };
+
+    /*
+    union
+    {
+        std::string charcode{};
+        const char* bytecode{};
+    }
+    bool use_bytecode{};
+    */
+    std::string vs{};
+    std::string hs{};
+    std::string ds{};
+    std::string gs{};
+    std::string fs{};
+
+    std::string cs{};
+    std::string ms{};
+
+    // TODO
+    vertex_layout layout {};
+
+    uint vs_uniform_block_sz{};
+    uint fs_uniform_block_sz{};
+    std::vector<uniform_block> uniform_blocks;
+
+    // TODO: std::span_view
+    uint vs_samplers_sz{};
+    uint fs_samplers_sz{};
+    std::vector<sampler> samplers{};
+    //std::vector<sampler> vs_samplers{};
+    //std::vector<sampler> fs_samplers{};
+
+public:
+    std::pair<uint, shader_stage> ub_info(const std::string& name, uint size) const
+    {
+        auto opt_idx = fay::index(uniform_blocks, [name, size](auto&& ub)
+        {
+            return (ub.name == name) && (0 == size || ub.size == size);
+        });
+
+        DCHECK(opt_idx.has_value()) << "can't find this uniform_block";
+        uint idx = opt_idx.value();
+
+        DCHECK(size == 0 || size == uniform_blocks[idx].size) << "input unifrom block size isn't match";
+
+        auto stage = (idx < vs_uniform_block_sz) ? shader_stage::vertex : shader_stage::fragment; // !!!
+
+        return { idx, stage };
+    }
+
+public: 
+    // type define
     struct uniform_block
     {
         std::string name{};
@@ -743,60 +898,65 @@ public: // type define
         }
     };
 
-public:
-    std::string name{ "defult" };
-
-    /*
-    union
-    {
-        std::string charcode{};
-        const char* bytecode{};
-    }
-    bool use_bytecode{};
-    */
-    std::string vs{};
-    std::string gs{};
-    std::string fs{};
-
-    vertex_layout layout {};
-
-    uint vs_uniform_block_sz{};
-    uint fs_uniform_block_sz{};
-    std::vector<uniform_block> uniform_blocks;
-
-    // TODO: std::span_view
-    uint vs_samplers_sz{};
-    uint fs_samplers_sz{};
-    std::vector<sampler> samplers{};
-    //std::vector<sampler> vs_samplers{};
-    //std::vector<sampler> fs_samplers{};
-
-public:
-
-    std::pair<uint, shader_stage> ub_info(const std::string& name, uint size) const
-    {
-        auto opt_idx = fay::index(uniform_blocks, [name, size](auto&& ub)
-        {
-            return (ub.name == name) && (0 == size || ub.size == size);
-        });
-
-        DCHECK(opt_idx.has_value()) << "can't find this uniform_block";
-        uint idx = opt_idx.value();
-
-        DCHECK(size == 0 || size == uniform_blocks[idx].size) << "input unifrom block size isn't match";
-
-        auto stage = (idx < vs_uniform_block_sz) ? shader_stage::vertex : shader_stage::fragment; // !!!
-
-        return { idx, stage };
-    }
 };
+
+
+
+// graphics_pipeline_desc, raytracing_pipeline_desc, compute_pipeline_desc
 
 /*
     low level api: pipeline state object
 */
 struct pipeline_desc
 {
+public:
+    // depth-stencil state
+    struct stencil_state
+    {
+        compare_op compare_op{ compare_op::always };
+
+        stencil_op fail_op{ stencil_op::keep }; // stencil_fail(don't care depth test result???)
+        stencil_op depth_fail_op{ stencil_op::keep }; // stencil pass but depth fail
+        stencil_op pass_op{ stencil_op::keep };
+
+        // std::as_const
+        bool operator==(const stencil_state& that) const
+        {
+            return
+                (fail_op == that.fail_op) &&
+                (depth_fail_op == that.depth_fail_op) &&
+                (pass_op == that.pass_op) &&
+                (compare_op == that.compare_op);
+        }
+        bool operator!=(const stencil_state& that) const
+        {
+            return !operator==(that);
+        }
+    };
+
+    // alpha-blending state
+    struct blend_state
+    {
+        blend_factor src_factor{ blend_factor::one };
+        blend_factor dst_factor{ blend_factor::zero };
+        blend_op blend_op{ blend_op::add };
+
+        bool operator==(const blend_state& that) const
+        {
+            return
+                (src_factor == that.src_factor) &&
+                (dst_factor == that.dst_factor) &&
+                (blend_op == that.blend_op);
+        }
+        bool operator!=(const blend_state& that) const
+        {
+            return !operator==(that);
+        }
+    };
+
+public:
     std::string name{ "default" };
+    pipeline_type type{ pipeline_type::rasterization };
 
 	// vertex layout and attribure
     // DOIT: set vertex layout in pipeline_desc
@@ -811,6 +971,7 @@ struct pipeline_desc
     cull_mode cull_mode{ cull_mode::back };
     face_winding face_winding{ face_winding::cw }; // D3D-style
 
+    fill_mode fill_mode{ fill_mode::solid };
 	bool alpha_to_coverage_enabled { false };
 	int rasteriza_sample_count     { 1 }; // if sc > 1, use multisample
 
@@ -820,34 +981,14 @@ struct pipeline_desc
 	float depth_bias_slope_scale   { 0.f };
 	float depth_bias_clamp         { 0.f }; // used on d3d11 
 
-    // depth-stencil state
-    struct stencil_state
-    {
-        compare_op compare_op{ compare_op::always };
 
-        stencil_op fail_op{ stencil_op::keep }; // stencil_fail(don't care depth test result???)
-        stencil_op depth_fail_op{ stencil_op::keep }; // stencil pass but depth fail
-        stencil_op pass_op{ stencil_op::keep };
-
-        // std::as_const
-        bool operator==(const stencil_state& that) const
-        {
-            return
-                (fail_op       == that.fail_op) &&
-                (depth_fail_op == that.depth_fail_op) &&
-                (pass_op       == that.pass_op) &&
-                (compare_op  == that.compare_op);
-        }
-        bool operator!=(const stencil_state& that) const
-        {
-            return !operator==(that);
-        }
-    };
-
+    // depth
     bool depth_enabled{ true }; // depth_mask_write_enabled
     compare_op depth_compare_op{ compare_op::less_equal };
     
-    bool stencil_enabled{ true }; // WARNNING: default open stencil // TODO: def close it
+
+    // stencil
+    bool stencil_enabled{ false }; // WARNNING: default open stencil // TODO: def close it
 
     stencil_state stencil_front{ };
     stencil_state stencil_back{ };
@@ -856,30 +997,13 @@ struct pipeline_desc
 
     uint8_t stencil_write_mask{ 0xff };
 
-	// alpha-blending state
-    struct blend_state
-    {
-        blend_factor src_factor{ blend_factor::one };
-        blend_factor dst_factor{ blend_factor::zero };
-        blend_op blend_op{ blend_op::add };
 
-        bool operator==(const blend_state& that) const
-        {
-            return
-                (src_factor == that.src_factor) &&
-                (dst_factor == that.dst_factor) &&
-                (blend_op   == that.blend_op);
-        }
-        bool operator!=(const blend_state& that) const
-        {
-            return !operator==(that);
-        }
-    };
-
+    // blend
 	bool blend_enabled{ false };
 
     blend_state blend_rgb {};
     blend_state blend_alpha {};
+    // array4f vs float4 vs vec4f
     std::array<float, 4> blend_color{ 0.f, 0.f, 0.f, 0.f }; // if use constant color & alpha
 
      // WARNNING: used in debug check
@@ -931,7 +1055,7 @@ struct frame_desc
     {}
 };
 
-// ---------------------------
+
 
 struct render_desc
 {
@@ -959,14 +1083,17 @@ struct render_desc
 
 // clear_op
 
-
 #pragma endregion desc
 
+#pragma region command
 
 // render_command_type
 enum class command_type
 {
     none,
+
+    //begin_,
+    //end_,
 
     begin_default_frame,
     begin_frame,
@@ -1006,8 +1133,6 @@ enum class command_type
     readback, // blit
     // copy_data, update_resource, apply_state(binding_state)
 };
-
-#pragma region command
 
 // render_command
 struct command // command/encoder

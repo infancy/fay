@@ -99,4 +99,16 @@ private:
     uint64_t h{ fnv<uint64_t>::default_offset_basis };
 };
 
+namespace detail
+{
+    inline hasher hasher_;
+}
+
+uint64_t hash_ints()
+{
+
+
+    return 0;
+}
+
 } // namespace fay

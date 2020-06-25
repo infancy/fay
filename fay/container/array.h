@@ -20,6 +20,7 @@ namespace fay
 template <typename T, size_t N>
 class array : public sequence<T, array<T, N>>
 {
+#pragma region value
     static_assert(N > 0);
 
 public:
@@ -27,6 +28,7 @@ public:
     FAY_SEQUENCE_tYPE_ALIAS
 
 public:
+    // ctor
     constexpr array() = default;
 
     // WARNING: never provide dangerous interfaces without "unsafe", "uncheck", "ambiguous"
@@ -79,6 +81,15 @@ private:
     // because in the beginning provides user-define ctor, fay::array is not a aggregate anymore
     enum { sz_ = N };
     T a_[N]{};
+
+#pragma endregion
+
+#pragma region static
+
+public:
+    static void fill();
+
+#pragma endregion
 };
 
 #pragma endregion
