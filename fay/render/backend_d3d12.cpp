@@ -1,5 +1,7 @@
-#include "fay/render/backend.h"
+#include "fay/core/hash.h"
 #include "fay/math/math.h"
+#include "fay/render/backend.h"
+
 
 
 // https://www.3dgep.com/learning-directx-12-1/
@@ -426,16 +428,22 @@ private:
     struct command_list_context
     {
         bool is_offscreen{};
+        frame_id frm_id{};
         frame_desc frm_desc{};
         frame frm{};
 
+        pipeline_id pipe_id{};
         pipeline pipe{};
         pipeline_desc pipe_desc{};
+
+        shader_id shd_id{};
         shader shd{};
 
+        respack_id res_id{};
         respack res{};
 
         buffer index{};
+        buffer_id vertex_id{};
         buffer vertex{};
     };
     command_list_context cmd_{};
@@ -1616,7 +1624,7 @@ public:
 
         ctx_.mCurrentFrameIndex = ctx_.mSwapchain->GetCurrentBackBufferIndex();
         //ctx_.mCommandList = ctx_.mFrameCommandList[ctx_.mCurrentFrameIndex]; // TODO
-        D3D12_CHECK(ctx_.mCommandList->Reset(ctx_.mCommandAllocator, pso));
+        D3D12_CHECK(ctx_.mCommandList->Reset(ctx_.mCommandAllocator, nullptr));
     }
 
     void end_cmdlist()
@@ -1646,6 +1654,7 @@ public:
     {
         cmd_ = command_list_context{};
 
+        cmd_.res_id = ctx_.res_id;
         cmd_.res = pool_[ctx_.res_id]; // default respack can't be nullptr, so get it a empty respack.
     }
 
@@ -1662,6 +1671,7 @@ public:
             id = ctx_.frm_ids[ctx_.mCurrentFrameIndex];
         }
 
+        cmd_.frm_id = id;
         cmd_.frm = pool_[id];
         cmd_.frm_desc = pool_.desc(id);
 
@@ -1772,11 +1782,13 @@ public:
     virtual void apply_pipeline(const pipeline_id id, std::array<bool, 4>) override
     {
         FAY_DCHECK(pool_.contains(id));
+        cmd_.pipe_id = id;
         cmd_.pipe = pool_[id];
         cmd_.pipe_desc = pool_.desc(id);
     }
     virtual void apply_shader(const shader_id id) override
     {
+        cmd_.shd_id = id;
         cmd_.shd = pool_[id];
     }
 
@@ -1799,6 +1811,7 @@ public:
     }
     virtual void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) override
     {
+        cmd_.vertex_id = id;
         cmd_.vertex = pool_[id];
         set_backend_state();
 
@@ -1842,104 +1855,101 @@ public:
     }
 
 protected:
-    ID3D12PipelineStatePtr pso;
+    std::unordered_map<string, ID3D12PipelineStatePtr> cache_pso_map{};
     void set_backend_state()
     {
-        // if exist
+        // TODO
+        uint ids[] = { cmd_.frm_id.value, cmd_.pipe_id.value, cmd_.shd_id.value, cmd_.res_id.value, cmd_.vertex_id.value };
+        string hash_string{};
+        for (auto id : ids)
+        {
+            hash_string += std::to_string(id);
+            hash_string += " ";
+        }
 
-        // else
-        bool b = false;
-        if (b)
-        { // exist
-
+        if (cache_pso_map.contains(hash_string))
+        {
+            auto pso = cache_pso_map[hash_string];
+            ctx_.mCommandList->SetPipelineState(pso);
         }
         else
         {
-            auto state_ptr = create_rasterization_state(cmd_.vertex, cmd_.res, cmd_.shd, cmd_.pipe, cmd_.frm);
+            auto pso = create_rasterization_state(cmd_.vertex, cmd_.res, cmd_.shd, cmd_.pipe, cmd_.frm);
+            cache_pso_map[hash_string] = pso;
+        }
 
 
-            if (pso == nullptr)
+        ctx_.mCommandList->SetGraphicsRootSignature(cmd_.res.respack_layout);
+        auto primitive_topology = static_cast<D3D_PRIMITIVE_TOPOLOGY>(primitive_topology_map.at(cmd_.pipe_desc.primitive_type));
+        ctx_.mCommandList->IASetPrimitiveTopology(primitive_topology);
+
+
+        // bind respack
+        auto& res = cmd_.res;
+
+        uint32_t descriptor_heap_count = 0;
+        ID3D12DescriptorHeap* descriptor_heaps[2];
+        if (res.cbvsrvuav_heap)
+        {
+            descriptor_heaps[descriptor_heap_count] = res.cbvsrvuav_heap;
+            ++descriptor_heap_count;
+        }
+        if (res.sampler_heap)
+        {
+            descriptor_heaps[descriptor_heap_count] = res.sampler_heap;
+            ++descriptor_heap_count;
+        }
+        // TODO
+        if (descriptor_heap_count > 0)
+        {
+            ctx_.mCommandList->SetDescriptorHeaps(descriptor_heap_count, descriptor_heaps);
+        }
+
+        for (uint32_t i = 0; i < res.active_tables.size(); ++i)
+        {
+            descriptor_table* descriptor_table = res.active_tables[i];
+
+            if (descriptor_table->root_parameter_index == UINT32_MAX)
             {
-                pso = state_ptr;
-                return;
+                FAY_LOG(ERROR) << "overflow";
+            }
+
+            if (descriptor_table->type == descriptor_type::sampler)
+            {
+                D3D12_GPU_DESCRIPTOR_HANDLE handle =
+                    res.sampler_heap->GetGPUDescriptorHandleForHeapStart();
+                UINT handle_inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(
+                    D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+                handle.ptr += descriptor_table->heap_offset * handle_inc_size;
+
+                ctx_.mCommandList->SetGraphicsRootDescriptorTable(descriptor_table->root_parameter_index,
+                    handle);
             }
             else
             {
-                ctx_.mCommandList->SetPipelineState(pso);
-                ctx_.mCommandList->SetGraphicsRootSignature(cmd_.res.respack_layout);
-                auto primitive_topology = static_cast<D3D_PRIMITIVE_TOPOLOGY>(primitive_topology_map.at(cmd_.pipe_desc.primitive_type));
-                ctx_.mCommandList->IASetPrimitiveTopology(primitive_topology);
-            }
+                D3D12_GPU_DESCRIPTOR_HANDLE handle =
+                    res.cbvsrvuav_heap->GetGPUDescriptorHandleForHeapStart();
+                UINT handle_inc_size =
+                    ctx_.mDevice->GetDescriptorHandleIncrementSize(
+                        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                handle.ptr += descriptor_table->heap_offset * handle_inc_size;
 
+                ctx_.mCommandList->SetGraphicsRootDescriptorTable(
+                    descriptor_table->root_parameter_index, handle);
 
-
-            // bind respack
-            auto& res = cmd_.res;
-
-            uint32_t descriptor_heap_count = 0;
-            ID3D12DescriptorHeap* descriptor_heaps[2];
-            if (res.cbvsrvuav_heap)
-            {
-                descriptor_heaps[descriptor_heap_count] = res.cbvsrvuav_heap;
-                ++descriptor_heap_count;
-            }
-            if (res.sampler_heap)
-            {
-                descriptor_heaps[descriptor_heap_count] = res.sampler_heap;
-                ++descriptor_heap_count;
-            }
-            // TODO
-            if (descriptor_heap_count > 0)
-            {
-                ctx_.mCommandList->SetDescriptorHeaps(descriptor_heap_count, descriptor_heaps);
-            }
-
-            for (uint32_t i = 0; i < res.active_tables.size(); ++i)
-            {
-                descriptor_table* descriptor_table = res.active_tables[i];
-
-                if (descriptor_table->root_parameter_index == UINT32_MAX)
+                // TODO
+                /*
+                if (p_pipeline->type == tr_pipeline_type_graphics)
                 {
-                    FAY_LOG(ERROR) << "overflow";
-                }
-
-                if (descriptor_table->type == descriptor_type::sampler)
-                {
-                    D3D12_GPU_DESCRIPTOR_HANDLE handle =
-                        res.sampler_heap->GetGPUDescriptorHandleForHeapStart();
-                    UINT handle_inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(
-                        D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-                    handle.ptr += descriptor_table->heap_offset * handle_inc_size;
-
-                    ctx_.mCommandList->SetGraphicsRootDescriptorTable(descriptor_table->root_parameter_index,
-                        handle);
-                }
-                else
-                {
-                    D3D12_GPU_DESCRIPTOR_HANDLE handle =
-                        res.cbvsrvuav_heap->GetGPUDescriptorHandleForHeapStart();
-                    UINT handle_inc_size =
-                        ctx_.mDevice->GetDescriptorHandleIncrementSize(
-                            D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-                    handle.ptr += descriptor_table->heap_offset * handle_inc_size;
-
                     ctx_.mCommandList->SetGraphicsRootDescriptorTable(
                         descriptor_table->root_parameter_index, handle);
-
-                    // TODO
-                    /*
-                    if (p_pipeline->type == tr_pipeline_type_graphics)
-                    {
-                        ctx_.mCommandList->SetGraphicsRootDescriptorTable(
-                            descriptor_table->root_parameter_index, handle);
-                    }
-                    else if (p_pipeline->type == tr_pipeline_type_compute)
-                    {
-                        ctx_.mCommandList->SetComputeRootDescriptorTable(
-                            descriptor_table->root_parameter_index, handle);
-                    }
-                    */
                 }
+                else if (p_pipeline->type == tr_pipeline_type_compute)
+                {
+                    ctx_.mCommandList->SetComputeRootDescriptorTable(
+                        descriptor_table->root_parameter_index, handle);
+                }
+                */
             }
         }
     }

@@ -104,11 +104,16 @@ namespace detail
     inline hasher hasher_;
 }
 
-inline uint64_t hash_ints()
+inline uint64_t hash_uints(std::span<uint> uints)
 {
+    string hash_string{};
+    for (auto id : uints)
+    {
+        hash_string += std::to_string(id);
+    }
 
-
-    return 0;
+    detail::hasher_.hash(hash_string);
+    return detail::hasher_.value();
 }
 
 } // namespace fay
