@@ -351,8 +351,8 @@ enum class face_winding
 enum class cull_mode
 {
 	none,
-	front,
-	back,
+	front, // cw
+	back,  // ccw
 };
 
 enum class fill_mode

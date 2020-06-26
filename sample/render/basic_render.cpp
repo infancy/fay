@@ -48,8 +48,7 @@ public:
     }
 };
 
-// pipeline_
-
+#define test_pipeline
 class shader_pipeline_ : public fay::app
 {
 public:
@@ -81,15 +80,21 @@ public:
         auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
+#ifndef test_pipeline
         pd.primitive_type = fay::primitive_type::triangles;
         pd.cull_mode = fay::cull_mode::none;
+#else
+        pd.primitive_type = fay::primitive_type::triangles;
+        pd.cull_mode = fay::cull_mode::front; // cw
+        pd.fill_mode = fay::fill_mode::wireframe;
+#endif
         pd.depth_enabled = false;
         auto pipe_id = device->create(pd);
 
         pass1
             .begin_default(pipe_id, shd_id)
             .bind_vertex(buf_id)
-            .draw(3)
+            .draw(6)
             .end_frame();
     }
 

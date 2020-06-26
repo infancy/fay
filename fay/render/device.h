@@ -134,30 +134,12 @@ public:
 
 private:
     // 
-    void create_check(const   buffer_desc& desc)
-    {
-        FAY_DCHECK(!(desc.usage == resource_usage::immutable && desc.data == nullptr));
-        FAY_DCHECK(desc.btsz > 0);
-
-        //DCHECK(!(desc.type == buffer_type::vertex && desc.instance_rate != 0));
-        //DCHECK(!(desc.type == buffer_type::instance && desc.instance_rate <= 0));
-    }
-    void create_check(const  texture_desc& desc)
-    {
-
-    }
-    void create_check(const   shader_desc& desc)
-    {
-
-    }
-    void create_check(const pipeline_desc& desc)
-    {
-
-    }
-    void create_check(const    frame_desc& desc)
-    {
-
-    }
+    void create_check(const   buffer_desc& desc);
+    void create_check(const  texture_desc& desc);
+    void create_check(const  respack_desc& desc);
+    void create_check(const   shader_desc& desc);
+    void create_check(const pipeline_desc& desc);
+    void create_check(const    frame_desc& desc);
 
     // command
     void begin_default_frame()

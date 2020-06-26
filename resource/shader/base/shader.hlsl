@@ -1,8 +1,12 @@
-static float2 positions[3] =
+static float2 positions[6] =
 {
 	float2(0.0, 0.0),
 	float2(0.5, 1.0),
-	float2(1.0, 0.5)
+	float2(1.0, 0.5),
+	
+	float2( 0.0,  0.0),
+	float2(-1.0, -0.5),
+	float2(-0.5, -1.0),
 };
 
 float4 vs_main(uint vid : SV_VertexID) : SV_Position

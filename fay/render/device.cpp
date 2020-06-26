@@ -26,6 +26,41 @@ render_device::render_device(const render_desc& desc) :
     //    .end_frame());
 }
 
+#pragma region check
+
+
+// 
+void render_device::create_check(const   buffer_desc& desc)
+{
+    FAY_DCHECK(!(desc.usage == resource_usage::immutable && desc.data == nullptr));
+    FAY_DCHECK(desc.btsz > 0);
+
+    //DCHECK(!(desc.type == buffer_type::vertex && desc.instance_rate != 0));
+    //DCHECK(!(desc.type == buffer_type::instance && desc.instance_rate <= 0));
+}
+void render_device::create_check(const  texture_desc& desc)
+{
+
+}
+void render_device::create_check(const  respack_desc& desc)
+{
+
+}
+void render_device::create_check(const   shader_desc& desc)
+{
+
+}
+void render_device::create_check(const pipeline_desc& desc)
+{
+
+}
+void render_device::create_check(const    frame_desc& desc)
+{
+
+}
+
+#pragma endregion check
+
 void render_device::apply_pipeline(const pipeline_id id)
 {
     DCHECK(query_valid(id)) << "invalid id";
