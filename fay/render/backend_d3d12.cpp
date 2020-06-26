@@ -797,7 +797,11 @@ public:
             D3D12_RANGE read_range = { 0, 0 };
             D3D12_CHECK2(buffer.resource->Map(
                 0, &read_range, (void**)&(buffer.mapped_address)), buffer.mapped_address);
-            std::memcpy(buffer.mapped_address, buf_desc.data, buf_desc.btsz);
+
+            if (buf_desc.data)
+            {
+                std::memcpy(buffer.mapped_address, buf_desc.data, buf_desc.btsz);
+            }
         }
 
 

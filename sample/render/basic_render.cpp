@@ -50,16 +50,16 @@ public:
 
 // pipeline_
 
-class shader_ : public fay::app
+class shader_pipeline_ : public fay::app
 {
 public:
     fay::command_list pass1;
 
 public:
     // using fay::app;
-    shader_(const fay::app_desc& _desc) : fay::app(_desc)
+    shader_pipeline_(const fay::app_desc& _desc) : fay::app(_desc)
     {
-        desc.window.title = "triangle";
+        desc.window.title = "shader_pipeline_";
     }
 
     void setup() override
@@ -83,6 +83,7 @@ public:
         fay::pipeline_desc pd;
         pd.primitive_type = fay::primitive_type::triangles;
         pd.cull_mode = fay::cull_mode::none;
+        pd.depth_enabled = false;
         auto pipe_id = device->create(pd);
 
         pass1
@@ -447,7 +448,7 @@ public:
 
 SAMPLE_RENDER_APP_IMPL(init)
 SAMPLE_RENDER_APP_IMPL(clear)
-SAMPLE_RENDER_APP_IMPL(shader_)
+SAMPLE_RENDER_APP_IMPL(shader_pipeline_)
 SAMPLE_RENDER_APP_IMPL(vertex_index_)
 SAMPLE_RENDER_APP_IMPL(triangle)
 
