@@ -49,6 +49,7 @@ inline namespace type
 struct buffer
 {
     UINT64 btsz{};
+    void* mapped_address;
     ID3D12ResourcePtr resource{};
 
     D3D12_INDEX_BUFFER_VIEW index_buffer_view{};
@@ -787,7 +788,8 @@ public:
         {
             D3D12_RANGE read_range = { 0, 0 };
             D3D12_CHECK2(buffer.resource->Map(
-                0, &read_range, (void**)&(buf_desc.data)), buf_desc.data);
+                0, &read_range, (void**)&(buffer.mapped_address)), buffer.mapped_address);
+            std::memcpy(buffer.mapped_address, buf_desc.data, buf_desc.btsz);
         }
 
 
@@ -1854,13 +1856,21 @@ protected:
         else
         {
             auto state_ptr = create_rasterization_state(cmd_.vertex, cmd_.res, cmd_.shd, cmd_.pipe, cmd_.frm);
-            pso = state_ptr;
-            return;
 
-            ctx_.mCommandList->SetPipelineState(state_ptr);
-            ctx_.mCommandList->SetGraphicsRootSignature(cmd_.res.respack_layout);
-            auto primitive_topology = static_cast<D3D_PRIMITIVE_TOPOLOGY>(primitive_topology_map.at(cmd_.pipe_desc.primitive_type));
-            ctx_.mCommandList->IASetPrimitiveTopology(primitive_topology);
+
+            if (pso == nullptr)
+            {
+                pso = state_ptr;
+                return;
+            }
+            else
+            {
+                ctx_.mCommandList->SetPipelineState(pso);
+                ctx_.mCommandList->SetGraphicsRootSignature(cmd_.res.respack_layout);
+                auto primitive_topology = static_cast<D3D_PRIMITIVE_TOPOLOGY>(primitive_topology_map.at(cmd_.pipe_desc.primitive_type));
+                ctx_.mCommandList->IASetPrimitiveTopology(primitive_topology);
+            }
+
 
 
             // bind respack

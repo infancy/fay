@@ -139,7 +139,7 @@ public:
         }
         auto buf_id = device->create(bd);
 
-        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/shader");
+        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/vertex_index");
         sd.layout = bd.layout;
         auto shd_id = device->create(sd);
 
