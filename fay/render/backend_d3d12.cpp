@@ -1614,7 +1614,7 @@ public:
 
         ctx_.mCurrentFrameIndex = ctx_.mSwapchain->GetCurrentBackBufferIndex();
         //ctx_.mCommandList = ctx_.mFrameCommandList[ctx_.mCurrentFrameIndex]; // TODO
-        D3D12_CHECK(ctx_.mCommandList->Reset(ctx_.mCommandAllocator, NULL));
+        D3D12_CHECK(ctx_.mCommandList->Reset(ctx_.mCommandAllocator, pso));
     }
 
     void end_cmdlist()
@@ -1666,6 +1666,9 @@ public:
         if (!cmd_.is_offscreen)
         {
             transition_render_target(texture_usage_::present, texture_usage_::color_attachment);
+            // This needs to be reset whenever the command list is reset
+            set_viewport(0, 0, render_desc_.width, render_desc_.height);
+            set_scissor(0, 0, render_desc_.width, render_desc_.height);
         }
 
         D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle = {};
@@ -1837,6 +1840,7 @@ public:
     }
 
 protected:
+    ID3D12PipelineStatePtr pso;
     void set_backend_state()
     {
         // if exist
@@ -1850,6 +1854,8 @@ protected:
         else
         {
             auto state_ptr = create_rasterization_state(cmd_.vertex, cmd_.res, cmd_.shd, cmd_.pipe, cmd_.frm);
+            pso = state_ptr;
+            return;
 
             ctx_.mCommandList->SetPipelineState(state_ptr);
             ctx_.mCommandList->SetGraphicsRootSignature(cmd_.res.respack_layout);

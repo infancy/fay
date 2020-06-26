@@ -13,7 +13,9 @@ render_device::render_device(const render_desc& desc) :
     context_.type = desc.backend;
 
     // TODO: create other with "id=0"
-    ctx_.pipe_id = create(pipeline_desc());
+    pipeline_desc pipe_desc{};
+    pipe_desc.name = "render_device ctor default pipeline_desc";
+    ctx_.pipe_id = create(pipe_desc);
     ctx_.pipe = pool_.desc(ctx_.pipe_id);
     // make device have a old_pipe
     backend_->apply_pipeline(ctx_.pipe_id, {true, true, true, true});

@@ -139,26 +139,25 @@ public:
         }
         auto buf_id = device->create(bd);
 
-        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/vertex_index");
+        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/shader");
         sd.layout = bd.layout;
         auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
         pd.primitive_type = fay::primitive_type::triangles;
         pd.cull_mode = fay::cull_mode::none;
+        pd.depth_enabled = false;
         auto pipe_id = device->create(pd);
 
         pass1
             //.begin_default(pipe_id, shd_id)
 
             .begin_default_frame()
-            //.clear()
-
-            .clear_color(1.f, 0.f, 0.f, 1.f)
-            //.apply_pipeline(pipe_id)
-            //.apply_shader(shd_id)
-            //.bind_vertex(buf_id)
-            //.draw(3, 0)
+            .clear()
+            .apply_pipeline(pipe_id)
+            .apply_shader(shd_id)
+            .bind_vertex(buf_id)
+            .draw(3, 0)
             .end_frame();
     }
 
