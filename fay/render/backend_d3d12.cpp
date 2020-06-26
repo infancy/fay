@@ -552,7 +552,7 @@ private:
 
 
         // Create Logical Device actually
-        ThrowIfFailed(D3D12CreateDevice(ctx_.mAdapter, ctx_.mFeatureLevel,
+        D3D12_CHECK(D3D12CreateDevice(ctx_.mAdapter, ctx_.mFeatureLevel,
             IID_PPV_ARGS(&ctx_.mDevice)));
         // TODO
         ctx_.mDevice->SetName(L"MainD3D12Device");
@@ -707,6 +707,9 @@ private:
             // to record yet. The main loop expects it to be closed, so close it now.
             cmdlist->Close();
         }
+
+        // TODO
+        ctx_.mCommandList = ctx_.mFrameCommandList[0];
     }
 
     void create_default_respack()
@@ -1312,8 +1315,7 @@ public:
             desc.NumDescriptors = frm_desc.render_targets.size();
             desc.NodeMask = 0;
             desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-            HRESULT hres = ctx_.mDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&frm.rtv_heap));
-            assert(SUCCEEDED(hres));
+            D3D12_CHECK(ctx_.mDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&frm.rtv_heap)));
 
             D3D12_CPU_DESCRIPTOR_HANDLE handle = frm.rtv_heap->GetCPUDescriptorHandleForHeapStart();
             const UINT inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -1353,8 +1355,7 @@ public:
             desc.NumDescriptors = 1;
             desc.NodeMask = 0;
             desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-            HRESULT hres = ctx_.mDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&frm.dsv_heap));
-            assert(SUCCEEDED(hres));
+            D3D12_CHECK(ctx_.mDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&frm.dsv_heap)));
 
             D3D12_CPU_DESCRIPTOR_HANDLE handle = frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
             //const UINT inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
@@ -1612,7 +1613,7 @@ public:
         D3D12_CHECK(ctx_.mCommandAllocator->Reset());
 
         ctx_.mCurrentFrameIndex = ctx_.mSwapchain->GetCurrentBackBufferIndex();
-        ctx_.mCommandList = ctx_.mFrameCommandList[ctx_.mCurrentFrameIndex];
+        //ctx_.mCommandList = ctx_.mFrameCommandList[ctx_.mCurrentFrameIndex]; // TODO
         D3D12_CHECK(ctx_.mCommandList->Reset(ctx_.mCommandAllocator, NULL));
     }
 
@@ -1624,20 +1625,19 @@ public:
     virtual void begin() override
     {
         begin_cmdlist();
-        transition_render_target(texture_usage_::present, texture_usage_::color_attachment);
+        //transition_render_target(texture_usage_::present, texture_usage_::color_attachment);
     }
     virtual void end() override
     {
-        transition_render_target(texture_usage_::color_attachment, texture_usage_::present);
         end_cmdlist();
-
-
         queue_submit();
+
         if (!cmd_.is_offscreen)
         {
             queue_present();
-            queue_wait_idle();
         }
+
+        queue_wait_idle();
     }
 
     virtual void clear_command_list() override
@@ -1663,6 +1663,11 @@ public:
         cmd_.frm = pool_[id];
         cmd_.frm_desc = pool_.desc(id);
 
+        if (!cmd_.is_offscreen)
+        {
+            transition_render_target(texture_usage_::present, texture_usage_::color_attachment);
+        }
+
         D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle = {};
         D3D12_CPU_DESCRIPTOR_HANDLE dsv_handle = {};
         D3D12_CPU_DESCRIPTOR_HANDLE* p_rtv_handle = NULL;
@@ -1686,6 +1691,10 @@ public:
     }
     virtual void end_frame() override
     {
+        if(!cmd_.is_offscreen)
+        {
+            transition_render_target(texture_usage_::color_attachment, texture_usage_::present);
+        }
 
         // multisample texture to original texture
         // TODO
@@ -1780,11 +1789,13 @@ public:
     virtual void bind_index(const buffer_id id) override
     {
         cmd_.index = pool_[id];
+
         ctx_.mCommandList->IASetIndexBuffer(&cmd_.index.index_buffer_view);
     }
     virtual void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) override
     {
         cmd_.vertex = pool_[id];
+        set_backend_state();
 
         // TODO
         D3D12_VERTEX_BUFFER_VIEW views[1]{};
@@ -1813,13 +1824,13 @@ public:
 
     virtual void draw(uint vertex_count, uint first_vertex, uint instance_count) override
     {
-        set_backend_state();
+        //set_backend_state();
 
         ctx_.mCommandList->DrawInstanced((UINT)vertex_count, (UINT)1, (UINT)first_vertex, (UINT)0);
     }
     virtual void draw_index(uint index_count, uint first_index, uint instance_count) override
     {
-        set_backend_state();
+        //set_backend_state();
 
         ctx_.mCommandList->DrawIndexedInstanced((UINT)index_count, (UINT)1, (UINT)first_index, (UINT)0,
             (UINT)0);

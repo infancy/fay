@@ -16,6 +16,10 @@ public:
 class clear : public fay::app
 {
 public:
+    uint8_t color = 0;
+    int counter = 1;
+
+public:
     clear(const fay::app_desc& _desc) : fay::app(_desc)
     {
         desc.window.title = "clear";
@@ -27,12 +31,17 @@ public:
 
     void render() override
     {
+        color += counter;
+        if (color == 0 or color == 255) counter = -counter;
+
+        float red = float(color) / float(255);
+
         fay::command_list cmd;
         cmd
             .begin_default_frame()
             //.set_viewport(360, 240, 720, 480)
-            .set_scissor(360, 240, 720, 480) // not valid in D3D11/D3D12?
-            .clear_color(1.f, 0.f, 0.f, 1.f)
+            //.set_scissor(360, 240, 720, 480) // not valid in D3D11/D3D12?
+            .clear_color(red, 0.f, 0.f, 1.f)
             .end_frame();
 
         device->execute(cmd);
@@ -140,9 +149,16 @@ public:
         auto pipe_id = device->create(pd);
 
         pass1
-            .begin_default(pipe_id, shd_id)
-            .bind_vertex(buf_id)
-            .draw(3)
+            //.begin_default(pipe_id, shd_id)
+
+            .begin_default_frame()
+            //.clear()
+
+            .clear_color(1.f, 0.f, 0.f, 1.f)
+            //.apply_pipeline(pipe_id)
+            //.apply_shader(shd_id)
+            //.bind_vertex(buf_id)
+            //.draw(3, 0)
             .end_frame();
     }
 
@@ -250,6 +266,7 @@ public:
             // TODO: rename bind_uniform/bind_buffer
             .bind_uniform_block("para", fay::memory{ (uint8_t*)&paras1, sizeof(render_paras) })
             .draw_index(6, 0)
+
             .bind_uniform_block("para", fay::memory{ (uint8_t*)&paras2, sizeof(render_paras) })
             .draw_index(3, 6)
             //.draw(6)
