@@ -5,6 +5,7 @@
 namespace fay
 {
 
+#pragma region shader_type
 inline namespace shader_type
 {
 
@@ -350,19 +351,10 @@ private:
 };
 
 }
+#pragma endregion shader_type
 
 inline namespace shader_func
 {
-
-std::string load_file_to_string(const std::string& filename)
-{
-    auto file = load_text(filename);
-
-    std::stringstream str_stream{};
-    str_stream << file.rdbuf();
-
-    return str_stream.str();
-}
 
 // WARNING: ignore same files
 std::string add_include_files(const std::string& shader_filepath)
@@ -605,8 +597,8 @@ shader_desc merge_context(std::vector<shader_context>&& ctxs)
 
 } // namespace shader_func
 
-// TODO: scan_shader_program(const std::string shader_name, std::vector<std::string> shader)
-shader_desc scan_shader_program(const std::string shader_name, std::string vs_filepath, std::string fs_filepath, render_backend_type backend_type)
+// shader_desc scan_shader_program(const std::string shader_name, std::string vs_filepath, std::string fs_filepath, render_backend_type backend_type)
+shader_desc scan_shader_program(const std::string& shader_name, std::string vs_filepath, std::string fs_filepath, render_backend_type backend_type)
 {
     /*
     if (buildin)
@@ -668,6 +660,81 @@ shader_desc scan_shader_program(const std::string shader_name, std::string vs_fi
     std::cout << "==================================\n\n";
 
     return desc;
+}
+
+shader_desc scan_shader_program_extend(const std::string& shader_name, render_backend_type backend_type, std::string vs_filepath, std::string fs_filepath)
+{
+    vs_filepath += ".vs";
+    fs_filepath += ".fs";
+
+    bool is_hlsl{ false };
+    if (backend_type == render_backend_type::d3d11)
+    {
+        is_hlsl = true;
+        vs_filepath += ".hlsl";
+        fs_filepath += ".hlsl";
+    }
+
+    //TODO: for code in shds ...
+
+    std::cout << "==================================\n";
+    std::string vs_code = add_include_files(vs_filepath);
+    std::string fs_code = add_include_files(fs_filepath);
+
+    // TODO: skip no sence lines, like 'layout(early_fragment_tests) in;'
+    // vs_code = extracting_target_info(vs_code);
+
+    std::stringstream vs_stream{ vs_code };
+    std::stringstream fs_stream{ fs_code };
+
+    auto vs_ctx = extracting_context(vs_stream, is_hlsl);
+    auto fs_ctx = extracting_context(fs_stream, is_hlsl);
+
+    auto&& desc = merge_context({ vs_ctx, fs_ctx });
+    desc.name = shader_name;
+    desc.vs = std::move(vs_code);
+    desc.fs = std::move(fs_code);
+
+    std::cout << "\n-----------------------\n\nshader " << desc.name << "'s context: \n";
+
+    std::cout << "\nvertex names:\n";
+    for (const auto& str : vs_ctx.entry_names)
+        std::cout << str << '\n';
+
+    std::cout << "\nuniform blocks:\n";
+    for (const auto& ub : desc.uniform_blocks)
+        std::cout << ub.name << '\n';
+
+    std::cout << "\n samplers:\n";
+    for (const auto& sampler : desc.samplers)
+        std::cout << sampler.name << '\n';
+
+    std::cout << "==================================\n\n";
+
+    return desc;
+}
+
+shader_desc create_shader_desc(const std::string& shader_name, render_backend_type backend_type, std::string base_filepath)
+{
+    if (backend_type == render_backend_type::d3d12 || backend_type == render_backend_type::vulkan)
+    {
+        auto&& source_code = load_file_to_string(base_filepath + ".hlsl");
+
+        shader_desc desc;
+        desc.name = shader_name;
+        desc.vs = source_code;
+        desc.fs = source_code;
+        // TODO
+
+        return desc;
+    }
+    else if (backend_type == render_backend_type::d3d11 || backend_type == render_backend_type::opengl)
+    {
+        return scan_shader_program_extend(shader_name, backend_type, base_filepath, base_filepath);
+    }
+
+    FAY_LOG(ERROR) << "error";
+    return {};
 }
 
 } // namespace fay

@@ -136,7 +136,8 @@ private:
     // 
     void create_check(const   buffer_desc& desc)
     {
-        DCHECK(!(desc.usage == resource_usage::immutable && desc.data == nullptr));
+        FAY_DCHECK(!(desc.usage == resource_usage::immutable && desc.data == nullptr));
+        FAY_DCHECK(desc.btsz > 0);
 
         //DCHECK(!(desc.type == buffer_type::vertex && desc.instance_rate != 0));
         //DCHECK(!(desc.type == buffer_type::instance && desc.instance_rate <= 0));

@@ -17,6 +17,16 @@ inline std::ifstream load_text(const std::string& filepath)
 	return std::move(file);
 }
 
+inline std::string load_file_to_string(const std::string& filename)
+{
+	auto file = load_text(filename);
+
+	std::stringstream str_stream{};
+	str_stream << file.rdbuf();
+
+	return str_stream.str();
+}
+
 // class file
 
 // 二进制、文本，utf、GB213……

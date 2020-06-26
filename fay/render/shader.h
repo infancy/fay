@@ -8,11 +8,12 @@
 namespace fay
 {
 
-shader_desc scan_shader_program(const std::string shader_name, std::string vs_filepath, std::string fs_filepath, render_backend_type backend_type);
+// TODO: remove
+shader_desc scan_shader_program(const std::string& shader_name, std::string vs_filepath, std::string fs_filepath, render_backend_type backend_type);
 
-shader_desc scan_shader_program(const std::string shader_name, std::initializer_list<std::string> filepaths, render_backend_type backend_type);
 
 
+shader_desc create_shader_desc(const std::string& shader_name, render_backend_type backend_type, std::string base_filepath);
 
 // Parameter check
 // map to RootSignature???

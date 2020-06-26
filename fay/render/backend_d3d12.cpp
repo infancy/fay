@@ -1,5 +1,5 @@
 #include "fay/render/backend.h"
-
+#include "fay/math/math.h"
 
 
 // https://www.3dgep.com/learning-directx-12-1/
@@ -48,6 +48,7 @@ inline namespace type
 
 struct buffer
 {
+    UINT64 btsz{};
     ID3D12ResourcePtr resource{};
 
     D3D12_INDEX_BUFFER_VIEW index_buffer_view{};
@@ -162,7 +163,7 @@ struct respack
     ID3D12DescriptorHeapPtr sampler_heap{};
     ID3D12DescriptorHeapPtr cbvsrvuav_heap{};
 
-    ID3D12RootSignature* respack_layout{};
+    ID3D12RootSignaturePtr respack_layout{};
 
     respack() {}
     respack(const respack_desc& desc)
@@ -183,7 +184,8 @@ struct respack
                 active_tables.emplace_back(desc_table);
             }
         }
-        DCHECK(active_tables.size() > 0) << "empty respack";
+        // check it by render_device
+        //DCHECK(active_tables.size() > 0) << "empty respack";
     }
 };
 
@@ -229,7 +231,8 @@ struct shader // shader_program
         {
             if (!stage->source.empty())
             {
-                stage->target = stage->name + "_6_3";
+                // https://github.com/Microsoft/DirectXShaderCompiler/wiki/Shader-Model
+                stage->target = stage->name + "_5_1";
                 stage->entry  = stage->name + "_main";
                 stage->name   = stage->name + desc.name;
 
@@ -352,7 +355,7 @@ struct frame
 
 
 
-#define ThrowIfFailed D3D_CHECK
+#define ThrowIfFailed D3D12_CHECK
 
 class backend_d3d12 : public render_backend
 {
@@ -412,6 +415,7 @@ private:
         // cmdlist
         ID3D12GraphicsCommandListPtr mCommandList{};
         ID3D12GraphicsCommandListPtr mFrameCommandList[SwapChainBufferCount]{};
+        respack_id res_id{};
     };
     context ctx_{};
 
@@ -449,12 +453,33 @@ public:
         resize_swapchain_frame();
 
         create_command_list();
+        create_default_respack();
     }
     ~backend_d3d12()
     {
     }
 
 private:
+    void d3d12_error_handle(HRESULT hr)
+    {
+        if (hr == DXGI_ERROR_DEVICE_RESET)
+        {
+            char buff[128] = {};
+            sprintf_s(buff, "Device Reset: Reason code 0x%08X\n", hr);
+            OutputDebugStringA(buff);
+        }
+
+
+        if (hr == DXGI_ERROR_DEVICE_REMOVED)
+        {
+            char buff[128] = {};
+            sprintf_s(buff, "Device Lost: Reason code 0x%08X\n", ctx_.mDevice->GetDeviceRemovedReason());
+            OutputDebugStringA(buff);
+
+            d3d_error_handle(ctx_.mDevice->GetDeviceRemovedReason(), "");
+        }
+    }
+
     void create_device()
     {
         UINT dxgiFactoryFlags = 0;
@@ -597,16 +622,16 @@ private:
         IDXGIOutput* output = nullptr;
 
         IDXGISwapChain1Ptr swapchain;
-        D3D_CHECK(ctx_.mFactory->CreateSwapChainForHwnd(
+        D3D12_CHECK(ctx_.mFactory->CreateSwapChainForHwnd(
             ctx_.mGraphicsQueue.queue, 
             static_cast<HWND>(render_desc_.d3d_handle), 
             &desc, fullscreenDesc, output, &swapchain));
 
-        D3D_CHECK(ctx_.mFactory->MakeWindowAssociation(
+        D3D12_CHECK(ctx_.mFactory->MakeWindowAssociation(
             static_cast<HWND>(render_desc_.d3d_handle),
             DXGI_MWA_NO_ALT_ENTER));
 
-        D3D_CHECK(swapchain->QueryInterface(IID_PPV_ARGS(&ctx_.mSwapchain)));
+        D3D12_CHECK(swapchain->QueryInterface(IID_PPV_ARGS(&ctx_.mSwapchain)));
     }
 
     // int left, int top, uint width, uint height, int min_depth, int max_depth
@@ -684,6 +709,12 @@ private:
         }
     }
 
+    void create_default_respack()
+    {
+        respack_desc desc;
+        ctx_.res_id = create(desc);
+    }
+
 #pragma endregion init
 
 #pragma region create, update and destroy
@@ -696,19 +727,16 @@ public:
 
 
         // TODO: enum_contain
+        buffer.btsz = buf_desc.btsz;
         if (enum_have(buf_desc.type, buffer_type::uniform_cbv))
         {
-            //
+            buffer.btsz = round_up(buffer.btsz, 256);
         }
 
-
-
-        D3D12_RESOURCE_DIMENSION res_dim = D3D12_RESOURCE_DIMENSION_BUFFER;
-
         D3D12_RESOURCE_DESC res_desc = {};
-        res_desc.Dimension = res_dim;
+        res_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
         res_desc.Alignment = 0;
-        res_desc.Width = buf_desc.btsz;
+        res_desc.Width = buffer.btsz;
         res_desc.Height = 1;
         res_desc.DepthOrArraySize = 1;
         res_desc.MipLevels = 1;
@@ -726,17 +754,12 @@ public:
         // Adjust for padding
         UINT64 padded_size = 0;
         ctx_.mDevice->GetCopyableFootprints(&res_desc, 0, 1, 0, NULL, NULL, NULL, &padded_size);
-        //desc.btsz = (uint64_t)padded_size;
+        buffer.btsz = padded_size;
         res_desc.Width = padded_size;
 
 
 
-        D3D12_RESOURCE_STATES res_states = D3D12_RESOURCE_STATE_COPY_DEST;
-        if (buffer_type_map.contains(buf_desc.type))
-        {
-            res_states = (D3D12_RESOURCE_STATES)buffer_type_map.at(buf_desc.type).d3d12;
-        }
-
+        D3D12_RESOURCE_STATES res_states = (D3D12_RESOURCE_STATES)buffer_type_map.at(buf_desc.type).d3d12;
         D3D12_HEAP_PROPERTIES heap_props = {};
         heap_props.Type = D3D12_HEAP_TYPE_DEFAULT;
         heap_props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -746,22 +769,22 @@ public:
 
         D3D12_HEAP_FLAGS heap_flags = D3D12_HEAP_FLAG_NONE;
         // TODO
-        if (buf_desc.usage == resource_usage::stream)
+        //if (buf_desc.usage == resource_usage::stream)
         {
             // D3D12_HEAP_TYPE_UPLOAD requires D3D12_RESOURCE_STATE_GENERIC_READ
             heap_props.Type = D3D12_HEAP_TYPE_UPLOAD;
             res_states = D3D12_RESOURCE_STATE_GENERIC_READ;
         }
 
-        HRESULT hres = ctx_.mDevice->CreateCommittedResource(
-            &heap_props, heap_flags, &res_desc, res_states, NULL, IID_PPV_ARGS(&buffer.resource));
-        assert(SUCCEEDED(hres));
+        D3D12_CHECK2(ctx_.mDevice->CreateCommittedResource(
+            &heap_props, heap_flags, &res_desc, res_states, NULL, IID_PPV_ARGS(&buffer.resource)), buffer.resource);
 
-        if (buf_desc.usage == resource_usage::stream)
+        // TODO
+        //if (buf_desc.usage == resource_usage::stream)
         {
             D3D12_RANGE read_range = { 0, 0 };
-            hres = buffer.resource->Map(0, &read_range, (void**)&(buf_desc.data));
-            assert(SUCCEEDED(hres));
+            D3D12_CHECK2(buffer.resource->Map(
+                0, &read_range, (void**)&(buf_desc.data)), buf_desc.data);
         }
 
 
@@ -1544,7 +1567,6 @@ private:
 
 
         pipeline_state_desc.DSVFormat = frm.dsv_fmt;
-
         pipeline_state_desc.NumRenderTargets = frm.rtv_fmts.size();
         for (uint32_t i = 0; i < frm.rtv_fmts.size(); ++i)
         {
@@ -1554,9 +1576,8 @@ private:
 
 
         ID3D12PipelineStatePtr ptr;
-        HRESULT hres = ctx_.mDevice->CreateGraphicsPipelineState(
-            &pipeline_state_desc, IID_PPV_ARGS(&ptr));
-        assert(SUCCEEDED(hres));
+        D3D12_CHECK2(ctx_.mDevice->CreateGraphicsPipelineState(
+            &pipeline_state_desc, IID_PPV_ARGS(&ptr)), ptr);
 
         return ptr;
     }
@@ -1586,22 +1607,29 @@ private:
 
 #pragma region render command
 public:
-
-    virtual void begin() override
+    void begin_cmdlist()
     {
-        HRESULT hres = ctx_.mCommandAllocator->Reset();
-        assert(SUCCEEDED(hres));
+        D3D12_CHECK(ctx_.mCommandAllocator->Reset());
 
         ctx_.mCurrentFrameIndex = ctx_.mSwapchain->GetCurrentBackBufferIndex();
         ctx_.mCommandList = ctx_.mFrameCommandList[ctx_.mCurrentFrameIndex];
+        D3D12_CHECK(ctx_.mCommandList->Reset(ctx_.mCommandAllocator, NULL));
+    }
 
-        hres = ctx_.mCommandList->Reset(ctx_.mCommandAllocator, NULL);
-        assert(SUCCEEDED(hres));
+    void end_cmdlist()
+    {
+        D3D12_CHECK(ctx_.mCommandList->Close());
+    }
+
+    virtual void begin() override
+    {
+        begin_cmdlist();
+        transition_render_target(texture_usage_::present, texture_usage_::color_attachment);
     }
     virtual void end() override
     {
-        HRESULT hres = ctx_.mCommandList->Close();
-        assert(SUCCEEDED(hres));
+        transition_render_target(texture_usage_::color_attachment, texture_usage_::present);
+        end_cmdlist();
 
 
         queue_submit();
@@ -1610,6 +1638,13 @@ public:
             queue_present();
             queue_wait_idle();
         }
+    }
+
+    virtual void clear_command_list() override
+    {
+        cmd_ = command_list_context{};
+
+        cmd_.res = pool_[ctx_.res_id]; // default respack can't be nullptr, so get it a empty respack.
     }
 
     // WARNNING: use 0 as default frame(rather than invalid value) by limitations of command_list
@@ -1625,7 +1660,6 @@ public:
             id = ctx_.frm_ids[ctx_.mCurrentFrameIndex];
         }
 
-        cmd_ = command_list_context{};
         cmd_.frm = pool_[id];
         cmd_.frm_desc = pool_.desc(id);
 
@@ -1659,32 +1693,41 @@ public:
 
     virtual void clear_color(glm::vec4 rgba, std::vector<uint> targets) const override
     {
-        UINT inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(
-            D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-        for (auto index : targets)
+        if (cmd_.frm.rtv_heap)
         {
-            D3D12_CPU_DESCRIPTOR_HANDLE handle =
-                cmd_.frm.rtv_heap->GetCPUDescriptorHandleForHeapStart();
-            handle.ptr += index * inc_size;
-            ctx_.mCommandList->ClearRenderTargetView(handle, (float*)(&rgba), 0, NULL);
+            UINT inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(
+                D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+            for (auto index : targets)
+            {
+                D3D12_CPU_DESCRIPTOR_HANDLE handle =
+                    cmd_.frm.rtv_heap->GetCPUDescriptorHandleForHeapStart();
+                handle.ptr += index * inc_size;
+                ctx_.mCommandList->ClearRenderTargetView(handle, (float*)(&rgba), 0, NULL);
+            }
         }
     }
     virtual void clear_depth(float depth) const override
     {
-        D3D12_CPU_DESCRIPTOR_HANDLE handle =
-            cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
+        if (cmd_.frm.dsv_heap)
+        {
+            D3D12_CPU_DESCRIPTOR_HANDLE handle =
+                cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
 
-        ctx_.mCommandList->ClearDepthStencilView(
-            handle, D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
+            ctx_.mCommandList->ClearDepthStencilView(
+                handle, D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
+        }
     }
     virtual void clear_stencil(uint stencil) const override
     {
-        D3D12_CPU_DESCRIPTOR_HANDLE handle =
-            cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
+        if (cmd_.frm.dsv_heap)
+        {
+            D3D12_CPU_DESCRIPTOR_HANDLE handle =
+                cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
 
-        ctx_.mCommandList->ClearDepthStencilView(
-            handle, D3D12_CLEAR_FLAG_DEPTH, 0.f, (uint8_t)stencil, 0, nullptr);
+            ctx_.mCommandList->ClearDepthStencilView(
+                handle, D3D12_CLEAR_FLAG_DEPTH, 0.f, (uint8_t)stencil, 0, nullptr);
+        }
     }
 
     virtual void set_viewport(uint x, uint y, uint width, uint height) override
@@ -1856,6 +1899,7 @@ protected:
                     ctx_.mCommandList->SetGraphicsRootDescriptorTable(
                         descriptor_table->root_parameter_index, handle);
 
+                    // TODO
                     /*
                     if (p_pipeline->type == tr_pipeline_type_graphics)
                     {
@@ -1894,7 +1938,7 @@ protected:
         barrier.Transition.pResource = tex.resource;
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         barrier.Transition.StateBefore = static_cast<D3D12_RESOURCE_STATES>(texture_usage_map.at(old_usage).d3d12);
-        barrier.Transition.StateAfter  = static_cast<D3D12_RESOURCE_STATES>(texture_usage_map.at(old_usage).d3d12);
+        barrier.Transition.StateAfter  = static_cast<D3D12_RESOURCE_STATES>(texture_usage_map.at(new_usage).d3d12);
 
         ctx_.mCommandList->ResourceBarrier(1, &barrier);
     }
@@ -1908,10 +1952,8 @@ protected:
         }
         else
         {
-            /*
             if (!cmd_.is_offscreen)
             {
-                // This means we're dealing with a single sample swapchain
                 if (cmd_.frm_desc.render_targets.size() == 1)
                 {
                     bool render = 
@@ -1924,11 +1966,11 @@ protected:
 
                     if (render || present)
                     {
-                        //
+                        auto tex_id = cmd_.frm_desc.render_targets[0].tex_id;
+                        transition_texture(pool_[tex_id], old_usage, new_usage);
                     }
                 }
             }
-            */
         }
     }
 

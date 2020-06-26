@@ -102,11 +102,13 @@ texture_usage_map
 {
     { texture_usage_::undefined,                { 0, 0, 0 } },
 
-    { texture_usage_::sampled_texture,            { 0, 0, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE } },
-    { texture_usage_::storage_texture,            { 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS } },
+    { texture_usage_::sampled_texture,          { 0, 0, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE } },
+    { texture_usage_::storage_texture,          { 0, 0, D3D12_RESOURCE_STATE_UNORDERED_ACCESS } },
 
     { texture_usage_::color_attachment,         { 0, 0, D3D12_RESOURCE_STATE_RENDER_TARGET } },
     { texture_usage_::depth_stencil_attachment, { 0, 0, D3D12_RESOURCE_STATE_DEPTH_WRITE } },
+
+    { texture_usage_::present,                  { 0, 0, D3D12_RESOURCE_STATE_COMMON } },
 
     { texture_usage_::resolve_src_,             { 0, 0, D3D12_RESOURCE_STATE_RESOLVE_SOURCE } },
     { texture_usage_::resolve_dst_,             { 0, 0, D3D12_RESOURCE_STATE_RESOLVE_DEST } },

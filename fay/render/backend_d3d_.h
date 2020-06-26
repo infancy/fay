@@ -28,31 +28,60 @@ using namespace std::string_literals;
 #define FAY_SMART_COM_PTR(_a) _COM_SMARTPTR_TYPEDEF(_a, __uuidof(_a))
 
 #ifdef FAY_DEBUG
+
 #ifndef D3D_CHECK
 #define D3D_CHECK(func)	\
 	    { \
 		    HRESULT hr = (func); \
 		    if(FAILED(hr)) \
 		    { \
-                char hr_msg[512]; \
-                FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, hr, 0, hr_msg, ARRAYSIZE(hr_msg), nullptr); \
-                std::string error_msg = "\nError!\nline: "s + std::to_string(__LINE__) + "\nhr: " + std::to_string(hr) + "\nfunc: " + #func + "\nerror msg: " + hr_msg; \
-                LOG(ERROR) << error_msg; \
+                d3d_error_handle(hr, #func); \
 		    } \
 	    }
 #endif
+
 #ifndef D3D_CHECK2
 #define D3D_CHECK2(func, ptr) \
             D3D_CHECK(func) \
-            { if(!ptr) LOG(ERROR) << "nullptr: "s + #ptr; }
+            { if(!ptr) LOG(ERROR) << "ptr is nullptr"s; }
 #endif
+
+#ifndef D3D12_CHECK
+#define D3D12_CHECK(func) \
+	    { \
+		    HRESULT hr = (func); \
+		    if(FAILED(hr)) \
+		    { \
+                d3d_error_handle(hr, #func); \
+                d3d12_error_handle(hr); \
+		    } \
+	    }
+#endif
+
+#ifndef D3D12_CHECK2
+#define D3D12_CHECK2(func, ptr) \
+            D3D12_CHECK(func) \
+            { if(!ptr) LOG(ERROR) << "ptr is nullptr"s; }
+#endif
+
 #else
+
 #ifndef D3D_CHECK
 #define D3D_CHECK(func) (func)
-#endif 
+#endif
+
 #ifndef D3D_CHECK2
 #define D3D_CHECK2(func, ptr) (func)
-#endif 
+#endif
+
+#ifndef D3D12_CHECK
+#define D3D12_CHECK(func) (func)
+#endif
+
+#ifndef D3D12_CHECK2
+#define D3D12_CHECK2(func, ptr) (func)
+#endif
+
 #endif
 
 namespace fay::d3d
@@ -175,6 +204,15 @@ primitive_topology_map
 
 
 #pragma region function
+
+inline void d3d_error_handle(HRESULT hr, const char* funcname)
+{
+    char hr_msg[256];
+    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, hr, 0, hr_msg, ARRAYSIZE(hr_msg), nullptr);
+
+    std::string error_msg = "\nError!\nline: "s + std::to_string(__LINE__) + "\nhr: " + std::to_string(hr) + "\nfunc: " + funcname + "\nerror msg: " + hr_msg;
+    LOG(ERROR) << error_msg;
+}
 
 /*
 IDXGIAdapter3Ptr FindAdapter()

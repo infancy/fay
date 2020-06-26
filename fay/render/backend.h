@@ -51,6 +51,7 @@ public:
     virtual void begin() {}
     virtual void end() {}
 
+    virtual void clear_command_list() {}
     // WARNNING: use 0 as default frame(rather than invalid value) by limitations of command_list
     virtual void begin_frame(frame_id id) = 0;
     virtual void end_frame() = 0;

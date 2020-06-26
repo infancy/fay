@@ -607,6 +607,7 @@ public:
     // size, count, num, byte_size, byte_count
     int_t       count{}; // count() * stride() == btsz, size * stride == bytes
 
+    // WARNING: don't use it
     // TODO: remove
     uint    stride{}; // byte sizes of single element. WARNNING: fay can't check if this value is right or not.
 

@@ -12,6 +12,7 @@ public:
     }
 };
 
+// swapchian, clear
 class clear : public fay::app
 {
 public:
@@ -38,23 +39,12 @@ public:
     }
 };
 
-// swapchain_
-// frame_
 // pipeline_
 
 class shader_ : public fay::app
 {
 public:
-    struct render_paras
-    {
-        glm::vec4 window{};
-        int flag;
-    };
-
-    fay::buffer_id buf_id;
-
-    render_paras paras1, paras2;
-    fay::command_list pass1, pass2;
+    fay::command_list pass1;
 
 public:
     // using fay::app;
@@ -65,16 +55,60 @@ public:
 
     void setup() override
     {
+        fay::buffer_desc bd;
+        {
+            bd.type = fay::buffer_type::vertex;
+            bd.btsz = 36; // can't be zero
+            bd.usage = fay::resource_usage::dynamic;
+            bd.layout =
+            {
+                {fay::attribute_usage::position,  fay::attribute_format::float3},
+            };
+        }
+        auto buf_id = device->create(bd);
+
+        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/shader");
+        sd.layout = bd.layout;
+        auto shd_id = device->create(sd);
+
+        fay::pipeline_desc pd;
+        pd.primitive_type = fay::primitive_type::triangles;
+        pd.cull_mode = fay::cull_mode::none;
+        auto pipe_id = device->create(pd);
+
+        pass1
+            .begin_default(pipe_id, shd_id)
+            .bind_vertex(buf_id)
+            .draw(3)
+            .end_frame();
+    }
+
+    void render() override
+    {
+        device->execute(pass1);
+    }
+};
+
+#define test_index
+class vertex_index_ : public fay::app
+{
+public:
+    fay::command_list pass1;
+
+public:
+    // using fay::app;
+    vertex_index_(const fay::app_desc& _desc) : fay::app(_desc)
+    {
+        desc.window.title = "vertex_index_";
+    }
+
+    void setup() override
+    {
         float vertices[] =
         {
-             0.6f,  0.45f, 0.5f,  1.f, 0.f, // right top
-             0.6f, -0.45f, 0.5f,  1.f, 1.f, // right bottom
-            -0.6f, -0.45f, 0.5f,  0.f, 1.f, // left bottom
-            -0.6f,  0.45f, 0.5f,  0.f, 0.f, // left top
-
-            -0.85f, -0.95f, 0.5f,  1.f, 1.f, // right bottom
-            -0.95f, -0.95f, 0.5f,  0.f, 1.f, // left bottom
-            -0.90f,  0.95f, 0.5f,  0.f, 0.f, // left top
+             0.00f,  0.25f, 0.0f, 1.0f, 
+            -0.25f, -0.25f, 0.0f, 1.0f, 
+             0.25f, -0.25f, 0.0f, 1.0f,
         };
         unsigned int indices[] =
         {  // note that we start from 0!
@@ -83,56 +117,32 @@ public:
 
             4, 5, 6
         };
+
         fay::buffer_desc bd;
         {
-            bd.name = "triangle_vb";
-            bd.size = 7;// sizeof(vertices);
-            bd.stride = 20; // TODO: do it by helper functions;
-            bd.data = vertices;
             bd.type = fay::buffer_type::vertex;
-
+            bd.btsz = 48;
+            bd.data = vertices;
             bd.layout =
             {
-                {fay::attribute_usage::position,  fay::attribute_format::float3},
-                {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
+                {fay::attribute_usage::position,  fay::attribute_format::float4}, // WARNING!
             };
         }
-        fay::buffer_desc id("triangle_ib", 9, indices);
-        auto triangle_vb = device->create(bd);
-        auto triangle_ib = device->create(id);
+        auto buf_id = device->create(bd);
 
-        fay::image img("texture/awesomeface.png", true);
-        auto triangle_tbo = create_2d(this->device, "hello", img);
-
-        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/0_basic.vs", "gfx/test/0_basic.fs", desc.render.backend);
-        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/1_buffer.vs", "gfx/test/1_buffer.fs", desc.render.backend);
-        //fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/2_texture.vs", "gfx/test/2_texture.fs", desc.render.backend);
-        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/test/3_uniform.vs", "gfx/test/3_uniform.fs", desc.render.backend);
+        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/vertex_index");
+        sd.layout = bd.layout;
         auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
-        pd.name = "triangles";
         pd.primitive_type = fay::primitive_type::triangles;
         pd.cull_mode = fay::cull_mode::none;
         auto pipe_id = device->create(pd);
 
-        paras1.window = glm::vec4(0.f, 0.f, 1080.f, 720.f);
-        paras1.flag = 1;
-
-        paras2.window = glm::vec4(0.f, 0.f, 1080.f, 720.f);
-        paras2.flag = 0;
-
         pass1
             .begin_default(pipe_id, shd_id)
-            .bind_textures({ triangle_tbo })
-            .bind_index(triangle_ib)
-            .bind_vertex(triangle_vb)
-            // TODO: rename bind_uniform/bind_buffer
-            .bind_uniform_block("para", fay::memory{ (uint8_t*)&paras1, sizeof(render_paras) })
-            .draw_index(6, 0)
-            .bind_uniform_block("para", fay::memory{ (uint8_t*)&paras2, sizeof(render_paras) })
-            .draw_index(3, 6)
-            //.draw(6)
+            .bind_vertex(buf_id)
+            .draw(3)
             .end_frame();
     }
 
@@ -175,6 +185,7 @@ public:
     {
         float vertices[] = 
         {
+          // position             texture
              0.6f,  0.45f, 0.5f,  1.f, 0.f, // right top
              0.6f, -0.45f, 0.5f,  1.f, 1.f, // right bottom
             -0.6f, -0.45f, 0.5f,  0.f, 1.f, // left bottom
@@ -205,8 +216,9 @@ public:
                 {fay::attribute_usage::texcoord0, fay::attribute_format::float2}
             };
         }
-        fay::buffer_desc id("triangle_ib", 9, indices);
         auto triangle_vb = device->create(bd);
+
+        fay::buffer_desc id("triangle_ib", 9, indices);
         auto triangle_ib = device->create(id);
 
         fay::image img("texture/awesomeface.png", true);
@@ -419,6 +431,8 @@ public:
 
 SAMPLE_RENDER_APP_IMPL(init)
 SAMPLE_RENDER_APP_IMPL(clear)
+SAMPLE_RENDER_APP_IMPL(shader_)
+SAMPLE_RENDER_APP_IMPL(vertex_index_)
 SAMPLE_RENDER_APP_IMPL(triangle)
 
 SAMPLE_RENDER_APP_IMPL(instancing)

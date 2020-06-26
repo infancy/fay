@@ -185,6 +185,7 @@ void render_device::execute_command_list(const command_list& cmds)
     ctx_.pipe_id = pipeline_id(1);
     ctx_.pipe = pool_.desc(ctx_.pipe_id);
 
+    backend_->clear_command_list();
     for (const auto& cmd : cs)
         execute_command(cmd);
 }
