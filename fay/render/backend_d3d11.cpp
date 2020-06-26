@@ -2,8 +2,10 @@
 
 #ifdef FAY_IN_WINDOWS
 
-namespace fay::d3d
+namespace fay::d3d11
 {
+
+using namespace fay::d3d;
 
 inline namespace func
 {
@@ -1457,7 +1459,7 @@ namespace fay
 // TODO: _ptr -> _up, _uptr _sp _wp
 render_backend_ptr create_backend_d3d11(const render_desc& desc)
 {
-    return std::make_unique<fay::d3d::backend_d3d11>(desc);
+    return std::make_unique<fay::d3d11::backend_d3d11>(desc);
 }
 
 } // namespace fay

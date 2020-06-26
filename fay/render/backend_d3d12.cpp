@@ -1,10 +1,6 @@
-#include <fmt/format.h>
 #include "fay/render/backend.h"
 
-#ifdef FAY_IN_WINDOWS
 
-#include "backend_d3d_.h"
-#include <d3d12.h>
 
 // https://www.3dgep.com/learning-directx-12-1/
 
@@ -12,8 +8,16 @@
 // https://github.com/vinjn/vgfx
 // https://github.com/microsoft/DirectX-Graphics-Samples
 
-namespace fay::d3d
+
+
+#ifdef FAY_IN_WINDOWS
+
+#include "backend_d3d_.h"
+
+namespace fay::d3d12
 {
+
+using namespace fay::d3d;
 
 inline namespace enum_
 {
@@ -44,17 +48,17 @@ inline namespace type
 
 struct buffer
 {
-    ID3D12ResourcePtr resource;
+    ID3D12ResourcePtr resource{};
 
-    D3D12_INDEX_BUFFER_VIEW index_buffer_view;
+    D3D12_INDEX_BUFFER_VIEW index_buffer_view{};
 
-    D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view;
+    D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view{};
     std::vector<D3D12_INPUT_ELEMENT_DESC> layout{};
     D3D12_INPUT_LAYOUT_DESC input_layout_desc{};
 
-    D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_view_desc;
-    D3D12_SHADER_RESOURCE_VIEW_DESC srv_view_desc;
-    D3D12_UNORDERED_ACCESS_VIEW_DESC uav_view_desc;
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_view_desc{};
+    D3D12_SHADER_RESOURCE_VIEW_DESC srv_view_desc{};
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uav_view_desc{};
 
 
     buffer() = default;
@@ -99,18 +103,17 @@ struct buffer
 
 struct texture
 {
-    ID3D12ResourcePtr resource;
+    ID3D12ResourcePtr resource{ 0 };
     // ID3D12ResourcePtr multisample_resource;
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc;
-    D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+    D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc{};
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc{};
 
-    D3D12_SAMPLER_DESC sampler_desc;
+    D3D12_SAMPLER_DESC sampler_desc{};
 
-    texture() {}
+    texture() = default;
     texture(const texture_desc& desc)
     {
-
     }
 };
 
@@ -151,15 +154,15 @@ struct descriptor_table
 // static_respack, dynamic_respack
 struct respack
 {
-    descriptor_table sampler_table;
-    descriptor_table uniform_table;
+    descriptor_table sampler_table{};
+    descriptor_table uniform_table{};
 
-    std::vector<descriptor_table*> active_tables;
+    std::vector<descriptor_table*> active_tables{};
 
-    ID3D12DescriptorHeapPtr sampler_heap;
-    ID3D12DescriptorHeapPtr cbvsrvuav_heap;
+    ID3D12DescriptorHeapPtr sampler_heap{};
+    ID3D12DescriptorHeapPtr cbvsrvuav_heap{};
 
-    ID3D12RootSignature* respack_layout;
+    ID3D12RootSignature* respack_layout{};
 
     respack() {}
     respack(const respack_desc& desc)
@@ -188,7 +191,7 @@ struct respack
 
 struct shader_unit
 {
-    shader_stage stage;
+    shader_stage stage{};
     string source;
     string name;
     string target;
@@ -353,6 +356,7 @@ struct frame
 
 class backend_d3d12 : public render_backend
 {
+#pragma region field
 private:
     struct IDXGIAdapter_
     {
@@ -379,9 +383,9 @@ private:
     {
         // Initialization
         IDXGIFactory5Ptr mFactory;
-#ifdef FAY_DEBUG
+    #ifdef FAY_DEBUG
         ID3D12Debug3Ptr mDebugController;
-#endif
+    #endif
         std::vector<IDXGIAdapter_> mAdapterList{}; // all adapter without software adapter
         
         D3D_FEATURE_LEVEL mFeatureLevel;
@@ -392,38 +396,22 @@ private:
         ID3D12DebugDevice1Ptr mDebugDevice;
     #endif
         ID3D12DevicePtr mDevice;
+        ID3D12CommandAllocatorPtr mCommandAllocator;
         Queue_ mGraphicsQueue; // use the graphics queue as present queue
         //Queue_ mPresentQueue;
-        ID3D12CommandAllocatorPtr mCommandAllocator;
-        ID3D12GraphicsCommandListPtr mCommandList;
 
 
-        // swap chain
+        // swapchain, frame and cmdlist
         IDXGISwapChain4Ptr mSwapchain;
-        static const uint SwapChainBufferCount{ 2 };
+        static const uint SwapChainBufferCount{ 2 }; // TODO
         // Current Frame
         UINT mCurrentFrameIndex;
-        ID3D12DescriptorHeapPtr mRtvHeap;
-        ID3D12ResourcePtr mRenderTargets[SwapChainBufferCount]; // TODO
+        texture_id tex_ids[SwapChainBufferCount]{};
+        frame_id frm_ids[SwapChainBufferCount]{};
 
-
-        // Resources
-        D3D12_VIEWPORT mViewport;
-        D3D12_RECT mScissorRect;
-
-        ID3D12ResourcePtr mVertexBuffer;
-        ID3D12ResourcePtr mIndexBuffer;
-
-        ID3D12ResourcePtr mUniformBuffer;
-        ID3D12DescriptorHeapPtr mUniformBufferHeap;
-        UINT8* mMappedUniformBuffer;
-
-        D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
-        D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
-
-        UINT mRtvDescriptorSize;
-        ID3D12RootSignaturePtr mRootSignature;
-        ID3D12PipelineStatePtr mPipelineState;
+        // cmdlist
+        ID3D12GraphicsCommandListPtr mCommandList{};
+        ID3D12GraphicsCommandListPtr mFrameCommandList[SwapChainBufferCount]{};
     };
     context ctx_{};
 
@@ -445,27 +433,32 @@ private:
         buffer index{};
         buffer vertex{};
     };
-    command_list_context cmd_;
+    command_list_context cmd_{};
+
+#pragma endregion field
 
 #pragma region init
 public:
     backend_d3d12(const render_desc& desc) : 
         render_backend(desc)
     {
-        create_device_command();
-        create_swapchain();
+        create_device();
 
-        resize_render_target();
+        create_swapchain();
+        create_swapchain_frame();
+        resize_swapchain_frame();
+
+        create_command_list();
     }
     ~backend_d3d12()
     {
     }
 
 private:
-    void create_device_command()
+    void create_device()
     {
         UINT dxgiFactoryFlags = 0;
-#ifdef FAY_DEBUG
+    #ifdef FAY_DEBUG
         // enable d3d12 debug layer
 
         dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
@@ -479,8 +472,10 @@ private:
         ThrowIfFailed(
             debugController->QueryInterface(IID_PPV_ARGS(&ctx_.mDebugController)));
         ctx_.mDebugController->EnableDebugLayer();
-        ctx_.mDebugController->SetEnableGPUBasedValidation(true);
-#endif
+
+        // or can't use Nvidia Nsight Graphics 
+        //ctx_.mDebugController->SetEnableGPUBasedValidation(true);
+    #endif
         // Create Entry Point
         ThrowIfFailed(
             CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&ctx_.mFactory)));
@@ -526,10 +521,7 @@ private:
         // find the highest feature level adapter
         FAY_CHECK(ctx_.mAdapterList.size() > 0);
         std::sort(ctx_.mAdapterList.begin(), ctx_.mAdapterList.end(), 
-            [](IDXGIAdapter_ a, IDXGIAdapter_ b)
-            {
-                return a.featureLevel > b.featureLevel;
-            });
+            [](IDXGIAdapter_ a, IDXGIAdapter_ b) { return a.featureLevel > b.featureLevel; });
         ctx_.mAdapter = ctx_.mAdapterList[0].adapter;
         ctx_.mFeatureLevel = ctx_.mAdapterList[0].featureLevel;
 
@@ -539,10 +531,10 @@ private:
             IID_PPV_ARGS(&ctx_.mDevice)));
         // TODO
         ctx_.mDevice->SetName(L"MainD3D12Device");
-#ifdef FAY_DEBUG
+    #ifdef FAY_DEBUG
         // Get debug device
         ThrowIfFailed(ctx_.mDevice->QueryInterface(&ctx_.mDebugDevice));
-#endif
+    #endif
 
 
         // create command producer
@@ -559,7 +551,7 @@ private:
         ThrowIfFailed(
             ctx_.mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&gfxQueue.queue)));
         
-        // Sync
+        // sync
         ThrowIfFailed(
             ctx_.mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&gfxQueue.fence)));
         gfxQueue.fence_value = 1;
@@ -581,7 +573,7 @@ private:
         desc.SampleDesc.Count = 1; // If multisampling is needed, we'll resolve it later
         //desc.SampleDesc.Quality = p_renderer->settings.swapchain.sample_quality;
         desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc.BufferCount = ctx_.SwapChainBufferCount; // TODO
+        desc.BufferCount = ctx_.SwapChainBufferCount;
         desc.Scaling = DXGI_SCALING_STRETCH;
         desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         desc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
@@ -622,128 +614,74 @@ private:
     {
         assert(ctx_.mSwapchain != nullptr);
 
-        ctx_.mScissorRect.left = 0;
-        ctx_.mScissorRect.top = 0;
-        ctx_.mScissorRect.right = static_cast<LONG>(width);
-        ctx_.mScissorRect.bottom = static_cast<LONG>(height);
-
-        ctx_.mViewport.TopLeftX = 0.f;
-        ctx_.mViewport.TopLeftY = 0.f;
-        ctx_.mViewport.Width = static_cast<float>(width);
-        ctx_.mViewport.Height = static_cast<float>(height);
-        ctx_.mViewport.MinDepth = 0.1f;
-        ctx_.mViewport.MaxDepth = 1000.f;
-
         ctx_.mSwapchain->ResizeBuffers(ctx_.SwapChainBufferCount, width, height,
             DXGI_FORMAT_R8G8B8A8_UNORM, 0);
         ctx_.mCurrentFrameIndex = ctx_.mSwapchain->GetCurrentBackBufferIndex();
     }
 
-    /*
-    // default frame
     void create_swapchain_frame()
     {
-        assert(ctx_.mDevice != nullptr);
-        assert(ctx_.mSwapchain != nullptr);
-
-        std::vector<ID3D12Resource*> swapchain_images(ctx_.SwapChainBufferCount);
-        for (uint32_t i = 0; i < ctx_.SwapChainBufferCount; ++i)
+        for (int i = 0; i < ctx_.SwapChainBufferCount; ++i)
         {
-            D3D_CHECK(ctx_.mSwapchain->GetBuffer(i, __uuidof(*swapchain_images.data()),
-                (void**)&(swapchain_images[i])));
-        }
+            texture_desc tex_desc;
+            tex_desc.as_render_target = render_target::color;
+            tex_desc.format = pixel_format::rgba8;
+            ctx_.tex_ids[i] = pool_.insert(tex_desc);
 
-        // Populate the vk_image field and create the Vulkan texture objects
-        for (size_t i = 0; i < ctx_.SwapChainBufferCount; ++i)
-        {
-            tr_render_target* render_target = p_renderer->swapchain_render_targets[i];
-            render_target->color_attachments[0]->dx_resource = swapchain_images[i];
 
-            create_texture(p_renderer, render_target->color_attachments[0]);
-            if (p_renderer->settings.swapchain.sample_count > tr_sample_count_1)
-            {
-                tr_internal_dx_create_texture(p_renderer,
-                    render_target->color_attachments_multisample[0]);
-            }
-
-            if (NULL != render_target->depth_stencil_attachment)
-            {
-                tr_internal_dx_create_texture(p_renderer, render_target->depth_stencil_attachment);
-
-                if (p_renderer->settings.swapchain.sample_count > tr_sample_count_1)
-                {
-                    tr_internal_dx_create_texture(p_renderer,
-                        render_target->depth_stencil_attachment_multisample);
-                }
-            }
-        }
-
-        // Initialize Vulkan render target objects
-        for (uint32_t i = 0; i < ctx_.SwapChainBufferCount; ++i)
-        {
-            tr_render_target* render_target = p_renderer->swapchain_render_targets[i];
-            tr_internal_dx_create_render_target(p_renderer, false, render_target);
+            // dummy
+            frame_desc frm_desc;
+            ctx_.frm_ids[i] = pool_.insert(frm_desc);
         }
     }
-    */
 
     void resize_swapchain_frame()
     {
-        // destory default frame
         for (size_t i = 0; i < ctx_.SwapChainBufferCount; ++i)
         {
-            if (ctx_.mRenderTargets[i])
+            texture& tex = pool_[ctx_.tex_ids[i]];
+            if (tex.resource)
             {
-                ctx_.mRenderTargets[i]->Release();
-                ctx_.mRenderTargets[i] = 0;
+                tex.resource->Release();
             }
-        }
-        if (ctx_.mRtvHeap)
-        {
-            ctx_.mRtvHeap->Release();
-            ctx_.mRtvHeap = nullptr;
-        }
+            HRESULT hres = ctx_.mSwapchain->GetBuffer(i, IID_PPV_ARGS(&tex.resource));
+            assert(SUCCEEDED(hres));
 
 
-        // create default frame
-        ctx_.mCurrentFrameIndex = ctx_.mSwapchain->GetCurrentBackBufferIndex();
-
-        // Create descriptor heaps
-        {
-            // create a render target view (RTV) descriptor heap.
-            D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-            rtvHeapDesc.NumDescriptors = ctx_.SwapChainBufferCount;
-            rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-            rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-            ThrowIfFailed(ctx_.mDevice->CreateDescriptorHeap(&rtvHeapDesc,
-                IID_PPV_ARGS(&ctx_.mRtvHeap)));
-
-            ctx_.mRtvDescriptorSize = ctx_.mDevice->GetDescriptorHandleIncrementSize(
-                D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-        }
-
-        // Create RTV/frame resources by descriptor heaps
-        {
-            D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-                ctx_.mRtvHeap->GetCPUDescriptorHandleForHeapStart());
-
-            // Create a RTV for each frame.
-            for (UINT n = 0; n < ctx_.SwapChainBufferCount; n++)
+            frame& frm = pool_[ctx_.frm_ids[i]];
+            if (frm.rtv_heap)
             {
-                ThrowIfFailed(
-                    ctx_.mSwapchain->GetBuffer(n, IID_PPV_ARGS(&ctx_.mRenderTargets[n])));
-                ctx_.mDevice->CreateRenderTargetView(ctx_.mRenderTargets[n], nullptr,
-                    rtvHandle);
-                rtvHandle.ptr += (1 * ctx_.mRtvDescriptorSize);
+                frm.rtv_heap->Release();
+                frm.rtv_heap = nullptr;
             }
-        }
 
-        // TODO: DSV
+            frame_desc frm_desc;
+            frm_desc.render_targets.push_back({ ctx_.tex_ids[i] });
+            ctx_.frm_ids[i] = create(frm_desc);
+        }
     }
 
     bool resize_render_target()
     {
         return false;
+    }
+
+    void create_command_list()
+    {
+        for(int i = 0; i < ctx_.SwapChainBufferCount; ++i)
+        {
+            auto& cmdlist = ctx_.mFrameCommandList[i];
+
+            ID3D12PipelineState* initialState = NULL;
+            HRESULT hres = ctx_.mDevice->CreateCommandList(
+                0, D3D12_COMMAND_LIST_TYPE_DIRECT, ctx_.mCommandAllocator, initialState,
+                IID_PPV_ARGS(&cmdlist));
+            assert(SUCCEEDED(hres));
+
+            // Command lists are created in the recording state, but there is nothing
+            // to record yet. The main loop expects it to be closed, so close it now.
+            cmdlist->Close();
+        }
     }
 
 #pragma endregion init
@@ -1644,6 +1582,207 @@ private:
         return ptr;
     }
 
+#pragma endregion create, update and destroy
+
+#pragma region render command
+public:
+
+    virtual void begin() override
+    {
+        HRESULT hres = ctx_.mCommandAllocator->Reset();
+        assert(SUCCEEDED(hres));
+
+        ctx_.mCurrentFrameIndex = ctx_.mSwapchain->GetCurrentBackBufferIndex();
+        ctx_.mCommandList = ctx_.mFrameCommandList[ctx_.mCurrentFrameIndex];
+
+        hres = ctx_.mCommandList->Reset(ctx_.mCommandAllocator, NULL);
+        assert(SUCCEEDED(hres));
+    }
+    virtual void end() override
+    {
+        HRESULT hres = ctx_.mCommandList->Close();
+        assert(SUCCEEDED(hres));
+
+
+        queue_submit();
+        if (!cmd_.is_offscreen)
+        {
+            queue_present();
+            queue_wait_idle();
+        }
+    }
+
+    // WARNNING: use 0 as default frame(rather than invalid value) by limitations of command_list
+    virtual void begin_frame(frame_id id) override
+    {
+        cmd_.is_offscreen = id.operator bool();
+        if (cmd_.is_offscreen)
+        {
+
+        }
+        else
+        {
+            id = ctx_.frm_ids[ctx_.mCurrentFrameIndex];
+        }
+
+        cmd_ = command_list_context{};
+        cmd_.frm = pool_[id];
+        cmd_.frm_desc = pool_.desc(id);
+
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle = {};
+        D3D12_CPU_DESCRIPTOR_HANDLE dsv_handle = {};
+        D3D12_CPU_DESCRIPTOR_HANDLE* p_rtv_handle = NULL;
+        D3D12_CPU_DESCRIPTOR_HANDLE* p_dsv_handle = NULL;
+
+        if (cmd_.frm.rtv_fmts.size() > 0)
+        {
+            rtv_handle = cmd_.frm.rtv_heap->GetCPUDescriptorHandleForHeapStart();
+            p_rtv_handle = &rtv_handle;
+        }
+
+        if (cmd_.frm.dsv_fmt)
+        {
+            dsv_handle = cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
+            p_dsv_handle = &dsv_handle;
+        }
+
+        ctx_.mCommandList->OMSetRenderTargets(
+            cmd_.frm.rtv_fmts.size(), p_rtv_handle, TRUE, 
+            p_dsv_handle);
+    }
+    virtual void end_frame() override
+    {
+
+        // multisample texture to original texture
+        // TODO
+    }
+
+    virtual void clear_color(glm::vec4 rgba, std::vector<uint> targets) const override
+    {
+        UINT inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(
+            D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+        for (auto index : targets)
+        {
+            D3D12_CPU_DESCRIPTOR_HANDLE handle =
+                cmd_.frm.rtv_heap->GetCPUDescriptorHandleForHeapStart();
+            handle.ptr += index * inc_size;
+            ctx_.mCommandList->ClearRenderTargetView(handle, (float*)(&rgba), 0, NULL);
+        }
+    }
+    virtual void clear_depth(float depth) const override
+    {
+        D3D12_CPU_DESCRIPTOR_HANDLE handle =
+            cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
+
+        ctx_.mCommandList->ClearDepthStencilView(
+            handle, D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
+    }
+    virtual void clear_stencil(uint stencil) const override
+    {
+        D3D12_CPU_DESCRIPTOR_HANDLE handle =
+            cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
+
+        ctx_.mCommandList->ClearDepthStencilView(
+            handle, D3D12_CLEAR_FLAG_DEPTH, 0.f, (uint8_t)stencil, 0, nullptr);
+    }
+
+    virtual void set_viewport(uint x, uint y, uint width, uint height) override
+    {
+        D3D12_VIEWPORT viewport = {};
+        viewport.TopLeftX = x;
+        viewport.TopLeftY = y;
+        viewport.Width = width;
+        viewport.Height = height;
+        viewport.MinDepth = 0.f;
+        viewport.MaxDepth = 1.f;
+
+        ctx_.mCommandList->RSSetViewports(1, &viewport);
+    }
+    virtual void set_scissor(uint x, uint y, uint width, uint height) override
+    {
+        D3D12_RECT scissor = {};
+        scissor.left = x;
+        scissor.top = y;
+        scissor.right = x + width;
+        scissor.bottom = y + height;
+
+        ctx_.mCommandList->RSSetScissorRects(1, &scissor);
+    }
+
+
+
+    virtual void apply_pipeline(const pipeline_id id, std::array<bool, 4>) override
+    {
+        FAY_DCHECK(pool_.contains(id));
+        cmd_.pipe = pool_[id];
+        cmd_.pipe_desc = pool_.desc(id);
+    }
+    virtual void apply_shader(const shader_id id) override
+    {
+        cmd_.shd = pool_[id];
+    }
+
+    //virtual void bind_resource() override {}
+
+    // bind resource, create RootSignature, ShaderInputLayout
+    void bind_respack(const respack_id& id)
+    {
+        // by currenty cmds_
+        // actually we pack resource descriptor up, not resource themselves
+
+        cmd_.res = pool_[id];
+    }
+
+    virtual void bind_index(const buffer_id id) override
+    {
+        cmd_.index = pool_[id];
+        ctx_.mCommandList->IASetIndexBuffer(&cmd_.index.index_buffer_view);
+    }
+    virtual void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) override
+    {
+        cmd_.vertex = pool_[id];
+
+        // TODO
+        D3D12_VERTEX_BUFFER_VIEW views[1]{};
+        for (uint32_t i = 0; i < 1; ++i)
+        {
+            views[i] = cmd_.vertex.vertex_buffer_view;
+        }
+
+        ctx_.mCommandList->IASetVertexBuffers(0, 1, views);
+    }
+
+    virtual void bind_uniform(const std::string& name, command::uniform uniform, shader_stage stage = shader_stage::none) override
+    {
+
+    }
+    virtual void bind_uniform(uint ub_index, const void* data, uint size, shader_stage stage = shader_stage::none) override
+    {
+
+    }
+    virtual void bind_texture(const texture_id id, int tex_index, const std::string& sampler, shader_stage stage = shader_stage::none) override
+    {
+
+    }
+
+
+
+    virtual void draw(uint vertex_count, uint first_vertex, uint instance_count) override
+    {
+        set_backend_state();
+
+        ctx_.mCommandList->DrawInstanced((UINT)vertex_count, (UINT)1, (UINT)first_vertex, (UINT)0);
+    }
+    virtual void draw_index(uint index_count, uint first_index, uint instance_count) override
+    {
+        set_backend_state();
+
+        ctx_.mCommandList->DrawIndexedInstanced((UINT)index_count, (UINT)1, (UINT)first_index, (UINT)0,
+            (UINT)0);
+    }
+
+protected:
     void set_backend_state()
     {
         // if exist
@@ -1734,193 +1873,6 @@ private:
         }
     }
 
-#pragma endregion create, update and destroy
-
-#pragma region render command
-public:
-
-    virtual void begin() override
-    {
-        HRESULT hres = ctx_.mCommandAllocator->Reset();
-        assert(SUCCEEDED(hres));
-
-        hres = ctx_.mCommandList->Reset(ctx_.mCommandAllocator, NULL);
-        assert(SUCCEEDED(hres));
-    }
-    virtual void end() override
-    {
-        HRESULT hres = ctx_.mCommandList->Close();
-        assert(SUCCEEDED(hres));
-    }
-
-    // WARNNING: use 0 as default frame(rather than invalid value) by limitations of command_list
-    virtual void begin_frame(frame_id id) override
-    {
-        if (id)
-        {
-
-        }
-        else
-        {
-            // TODO: swapchain
-        }
-
-        cmd_ = command_list_context{};
-        cmd_.frm = pool_[id];
-        cmd_.frm_desc = pool_.desc(id);
-
-        D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle = {};
-        D3D12_CPU_DESCRIPTOR_HANDLE dsv_handle = {};
-        D3D12_CPU_DESCRIPTOR_HANDLE* p_rtv_handle = NULL;
-        D3D12_CPU_DESCRIPTOR_HANDLE* p_dsv_handle = NULL;
-
-        if (cmd_.frm.rtv_fmts.size() > 0)
-        {
-            rtv_handle = cmd_.frm.rtv_heap->GetCPUDescriptorHandleForHeapStart();
-            p_rtv_handle = &rtv_handle;
-        }
-
-        if (cmd_.frm.dsv_fmt)
-        {
-            dsv_handle = cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
-            p_dsv_handle = &dsv_handle;
-        }
-
-        ctx_.mCommandList->OMSetRenderTargets(
-            cmd_.frm.rtv_fmts.size(), p_rtv_handle,
-            TRUE, p_dsv_handle);
-    }
-    virtual void end_frame() override
-    {
-        // multisample texture to original texture
-        // TODO
-    }
-
-    virtual void clear_color(glm::vec4 rgba, std::vector<uint> targets) const override
-    {
-        UINT inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(
-            D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-        for (auto index : targets)
-        {
-            D3D12_CPU_DESCRIPTOR_HANDLE handle =
-                cmd_.frm.rtv_heap->GetCPUDescriptorHandleForHeapStart();
-            handle.ptr += index * inc_size;
-            ctx_.mCommandList->ClearRenderTargetView(handle, (float*)(&rgba), 0, NULL);
-        }
-    }
-    virtual void clear_depth(float depth) const override
-    {
-        D3D12_CPU_DESCRIPTOR_HANDLE handle =
-            cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
-
-        ctx_.mCommandList->ClearDepthStencilView(
-            handle, D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
-    }
-    virtual void clear_stencil(uint stencil) const override
-    {
-        D3D12_CPU_DESCRIPTOR_HANDLE handle =
-            cmd_.frm.dsv_heap->GetCPUDescriptorHandleForHeapStart();
-
-        ctx_.mCommandList->ClearDepthStencilView(
-            handle, D3D12_CLEAR_FLAG_DEPTH, 0.f, (uint8_t)stencil, 0, nullptr);
-    }
-
-    virtual void set_viewport(uint x, uint y, uint width, uint height) override
-    {
-        D3D12_VIEWPORT viewport = {};
-        viewport.TopLeftX = x;
-        viewport.TopLeftY = y;
-        viewport.Width = width;
-        viewport.Height = height;
-        viewport.MinDepth = 0.f;
-        viewport.MaxDepth = 1.f;
-
-        ctx_.mCommandList->RSSetViewports(1, &viewport);
-    }
-    virtual void set_scissor(uint x, uint y, uint width, uint height) override
-    {
-        D3D12_RECT scissor = {};
-        scissor.left = x;
-        scissor.top = y;
-        scissor.right = x + width;
-        scissor.bottom = y + height;
-
-        ctx_.mCommandList->RSSetScissorRects(1, &scissor);
-    }
-
-
-
-    virtual void apply_pipeline(const pipeline_id id, std::array<bool, 4>) override
-    {
-        cmd_.pipe = pool_[id];
-        cmd_.pipe_desc = pool_.desc(id);
-    }
-    virtual void apply_shader(const shader_id id) override
-    {
-        cmd_.shd = pool_[id];
-    }
-
-    //virtual void bind_resource() override {}
-
-    // bind resource, create RootSignature, ShaderInputLayout
-    void bind_respack(const respack_id& id)
-    {
-        // by currenty cmds_
-        // actually we pack resource descriptor up, not resource themselves
-
-        cmd_.res = pool_[id];
-    }
-
-    virtual void bind_index(const buffer_id id) override
-    {
-        cmd_.index = pool_[id];
-        ctx_.mCommandList->IASetIndexBuffer(&cmd_.index.index_buffer_view);
-    }
-    virtual void bind_vertex(const buffer_id id, std::vector<size_t> attrs, std::vector<size_t> slots, size_t instance_rate) override
-    {
-        cmd_.vertex = pool_[id];
-
-        // TODO
-        D3D12_VERTEX_BUFFER_VIEW views[1]{};
-        for (uint32_t i = 0; i < 1; ++i)
-        {
-            views[i] = cmd_.vertex.vertex_buffer_view;
-        }
-
-        ctx_.mCommandList->IASetVertexBuffers(0, 1, views);
-    }
-
-    virtual void bind_uniform(const std::string& name, command::uniform uniform, shader_stage stage = shader_stage::none) override
-    {
-
-    }
-    virtual void bind_uniform(uint ub_index, const void* data, uint size, shader_stage stage = shader_stage::none) override
-    {
-
-    }
-    virtual void bind_texture(const texture_id id, int tex_index, const std::string& sampler, shader_stage stage = shader_stage::none) override
-    {
-
-    }
-
-
-
-    virtual void draw(uint vertex_count, uint first_vertex, uint instance_count) override
-    {
-        set_backend_state();
-
-        ctx_.mCommandList->DrawInstanced((UINT)vertex_count, (UINT)1, (UINT)first_vertex, (UINT)0);
-    }
-    virtual void draw_index(uint index_count, uint first_index, uint instance_count) override
-    {
-        set_backend_state();
-
-        ctx_.mCommandList->DrawIndexedInstanced((UINT)index_count, (UINT)1, (UINT)first_index, (UINT)0,
-            (UINT)0);
-    }
-
-protected:
     void transition_buffer(const buffer& buf, buffer_type old_type, buffer_type new_type)
     {
         D3D12_RESOURCE_BARRIER barrier = {};
@@ -2030,7 +1982,7 @@ protected:
     // low level api, mainly for d3d12, vulkan and metal
     virtual void acquire_next_image() override
     {
-        ctx_.mCurrentFrameIndex = ctx_.mSwapchain->GetCurrentBackBufferIndex();
+        //ctx_.mCurrentFrameIndex = ctx_.mSwapchain->GetCurrentBackBufferIndex();
     }
 
 
@@ -2062,7 +2014,7 @@ namespace fay
 
 render_backend_ptr create_backend_d3d12(const render_desc& desc)
 {
-    return std::make_unique<fay::d3d::backend_d3d12>(desc);
+    return std::make_unique<fay::d3d12::backend_d3d12>(desc);
 }
 
 } // namespace fay

@@ -1231,6 +1231,10 @@ public:
     // command_list& bind_frame(frame_id id, uint flags, std::vector<glm::vec4> colors, float depth, int stencil);
 
     // WARNNING: clear all color targets if 'targets' is empty.
+    command_list& clear_color(float red, float green, float blue, float alpha = 1.f, std::vector<uint> targets = {})
+    {
+        return clear_color({ red, green, blue, alpha });
+    }
     command_list& clear_color(glm::vec4 rgba = { 0.f, 0.f, 0.f, 1.f }, std::vector<uint> targets = {})
     {
         auto& cmd = add_command(command_type::clear_color);
