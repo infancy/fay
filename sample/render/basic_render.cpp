@@ -48,7 +48,7 @@ public:
     }
 };
 
-#define test_pipeline
+//#define test_pipeline
 class shader_pipeline_ : public fay::app
 {
 public:
@@ -119,35 +119,76 @@ public:
 
     void setup() override
     {
-        float vertices[] =
-        {
-             0.00f,  0.25f, 0.0f, 1.0f, 
-            -0.25f, -0.25f, 0.0f, 1.0f, 
-             0.25f, -0.25f, 0.0f, 1.0f,
-        };
-        unsigned int indices[] =
-        {  // note that we start from 0!
-            0, 1, 3,  // first Triangle
-            1, 2, 3,   // second Triangle
+        fay::buffer_id vertex_id0, vertex_id1, index_id1;
+        fay::shader_id shd_id0, shd_id1;
 
-            4, 5, 6
-        };
-
-        fay::buffer_desc bd;
         {
-            bd.type = fay::buffer_type::vertex;
-            bd.btsz = 48;
-            bd.data = vertices;
-            bd.layout =
+            float vertices[] =
             {
-                {fay::attribute_usage::position,  fay::attribute_format::float4}, // WARNING!
+                 0.00f,  0.25f, 0.0f,
+                -0.25f, -0.25f, 0.0f,
+                 0.25f, -0.25f, 0.0f,
             };
-        }
-        auto buf_id = device->create(bd);
+            fay::buffer_desc bd;
+            {
+                bd.type = fay::buffer_type::vertex;
+                bd.btsz = 48;
+                bd.data = vertices;
+                bd.layout =
+                {
+                    {fay::attribute_usage::position, fay::attribute_format::float3},
+                };
+            }
+            vertex_id0 = device->create(bd);
 
-        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/vertex_index");
-        sd.layout = bd.layout;
-        auto shd_id = device->create(sd);
+            fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/vertex");
+            sd.layout = bd.layout;
+            shd_id0 = device->create(sd);
+        }
+
+#ifdef test_index
+        {
+            float vertices[] =
+            {
+                 0.25f,  0.25f, 0.f,   1.f, 0.f, 0.f,
+                 0.25f, -0.25f, 0.f,   0.f, 1.f, 0.f,
+                 0.75f, -0.25f, 0.f,   0.f, 0.f, 1.f, 
+                 0.75f,  0.25f, 0.f,   1.f, 0.f, 0.f,
+            };
+            fay::buffer_desc bd;
+            {
+                bd.type = fay::buffer_type::vertex;
+                bd.btsz = 96;
+                bd.data = vertices;
+                bd.layout =
+                {
+                    {fay::attribute_usage::position, fay::attribute_format::float3},
+                    {fay::attribute_usage::normal, fay::attribute_format::float3},
+                };
+            }
+            vertex_id1 = device->create(bd);
+
+
+            // float indices[]...
+            int indices[] =
+            {
+                0, 1, 2, 
+                0, 2, 3
+            };
+            fay::buffer_desc index;
+            {
+                index.type = fay::buffer_type::index;
+                index.btsz = 24;
+                index.data = indices;
+            }
+            index_id1 = device->create(index);
+
+
+            fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/index");
+            sd.layout = bd.layout;
+            shd_id1 = device->create(sd);
+        }
+#endif
 
         fay::pipeline_desc pd;
         pd.primitive_type = fay::primitive_type::triangles;
@@ -161,9 +202,15 @@ public:
             .begin_default_frame()
             .clear()
             .apply_pipeline(pipe_id)
-            .apply_shader(shd_id)
-            .bind_vertex(buf_id)
+            .apply_shader(shd_id0)
+            .bind_vertex(vertex_id0)
             .draw(3, 0)
+        #ifdef test_index
+            .apply_shader(shd_id1)
+            .bind_vertex(vertex_id1)
+            .bind_index(index_id1)
+            .draw_index(6, 0)
+        #endif
             .end_frame();
     }
 
