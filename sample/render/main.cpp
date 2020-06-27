@@ -27,6 +27,7 @@ SAMPLE_RENDER_APP_DECL(FXAA)
 
 SAMPLE_RENDER_APP_DECL(WBOIT)
 
+SAMPLE_RENDER_APP_DECL(shadow_map)
 SAMPLE_RENDER_APP_DECL(cascade_shadow_map) // rename: CSM // fixme: missing shadow in some viewing angle
 
 SAMPLE_RENDER_APP_DECL(defered_shading)
@@ -48,9 +49,9 @@ int main(int argc, char** argv)
     // vector<{XX_desc, XX}> ...;
     fay::app_desc desc;
     {
-        //desc.render.backend = fay::render_backend_type::opengl;
+        desc.render.backend = fay::render_backend_type::opengl;
         //desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(camera_, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(shadow_map, desc);
     return app_->run();
 }

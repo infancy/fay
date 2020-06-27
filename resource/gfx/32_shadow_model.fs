@@ -50,7 +50,6 @@ float ShadowCalculation(vec4 CameraSpacePos, float dot_lightDir_normal)
     
     // 取得当前片元在光源视角下的深度
     float currentDepth = projCoords.z;
-
     // 对光锥远平面之外的片元，都不计入阴影
     if(currentDepth > 1.0)
         return 0.0;
