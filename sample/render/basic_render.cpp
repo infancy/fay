@@ -221,7 +221,7 @@ public:
 };
 
 //texture, uniform, respack
-#define test_uniform
+//#define test_uniform
 class texture_uniform_ : public fay::app
 {
 public:
@@ -276,7 +276,11 @@ public:
             index_id1 = device->create(index);
 
 
-            fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/index");
+    #ifdef test_uniform
+            fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/uniform");
+    #else
+            fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/texture");
+    #endif
             sd.layout = bd.layout;
             shd_id1 = device->create(sd);
         }
@@ -287,7 +291,7 @@ public:
 
         fay::respack_desc res{};
         res.textures.push_back(tex_id);
-        //auto res_id = device->create(res);
+        auto res_id = device->create(res);
 
         fay::pipeline_desc pd;
         pd.primitive_type = fay::primitive_type::triangles;
@@ -297,7 +301,7 @@ public:
 
         pass1
             .begin_default(pipe_id, shd_id1)
-            //.bind_respack(res_id)
+            .bind_respack(res_id)
             .bind_vertex(vertex_id1)
             .bind_index(index_id1)
             .draw_index(6, 0)

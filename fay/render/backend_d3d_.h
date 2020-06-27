@@ -169,7 +169,8 @@ semantic_name_map
     { attribute_usage::normal,         "NORMAL" },
     { attribute_usage::tangent,        "TANGENT" },
     { attribute_usage::bitangent,      "BITANGENT" },
-    { attribute_usage::texcoord0,      "TEXCOORD" },
+    { attribute_usage::texcoord0,      "TEXCOORD" }, // TODO
+    { attribute_usage::texcoord1,      "TEXCOORD1" },
     { attribute_usage::instance_model, "INSTANCE_MODEL" },
 };
 
