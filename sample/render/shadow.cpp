@@ -71,7 +71,7 @@ public:
         return  glm::orthoLH(
             min.x - 10, max.x + 10,
             min.y - 10, max.y + 10,
-            min.z - 100, max.z + 100
+            min.z - 10, max.z + 10
         );
     }
 
@@ -84,16 +84,19 @@ public:
         auto debug_camera = create_box_mesh(box_camera, device.get());
 
 
-        GLfloat near_plane = 1.f, far_plane = 200.f;
-        //glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
-        glm::mat4 lightOrtho = frustum_to_ortho(light->position(), box_camera);
 
+        GLfloat near_plane = 1.f, far_plane = 200.f;
         glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
             1080.f / 720.f, near_plane, far_plane);
 
         glm::mat4 lightView = glm::lookAt(
-            light->position(), box_camera.center(), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
+            light->position(), glm::vec3(1.f, -10.f, 1.f), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
+        glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
+        //glm::mat4 lightOrtho = frustum_to_ortho(light->position(), box_camera);
+
         glm::mat4 lightSpace = lightOrtho * lightView;
+
+
 
         //fay::bounds3 box_light(-70, 70);
         fay::frustum box_light(lightSpace);
@@ -101,7 +104,7 @@ public:
 
         auto plane_mat = transform->model_matrix();
         auto plane_mat1 = glm::scale(plane_mat, glm::vec3(0.5f, 0.5f, 0.5f));
-        plane_mat1 = glm::translate(plane_mat1, glm::vec3(50.f, 100.f, 50.f));
+        plane_mat1 = glm::translate(plane_mat1, glm::vec3(50.f, 50.f, 50.f));
         
         fay::command_list pass1, pass2;
         // depth map

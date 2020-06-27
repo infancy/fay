@@ -23,7 +23,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, float dot_lightDir_normal)
 {
     // 执行（正交、透视）投影除法
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    //projCoords.y = -projCoords.y;
+    projCoords.y = -projCoords.y;
 
     // 变换到[0,1]的范围
     projCoords.x = projCoords.x * 0.5 + 0.5;
