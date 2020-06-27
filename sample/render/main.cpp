@@ -16,8 +16,10 @@ SAMPLE_RENDER_APP_DECL(clear)
 SAMPLE_RENDER_APP_DECL(shader_pipeline_)
 SAMPLE_RENDER_APP_DECL(vertex_index_)
 SAMPLE_RENDER_APP_DECL(texture_uniform_)
-SAMPLE_RENDER_APP_DECL(triangle)
+SAMPLE_RENDER_APP_DECL(camera_)
+SAMPLE_RENDER_APP_DECL(offscreen_)
 
+SAMPLE_RENDER_APP_DECL(triangle)
 SAMPLE_RENDER_APP_DECL(instancing)
 SAMPLE_RENDER_APP_DECL(offscreen)
 
@@ -49,6 +51,6 @@ int main(int argc, char** argv)
         //desc.render.backend = fay::render_backend_type::opengl;
         //desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(texture_uniform_, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(camera_, desc);
     return app_->run();
 }
