@@ -18,17 +18,19 @@ public:
         buffer_desc bd;
         {
             bd.name = res.name + "_vbo";
+            bd.type = buffer_type::vertex;
             bd.size = res.size; // rename: num
             bd.stride = res.layout.stride(); // TODO: do it by helper functions;
+            bd.btsz = bd.size * bd.stride;
             bd.data = res.vertices.data();
-            bd.type = buffer_type::vertex;
 
             bd.layout = res.layout;
         }
         vbo = device->create(bd);
 
-        fay::buffer_desc id(res.name + "_ibo", res.indices.size(), res.indices.data(), fay::buffer_type::index);
-        ibo = device->create(id);
+        fay::buffer_desc index(res.name + "_ibo", res.indices.size(), res.indices.data(), fay::buffer_type::index);
+        index.btsz = index.size * 4;
+        ibo = device->create(index);
 
         primitive_ = res.primitive_;
     }

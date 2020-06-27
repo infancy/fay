@@ -351,9 +351,13 @@ public:
 };
 
 
-
+// box_, camera_
 class camera_ : public passes
 {
+public:
+    fay::command_list pass1;
+    glm::mat4 mvp{};
+
 public:
     // using fay::app;
     camera_(const fay::app_desc& _desc) : passes(_desc)
@@ -368,57 +372,57 @@ public:
         mesh = fay::create_raw_renderable(fay::Box, device.get());
         //mesh2 = fay::create_renderable(fay::Plants, device.get());
 
-        fay::image img("texture/awesomeface.png");//, true);
-        tex = create_2d(this->device, "hello", img, false);
+        fay::buffer_id uniform_id;
+        {
+            fay::buffer_desc uniform_desc;
+            uniform_desc.type = fay::buffer_type::uniform_cbv;
+            uniform_desc.btsz = 64;
+            uniform_desc.usage = fay::resource_usage::stream;
+            uniform_id = device->create(uniform_desc);
+        }
 
-        fay::shader_desc sd = fay::scan_shader_program("shd", "gfx/offscreen.vs", "gfx/offscreen.fs", desc.render.backend);
-        shd = device->create(sd);
+
+        fay::image img0("texture/awesomeface2.png", true);
+        auto tex_id0 = create_2d(this->device, "hello", img0);
+
+
+        fay::respack_desc res{};
+        res.textures.push_back(tex_id0);
+        res.uniforms.push_back(uniform_id);
+        auto res_id = device->create(res);
+
+
+        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/camera");
+        sd.layout =
+        {
+            {fay::attribute_usage::position,  fay::attribute_format::float3},
+            {fay::attribute_usage::normal,    fay::attribute_format::float3},
+            {fay::attribute_usage::texcoord0, fay::attribute_format::float2},
+            {fay::attribute_usage::tangent,   fay::attribute_format::float3},
+            {fay::attribute_usage::bitangent, fay::attribute_format::float3},
+        };
+        auto shd_id = device->create(sd);
 
         fay::pipeline_desc pd;
-        {
-            pd.name = "triangles";
-            // pd.cull_mode = fay::cull_mode::none;
-        }
-        pipe = device->create(pd);
+        pd.depth_enabled = false;
+        auto pipe_id = device->create(pd);
 
-        frame = fay::create_frame(device.get(), "offscreen_frm", 512, 512);
+        pass1
+            .begin_default(pipe_id, shd_id)
+            .bind_respack(res_id)
+            .update_buffer(uniform_id, &mvp)
+            .draw(mesh.get())
+            .end_frame();
     }
 
     void render() override
     {
         glm::mat4 model(1.f);
         auto model1 = glm::scale(model, glm::vec3(40.f, 40.f, 40.f));
-        auto model2 = glm::translate(model1, glm::vec3(5.f, 0.f, 0.f)); // y, x, z
-        auto model3 = glm::translate(model1, glm::vec3(5.f, -5.f, 0.f));
 
-        auto VP = camera->world_to_ndc();
+        mvp = camera->world_to_ndc() * model1;
 
-        fay::command_list pass1, pass2;
-
-        pass1
-            .begin_frame(frame)
-            .clear_color({ 1.f, 0.f, 0.f, 1.f })
-            .clear_depth().clear_stencil()
-            .apply_pipeline(pipe).apply_shader(shd)
-            .bind_textures({ tex })
-            .bind_uniform("bAlbedo", true)
-            .bind_uniform("MVP", VP * model1).draw(mesh.get())
-            .bind_uniform("MVP", VP * model2).draw(mesh.get())
-            .bind_uniform("MVP", VP * model3).draw(mesh.get())
-            .end_frame();
-
-        pass2
-            .begin_default(pipe, shd)
-            .bind_textures({ frame[0] })
-            .bind_uniform("bAlbedo", true)
-            .bind_uniform("MVP", VP * model1).draw(mesh.get())
-            .bind_uniform("MVP", VP * model2).draw(mesh.get())
-            .bind_uniform("MVP", VP * model3).draw(mesh.get())
-            .bind_uniform("MVP", VP * model)
-            //.draw(mesh2.get())
-            .end_frame();
-
-        device->execute({ pass1, pass2 });
+        device->execute(pass1);
     }
 };
 
