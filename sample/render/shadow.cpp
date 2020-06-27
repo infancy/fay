@@ -1,5 +1,16 @@
 #include "sample_render_app.h"
 
+class frustum : public passes
+{
+public:
+    frustum(const fay::app_desc& _desc) : passes(_desc)
+    {
+        desc.window.title = "frustum";
+    }
+
+    // TODO
+};
+
 class shadow_map : public passes
 {
 public:
@@ -15,10 +26,10 @@ public:
 
 
         cameras_[0] = fay::camera{ glm::vec3{ 0, 20, -80 }, 90, 0, 1.f, 300.f }; // look at the positive-z axis
-        cameras_[1] = fay::camera{ glm::vec3{ -300, 300, 0 }, /*-180*/0, -45, 1.f, 1000.f }, // look at the positive-x axis
+        cameras_[1] = fay::camera{ glm::vec3{ -300, 100, 0 }, /*-180*/0, -45, 1.f, 1000.f }, // look at the positive-x axis
         //cameras_[1] = fay::camera{ glm::vec3{ -300, 0, 0 }, /*-180*/0, 0, 1.f, 1000.f }; // look at the positive-x axis
 
-        lights_[0] = fay::light{ glm::vec3{ 0, 150, 0 } };
+        lights_[0] = fay::light{ glm::vec3{ 0, 200, 0 } };
 
 
         mesh = fay::create_renderable(fay::Plants, device.get());
@@ -52,7 +63,7 @@ public:
 
     glm::mat4 frustum_to_ortho(glm::vec3 light_position, fay::frustum box, glm::vec3 camera_up = glm::vec3(0.f, 1.f, 0.f))
     {
-        glm::mat4 lightView = glm::lookAt(light_position, box.center(), camera_up);
+        glm::mat4 lightView = glm::lookAtLH(light_position, box.center(), camera_up);
 
         // transform to light space
         //glm::vec3 aa = glm::vec3(lightView * glm::vec4(bounds.min(), 1.f));
@@ -63,15 +74,21 @@ public:
             c = glm::vec3(lightView * glm::vec4(c, 1.f));
 
         fay::bounds3 bounds(corners[0], corners[1]);
-        for (size_t i : fay::range(2, 8))
+        //for (size_t i : fay::range(2, 8))
+        //    bounds.expand(corners[i]);
+
+        for(int i = 0; i < 8; ++i)
             bounds.expand(corners[i]);
 
         glm::vec3 min = bounds.min(), max = bounds.max();
 
+        //DCHECK(min.z > 0);
+
         return  glm::orthoLH(
-            min.x - 10, max.x + 10,
-            min.y - 10, max.y + 10,
-            min.z - 10, max.z + 10
+            min.x, max.x,
+            min.y, max.y,
+            min.z, max.z // ???
+            //-500.f, 700.f
         );
     }
 
@@ -86,13 +103,15 @@ public:
 
 
         GLfloat near_plane = 1.f, far_plane = 200.f;
-        glm::mat4 lightProj = glm::perspective(glm::radians(90.f),
+        glm::mat4 lightProj = glm::perspectiveLH(glm::radians(90.f),
             1080.f / 720.f, near_plane, far_plane);
 
-        glm::mat4 lightView = glm::lookAt(
-            light->position(), glm::vec3(1.f, -10.f, 1.f), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
-        glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
-        //glm::mat4 lightOrtho = frustum_to_ortho(light->position(), box_camera);
+        //glm::mat4 lightView = glm::lookAt(light->position(), glm::vec3(1.f, -10.f, 1.f), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
+        //glm::mat4 lightOrtho = glm::ortho(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
+
+        glm::mat4 lightView = glm::lookAtLH(
+            light->position(), box_camera.center(), glm::vec3(0.f, 1.f, 0.f)); // TODO: camera_up
+        glm::mat4 lightOrtho = frustum_to_ortho(light->position(), box_camera);
 
         glm::mat4 lightSpace = lightOrtho * lightView;
 
