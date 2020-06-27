@@ -129,28 +129,28 @@ enum class descriptor_type
 
     sampler,
 
-    uniform_buffer_cbv,       // CBV | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+    uniform_cbv,              // CBV | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+    
+    texture_srv,              // SRV | VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+    texture_uav,              // UAV | VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     
     storage_buffer_srv,       // SRV | VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     storage_buffer_uav,       // UAV | VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     
     uniform_texel_buffer_srv, // SRV | VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
     storage_texel_buffer_uav, // UAV | VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
-    
-    texture_srv,              // SRV | VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-    texture_uav,              // UAV | VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
 };
 
 struct descriptor_table
 {
-    descriptor_type type;
-    uint32_t base_binding; // base shader register binding point, like b0/t0...
-    uint32_t count; // b0~bn/t0~tn
+    descriptor_type type{};
+    uint32_t base_binding{}; // base shader register binding point, like b0/t0...
+    uint32_t count{}; // b0~bn/t0~tn
     //shader_stage shader_stages;
 
     // std::vector<size_t> render_ids;
-    uint32_t heap_offset;
-    uint32_t root_parameter_index;
+    uint32_t heap_offset{};
+    uint32_t root_parameter_index{};
 };
 
 // material_data(shader, shader_params, resource) 
@@ -158,33 +158,36 @@ struct descriptor_table
 // static_respack, dynamic_respack
 struct respack
 {
-    descriptor_table sampler_table{};
-    descriptor_table uniform_table{};
-
-    std::vector<descriptor_table*> active_tables{};
+    ID3D12RootSignaturePtr root_signature{}; // resource_signature, respack_layout
 
     ID3D12DescriptorHeapPtr sampler_heap{};
     ID3D12DescriptorHeapPtr cbvsrvuav_heap{};
 
-    ID3D12RootSignaturePtr respack_layout{};
+    descriptor_table sampler_table{};
+    descriptor_table uniform_cbv_table{};
+    descriptor_table texture_srv_table{};
+
+    std::vector<descriptor_table*> active_tables{};
 
     respack() {}
     respack(const respack_desc& desc)
     {
         // TODO: base_binding
-        sampler_table = { descriptor_type::sampler,            0, (uint32_t)desc.textures.size() };
-        uniform_table = { descriptor_type::uniform_buffer_cbv, 0, (uint32_t)desc.uniform_buffers.size() };
+        sampler_table     = { descriptor_type::sampler,     0, (uint32_t)desc.textures.size() };
+        uniform_cbv_table = { descriptor_type::uniform_cbv, 0, (uint32_t)desc.uniforms.size() };
+        texture_srv_table = { descriptor_type::texture_srv, 0, (uint32_t)desc.textures.size() };
 
-        descriptor_table* raw_desc_tables[] =
+        descriptor_table* raw_tables[] =
         {
             &sampler_table,
-            &uniform_table
+            &uniform_cbv_table,
+            &texture_srv_table,
         };
-        for (auto desc_table : raw_desc_tables)
+        for (auto table : raw_tables)
         {
-            if (desc_table->count > 0)
+            if (table->count > 0)
             {
-                active_tables.emplace_back(desc_table);
+                active_tables.emplace_back(table);
             }
         }
         // check it by render_device
@@ -1059,7 +1062,7 @@ public:
         // update texture
         if (tex_desc.data.size() > 0)
         {
-            update(pid, nullptr);
+            update(pid, tex_desc, tex);
         }
 
         return pid;
@@ -1083,15 +1086,13 @@ public:
             desc.NodeMask = 0;
             desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-            HRESULT hres = ctx_.mDevice->CreateDescriptorHeap(
-                &desc, IID_PPV_ARGS(&res.sampler_heap));
-            assert(SUCCEEDED(hres));
+            D3D12_CHECK2(ctx_.mDevice->CreateDescriptorHeap(
+                &desc, IID_PPV_ARGS(&res.sampler_heap)), res.sampler_heap);
 
-            // TODO
             res.sampler_table.heap_offset = 0;
         }
         // TODO
-        UINT cbvsrvuav_count = res_desc.uniform_buffers.size(); // + res_desc.textures.size()
+        UINT cbvsrvuav_count = res_desc.uniforms.size() + res_desc.textures.size();
         if (cbvsrvuav_count > 0)
         {
             D3D12_DESCRIPTOR_HEAP_DESC desc = {};
@@ -1100,162 +1101,75 @@ public:
             desc.NodeMask = 0;
             desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-            HRESULT hres = ctx_.mDevice->CreateDescriptorHeap(
-                &desc, IID_PPV_ARGS(&res.cbvsrvuav_heap));
-            assert(SUCCEEDED(hres));
+            D3D12_CHECK2(ctx_.mDevice->CreateDescriptorHeap(
+                &desc, IID_PPV_ARGS(&res.cbvsrvuav_heap)), res.cbvsrvuav_heap);
 
             // TODO
-            res.uniform_table.heap_offset = 0;
+            res.uniform_cbv_table.heap_offset = 0;
+            res.texture_srv_table.heap_offset = res_desc.uniforms.size();
         }
 
 
 
-        // create resource pack layout 
-
-        D3D12_FEATURE_DATA_ROOT_SIGNATURE feature_data = {};
-        feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
-        HRESULT hres = ctx_.mDevice->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE,
-            &feature_data, sizeof(feature_data));
-        if (FAILED(hres))
+        //update(pid, res_desc);
+        if (res_desc.uniforms.size() > 0)
         {
-            feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
-        }
+            D3D12_CPU_DESCRIPTOR_HANDLE handle =
+                res.cbvsrvuav_heap->GetCPUDescriptorHandleForHeapStart();
+            UINT handle_inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(
+                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+            handle.ptr += res.uniform_cbv_table.heap_offset * handle_inc_size;
 
-        const int descriptor_table_count = res.active_tables.size();
-        // Allocate everything with an upper bound of descriptor counts
-        std::vector<D3D12_ROOT_PARAMETER1> parameters_11(descriptor_table_count);
-        std::vector<D3D12_ROOT_PARAMETER> parameters_10(descriptor_table_count);
-
-        std::vector<D3D12_DESCRIPTOR_RANGE1> ranges_11(descriptor_table_count);
-        std::vector<D3D12_DESCRIPTOR_RANGE> ranges_10(descriptor_table_count);
-
-        // Build ranges
-        int paramter_range_index = 0;
-        for (int descriptor_index = 0; descriptor_index < descriptor_table_count; ++descriptor_index)
-        {
-            auto* descriptor = res.active_tables[descriptor_index];
-
-
-            D3D12_ROOT_PARAMETER1* param_11 = &parameters_11[paramter_range_index];
-            D3D12_ROOT_PARAMETER* param_10 = &parameters_10[paramter_range_index];
-
-            param_11->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-            param_10->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-
-            // Start out with visibility on all shader stages
-            // TODO: optimization
-            param_11->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-            param_10->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
-
-            D3D12_DESCRIPTOR_RANGE1* range_11 = &ranges_11[paramter_range_index];
-            D3D12_DESCRIPTOR_RANGE* range_10 = &ranges_10[paramter_range_index];
-
-            bool assign_range = false;
-            switch (descriptor->type)
+            for (uint32_t i = 0; i < res_desc.uniforms.size(); ++i)
             {
-                case descriptor_type::sampler:
-                {
-                    range_11->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-                    range_10->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-                    assign_range = true;
-                }
-                break;
+                auto buf_id = res_desc.uniforms[i];
+                const auto& buf = pool_[buf_id];
 
-                case descriptor_type::uniform_buffer_cbv:
-                {
-                    range_11->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-                    range_10->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-                    assign_range = true;
-                }
-                break;
-
-                case descriptor_type::storage_buffer_srv:
-                case descriptor_type::uniform_texel_buffer_srv:
-                case descriptor_type::texture_srv:
-                {
-                    range_11->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                    range_10->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                    assign_range = true;
-                }
-                break;
-
-                case descriptor_type::storage_buffer_uav:
-                case descriptor_type::storage_texel_buffer_uav:
-                case descriptor_type::texture_uav:
-                {
-                    range_11->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                    range_10->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                    assign_range = true;
-                }
-                break;
-            }
-
-            if (assign_range)
-            {
-                range_11->NumDescriptors = descriptor->count;
-                range_11->BaseShaderRegister = descriptor->base_binding;
-                range_11->RegisterSpace = 0;
-                range_11->Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
-                range_11->OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-                range_10->NumDescriptors = descriptor->count;
-                range_10->BaseShaderRegister = descriptor->base_binding;
-                range_10->RegisterSpace = 0;
-                range_10->OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-
-                param_11->DescriptorTable.pDescriptorRanges = range_11;
-                param_11->DescriptorTable.NumDescriptorRanges = 1;
-
-                param_10->DescriptorTable.pDescriptorRanges = range_10;
-                param_10->DescriptorTable.NumDescriptorRanges = 1;
-
-
-                descriptor->root_parameter_index = paramter_range_index;
-                ++paramter_range_index;
+                ctx_.mDevice->CreateConstantBufferView(&buf.cbv_view_desc, handle);
+                handle.ptr += handle_inc_size;
             }
         }
-        int parameter_count = paramter_range_index;
 
-
-        // create root signature
-
-        hres = 0;
-        D3D12_VERSIONED_ROOT_SIGNATURE_DESC desc = {};
-        ID3DBlobPtr sig_blob;
-        ID3DBlobPtr error_msgs;
-        if (feature_data.HighestVersion == D3D_ROOT_SIGNATURE_VERSION_1_1)
+        if (res_desc.textures.size() > 0)
         {
-            desc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
-            desc.Desc_1_1.NumParameters = parameter_count;
-            desc.Desc_1_1.pParameters = parameters_11.data();
-            desc.Desc_1_1.NumStaticSamplers = 0;
-            desc.Desc_1_1.pStaticSamplers = NULL;
-            desc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+            {
+                D3D12_CPU_DESCRIPTOR_HANDLE handle =
+                    res.sampler_heap->GetCPUDescriptorHandleForHeapStart();
+                UINT handle_inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(
+                    D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+                handle.ptr += res.sampler_table.heap_offset * handle_inc_size;
 
-            hres = D3D12SerializeVersionedRootSignature(&desc, &sig_blob, &error_msgs);
+                for (uint32_t i = 0; i < res_desc.textures.size(); ++i)
+                {
+                    auto tex_id = res_desc.textures[i];
+                    const auto& tex = pool_[tex_id];
+
+                    ctx_.mDevice->CreateSampler(&tex.sampler_desc, handle);
+                    handle.ptr += handle_inc_size;
+                }
+            }
+
+            {
+                D3D12_CPU_DESCRIPTOR_HANDLE handle =
+                    res.cbvsrvuav_heap->GetCPUDescriptorHandleForHeapStart();
+                UINT handle_inc_size = ctx_.mDevice->GetDescriptorHandleIncrementSize(
+                    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                handle.ptr += res.texture_srv_table.heap_offset * handle_inc_size;
+
+                for (uint32_t i = 0; i < res_desc.textures.size(); ++i)
+                {
+                    auto tex_id = res_desc.textures[i];
+                    const auto& tex = pool_[tex_id];
+
+                    ctx_.mDevice->CreateShaderResourceView(tex.resource, &tex.srv_desc, handle);
+                    handle.ptr += handle_inc_size;
+                }
+            }
         }
-        else if (feature_data.HighestVersion == D3D_ROOT_SIGNATURE_VERSION_1_0)
-        {
-            desc.Version = D3D_ROOT_SIGNATURE_VERSION_1_0;
-            desc.Desc_1_0.NumParameters = parameter_count;
-            desc.Desc_1_0.pParameters = parameters_10.data();
-            desc.Desc_1_0.NumStaticSamplers = 0;
-            desc.Desc_1_0.pStaticSamplers = NULL;
-            desc.Desc_1_0.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+        
 
-            hres = D3D12SerializeRootSignature(&(desc.Desc_1_0), D3D_ROOT_SIGNATURE_VERSION_1_0,
-                &sig_blob, &error_msgs);
-        }
-        assert(SUCCEEDED(hres));
 
-        hres = 0;
-        hres = ctx_.mDevice->CreateRootSignature(0, sig_blob->GetBufferPointer(),
-            sig_blob->GetBufferSize(),
-            IID_PPV_ARGS(&res.respack_layout));
-        assert(SUCCEEDED(hres));
-
+        create_shader_resource_layout(res);
 
 
         return pid;
@@ -1440,14 +1354,16 @@ public:
     // directly create a new respack???
     virtual void update(respack_id id, const respack_desc& update_desc) override
     {
+        /*
         const auto& origin_desc = pool_.desc(id);
         respack& res = pool_[id];
+
+
 
         for (uint32_t i = 0; i < res.active_tables.size(); ++i)
         {
             descriptor_table* descriptor_table = res.active_tables[i];
 
-            /*
             switch (descriptor_table->type)
             {
                 case descriptor_type::sampler:
@@ -1467,7 +1383,7 @@ public:
                 }
                 break;
 
-                case descriptor_type::uniform_buffer_cbv:
+                case descriptor_type::uniform_cbv:
                 {
                     D3D12_CPU_DESCRIPTOR_HANDLE handle =
                         res.cbvsrvuav_heap->GetCPUDescriptorHandleForHeapStart();
@@ -1477,9 +1393,9 @@ public:
 
                     for (uint32_t i = 0; i < descriptor_table->count; ++i)
                     {
-                        ID3D12Resource* resource = descriptor_table->uniform_buffers[i]->dx_resource;
+                        ID3D12Resource* resource = descriptor_table->uniforms[i]->dx_resource;
                         D3D12_CONSTANT_BUFFER_VIEW_DESC* view_desc =
-                            &(descriptor_table->uniform_buffers[i]->dx_cbv_view_desc);
+                            &(descriptor_table->uniforms[i]->dx_cbv_view_desc);
                         ctx_.mDevice->CreateConstantBufferView(view_desc, handle);
                         handle.ptr += handle_inc_size;
                     }
@@ -1575,8 +1491,8 @@ public:
                 }
                 break;
             }
-            */
         }
+        */
     }
 
     virtual void destroy(  buffer_id id) override {}
@@ -1586,6 +1502,150 @@ public:
     virtual void destroy(   frame_id id) override {}
 
 private:
+    void create_shader_resource_layout(respack& res)
+    {
+        // create resource pack layout 
+
+        D3D12_FEATURE_DATA_ROOT_SIGNATURE feature_data = {};
+        feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+        HRESULT hres = ctx_.mDevice->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE,
+            &feature_data, sizeof(feature_data));
+        if (FAILED(hres))
+        {
+            feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+        }
+
+        const int descriptor_table_count = res.active_tables.size();
+        // Allocate everything with an upper bound of descriptor counts
+        std::vector<D3D12_ROOT_PARAMETER1> parameters_11(descriptor_table_count);
+        std::vector<D3D12_ROOT_PARAMETER> parameters_10(descriptor_table_count);
+
+        std::vector<D3D12_DESCRIPTOR_RANGE1> ranges_11(descriptor_table_count);
+        std::vector<D3D12_DESCRIPTOR_RANGE> ranges_10(descriptor_table_count);
+
+        // Build ranges
+        int paramter_range_index = 0;
+        for (int descriptor_index = 0; descriptor_index < descriptor_table_count; ++descriptor_index)
+        {
+            auto* descriptor = res.active_tables[descriptor_index];
+
+
+            D3D12_ROOT_PARAMETER1* param_11 = &parameters_11[paramter_range_index];
+            D3D12_ROOT_PARAMETER* param_10 = &parameters_10[paramter_range_index];
+
+            param_11->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            param_10->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+
+            // Start out with visibility on all shader stages
+            // TODO: optimization
+            param_11->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+            param_10->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+
+            D3D12_DESCRIPTOR_RANGE1* range_11 = &ranges_11[paramter_range_index];
+            D3D12_DESCRIPTOR_RANGE* range_10 = &ranges_10[paramter_range_index];
+
+            bool assign_range = false;
+            switch (descriptor->type)
+            {
+                case descriptor_type::sampler:
+                {
+                    range_11->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+                    range_10->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+                    assign_range = true;
+                }
+                break;
+
+                case descriptor_type::uniform_cbv:
+                {
+                    range_11->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                    range_10->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                    assign_range = true;
+                }
+                break;
+
+                case descriptor_type::storage_buffer_srv:
+                case descriptor_type::uniform_texel_buffer_srv:
+                case descriptor_type::texture_srv:
+                {
+                    range_11->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                    range_10->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                    assign_range = true;
+                }
+                break;
+
+                case descriptor_type::storage_buffer_uav:
+                case descriptor_type::storage_texel_buffer_uav:
+                case descriptor_type::texture_uav:
+                {
+                    range_11->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                    range_10->RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                    assign_range = true;
+                }
+                break;
+            }
+
+            if (assign_range)
+            {
+                range_11->NumDescriptors = descriptor->count;
+                range_11->BaseShaderRegister = descriptor->base_binding;
+                range_11->RegisterSpace = 0;
+                range_11->Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+                range_11->OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+                range_10->NumDescriptors = descriptor->count;
+                range_10->BaseShaderRegister = descriptor->base_binding;
+                range_10->RegisterSpace = 0;
+                range_10->OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+
+                param_11->DescriptorTable.pDescriptorRanges = range_11;
+                param_11->DescriptorTable.NumDescriptorRanges = 1;
+
+                param_10->DescriptorTable.pDescriptorRanges = range_10;
+                param_10->DescriptorTable.NumDescriptorRanges = 1;
+
+
+                descriptor->root_parameter_index = paramter_range_index;
+                ++paramter_range_index;
+            }
+        }
+        int parameter_count = paramter_range_index;
+
+
+        // create root signature
+
+        D3D12_VERSIONED_ROOT_SIGNATURE_DESC desc = {};
+        ID3DBlobPtr sig_blob;
+        ID3DBlobPtr error_msgs;
+        if (feature_data.HighestVersion == D3D_ROOT_SIGNATURE_VERSION_1_1)
+        {
+            desc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
+            desc.Desc_1_1.NumParameters = parameter_count;
+            desc.Desc_1_1.pParameters = parameters_11.data();
+            desc.Desc_1_1.NumStaticSamplers = 0;
+            desc.Desc_1_1.pStaticSamplers = NULL;
+            desc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+            D3D12_CHECK(D3D12SerializeVersionedRootSignature(&desc, &sig_blob, &error_msgs));
+        }
+        else if (feature_data.HighestVersion == D3D_ROOT_SIGNATURE_VERSION_1_0)
+        {
+            desc.Version = D3D_ROOT_SIGNATURE_VERSION_1_0;
+            desc.Desc_1_0.NumParameters = parameter_count;
+            desc.Desc_1_0.pParameters = parameters_10.data();
+            desc.Desc_1_0.NumStaticSamplers = 0;
+            desc.Desc_1_0.pStaticSamplers = NULL;
+            desc.Desc_1_0.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+            D3D12_CHECK(D3D12SerializeRootSignature(&(desc.Desc_1_0), D3D_ROOT_SIGNATURE_VERSION_1_0,
+                &sig_blob, &error_msgs));
+        }
+        D3D12_CHECK(ctx_.mDevice->CreateRootSignature(
+            0, sig_blob->GetBufferPointer(), sig_blob->GetBufferSize(),
+            IID_PPV_ARGS(&res.root_signature)), res.root_signature);
+    }
+
     // TODO: id
     ID3D12PipelineStatePtr create_rasterization_state(
         const buffer& buf, const respack& res, 
@@ -1596,7 +1656,7 @@ private:
         cached_pso_desc.CachedBlobSizeInBytes = 0;
 
         D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_state_desc = {};
-        pipeline_state_desc.pRootSignature = res.respack_layout;
+        pipeline_state_desc.pRootSignature = res.root_signature;
         pipeline_state_desc.VS = shd.vs.bytecode;
         pipeline_state_desc.HS = shd.hs.bytecode;
         pipeline_state_desc.DS = shd.ds.bytecode;
@@ -1646,7 +1706,7 @@ private:
         cached_pso_desc.CachedBlobSizeInBytes = 0;
 
         D3D12_COMPUTE_PIPELINE_STATE_DESC pipeline_state_desc = {};
-        pipeline_state_desc.pRootSignature = res.respack_layout;
+        pipeline_state_desc.pRootSignature = res.root_signature;
         pipeline_state_desc.CS = shd.cs.bytecode;
         pipeline_state_desc.NodeMask = 0;
         pipeline_state_desc.CachedPSO = cached_pso_desc;
@@ -1925,12 +1985,16 @@ protected:
         }
 
 
-        ctx_.mCommandList->SetGraphicsRootSignature(cmd_.res.respack_layout);
+        ctx_.mCommandList->SetGraphicsRootSignature(cmd_.res.root_signature);
         auto primitive_topology = static_cast<D3D_PRIMITIVE_TOPOLOGY>(primitive_topology_map.at(cmd_.pipe_desc.primitive_type));
         ctx_.mCommandList->IASetPrimitiveTopology(primitive_topology);
 
 
-        // bind respack
+        bind_respack_internal();
+    }
+
+    void bind_respack_internal()
+    {
         auto& res = cmd_.res;
 
         uint32_t descriptor_heap_count = 0;
@@ -1999,6 +2063,8 @@ protected:
             }
         }
     }
+
+
 
     void transition_buffer(const buffer& buf, buffer_type old_type, buffer_type new_type)
     {

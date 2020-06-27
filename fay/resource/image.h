@@ -221,9 +221,9 @@ private:
 };
 FAY_SHARED_PTR(image)
 
-std::vector<image> create_image_mipmap()
+inline std::vector<image> create_image_mipmap()
 {
-
+    return {};
 }
 
 /* This probably doesn't useful.

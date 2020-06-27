@@ -697,7 +697,7 @@ public:
 
     texture_type type{ texture_type::two };
     /*legacy*/texture_usage _usage{}; // TODO: rename
-    texture_usage_ usage_{};
+    texture_usage_ usage_{ texture_usage_::sampled_texture };
 
 	resource_usage usage{ resource_usage::immutable }; // update_rate rate
     // resource_state state{ resource_state::empty };
@@ -798,12 +798,12 @@ struct respack_desc
 {
     std::string name{ "defult" };
 
-    buffer_id index{};
+    /*legacy*/buffer_id index{};
     // buffer_id vertex{ 0 }; array<buffer_id, ...> instances;
-    std::vector<buffer_id>  buffers{}; // buffers[0] is default vertex buffer
+    /*legacy*/std::vector<buffer_id>  buffers{}; // buffers[0] is default vertex buffer
 
     std::vector<texture_id> textures{};
-    std::vector<buffer_id>  uniform_buffers{};
+    std::vector<buffer_id>  uniforms{};
     //std::vector<buffer_id>  storage_buffers_srv{};
     //std::vector<buffer_id>  storage_buffers_uav{};
     //...
