@@ -220,10 +220,94 @@ public:
     }
 };
 
-// vertex_index_
-// uniform_
-// texture_
-// 
+#define test_uniform
+class texture_uniform_ : public fay::app
+{
+public:
+    fay::command_list pass1;
+
+public:
+    // using fay::app;
+    texture_uniform_(const fay::app_desc& _desc) : fay::app(_desc)
+    {
+        desc.window.title = "texture_uniform_";
+    }
+
+    void setup() override
+    {
+        fay::buffer_id vertex_id1, index_id1;
+        fay::shader_id shd_id1;
+
+        // buffer
+        {
+            float vertices[] =
+            {
+                 -0.5f,  0.5f, 0.f,   0.f, 0.f,
+                  0.5f,  0.5f, 0.f,   1.f, 0.f,
+                  0.5f, -0.5f, 0.f,   1.f, 1.f,
+                 -0.5f, -0.5f, 0.f,   0.f, 1.f,
+            };
+            fay::buffer_desc bd;
+            {
+                bd.type = fay::buffer_type::vertex;
+                bd.btsz = 80;
+                bd.data = vertices;
+                bd.layout =
+                {
+                    {fay::attribute_usage::position, fay::attribute_format::float3},
+                    {fay::attribute_usage::texcoord0, fay::attribute_format::float2},
+                };
+            }
+            vertex_id1 = device->create(bd);
+
+
+            int indices[] =
+            {
+                0, 1, 2,
+                0, 2, 3
+            };
+            fay::buffer_desc index;
+            {
+                index.type = fay::buffer_type::index;
+                index.btsz = 24;
+                index.data = indices;
+            }
+            index_id1 = device->create(index);
+
+
+            fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/texture");
+            sd.layout = bd.layout;
+            shd_id1 = device->create(sd);
+        }
+
+
+        fay::image img("texture/awesomeface.png", true);
+        auto tex_id = create_2d(this->device, "hello", img);
+
+        fay::respack_desc res{};
+        res.textures.push_back(tex_id);
+        auto res_id = device->create(res);
+
+        fay::pipeline_desc pd;
+        pd.primitive_type = fay::primitive_type::triangles;
+        pd.cull_mode = fay::cull_mode::none;
+        pd.depth_enabled = false;
+        auto pipe_id = device->create(pd);
+
+        pass1
+            .begin_default(pipe_id, shd_id1)
+            .bind_respack(res_id)
+            .bind_vertex(vertex_id1)
+            .bind_index(index_id1)
+            .draw_index(6, 0)
+            .end_frame();
+    }
+
+    void render() override
+    {
+        device->execute(pass1);
+    }
+};
 
 // buffer_texture_
 
@@ -502,6 +586,7 @@ SAMPLE_RENDER_APP_IMPL(init)
 SAMPLE_RENDER_APP_IMPL(clear)
 SAMPLE_RENDER_APP_IMPL(shader_pipeline_)
 SAMPLE_RENDER_APP_IMPL(vertex_index_)
+SAMPLE_RENDER_APP_IMPL(texture_uniform_)
 SAMPLE_RENDER_APP_IMPL(triangle)
 
 SAMPLE_RENDER_APP_IMPL(instancing)

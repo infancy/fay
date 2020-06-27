@@ -96,13 +96,33 @@ public:
 
 
 
+#pragma region static_array
+
+// set size in ctor
+// if size <= Fixed, storage in stack
+// else storage in heap
+// then can't resize
+template <typename T, size_t Fixed>
+class static_array
+{
+
+};
+
+#pragma endregion static_array
+
+
+
 #pragma region dynamic_array/heap_array
+
+// can't exceed the size of the statck, or throw error
+// stack_dynamic_array
 
 // fay::heap_array<T> is a variable-length arrays(VLA)
 // TODO: fay::heap_array<T> is a fay::container(concept)
 // WARNING: when use fay::container, always use 'fay::' to avoid confusion with standard container
 // TODO: heap_value
 
+// TODD: merge to static_array
 template<typename T>
 /*TODO: constexpr */class heap_array : public sequence<T, heap_array<T>>
 {

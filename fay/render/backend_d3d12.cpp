@@ -421,6 +421,8 @@ private:
         respack_id res_id{};
     };
     context ctx_{};
+    ID3D12DevicePtr device_{};
+    ID3D12GraphicsCommandListPtr list_{};
 
     using render_pool = resource_pool<buffer, texture, respack, shader, pipeline, frame>;
     render_pool pool_{};
@@ -446,7 +448,7 @@ private:
         buffer_id vertex_id{};
         buffer vertex{};
     };
-    command_list_context cmd_{};
+    command_list_context cmd_{}; // TODO: rename
 
 #pragma endregion field
 
@@ -569,6 +571,7 @@ private:
         // Get debug device
         ThrowIfFailed(ctx_.mDevice->QueryInterface(&ctx_.mDebugDevice));
     #endif
+        device_ = ctx_.mDevice;
 
 
         // create command producer
@@ -919,7 +922,7 @@ public:
 
 
 
-        if (tex.resource == nullptr)
+        // create texture
         {
             D3D12_HEAP_PROPERTIES heap_props = {};
             heap_props.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -928,30 +931,12 @@ public:
             heap_props.CreationNodeMask = 1;
             heap_props.VisibleNodeMask = 1;
 
-
-
-            D3D12_RESOURCE_DIMENSION res_dim = D3D12_RESOURCE_DIMENSION_UNKNOWN;
-            switch (tex_desc.type)
-            {
-            case texture_type::one:
-                res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
-                break;
-            case texture_type::two:
-                res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-                break;
-            case texture_type::three:
-                res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
-                break;
-            case texture_type::cube:
-                res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-                break;
-            }
-            assert(D3D12_RESOURCE_DIMENSION_UNKNOWN != res_dim);
-
             D3D12_HEAP_FLAGS heap_flags = D3D12_HEAP_FLAG_NONE;
 
+
+
             D3D12_RESOURCE_DESC res_desc = {};
-            res_desc.Dimension = res_dim;
+            res_desc.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(texture_type_map.at(tex_desc.type).d3d12);
             res_desc.Alignment = 0;
             res_desc.Width = tex_desc.width;
             res_desc.Height = tex_desc.height;
@@ -962,8 +947,8 @@ public:
             res_desc.SampleDesc.Count = 1;
             res_desc.SampleDesc.Quality = 0;
             res_desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-            res_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
+            res_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
             if (enum_have(tex_desc.as_render_target, render_target::color))
             {
                 res_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -972,15 +957,13 @@ public:
             {
                 res_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
             }
-            /*
-            if (enum_have(tex_desc.as_render_target, render_target::color))
+            if (enum_have(tex_desc.usage_, texture_usage_::storage_texture))
             {
-                desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+                res_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
             }
-            */
 
-
-            D3D12_RESOURCE_STATES res_states = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
+            D3D12_RESOURCE_STATES res_states = 
+                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
                 D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
             if (enum_have(tex_desc.as_render_target, render_target::color))
             {
@@ -1015,10 +998,9 @@ public:
 
 
 
-            HRESULT hres = ctx_.mDevice->CreateCommittedResource(
+            D3D12_CHECK2(ctx_.mDevice->CreateCommittedResource(
                 &heap_props, heap_flags, &res_desc, res_states, p_clear_value,
-                IID_PPV_ARGS(&tex.resource));
-            assert(SUCCEEDED(hres));
+                IID_PPV_ARGS(&tex.resource)), tex.resource);
         }
 
         if (enum_have(tex_desc.usage_, texture_usage_::sampled_texture))
@@ -1042,8 +1024,7 @@ public:
             assert(D3D12_SRV_DIMENSION_UNKNOWN != view_dim);
 
 
-            tex.srv_desc.Shader4ComponentMapping =
-                D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+            tex.srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             tex.srv_desc.Format = (DXGI_FORMAT)pixel_format_map.at(tex_desc.format).d3d11;
             tex.srv_desc.ViewDimension = view_dim;
             tex.srv_desc.Texture2D.MipLevels = (UINT)tex_desc.mipmaps;
@@ -1057,6 +1038,7 @@ public:
             tex.uav_desc.Texture2D.PlaneSlice = 0;
         }
 
+        // create sampler desc
         // TODO
         {
             tex.sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -1072,6 +1054,12 @@ public:
             tex.sampler_desc.BorderColor[3] = 0.0f;
             tex.sampler_desc.MinLOD = 0.0f;
             tex.sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
+        }
+
+        // update texture
+        if (tex_desc.data.size() > 0)
+        {
+            update(pid, nullptr);
         }
 
         return pid;
@@ -1395,6 +1383,60 @@ public:
 
     virtual void update( buffer_id id, const void* data, int size) override {}
     virtual void update(texture_id id, const void* data) override {}
+
+    virtual void update(texture_id id, const texture_desc& update_desc, texture& tex)
+    {
+        int mipmaps = update_desc.mipmaps;
+        FAY_DCHECK(mipmaps == 1);
+
+
+        std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> subres_layouts(mipmaps);
+        std::vector<UINT> subres_row_counts(mipmaps);
+        std::vector<UINT64> subres_row_strides(mipmaps);
+        UINT64 uploadBufferSize = 0;
+
+        D3D12_RESOURCE_DESC stDestDesc = tex.resource->GetDesc();
+        device_->GetCopyableFootprints(
+            &stDestDesc, 0, mipmaps, 0,
+            subres_layouts.data(), subres_row_counts.data(), subres_row_strides.data(),
+            &uploadBufferSize);
+
+
+        // TODO: create_image_mipmap
+
+
+
+        buffer_desc upload_desc;
+        upload_desc.type = buffer_type::transfer_src_;
+        upload_desc.data = update_desc.data[0]; // TODO
+        upload_desc.btsz = uploadBufferSize;
+        auto upload_id = create(upload_desc);
+        auto upload_buffer = pool_[upload_id];
+
+
+        // TODO
+        begin_cmdlist();
+        transition_texture(tex, texture_usage_::sampled_texture, texture_usage_::transfer_dst_);
+        for (uint32_t mip_level = 0; mip_level < mipmaps; ++mip_level)
+        {
+            D3D12_TEXTURE_COPY_LOCATION src = {};
+            src.pResource = upload_buffer.resource;
+            src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+            src.PlacedFootprint = subres_layouts[mip_level];
+            
+            D3D12_TEXTURE_COPY_LOCATION dst = {};
+            dst.pResource = tex.resource;
+            dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+            dst.SubresourceIndex = mip_level;
+
+            ctx_.mCommandList->CopyTextureRegion(&dst, 0, 0, 0, &src, NULL);
+        }
+        transition_texture(tex, texture_usage_::transfer_dst_, texture_usage_::sampled_texture);
+        end_cmdlist();
+        queue_submit();
+        queue_wait_idle();
+    }
+
     // directly create a new respack???
     virtual void update(respack_id id, const respack_desc& update_desc) override
     {

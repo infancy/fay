@@ -90,6 +90,7 @@ enum class buffer_type
 
     storage_srv = 0x00000040,
     storage_uav = 0x00000080,
+
     uniform_texel_srv = 0x00000100,
     storage_texel_uav = 0x00000200,
 
@@ -593,28 +594,30 @@ public:
     }
 };
 
-// vertex buffer, index buffer, indirect buffer, uniform buffer
+// vertex buffer, index buffer, indirect buffer, uniform buffer...
 struct buffer_desc
 {
 public:
-    std::string name { "defult" };
+    std::string name{};
 
-    uint    size{}; // vertex/index nums
+    buffer_type type{};
+    /*legacy*/resource_usage usage{ resource_usage::immutable };
 
-    // TODO: const byte* data
+    // TODO: const byte* data/ memory memory
     const void* data{}; // data's length is size * layout.stride()
     int_t       btsz{}; // bytes, byte size, padding it???
+
+
     // size, count, num, byte_size, byte_count
-    int_t       count{}; // count() * stride() == btsz, size * stride == bytes
+    /*legacy*/int_t count{}; // count() * stride() == btsz, size * stride == bytes
+
 
     // WARNING: don't use it
-    // TODO: remove
-    uint    stride{}; // byte sizes of single element. WARNNING: fay can't check if this value is right or not.
-
-    buffer_type type     {};
-    resource_usage usage { resource_usage::immutable };
+    /*legacy*/uint stride{}; // byte sizes of single element. WARNNING: fay can't check if this value is right or not.
 
 
+    // used for vertex/index, vertex/index nums
+    uint size{};
     // used for vertex buffer, instance buffer
     // TODO: improve
     vertex_layout layout{};
@@ -623,7 +626,7 @@ public:
     pixel_format pixel_format{};
 
 
-    // only used for instance buffer
+    // used for instance buffer
     // instance buffer update data per instance(or more), instead of updating per vertex.
     // TODO: remove it
     // uint instance_rate{};
@@ -693,16 +696,17 @@ public:
     std::vector<const void*> data{};
 
     texture_type type{ texture_type::two };
-    texture_usage _usage{}; // TODO: rename
+    /*legacy*/texture_usage _usage{}; // TODO: rename
     texture_usage_ usage_{};
 
 	resource_usage usage{ resource_usage::immutable }; // update_rate rate
     // resource_state state{ resource_state::empty };
 
+
     filter_mode min_filter{ filter_mode::linear };
 	filter_mode max_filter{ filter_mode::linear };
     uint max_anisotropy{ 1 }; // 1 ~ 16
-    bool mipmap{ true }; // TODO: remove
+    /*legacy*/bool mipmap{ true }; // TODO: remove
 
     wrap_mode wrap_u{ wrap_mode::repeat };
 	wrap_mode wrap_v{ wrap_mode::repeat };
@@ -710,6 +714,7 @@ public:
 
     float min_lod{ 0.f }; // -1000 ~ +1000 or 0 ~ 1000 ???
     float max_lod{ 1000.f }; // max_float
+
 
     // rename: target
     render_target as_render_target{ render_target::none }; // used as render target or depth_stencil target is depended by pixel_format

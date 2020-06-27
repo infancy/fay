@@ -15,6 +15,7 @@ SAMPLE_RENDER_APP_DECL(init)
 SAMPLE_RENDER_APP_DECL(clear)
 SAMPLE_RENDER_APP_DECL(shader_pipeline_)
 SAMPLE_RENDER_APP_DECL(vertex_index_)
+SAMPLE_RENDER_APP_DECL(texture_uniform_)
 SAMPLE_RENDER_APP_DECL(triangle)
 
 SAMPLE_RENDER_APP_DECL(instancing)
@@ -48,6 +49,6 @@ int main(int argc, char** argv)
         //desc.render.backend = fay::render_backend_type::opengl;
         //desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(vertex_index_, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(texture_uniform_, desc);
     return app_->run();
 }

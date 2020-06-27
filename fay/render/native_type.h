@@ -88,11 +88,11 @@ pixel_format_map
 const inline enum_class_map<texture_type, native_type>
 texture_type_map
 {
-    { texture_type::one,   { GL_TEXTURE_1D, 0 } },
-	{ texture_type::two,   { GL_TEXTURE_2D, 0 } },
-	{ texture_type::cube,  { GL_TEXTURE_CUBE_MAP, 0 } },
-	{ texture_type::three, { GL_TEXTURE_3D, 0 } },
-	{ texture_type::array, { GL_TEXTURE_2D_ARRAY, 0 } },
+    { texture_type::one,   { GL_TEXTURE_1D,       0, D3D12_RESOURCE_DIMENSION_TEXTURE1D } },
+	{ texture_type::two,   { GL_TEXTURE_2D,       0, D3D12_RESOURCE_DIMENSION_TEXTURE2D } },
+	{ texture_type::cube,  { GL_TEXTURE_CUBE_MAP, 0, D3D12_RESOURCE_DIMENSION_TEXTURE2D } },
+	{ texture_type::three, { GL_TEXTURE_3D,       0, D3D12_RESOURCE_DIMENSION_TEXTURE3D } },
+	{ texture_type::array, { GL_TEXTURE_2D_ARRAY, 0, D3D12_RESOURCE_DIMENSION_TEXTURE2D } },
 	//{ texture_type::texture_array_2d,   { 0, 0 } },
 	//{ texture_type::texture_array_data, { 0, 0 } },
 };

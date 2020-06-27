@@ -309,6 +309,13 @@ private:
     //void update(buffer_id id, const void* data, uint size);
     //void update(texture_id id, const void* data, uint size);
 
+    void bind_respack(const respack_id id)
+    {
+        DCHECK(query_valid(id)) << "invalid id";
+
+        backend_->bind_respack(id);
+    }
+
     void draw(uint count, uint first, uint instance_count)
     {
         DCHECK((count >= 0) && (first >= 0) && (instance_count > 0));

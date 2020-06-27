@@ -311,6 +311,12 @@ void render_device::execute_command(const command& cmd)
             bind_uniform(cmd.str_, cmd.uniform_block_.data(), cmd.uniform_block_.size());
             break;
 
+        case command_type::bind_respack:
+        {
+            bind_respack(cmd.res_);
+        }
+        break;
+
         case command_type::draw:
 
             draw(cmd.uint4_.x, cmd.uint4_.y, cmd.uint4_.z);
