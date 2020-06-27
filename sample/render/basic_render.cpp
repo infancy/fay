@@ -299,13 +299,18 @@ public:
         }
 
 
-        fay::image img("texture/awesomeface2.png", true);
-        auto tex_id = create_2d(this->device, "hello", img);
+        fay::image img0("texture/awesomeface2.png", true);
+        auto tex_id0 = create_2d(this->device, "hello", img0);
+
+
+        fay::image img1("texture/grass.png", true);
+        auto tex_id1 = create_2d(this->device, "hello", img1);
 
 
 #pragma region customization point
         fay::respack_desc res{};
-        res.textures.push_back(tex_id);
+        res.textures.push_back(tex_id0);
+        res.textures.push_back(tex_id1);
         res.uniforms.push_back(uniform_id0);
         res.uniforms.push_back(uniform_id1);
         auto res_id = device->create(res);

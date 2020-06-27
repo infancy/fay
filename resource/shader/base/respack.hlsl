@@ -29,12 +29,15 @@ VertexOut vs_main(VertexIn vIn)
     return vOut;
 }
 
-Texture2D gTex : register(t0);
 SamplerState gSampler : register(s0);
+Texture2D gTex : register(t0);
+Texture2D gTex1 : register(t1);
 
 float4 ps_main(VertexOut vOut) : SV_TARGET
 {
-   return gTex.Sample(gSampler, vOut.rTex) + ps_offset;
+    float4 alpha = 0;
+    alpha.z = ps_offset.x;
+    return gTex.Sample(gSampler, vOut.rTex) + gTex1.Sample(gSampler, vOut.rTex) - alpha;
    
-   //return float4(vOut.rTex.x, vOut.rTex.y, 0.f, 1.f) + ps_offset;
+    //return float4(vOut.rTex.x, vOut.rTex.y, 0.f, 1.f) + ps_offset;
 }
