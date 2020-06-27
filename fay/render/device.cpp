@@ -327,6 +327,12 @@ void render_device::execute_command(const command& cmd)
             draw_index(cmd.uint4_.x, cmd.uint4_.y, cmd.uint4_.z);
             break;
 
+        case command_type::update_buffer:
+        {
+            update_buffer(cmd.buf_, cmd.data_);
+        }
+        break;
+
         default:
 
             LOG(ERROR) << "shouldn't be here";

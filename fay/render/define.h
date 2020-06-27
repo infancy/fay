@@ -1165,6 +1165,7 @@ struct command // command/encoder
     glm::vec4 float4_{};
     //glm::mat4 mat4_{};
 
+    const void* data_;
     uniform uniform_;
     memory uniform_block_;
 
@@ -1401,7 +1402,14 @@ public:
 
     // TODO: bind_vertex_attribute, allocate_vertex_data
 
-    // command_list& update_buffer(const buffer_id id, const void* data, uint size); // cache the data
+    command_list& update_buffer(const buffer_id id, const void* data, uint size = 0) // cache the data
+    {
+        auto& cmd = add_command(command_type::update_buffer);
+        cmd.buf_ = id;
+        cmd.data_ = data;
+
+        return *this;
+    }
     // command_list& update_texture(const texture_id id, const void* data, uint size);
     // command_list& update_respack(const respack_id id, /*...*/);
 

@@ -229,7 +229,7 @@ private:
 
     void bind_uniform(const std::string& name, command::uniform uniform)
     {
-        DLOG(INFO) << "don't use 'bind_uniform', it will remove in the futrue";
+        FAY_LOG(ERROR) << "don't use 'bind_uniform', it will remove in the futrue";
 
         if(type() == render_backend_type::opengl)
             backend_->bind_uniform(name.c_str(), uniform);
@@ -333,6 +333,13 @@ private:
             count = ctx_.index_count;
 
         backend_->draw_index(count, first, instance_count);
+    }
+
+    void update_buffer(const buffer_id id, const void* data)
+    {
+        DCHECK(query_valid(id)) << "invalid id";
+
+        backend_->update(id, data, 0);
     }
 
 private:

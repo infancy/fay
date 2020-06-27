@@ -29,5 +29,5 @@ SamplerState gSampler : register(s0);
 
 float4 ps_main(VertexOut vOut) : SV_TARGET
 {
-   return float4(vOut.rTex.x, vOut.rTex.y, 0.f, 1.f);
+   return gTex.Sample(gSampler, vOut.rTex);
 }

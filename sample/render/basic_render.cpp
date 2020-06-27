@@ -221,11 +221,19 @@ public:
 };
 
 //texture, uniform, respack
-//#define test_uniform
+//#define test_texture
+#define test_uniform
+//#define test_respack
 class texture_uniform_ : public fay::app
 {
 public:
     fay::command_list pass1;
+
+    // TODO: animation_curve, graph
+    uint8_t color = 0;
+    int counter = 1;
+
+    glm::vec4 offset{};
 
 public:
     // using fay::app;
@@ -239,59 +247,66 @@ public:
         fay::buffer_id vertex_id1, index_id1;
         fay::shader_id shd_id1;
 
-        // buffer
+
+        float vertices[] =
         {
-            float vertices[] =
+             -0.5f,  0.5f, 0.f,   0.f, 0.f,
+              0.5f,  0.5f, 0.f,   1.f, 0.f,
+              0.5f, -0.5f, 0.f,   1.f, 1.f,
+             -0.5f, -0.5f, 0.f,   0.f, 1.f,
+        };
+        fay::buffer_desc bd;
+        {
+            bd.type = fay::buffer_type::vertex;
+            bd.btsz = 80;
+            bd.data = vertices;
+            bd.layout =
             {
-                 -0.5f,  0.5f, 0.f,   0.f, 0.f,
-                  0.5f,  0.5f, 0.f,   1.f, 0.f,
-                  0.5f, -0.5f, 0.f,   1.f, 1.f,
-                 -0.5f, -0.5f, 0.f,   0.f, 1.f,
+                {fay::attribute_usage::position,  fay::attribute_format::float3},
+                {fay::attribute_usage::texcoord0, fay::attribute_format::float2},
             };
-            fay::buffer_desc bd;
-            {
-                bd.type = fay::buffer_type::vertex;
-                bd.btsz = 80;
-                bd.data = vertices;
-                bd.layout =
-                {
-                    {fay::attribute_usage::position,  fay::attribute_format::float3},
-                    {fay::attribute_usage::texcoord0, fay::attribute_format::float2},
-                };
-            }
-            vertex_id1 = device->create(bd);
-
-
-            int indices[] =
-            {
-                0, 1, 2,
-                0, 2, 3
-            };
-            fay::buffer_desc index;
-            {
-                index.type = fay::buffer_type::index;
-                index.btsz = 24;
-                index.data = indices;
-            }
-            index_id1 = device->create(index);
-
-
-    #ifdef test_uniform
-            fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/uniform");
-    #else
-            fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/texture");
-    #endif
-            sd.layout = bd.layout;
-            shd_id1 = device->create(sd);
         }
+        vertex_id1 = device->create(bd);
+
+
+        int indices[] =
+        {
+            0, 1, 2,
+            0, 2, 3
+        };
+        fay::buffer_desc index;
+        {
+            index.type = fay::buffer_type::index;
+            index.btsz = 24;
+            index.data = indices;
+        }
+        index_id1 = device->create(index);
+
+
+        fay::buffer_desc uniform_desc;
+        uniform_desc.type = fay::buffer_type::uniform_cbv;
+        uniform_desc.btsz = 16;
+        uniform_desc.usage = fay::resource_usage::stream;
+        auto uniform_id = device->create(uniform_desc);
 
 
         fay::image img("texture/awesomeface2.png", true);
         auto tex_id = create_2d(this->device, "hello", img);
 
+
+#pragma region customization point
         fay::respack_desc res{};
-        res.textures.push_back(tex_id);
+        //res.textures.push_back(tex_id);
+        res.uniforms.push_back(uniform_id);
         auto res_id = device->create(res);
+
+
+        //fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/texture");
+        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/uniform");
+        //fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/respack");
+        sd.layout = bd.layout;
+        shd_id1 = device->create(sd);
+#pragma endregion
 
         fay::pipeline_desc pd;
         pd.primitive_type = fay::primitive_type::triangles;
@@ -302,6 +317,7 @@ public:
         pass1
             .begin_default(pipe_id, shd_id1)
             .bind_respack(res_id)
+            .update_buffer(uniform_id, &offset)
             .bind_vertex(vertex_id1)
             .bind_index(index_id1)
             .draw_index(6, 0)
@@ -310,6 +326,10 @@ public:
 
     void render() override
     {
+        color += counter;
+        if (color == 0 or color == 255) counter = -counter;
+        offset.x = float(color) / float(255);
+
         device->execute(pass1);
     }
 };

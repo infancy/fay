@@ -836,7 +836,7 @@ public:
             case buffer_type::uniform_cbv:
             {
                 buffer.cbv_view_desc.BufferLocation = buffer.resource->GetGPUVirtualAddress();
-                buffer.cbv_view_desc.SizeInBytes = (UINT)buf_desc.btsz;
+                buffer.cbv_view_desc.SizeInBytes = buffer.btsz;
             }
             break;
 
@@ -1295,7 +1295,11 @@ public:
         return pid;
     }
 
-    virtual void update( buffer_id id, const void* data, int size) override {}
+    virtual void update(buffer_id id, const void* data, int size) override
+    {
+        const auto& buf = pool_[id];
+        std::memcpy(buf.mapped_address, data, buf.btsz);
+    }
     virtual void update(texture_id id, const void* data) override {}
 
     virtual void update(texture_id id, const texture_desc& update_desc, texture& tex)
