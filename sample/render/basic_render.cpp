@@ -222,7 +222,7 @@ public:
 
 //texture, uniform, respack
 //#define test_texture
-#define test_uniform
+//#define test_uniform
 //#define test_respack
 class texture_uniform_ : public fay::app
 {
@@ -282,12 +282,21 @@ public:
         }
         index_id1 = device->create(index);
 
-
-        fay::buffer_desc uniform_desc;
-        uniform_desc.type = fay::buffer_type::uniform_cbv;
-        uniform_desc.btsz = 16;
-        uniform_desc.usage = fay::resource_usage::stream;
-        auto uniform_id = device->create(uniform_desc);
+        fay::buffer_id uniform_id0, uniform_id1;
+        {
+            fay::buffer_desc uniform_desc;
+            uniform_desc.type = fay::buffer_type::uniform_cbv;
+            uniform_desc.btsz = 16;
+            uniform_desc.usage = fay::resource_usage::stream;
+            uniform_id0 = device->create(uniform_desc);
+        }
+        {
+            fay::buffer_desc uniform_desc;
+            uniform_desc.type = fay::buffer_type::uniform_cbv;
+            uniform_desc.btsz = 16;
+            uniform_desc.usage = fay::resource_usage::stream;
+            uniform_id1 = device->create(uniform_desc);
+        }
 
 
         fay::image img("texture/awesomeface2.png", true);
@@ -296,14 +305,15 @@ public:
 
 #pragma region customization point
         fay::respack_desc res{};
-        //res.textures.push_back(tex_id);
-        res.uniforms.push_back(uniform_id);
+        res.textures.push_back(tex_id);
+        res.uniforms.push_back(uniform_id0);
+        res.uniforms.push_back(uniform_id1);
         auto res_id = device->create(res);
 
 
         //fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/texture");
-        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/uniform");
-        //fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/respack");
+        //fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/uniform");
+        fay::shader_desc sd = fay::create_shader_desc("default", desc.render.backend, "shader/base/respack");
         sd.layout = bd.layout;
         shd_id1 = device->create(sd);
 #pragma endregion
@@ -317,7 +327,8 @@ public:
         pass1
             .begin_default(pipe_id, shd_id1)
             .bind_respack(res_id)
-            .update_buffer(uniform_id, &offset)
+            .update_buffer(uniform_id0, &offset)
+            .update_buffer(uniform_id1, &offset)
             .bind_vertex(vertex_id1)
             .bind_index(index_id1)
             .draw_index(6, 0)
