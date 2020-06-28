@@ -1,11 +1,38 @@
 #include <sstream>
 #include "fay/render/backend.h"
-
 using namespace std::string_literals;
+
+
+
+#pragma region backend differences
 
 // https://docs.unity3d.com/Manual/SL-PlatformDifferences.html
 // https://veldrid.dev/articles/backend-differences.html
 // https://urho3d.github.io/documentation/1.6/_a_p_i_differences.html
+// GLM
+
+// perspective matrix:
+// left hand: D3D, Metal, Vulkan
+// right hand: OpenGL
+// how to solve: actually backend independent, as long as transform into their NDC space
+
+// NDC space/clip space(before perspective divide)
+// z-range: [0,  1], xy origin: upper_left: D3D
+// z-range: [-1, 1], xy origin: lower_left: OpenGL
+// how to solve: use glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE)
+
+// OpenGL's texture coordinate origin in the bottom-left corner of a texture
+// no need to be addressed, because texture data is also uploaded starting from that lower-left corner
+
+// Depth (Z) direction
+// Reversed direction(near1, far0): D3D, Metal
+
+// framebuffer texture coordinates
+// use a offscreen framebuffer as default render target, and flip it to swapchain frame when present
+
+#pragma endregion backend differences
+
+
 
 namespace fay::opengl
 {
