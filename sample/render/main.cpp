@@ -27,6 +27,7 @@ SAMPLE_RENDER_APP_DECL(FXAA)
 
 SAMPLE_RENDER_APP_DECL(WBOIT)
 
+SAMPLE_RENDER_APP_DECL(frustum_bounds)
 SAMPLE_RENDER_APP_DECL(shadow_map)
 SAMPLE_RENDER_APP_DECL(cascade_shadow_map) // rename: CSM // fixme: missing shadow in some viewing angle
 
@@ -52,6 +53,6 @@ int main(int argc, char** argv)
         desc.render.backend = fay::render_backend_type::opengl;
         //desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(shadow_map, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(frustum_bounds, desc);
     return app_->run();
 }

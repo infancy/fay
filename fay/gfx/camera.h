@@ -29,6 +29,8 @@ public:
 
     glm::vec3 position() const { return position_; }
 
+    void set_zoom(float zoom) { zoom_ = zoom; }
+    float get_zoom() const { return zoom_; }
     float zoom() const { return zoom_; }
 
     // view_matrix
