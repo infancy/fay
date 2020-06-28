@@ -39,8 +39,8 @@ public:
     void render() override
     {
         GLfloat near_plane = 1.f, far_plane = 200.f;
-        glm::mat4 lightOrtho = glm::orthoLH(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
-        glm::mat4 lightProj = glm::perspectiveLH(glm::radians(90.f),
+        glm::mat4 lightOrtho = glm::orthoLH_ZO(-150.f, 150.f, -100.0f, 100.0f, near_plane, far_plane);
+        glm::mat4 lightProj = glm::perspectiveLH_ZO(glm::radians(90.f),
             1080.f / 720.f, near_plane, far_plane);
         glm::mat4 lightView = glm::lookAtLH(
             light->position(), glm::vec3(0.0f), glm::vec3(0.f, 1.f, 0.f));
@@ -155,7 +155,7 @@ public:
 
         fay::command_list pass, pass2;
 
-        glm::mat4 captureProjection = glm::perspectiveLH(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+        glm::mat4 captureProjection = glm::perspectiveLH_ZO(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
         glm::mat4 captureView = glm::lookAtLH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 captureModel(1.f);
         glm::mat4 captureModels[6] =

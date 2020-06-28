@@ -53,6 +53,6 @@ int main(int argc, char** argv)
         desc.render.backend = fay::render_backend_type::opengl;
         //desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(frustum_bounds, desc);
+    auto  app_ = CREATE_SAMPLE_RENDER_APP(IBL, desc);
     return app_->run();
 }

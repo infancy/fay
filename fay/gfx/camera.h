@@ -42,7 +42,7 @@ public:
 
     glm::mat4 persp() const
     {
-        return glm::perspectiveLH(
+        return glm::perspectiveLH_ZO(
             glm::radians(zoom()), aspect_, near_, far_);
     }
 
@@ -58,7 +58,7 @@ public:
 
     glm::mat4 ortho() const
     {
-        return glm::orthoLH(-50.f, 50.f, -50.f, 50.f, 1.f, 100.f);
+        return glm::orthoLH_ZO(-50.f, 50.f, -50.f, 50.f, 1.f, 100.f);
     }
 
     // actually transform to homogeneous clipping space
