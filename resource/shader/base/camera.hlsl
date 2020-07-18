@@ -19,7 +19,7 @@ struct VertexOut
     float2 rTex : TEXCOORD;
 };
 
-VertexOut vs_main(VertexIn vIn)
+VertexOut vs(VertexIn vIn)
 {
     VertexOut vOut;
     vOut.rPos = mul(mvp, float4(vIn.mPos, 1.f));
@@ -31,7 +31,7 @@ VertexOut vs_main(VertexIn vIn)
 SamplerState gSampler : register(s0);
 Texture2D gTex : register(t0);
 
-float4 ps_main(VertexOut vOut) : SV_TARGET
+float4 ps(VertexOut vOut) : SV_TARGET
 {
     return gTex.Sample(gSampler, vOut.rTex);
 }

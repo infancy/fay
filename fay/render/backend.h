@@ -27,6 +27,8 @@ public:
     }
     virtual ~render_backend() = default;
 
+    virtual bool enable_raytracing() { return false; }
+
     // resource creation, updating and destruction
     virtual   buffer_id create(const   buffer_desc& desc) = 0;
     virtual  texture_id create(const  texture_desc& desc) = 0;
@@ -79,6 +81,8 @@ public:
 
     virtual void draw(uint count, uint first, uint instance_count) = 0;
     virtual void draw_index(uint count, uint first, uint instance_count) = 0;
+
+    virtual void tracing_ray() {}
 
 protected:
     // low level api, mainly for d3d12, vulkan and metal

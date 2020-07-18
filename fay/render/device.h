@@ -342,6 +342,11 @@ private:
         backend_->update(id, data, 0);
     }
 
+    void tracing_ray()
+    {
+        backend_->tracing_ray();
+    }
+
 private:
     // execute
     void execute_command_list(const command_list& cmds);

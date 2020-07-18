@@ -19,6 +19,8 @@ SAMPLE_RENDER_APP_DECL(texture_uniform_)
 SAMPLE_RENDER_APP_DECL(camera_)
 SAMPLE_RENDER_APP_DECL(offscreen_)
 
+SAMPLE_RENDER_APP_DECL(raytracing_triangle_)
+
 SAMPLE_RENDER_APP_DECL(triangle)
 SAMPLE_RENDER_APP_DECL(instancing)
 SAMPLE_RENDER_APP_DECL(offscreen)
@@ -50,9 +52,9 @@ int main(int argc, char** argv)
     // vector<{XX_desc, XX}> ...;
     fay::app_desc desc;
     {
-        desc.render.backend = fay::render_backend_type::opengl;
+        //desc.render.backend = fay::render_backend_type::opengl;
         //desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto  app_ = CREATE_SAMPLE_RENDER_APP(IBL, desc);
+    auto app_ = CREATE_SAMPLE_RENDER_APP(raytracing_triangle_, desc);
     return app_->run();
 }

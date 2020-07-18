@@ -39,6 +39,7 @@ resource_usage_map
 const inline enum_class_map<buffer_type, native_type>
 buffer_type_map
 {
+    { buffer_type::none,      { 0,                       0,                        D3D12_RESOURCE_STATE_COMMON } },
 	{ buffer_type::vertex,    { GL_ARRAY_BUFFER,         D3D11_BIND_VERTEX_BUFFER, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER } },
 	{ buffer_type::index,     { GL_ELEMENT_ARRAY_BUFFER, D3D11_BIND_INDEX_BUFFER,  D3D12_RESOURCE_STATE_INDEX_BUFFER } },
     { buffer_type::instance,  { GL_ARRAY_BUFFER,         D3D11_BIND_VERTEX_BUFFER, 0 } },
@@ -55,6 +56,8 @@ buffer_type_map
 
     { buffer_type::transfer_src_,     { 0, 0, D3D12_RESOURCE_STATE_COPY_SOURCE } },
     { buffer_type::transfer_dst_,     { 0, 0, D3D12_RESOURCE_STATE_COPY_DEST } },
+
+    { buffer_type::raytracing_accel_,     { 0, 0, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE } },
 };
 
 const inline enum_class_map<pixel_format, native_type>

@@ -13,5 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\sample\render\sample_render_app.h" />
+    <ClInclude Include="..\..\sample\render\raytracing.cpp" />
   </ItemGroup>
 </Project>

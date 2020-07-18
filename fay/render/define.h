@@ -78,7 +78,8 @@ enum class resource_state
 
 enum class buffer_type
 {
-    // none,
+    none,
+
 	vertex,
 	//index16,
 	index,
@@ -98,6 +99,8 @@ enum class buffer_type
 
     transfer_src_ = 0x00000008,
     transfer_dst_ = 0x00000010,
+
+    raytracing_accel_,
 };
 FAY_ENUM_CLASS_OPERATORS(buffer_type)
 
@@ -230,7 +233,7 @@ enum class render_target
     depth         = 0b0010,
     stencil       = 0b0100,
     depth_stencil = 0b1000,
-    depth_or_stencil = depth | stencil | depth_stencil,
+    depth_or_stencil = depth | stencil | depth_stencil, // ???
     DepthStencil  = depth | stencil | depth_stencil
 };
 FAY_ENUM_CLASS_OPERATORS(render_target)
@@ -274,14 +277,26 @@ enum class shader_stage
 {
     none,
 
+    //
 	vertex,
     hull,
     domn,
 	geometry,
+
+    task,
+    mesh,
+
 	fragment,
 
+    //
     compute,
-    mesh,
+
+    //
+    ray_gen,
+    ray_miss,
+    ray_intersect,
+    ray_any_hit,
+    ray_hit,
 };
 
 enum class uniform_type
@@ -454,6 +469,7 @@ enum class pass_type
 // buffer, texture, shader, uniform, pso
 // device, context, effect, pass
 
+// base_render_id
 // TODO: struct no ctor init, default ctor
 // TODO: uint -> size_t
 // TODO: bool() -> is_valid()
@@ -472,6 +488,7 @@ struct type##_id                                                            \
 
 FAY_RENDER_TYPE_ID(buffer)
 FAY_RENDER_TYPE_ID(texture)
+FAY_RENDER_TYPE_ID(accel)
 FAY_RENDER_TYPE_ID(respack)
 FAY_RENDER_TYPE_ID(shader)
 FAY_RENDER_TYPE_ID(pipeline)
@@ -480,6 +497,8 @@ FAY_RENDER_TYPE_ID(frame)
 #undef FAY_RENDER_TYPE_ID
 
 
+
+#pragma region buffer
 
 // a matrix instance : { fay::attribute_usage::instance_matrix,  fay::attribute_format::floatx, 16 }
 class vertex_attribute
@@ -678,6 +697,8 @@ private:
 
 // buffer_id create_vertex_buffer(...)
 
+#pragma endregion buffer
+
 
 
 struct texture_desc
@@ -791,6 +812,48 @@ public:
 };
 
 
+// row major
+struct render_matrix
+{
+    // TODO
+    float m[4][4]
+    {
+        1.f, 0.f, 0.f, 0.f,
+        0.f, 1.f, 0.f, 0.f,
+        0.f, 0.f, 1.f, 0.f,
+        0.f, 0.f, 0.f, 1.f,
+    };
+};
+
+struct bottom_accel_desc
+{
+    struct shape // raw_mesh
+    {
+        buffer_id vertex;
+        buffer_id index;
+        // transform
+    };
+
+    std::vector<shape> shapes;
+};
+
+// struct top_accel_desc
+
+struct accel_desc
+{
+    struct instance
+    {
+        int bottom_index;
+        render_matrix mat{};
+    };
+
+    std::vector<bottom_accel_desc> bottoms;
+
+    std::vector<instance> instances;
+    bool allowUpdate = false;
+};
+
+
 
 // RootSignature/DescriptorSetLayout
 // shader_resource/resource_set/resource_pack/resource_package/resource_bundle/resource_collection
@@ -799,6 +862,7 @@ struct respack_desc
     std::string name{ "defult" };
 
     /*legacy*/buffer_id index{};
+    /*legacy*/buffer_id vertex{};
     // buffer_id vertex{ 0 }; array<buffer_id, ...> instances;
     /*legacy*/std::vector<buffer_id>  buffers{}; // buffers[0] is default vertex buffer
 
@@ -809,8 +873,6 @@ struct respack_desc
     //...
     // texture sampler
 };
-
-
 
 
 
@@ -839,8 +901,16 @@ public:
     std::string gs{};
     std::string fs{};
 
-    std::string cs{};
-    std::string ms{};
+    std::string compute{};
+
+    std::string task{};
+    std::string mesh{};
+
+    std::string ray_gen{};
+    std::string ray_miss{};
+    std::string ray_intersect{};
+    std::string ray_any_hit{};
+    std::string ray_hit{};
 
     // TODO
     vertex_layout layout {};
@@ -903,7 +973,6 @@ public:
                 (type == that.type);
         }
     };
-
 };
 
 
@@ -1135,6 +1204,11 @@ enum class command_type
 
     draw,
     draw_index,
+
+    compute,
+
+    build_accel,
+    tracing_ray,
 
     readback, // blit
     // copy_data, update_resource, apply_state(binding_state)
@@ -1447,6 +1521,13 @@ public:
     // command_list& draw_indexed_indirect();
     // command_list& compute();
     // command_list& blit(frame_id f1, frame_id f2); // transfer
+
+    command_list& tracing_ray()
+    {
+        auto& cmd = add_command(command_type::tracing_ray);
+
+        return *this;
+    }
 
     /* const */std::string_view name() const { return name_; }
     const std::vector<command>& commands_() const { return cmds_; }

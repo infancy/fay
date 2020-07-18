@@ -30,6 +30,7 @@
     <ClCompile Include="..\..\sample\render\__sample.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\sample\render\raytracing.cpp" />
     <ClInclude Include="..\..\sample\render\sample_render_app.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

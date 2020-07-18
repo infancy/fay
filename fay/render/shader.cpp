@@ -722,9 +722,24 @@ shader_desc create_shader_desc(const std::string& shader_name, render_backend_ty
 
         shader_desc desc;
         desc.name = shader_name;
-        desc.vs = source_code;
-        desc.fs = source_code;
         // TODO
+        if (shader_name.find_first_of("raytracing"))
+        {
+            desc.ray_gen = source_code;
+            desc.ray_miss = source_code;
+            desc.ray_intersect = source_code;
+            desc.ray_any_hit = source_code;
+            desc.ray_hit = source_code;
+        }
+        else if (shader_name.find_first_of("compute"))
+        {
+            desc.compute = source_code;
+        }
+        else
+        {
+            desc.vs = source_code;
+            desc.fs = source_code;
+        }
 
         return desc;
     }

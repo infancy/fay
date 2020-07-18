@@ -11,14 +11,17 @@ using namespace std::string_literals;
 
 #include <Windows.h>
 #include <comdef.h>
+#include <dxcapi.h>
 #include <d3d11_4.h>
 #include <d3d12.h>
+//#include <d3dx12.h>
 #include <d3dcompiler.h>
 #include <dxgi1_5.h>
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3d12.lib")
 #pragma comment (lib, "d3dcompiler.lib")
+#pragma comment (lib, "dxcompiler.lib")
 #pragma comment (lib, "dxgi.lib")
 #pragma comment (lib, "dxguid.lib")
 //#pragma comment(lib, "winmm.lib")
@@ -122,18 +125,22 @@ FAY_SMART_COM_PTR(ID3D11BlendState);
 
 
 FAY_SMART_COM_PTR(ID3D12Device);
-FAY_SMART_COM_PTR(ID3D12Device6);
+FAY_SMART_COM_PTR(ID3D12Device5);
 FAY_SMART_COM_PTR(ID3D12Debug);
 FAY_SMART_COM_PTR(ID3D12Debug3);
 FAY_SMART_COM_PTR(ID3D12DebugDevice1);
 FAY_SMART_COM_PTR(ID3D12CommandQueue);
 FAY_SMART_COM_PTR(ID3D12CommandAllocator);
-FAY_SMART_COM_PTR(ID3D12GraphicsCommandList);
+FAY_SMART_COM_PTR(ID3D12GraphicsCommandList4);
+
+FAY_SMART_COM_PTR(IDxcBlob);
 
 FAY_SMART_COM_PTR(ID3D12DescriptorHeap);
 FAY_SMART_COM_PTR(ID3D12Resource);
 FAY_SMART_COM_PTR(ID3D12Fence1);
 FAY_SMART_COM_PTR(ID3D12PipelineState);
+FAY_SMART_COM_PTR(ID3D12StateObject);
+FAY_SMART_COM_PTR(ID3D12StateObjectProperties);
 FAY_SMART_COM_PTR(ID3D12ShaderReflection);
 FAY_SMART_COM_PTR(ID3D12RootSignature);
 FAY_SMART_COM_PTR(ID3D12QueryHeap);

@@ -333,6 +333,11 @@ void render_device::execute_command(const command& cmd)
         }
         break;
 
+        case command_type::tracing_ray:
+        {
+
+        }
+
         default:
 
             LOG(ERROR) << "shouldn't be here";

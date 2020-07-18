@@ -1,3 +1,4 @@
+#include <unordered_set>
 #include "fay/core/hash.h"
 #include "fay/math/math.h"
 #include "fay/render/backend.h"
@@ -68,6 +69,8 @@ struct buffer
     buffer() = default;
     buffer(const buffer_desc & desc) : layout(desc.layout.size())
     {
+        // TODO: *((buffer_desc*)this) = desc
+
         if (desc.is_vertex_or_instance())
         {
             uint offset = 0;
@@ -201,16 +204,60 @@ struct shader_unit
 {
     shader_stage stage{};
     string source;
+    string entry;
     string name;
     string target;
-    string entry;
 
     ID3DBlobPtr blob_ptr{};
     D3D12_SHADER_BYTECODE bytecode{};
+
+    // DXC
+    IDxcBlobPtr dxc_blob_ptr{};
 };
 
-struct shader // shader_program
+/// Storage for DXIL libraries and their exported symbols
+struct shader_lib
 {
+    shader_lib(IDxcBlobPtr dxil, const std::vector<std::wstring>& exportedSymbols) :
+        m_dxil(dxil), m_exportedSymbols(exportedSymbols), m_exports(exportedSymbols.size())
+    {
+        // Create one export descriptor per symbol
+        for (size_t i = 0; i < m_exportedSymbols.size(); i++)
+        {
+            m_exports[i] = {};
+            m_exports[i].Name = m_exportedSymbols[i].c_str();
+            m_exports[i].ExportToRename = nullptr;
+            m_exports[i].Flags = D3D12_EXPORT_FLAG_NONE;
+        }
+
+        // Create a library descriptor combining the DXIL code and the export names
+        m_libDesc.DXILLibrary.BytecodeLength = dxil->GetBufferSize();
+        m_libDesc.DXILLibrary.pShaderBytecode = dxil->GetBufferPointer();
+        m_libDesc.NumExports = static_cast<UINT>(m_exportedSymbols.size());
+        m_libDesc.pExports = m_exports.data();
+    }
+    shader_lib(const shader_lib& source) : shader_lib(source.m_dxil, source.m_exportedSymbols)
+    {
+    }
+    shader_lib& operator=(const shader_lib& source)
+    {
+        shader_lib tmp(source);
+        std::swap(*this, tmp);
+
+        return *this;
+    }
+
+    IDxcBlob* m_dxil;
+    const std::vector<std::wstring> m_exportedSymbols;
+
+    std::vector<D3D12_EXPORT_DESC> m_exports;
+    D3D12_DXIL_LIBRARY_DESC m_libDesc;
+};
+
+struct shader //: public shader_desc // shader_program
+{
+    //using shader_desc::shader_desc;
+
     shader_unit vs{};
     shader_unit hs{};
     shader_unit ds{};
@@ -218,37 +265,53 @@ struct shader // shader_program
     shader_unit ps{};
     shader_unit cs{};
 
+    shader_unit ray_gen{};
+    shader_unit ray_miss{};
+    shader_unit ray_intersect{};
+    shader_unit ray_any_hit{};
+    shader_unit ray_hit{};
+
     //std::vector<respack_layout> respack_layouts; // TODO: cache them
 
     std::vector<shader_unit*> active_units{};
+    std::vector<shader_lib> raytracing_libs{};
 
     shader() {}
-    shader(const shader_desc& desc)
+    shader(const shader_desc& desc) //: shader_desc(desc)
     {
         vs = { shader_stage::vertex,   desc.vs, "vs", };
         hs = { shader_stage::hull,     desc.hs, "hs", };
         ds = { shader_stage::domn,     desc.ds, "ds", };
         gs = { shader_stage::geometry, desc.gs, "gs", };
         ps = { shader_stage::fragment, desc.fs, "ps", };
-        cs = { shader_stage::compute,  desc.cs, "cs", };
 
-        shader_unit* raw_stages[]{ &vs, &hs, &ds, &gs, &ps, &cs };
+        cs = { shader_stage::compute,  desc.compute, "cs", };
+
+        ray_gen       = { shader_stage::ray_gen, desc.ray_gen, "ray_gen", };
+        ray_miss      = { shader_stage::ray_miss, desc.ray_miss, "ray_miss", };
+        ray_intersect = { shader_stage::ray_intersect, desc.ray_intersect, "ray_intersect", };
+        ray_any_hit   = { shader_stage::ray_any_hit, desc.ray_any_hit, "ray_any_hit", };
+        ray_hit       = { shader_stage::ray_hit, desc.ray_hit, "ray_hit", };
+
+        shader_unit* raw_stages[]
+        { 
+            &vs, &hs, &ds, &gs, &ps, 
+            &cs, 
+            &ray_gen, &ray_miss, &ray_intersect, &ray_any_hit, &ray_hit 
+        };
         for (auto& stage : raw_stages)
         {
             if (!stage->source.empty())
             {
                 // https://github.com/Microsoft/DirectXShaderCompiler/wiki/Shader-Model
-                stage->target = stage->name + "_5_1";
-                stage->entry  = stage->name + "_main";
-                stage->name   = stage->name + desc.name;
+                stage->target = stage->target + "_5_1";
+                stage->name   = desc.name + "_" + stage->target;
 
                 active_units.emplace_back(stage);
             }
         }
     }
 };
-
-
 
 struct pipeline
 {
@@ -359,7 +422,359 @@ struct frame
 
 }
 
+inline namespace generator
+{
 
+
+class RootSignatureGenerator
+{
+public:
+    /// Add a set of heap range descriptors as a parameter of the root signature.
+    void AddHeapRangesParameter(const std::vector<D3D12_DESCRIPTOR_RANGE>& ranges)
+    {
+        m_ranges.push_back(ranges);
+
+        // A set of ranges on the heap is a descriptor table parameter
+        D3D12_ROOT_PARAMETER param = {};
+        param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        param.DescriptorTable.NumDescriptorRanges = static_cast<UINT>(ranges.size());
+        // The range pointer is kept null here, and will be resolved when generating the root signature
+        // (see explanation of m_rangeLocations below)
+        param.DescriptorTable.pDescriptorRanges = nullptr;
+
+        // All parameters (heap ranges and root parameters) are added to the same parameter list to
+        // preserve order
+        m_parameters.push_back(param);
+
+        // The descriptor table descriptor ranges require a pointer to the descriptor ranges. Since new
+        // ranges can be dynamically added in the vector, we separately store the index of the range set.
+        // The actual address will be solved when generating the actual root signature
+        m_rangeLocations.push_back(static_cast<UINT>(m_ranges.size() - 1));
+    }
+
+    /// Add a set of heap ranges as a parameter of the root signature. Each range
+    /// is defined as follows:
+    /// - UINT BaseShaderRegister: the first register index in the range, e.g. the
+    /// register of a UAV with BaseShaderRegister==0 is defined in the HLSL code
+    /// as register(u0)
+    /// - UINT NumDescriptors: number of descriptors in the range. Those will be
+    /// mapped to BaseShaderRegister, BaseShaderRegister+1 etc. UINT
+    /// RegisterSpace: Allows using the same register numbers multiple times by
+    /// specifying a space where they are defined, similarly to a namespace. For
+    /// example, a UAV with BaseShaderRegister==0 and RegisterSpace==1 is accessed
+    /// in HLSL using the syntax register(u0, space1)
+    /// - D3D12_DESCRIPTOR_RANGE_TYPE RangeType: The range type, such as
+    /// D3D12_DESCRIPTOR_RANGE_TYPE_CBV for a constant buffer
+    /// - UINT OffsetInDescriptorsFromTableStart: The first slot in the heap
+    /// corresponding to the buffers mapped by the root signature. This can either
+    /// be explicit, or implicit using D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND. In
+    /// this case the index in the heap is the one directly following the last
+    /// parameter range (or 0 if it's the first)
+    void AddHeapRangesParameter(std::vector<std::tuple<UINT,                        // BaseShaderRegister,
+        UINT,                        // NumDescriptors
+        UINT,                        // RegisterSpace
+        D3D12_DESCRIPTOR_RANGE_TYPE, // RangeType
+        UINT                         // OffsetInDescriptorsFromTableStart
+        >>
+        ranges)
+    {
+        // Build and store the set of descriptors for the ranges
+        std::vector<D3D12_DESCRIPTOR_RANGE> rangeStorage;
+        for (const auto& input : ranges)
+        {
+            D3D12_DESCRIPTOR_RANGE r = {};
+            r.BaseShaderRegister = std::get<RSC_BASE_SHADER_REGISTER>(input);
+            r.NumDescriptors = std::get<RSC_NUM_DESCRIPTORS>(input);
+            r.RegisterSpace = std::get<RSC_REGISTER_SPACE>(input);
+            r.RangeType = std::get<RSC_RANGE_TYPE>(input);
+            r.OffsetInDescriptorsFromTableStart = std::get<RSC_OFFSET_IN_DESCRIPTORS_FROM_TABLE_START>(input);
+            rangeStorage.push_back(r);
+        }
+
+        // Add those ranges to the heap parameters
+        AddHeapRangesParameter(rangeStorage);
+    }
+
+    /// Add a root parameter to the shader, defined by its type: constant buffer (CBV), shader
+    /// resource (SRV), unordered access (UAV), or root constant (CBV, directly defined by its value
+    /// instead of a buffer). The shaderRegister and registerSpace indicate how to access the
+    /// parameter in the HLSL code, e.g a SRV with shaderRegister==1 and registerSpace==0 is
+    /// accessible via register(t1, space0).
+    /// In case of a root constant, the last parameter indicates how many successive 32-bit constants
+    /// will be bound.
+    void AddRootParameter(D3D12_ROOT_PARAMETER_TYPE type, UINT shaderRegister = 0, UINT registerSpace = 0,
+        UINT numRootConstants = 1)
+    {
+        D3D12_ROOT_PARAMETER param = {};
+        param.ParameterType = type;
+        // The descriptor is an union, so specific values need to be set in case the parameter is a
+        // constant instead of a buffer.
+        if (type == D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS)
+        {
+            param.Constants.Num32BitValues = numRootConstants;
+            param.Constants.RegisterSpace = registerSpace;
+            param.Constants.ShaderRegister = shaderRegister;
+        }
+        else
+        {
+            param.Descriptor.RegisterSpace = registerSpace;
+            param.Descriptor.ShaderRegister = shaderRegister;
+        }
+
+        // We default the visibility to all shaders
+        param.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+        // Add the root parameter to the set of parameters,
+        m_parameters.push_back(param);
+        // and indicate that there will be no range
+        // location to indicate since this parameter is not part of the heap
+        m_rangeLocations.push_back(~0u);
+    }
+
+    /// Create the root signature from the set of parameters, in the order of the addition calls
+    ID3D12RootSignature* Generate(ID3D12Device* device, bool isLocal)
+    {
+        // Go through all the parameters, and set the actual addresses of the heap range descriptors based
+        // on their indices in the range set array
+        for (size_t i = 0; i < m_parameters.size(); i++)
+        {
+            if (m_parameters[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+            {
+                m_parameters[i].DescriptorTable.pDescriptorRanges = m_ranges[m_rangeLocations[i]].data();
+            }
+        }
+        // Specify the root signature with its set of parameters
+        D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
+        rootDesc.NumParameters = static_cast<UINT>(m_parameters.size());
+        rootDesc.pParameters = m_parameters.data();
+        // Set the flags of the signature. By default root signatures are global, for example for vertex
+        // and pixel shaders. For raytracing shaders the root signatures are local.
+        rootDesc.Flags = isLocal ? D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE : D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+        // Create the root signature from its descriptor
+        ID3DBlob* pSigBlob;
+        ID3DBlob* pErrorBlob;
+        HRESULT hr = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &pSigBlob, &pErrorBlob);
+        if (FAILED(hr))
+        {
+            throw std::logic_error("Cannot serialize root signature");
+        }
+        ID3D12RootSignature* pRootSig;
+        hr = device->CreateRootSignature(0, pSigBlob->GetBufferPointer(), pSigBlob->GetBufferSize(),
+            IID_PPV_ARGS(&pRootSig));
+        if (FAILED(hr))
+        {
+            throw std::logic_error("Cannot create root signature");
+        }
+        return pRootSig;
+    }
+
+private:
+    /// Heap range descriptors
+    std::vector<std::vector<D3D12_DESCRIPTOR_RANGE>> m_ranges;
+    /// Root parameter descriptors
+    std::vector<D3D12_ROOT_PARAMETER> m_parameters;
+
+    /// For each entry of m_parameter, indicate the index of the range array in m_ranges, and ~0u if
+    /// the parameter is not a heap range descriptor
+    std::vector<UINT> m_rangeLocations;
+
+    enum
+    {
+        RSC_BASE_SHADER_REGISTER = 0,
+        RSC_NUM_DESCRIPTORS = 1,
+        RSC_REGISTER_SPACE = 2,
+        RSC_RANGE_TYPE = 3,
+        RSC_OFFSET_IN_DESCRIPTORS_FROM_TABLE_START = 4
+    };
+};
+
+/// Helper class to create and maintain a Shader Binding Table
+class ShaderBindingTable
+{
+public:
+    /// Add a ray generation program by name, with its list of data pointers or values according to
+    /// the layout of its root signature
+    void AddRayGenerationProgram(const std::wstring& entryPoint, const std::vector<void*>& inputData) {
+        m_rayGen.emplace_back(SBTEntry(entryPoint, inputData));
+    }
+
+    /// Add a miss program by name, with its list of data pointers or values according to
+    /// the layout of its root signature
+    void AddMissProgram(const std::wstring& entryPoint, const std::vector<void*>& inputData) {
+        m_miss.emplace_back(SBTEntry(entryPoint, inputData));
+    }
+
+    /// Add a hit group by name, with its list of data pointers or values according to
+    /// the layout of its root signature
+    void AddHitGroup(const std::wstring& entryPoint, const std::vector<void*>& inputData) {
+        m_hitGroup.emplace_back(SBTEntry(entryPoint, inputData));
+    }
+
+    /// Compute the size of the SBT based on the set of programs and hit groups it contains
+    uint32_t ComputeSBTSize()
+    {
+        // Size of a program identifier
+        m_progIdSize = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+        // Compute the entry size of each program type depending on the maximum number of parameters in
+        // each category
+        m_rayGenEntrySize = GetEntrySize(m_rayGen);
+        m_missEntrySize = GetEntrySize(m_miss);
+        m_hitGroupEntrySize = GetEntrySize(m_hitGroup);
+
+        // The total SBT size is the sum of the entries for ray generation, miss and hit groups, aligned
+        // on 256 bytes
+        uint32_t sbtSize = round_up(m_rayGenEntrySize * static_cast<UINT>(m_rayGen.size()) +
+            m_missEntrySize * static_cast<UINT>(m_miss.size()) +
+            m_hitGroupEntrySize * static_cast<UINT>(m_hitGroup.size()),
+            256);
+        return sbtSize;
+    }
+
+    /// Build the SBT and store it into sbtBuffer, which has to be pre-allocated on the upload heap.
+    /// Access to the raytracing pipeline object is required to fetch program identifiers using their
+    /// names
+    void Generate(ID3D12Resource* sbtBuffer, ID3D12StateObjectProperties* raytracingPipeline)
+    {
+        // Map the SBT
+        uint8_t* pData;
+        HRESULT hr = sbtBuffer->Map(0, nullptr, reinterpret_cast<void**>(&pData));
+        if (FAILED(hr))
+        {
+            throw std::logic_error("Could not map the shader binding table");
+        }
+        // Copy the shader identifiers followed by their resource pointers or root constants: first the
+        // ray generation, then the miss shaders, and finally the set of hit groups
+        uint32_t offset = 0;
+
+        offset = CopyShaderData(raytracingPipeline, pData, m_rayGen, m_rayGenEntrySize);
+        pData += offset;
+
+        offset = CopyShaderData(raytracingPipeline, pData, m_miss, m_missEntrySize);
+        pData += offset;
+
+        offset = CopyShaderData(raytracingPipeline, pData, m_hitGroup, m_hitGroupEntrySize);
+
+        // Unmap the SBT
+        sbtBuffer->Unmap(0, nullptr);
+    }
+
+    /// Reset the sets of programs and hit groups
+    void Reset()
+    {
+        m_rayGen.clear();
+        m_miss.clear();
+        m_hitGroup.clear();
+
+        m_rayGenEntrySize = 0;
+        m_missEntrySize = 0;
+        m_hitGroupEntrySize = 0;
+        m_progIdSize = 0;
+    }
+
+    /// The following getters are used to simplify the call to DispatchRays where the offsets of the
+    /// shader programs must be exactly following the SBT layout
+
+    /// Get the size in bytes of the SBT section dedicated to ray generation programs
+    UINT GetRayGenSectionSize() const {
+        return m_rayGenEntrySize * static_cast<UINT>(m_rayGen.size());
+    }
+    /// Get the size in bytes of one ray generation program entry in the SBT
+    UINT GetRayGenEntrySize() const { return m_rayGenEntrySize; }
+
+    /// Get the size in bytes of the SBT section dedicated to miss programs
+    UINT GetMissSectionSize() const {
+        return m_missEntrySize * static_cast<UINT>(m_miss.size());
+    }
+
+    /// Get the size in bytes of one miss program entry in the SBT
+    UINT GetMissEntrySize() { return m_missEntrySize; }
+
+    /// Get the size in bytes of the SBT section dedicated to hit groups
+    UINT GetHitGroupSectionSize() const {
+        return m_hitGroupEntrySize * static_cast<UINT>(m_hitGroup.size());
+    }
+    /// Get the size in bytes of hit group entry in the SBT
+    UINT GetHitGroupEntrySize() const { return m_hitGroupEntrySize; }
+
+private:
+    /// Wrapper for SBT entries, each consisting of the name of the program and a list of values,
+    /// which can be either pointers or raw 32-bit constants
+    struct SBTEntry
+    {
+        SBTEntry(std::wstring entryPoint, std::vector<void*> inputData) :
+            m_entryPoint(std::move(entryPoint)), m_inputData(std::move(inputData))
+        {
+        }
+
+        const std::wstring m_entryPoint;
+        const std::vector<void*> m_inputData;
+    };
+
+    /// For each entry, copy the shader identifier followed by its resource pointers and/or root
+    /// constants in outputData, with a stride in bytes of entrySize, and returns the size in bytes
+    /// actually written to outputData.
+    uint32_t CopyShaderData(ID3D12StateObjectProperties* raytracingPipeline, uint8_t* outputData,
+        const std::vector<SBTEntry>& shaders, uint32_t entrySize)
+    {
+        uint8_t* pData = outputData;
+        for (const auto& shader : shaders)
+        {
+            // Get the shader identifier, and check whether that identifier is known
+            void* id = raytracingPipeline->GetShaderIdentifier(shader.m_entryPoint.c_str());
+            if (!id)
+            {
+                std::wstring errMsg(std::wstring(L"Unknown shader identifier used in the SBT: ") + shader.m_entryPoint);
+                throw std::logic_error(std::string(errMsg.begin(), errMsg.end()));
+            }
+            // Copy the shader identifier
+            memcpy(pData, id, m_progIdSize);
+            // Copy all its resources pointers or values in bulk
+            memcpy(pData + m_progIdSize, shader.m_inputData.data(), shader.m_inputData.size() * 8);
+
+            pData += entrySize;
+        }
+        // Return the number of bytes actually written to the output buffer
+        return static_cast<uint32_t>(shaders.size()) * entrySize;
+    }
+
+    /// Compute the size of the SBT entries for a set of entries, which is determined by the maximum
+    /// number of parameters of their root signature
+    uint32_t GetEntrySize(const std::vector<SBTEntry>& entries)
+    {
+        // Find the maximum number of parameters used by a single entry
+        size_t maxArgs = 0;
+        for (const auto& shader : entries)
+        {
+            maxArgs = max(maxArgs, shader.m_inputData.size());
+        }
+        // A SBT entry is made of a program ID and a set of parameters, taking 8 bytes each. Those
+        // parameters can either be 8-bytes pointers, or 4-bytes constants
+        uint32_t entrySize = m_progIdSize + 8 * static_cast<uint32_t>(maxArgs);
+
+        // The entries of the shader binding table must be 16-bytes-aligned
+        entrySize = round_up(entrySize, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
+
+        return entrySize;
+    }
+
+    std::vector<SBTEntry> m_rayGen;
+    std::vector<SBTEntry> m_miss;
+    std::vector<SBTEntry> m_hitGroup;
+
+    /// For each category, the size of an entry in the SBT depends on the maximum number of resources
+    /// used by the shaders in that category.The helper computes those values automatically in
+    /// GetEntrySize()
+    uint32_t m_rayGenEntrySize;
+    uint32_t m_missEntrySize;
+    uint32_t m_hitGroupEntrySize;
+
+    /// The program names are translated into program identifiers.The size in bytes of an identifier
+    /// is provided by the device and is the same for all categories.
+    UINT m_progIdSize;
+};
+
+}
 
 #define ThrowIfFailed D3D12_CHECK
 
@@ -404,7 +819,7 @@ private:
     #ifdef FAY_DEBUG
         ID3D12DebugDevice1Ptr mDebugDevice;
     #endif
-        ID3D12DevicePtr mDevice;
+        ID3D12Device5Ptr mDevice;
         ID3D12CommandAllocatorPtr mCommandAllocator;
         Queue_ mGraphicsQueue; // use the graphics queue as present queue
         //Queue_ mPresentQueue;
@@ -419,13 +834,13 @@ private:
         frame_id frm_ids[SwapChainBufferCount]{};
 
         // cmdlist
-        ID3D12GraphicsCommandListPtr mCommandList{};
-        ID3D12GraphicsCommandListPtr mFrameCommandList[SwapChainBufferCount]{};
+        ID3D12GraphicsCommandList4Ptr mCommandList{};
+        ID3D12GraphicsCommandList4Ptr mFrameCommandList[SwapChainBufferCount]{};
         respack_id res_id{};
     };
     context ctx_{};
-    ID3D12DevicePtr device_{};
-    ID3D12GraphicsCommandListPtr list_{};
+    ID3D12Device5Ptr device_{};
+    ID3D12GraphicsCommandList4Ptr list_{};
 
     using render_pool = resource_pool<buffer, texture, respack, shader, pipeline, frame>;
     render_pool pool_{};
@@ -597,6 +1012,9 @@ private:
         gfxQueue.fence_value = 1;
         gfxQueue.fence_event = CreateEvent(NULL, FALSE, FALSE, NULL);
         FAY_CHECK(gfxQueue.fence_event != nullptr);
+
+        // enable
+        enable_raytracing();
     }
 
     // can call it repeatedly when windows size change
@@ -706,6 +1124,22 @@ private:
         return false;
     }
 
+    virtual bool enable_raytracing()
+    {
+        D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
+        ThrowIfFailed(device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5,
+            &options5, sizeof(options5)));
+        if (options5.RaytracingTier < D3D12_RAYTRACING_TIER_1_0)
+        {
+            throw std::runtime_error("Raytracing not supported on device");
+            return false;
+        }
+
+        return true;
+    }
+
+
+
     void create_command_list()
     {
         for(int i = 0; i < ctx_.SwapChainBufferCount; ++i)
@@ -735,7 +1169,7 @@ private:
 
 #pragma endregion init
 
-#pragma region create, update and destroy
+#pragma region create (resource, state), update and destroy
 public:
     virtual   buffer_id create(const   buffer_desc& buf_desc) override
     {
@@ -1112,6 +1546,7 @@ public:
 
 
         //update(pid, res_desc);
+        // create cbv
         if (res_desc.uniforms.size() > 0)
         {
             D3D12_CPU_DESCRIPTOR_HANDLE handle =
@@ -1129,7 +1564,7 @@ public:
                 handle.ptr += handle_inc_size;
             }
         }
-
+        // create sampler/srv
         if (res_desc.textures.size() > 0)
         {
             {
@@ -1169,12 +1604,12 @@ public:
         
 
 
-        create_shader_resource_layout(res);
+        create_shader_input_layout(res);
 
 
         return pid;
     }
-    virtual   shader_id create(const   shader_desc& shd_desc) override
+    virtual   shader_id create2(const   shader_desc& shd_desc)// override
     {
         auto pid = pool_.insert(shd_desc);
         shader& shd = pool_[pid];
@@ -1212,6 +1647,23 @@ public:
 
         return pid;
     }
+    virtual   shader_id create(const   shader_desc& shd_desc) override
+    {
+        auto pid = pool_.insert(shd_desc);
+        shader& shd = pool_[pid];
+
+        for (auto unit_ptr : shd.active_units)
+        {
+            auto& unit = *unit_ptr;
+
+            unit.dxc_blob_ptr = CompileShaderLibrary(unit.name, unit.source, unit.entry);
+
+            shd.raytracing_libs.emplace_back(shader_lib{ unit.dxc_blob_ptr, { std::wstring((LPCWSTR)unit.entry.c_str()) } });
+        }
+
+        return pid;
+    }
+
     virtual pipeline_id create(const pipeline_desc& pipe_desc) override
     {
         auto pid = pool_.insert(pipe_desc);
@@ -1295,7 +1747,7 @@ public:
         return pid;
     }
 
-    virtual void update(buffer_id id, const void* data, int size) override
+    virtual void update(buffer_id  id, const void* data, int size) override
     {
         const auto& buf = pool_[id];
         std::memcpy(buf.mapped_address, data, buf.btsz);
@@ -1506,7 +1958,9 @@ public:
     virtual void destroy(   frame_id id) override {}
 
 private:
-    void create_shader_resource_layout(respack& res)
+    // create root signature
+    // TODO: repalce res with shd
+    void create_shader_input_layout(respack& res)
     {
         // create resource pack layout 
 
@@ -1534,6 +1988,7 @@ private:
             auto* descriptor = res.active_tables[descriptor_index];
 
 
+
             D3D12_ROOT_PARAMETER1* param_11 = &parameters_11[paramter_range_index];
             D3D12_ROOT_PARAMETER* param_10 = &parameters_10[paramter_range_index];
 
@@ -1544,6 +1999,7 @@ private:
             // TODO: optimization
             param_11->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
             param_10->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
 
 
             D3D12_DESCRIPTOR_RANGE1* range_11 = &ranges_11[paramter_range_index];
@@ -1591,14 +2047,14 @@ private:
 
             if (assign_range)
             {
-                range_11->NumDescriptors = descriptor->count;
                 range_11->BaseShaderRegister = descriptor->base_binding;
+                range_11->NumDescriptors = descriptor->count;
                 range_11->RegisterSpace = 0;
                 range_11->Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
                 range_11->OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-                range_10->NumDescriptors = descriptor->count;
                 range_10->BaseShaderRegister = descriptor->base_binding;
+                range_10->NumDescriptors = descriptor->count;
                 range_10->RegisterSpace = 0;
                 range_10->OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
@@ -1651,6 +2107,7 @@ private:
     }
 
     // TODO: id
+    // TODO: remove buf and res, only need shd(Programmable), pipe(fixed) and frm(target)
     ID3D12PipelineStatePtr create_rasterization_state(
         const buffer& buf, const respack& res, 
         const shader& shd, const pipeline& pipe, const frame& frm)
@@ -1725,6 +2182,1029 @@ private:
     }
 
 #pragma endregion create, update and destroy
+
+#pragma region create shader
+
+#pragma endregion
+
+#pragma region raytracing
+    // https://developer.nvidia.com/rtx/raytracing/dxr/DX12-Raytracing-tutorial-Part-1
+
+    static constexpr D3D12_HEAP_PROPERTIES kUploadHeapProps{ D3D12_HEAP_TYPE_UPLOAD, D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+                                                        D3D12_MEMORY_POOL_UNKNOWN, 0, 0 };
+
+    // Specifies the default heap. This heap type experiences the most bandwidth for
+    // the GPU, but cannot provide CPU access.
+    static constexpr D3D12_HEAP_PROPERTIES kDefaultHeapProps{ D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+                                                             D3D12_MEMORY_POOL_UNKNOWN, 0, 0 };
+
+    ID3D12Resource* CreateBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags,
+        D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps)
+    {
+        D3D12_RESOURCE_DESC bufDesc = {};
+        bufDesc.Alignment = 0;
+        bufDesc.DepthOrArraySize = 1;
+        bufDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        bufDesc.Flags = flags;
+        bufDesc.Format = DXGI_FORMAT_UNKNOWN;
+        bufDesc.Height = 1;
+        bufDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+        bufDesc.MipLevels = 1;
+        bufDesc.SampleDesc.Count = 1;
+        bufDesc.SampleDesc.Quality = 0;
+        bufDesc.Width = size;
+
+        ID3D12Resource* pBuffer;
+        ThrowIfFailed(device_->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufDesc, initState, nullptr,
+            IID_PPV_ARGS(&pBuffer)));
+        return pBuffer;
+    }
+
+
+
+
+
+    // bounds
+    struct accel
+    {
+        ID3D12ResourcePtr pScratch;              // Scratch memory for AS builder
+        ID3D12ResourcePtr pResult;            // Where the AS is
+
+        ID3D12ResourcePtr pInstanceDesc;         // Hold the matrices of the instances
+    };
+
+    accel create_bottom_accel(const bottom_accel_desc& desc)
+    {
+        accel accel;
+
+
+
+        // 
+
+        const auto& shapes = desc.shapes;
+        std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> descriptors(shapes.size());
+
+        for (int i = 0; i < shapes.size(); ++i)
+        {
+            const auto& desc = shapes[i];
+            const auto& vertex = pool_[desc.vertex];
+            const auto& vertex_desc = pool_.desc(desc.vertex); // TODO
+            const auto& index = pool_[desc.index];
+            const auto& index_desc = pool_.desc(desc.index);
+
+            int vertexOffsetInBytes = 0;
+            int indexOffsetInBytes = 0;
+            D3D12_RAYTRACING_GEOMETRY_DESC& descriptor = descriptors[i];
+            descriptor.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+
+            descriptor.Triangles.VertexBuffer.StartAddress = vertex.resource->GetGPUVirtualAddress() + vertexOffsetInBytes;
+            descriptor.Triangles.VertexBuffer.StrideInBytes = vertex_desc.layout.stride();
+            descriptor.Triangles.VertexCount = vertex_desc.size;
+            descriptor.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT; // only position
+
+            descriptor.Triangles.IndexBuffer = index.resource->GetGPUVirtualAddress() + indexOffsetInBytes;
+            descriptor.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
+            descriptor.Triangles.IndexCount = index_desc.size;
+            descriptor.Triangles.Transform3x4 = 0;
+            descriptor.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
+        }
+
+
+
+        // compute bottom accels bufer size
+
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS prebuildDesc;
+        prebuildDesc.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+        prebuildDesc.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+        prebuildDesc.NumDescs = static_cast<UINT>(descriptors.size());
+        prebuildDesc.pGeometryDescs = descriptors.data();
+        prebuildDesc.Flags = flags;
+
+        // This structure is used to hold the sizes of the required scratch memory and
+        // resulting AS
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
+
+        device_->GetRaytracingAccelerationStructurePrebuildInfo(&prebuildDesc, &info);
+
+        UINT64 scratchSizeInBytes = round_up(info.ScratchDataSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+        accel.pScratch = CreateBuffer(scratchSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+            D3D12_RESOURCE_STATE_COMMON, kDefaultHeapProps);
+
+        UINT64 resultSizeInBytes = round_up(info.ResultDataMaxSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+        accel.pResult = CreateBuffer(resultSizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+            D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, kDefaultHeapProps);
+
+
+
+        // Generate bottom accels
+
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc;
+        buildDesc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+        buildDesc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+        buildDesc.Inputs.NumDescs = static_cast<UINT>(descriptors.size());
+        buildDesc.Inputs.pGeometryDescs = descriptors.data();
+        buildDesc.DestAccelerationStructureData = { accel.pResult->GetGPUVirtualAddress() };
+        buildDesc.ScratchAccelerationStructureData = { accel.pScratch->GetGPUVirtualAddress() };
+        buildDesc.SourceAccelerationStructureData = 0;
+        buildDesc.Inputs.Flags = flags;
+        list_->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+
+        D3D12_RESOURCE_BARRIER uavBarrier;
+        uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        uavBarrier.UAV.pResource = accel.pResult;
+        uavBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        list_->ResourceBarrier(1, &uavBarrier);
+
+
+
+        return accel;
+    }
+    
+    accel create_top_accel(const accel_desc& desc, const std::vector<accel>& bottoms)
+    {
+        accel accel;
+
+
+
+        // 
+
+        const auto& instances = desc.instances;
+
+        struct accel_instance
+        {
+            /// Bottom-level AS
+            ID3D12Resource* bottomLevelAS;
+            /// Transform matrix
+            render_matrix transform;
+            /// Instance ID visible in the shader
+            UINT instanceID;
+            /// Hit group index used to fetch the shaders from the SBT
+            UINT hitGroupIndex;
+        };
+        std::vector<accel_instance> accel_instances(instances.size());
+
+        for (int i = 0; i < instances.size(); ++i)
+        {
+            const auto& instance = instances[i];
+            accel_instances[i] = accel_instance{ bottoms[instance.bottom_index].pResult, instance.mat, 0, 1 };
+        }
+
+
+
+        // compute bottom accels bufer size
+
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS flags = desc.allowUpdate ? D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE
+            : D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS prebuildDesc{};
+        prebuildDesc.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+        prebuildDesc.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+        prebuildDesc.NumDescs = static_cast<UINT>(instances.size());
+        prebuildDesc.Flags = flags;
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
+        device_->GetRaytracingAccelerationStructurePrebuildInfo(&prebuildDesc, &info);
+
+        UINT64 scratchSizeInBytes = round_up(info.ScratchDataSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+        UINT64 resultSizeInBytes = round_up(info.ResultDataMaxSizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+        UINT64 instanceDescsSizeInBytes = round_up(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * static_cast<UINT64>(instances.size()), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+
+        accel.pScratch      = CreateBuffer(scratchSizeInBytes,       D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, kDefaultHeapProps);
+        accel.pResult       = CreateBuffer(resultSizeInBytes,        D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, kDefaultHeapProps);
+        accel.pInstanceDesc = CreateBuffer(instanceDescsSizeInBytes, D3D12_RESOURCE_FLAG_NONE,                   D3D12_RESOURCE_STATE_GENERIC_READ, kUploadHeapProps);
+        ID3D12Resource* scratchBuffer = accel.pScratch;
+        ID3D12Resource* resultBuffer = accel.pResult;
+        ID3D12Resource* descriptorsBuffer = accel.pInstanceDesc;
+
+
+
+        // Generate bottom accels
+
+        // Copy the descriptors in the target descriptor buffer
+        D3D12_RAYTRACING_INSTANCE_DESC* instanceDescs;
+        descriptorsBuffer->Map(0, nullptr, reinterpret_cast<void**>(&instanceDescs));
+        if (!instanceDescs)
+        {
+            throw std::logic_error("Cannot map the instance descriptor buffer - is it "
+                "in the upload heap?");
+        }
+
+        auto instanceCount = static_cast<UINT>(instances.size());
+
+        // Initialize the memory to zero on the first time only
+        if (!desc.allowUpdate)
+        {
+            ZeroMemory(instanceDescs, instanceDescsSizeInBytes);
+        }
+
+        // Create the description for each instance
+        for (uint32_t i = 0; i < instanceCount; i++)
+        {
+            // Instance ID visible in the shader in InstanceID()
+            instanceDescs[i].InstanceID = accel_instances[i].instanceID;
+            // Index of the hit group invoked upon intersection
+            instanceDescs[i].InstanceContributionToHitGroupIndex = accel_instances[i].hitGroupIndex;
+            // Instance flags, including backface culling, winding, etc - TODO: should
+            // be accessible from outside
+            instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+            memcpy(instanceDescs[i].Transform, &accel_instances[i].transform, sizeof(instanceDescs[i].Transform));
+            // Get access to the bottom level
+            instanceDescs[i].AccelerationStructure = accel_instances[i].bottomLevelAS->GetGPUVirtualAddress();
+            // Visibility mask, always visible here - TODO: should be accessible from
+            // outside
+            instanceDescs[i].InstanceMask = 0xFF;
+        }
+        descriptorsBuffer->Unmap(0, nullptr);
+
+
+
+        // If this in an update operation we need to provide the source buffer
+        D3D12_GPU_VIRTUAL_ADDRESS pSourceAS = 0;
+
+        if (flags == D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE && desc.allowUpdate)
+        {
+            flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+        }
+
+        // Create a descriptor of the requested builder work, to generate a top-level
+        // AS from the input parameters
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
+        buildDesc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+        buildDesc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+        buildDesc.Inputs.InstanceDescs = descriptorsBuffer->GetGPUVirtualAddress();
+        buildDesc.Inputs.NumDescs = instanceCount;
+        buildDesc.DestAccelerationStructureData = { resultBuffer->GetGPUVirtualAddress() };
+        buildDesc.ScratchAccelerationStructureData = { scratchBuffer->GetGPUVirtualAddress() };
+        buildDesc.SourceAccelerationStructureData = pSourceAS;
+        buildDesc.Inputs.Flags = flags;
+
+        // Build the top-level AS
+        list_->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+
+        // Wait for the builder to complete by setting a barrier on the resulting
+        // buffer. This can be important in case the rendering is triggered
+        // immediately afterwards, without executing the command list
+        D3D12_RESOURCE_BARRIER uavBarrier;
+        uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        uavBarrier.UAV.pResource = resultBuffer;
+        uavBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        list_->ResourceBarrier(1, &uavBarrier);
+
+
+
+        return accel;
+    }
+
+    accel create_accel(const accel_desc& desc)
+    {
+        //begin();
+
+        std::vector<accel> bottoms(desc.bottoms.size());
+        for (int i = 0; i < desc.bottoms.size(); ++i)
+        {
+            bottoms[i] = create_bottom_accel(desc.bottoms[i]);
+        }
+
+        accel accel = create_top_accel(desc, bottoms);
+
+        //end();
+
+        return accel;
+    }
+
+
+
+
+
+
+
+    /// Storage for the hit groups, binding the hit group name with the underlying intersection, any
+    /// hit and closest hit symbols
+    struct hit_group
+    {
+        hit_group(std::wstring hitGroupName, std::wstring closestHitSymbol, std::wstring anyHitSymbol = L"",
+            std::wstring intersectionSymbol = L"") :
+            m_hitGroupName(std::move(hitGroupName)),
+            m_closestHitSymbol(std::move(closestHitSymbol)), m_anyHitSymbol(std::move(anyHitSymbol)),
+            m_intersectionSymbol(std::move(intersectionSymbol))
+        {
+            // Indicate which shader program is used for closest hit, leave the other
+            // ones undefined (default behavior), export the name of the group
+            m_desc.HitGroupExport = m_hitGroupName.c_str();
+            m_desc.ClosestHitShaderImport = m_closestHitSymbol.empty() ? nullptr : m_closestHitSymbol.c_str();
+            m_desc.AnyHitShaderImport = m_anyHitSymbol.empty() ? nullptr : m_anyHitSymbol.c_str();
+            m_desc.IntersectionShaderImport = m_intersectionSymbol.empty() ? nullptr : m_intersectionSymbol.c_str();
+        }
+
+        /*
+        
+        hit_group(const hit_group& source) :
+            HitGroup(source.m_hitGroupName, source.m_closestHitSymbol, source.m_anyHitSymbol, source.m_intersectionSymbol)
+        {
+        }
+        */
+
+        std::wstring m_hitGroupName;
+        std::wstring m_closestHitSymbol;
+        std::wstring m_anyHitSymbol;
+        std::wstring m_intersectionSymbol;
+        D3D12_HIT_GROUP_DESC m_desc = {};
+    };
+
+    /// Storage for the association between shaders and root signatures
+    struct RootSignatureAssociation
+    {
+        RootSignatureAssociation(ID3D12RootSignature* rootSignature, const std::vector<std::wstring>& symbols) :
+            m_rootSignature(rootSignature),
+            m_symbols(symbols), m_symbolPointers(symbols.size())
+        {
+            for (size_t i = 0; i < m_symbols.size(); i++)
+            {
+                m_symbolPointers[i] = m_symbols[i].c_str();
+            }
+            m_rootSignaturePointer = m_rootSignature;
+        }
+        //RootSignatureAssociation(const RootSignatureAssociation& source);
+
+        ID3D12RootSignature* m_rootSignature;
+        ID3D12RootSignature* m_rootSignaturePointer;
+        std::vector<std::wstring> m_symbols;
+        std::vector<LPCWSTR> m_symbolPointers;
+        D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION m_association = {};
+    };
+
+    ID3D12RootSignature* m_dummyLocalRootSignature;
+    ID3D12RootSignature* m_dummyGlobalRootSignature;
+    void CreateDummyRootSignatures()
+    {
+        // Creation of the global root signature
+        D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
+        rootDesc.NumParameters = 0;
+        rootDesc.pParameters = nullptr;
+        // A global root signature is the default, hence this flag
+        rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+        HRESULT hr = 0;
+
+        ID3DBlob* serializedRootSignature;
+        ID3DBlob* error;
+
+        // Create the empty global root signature
+        hr = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &serializedRootSignature, &error);
+        if (FAILED(hr))
+        {
+            throw std::logic_error("Could not serialize the global root signature");
+        }
+        hr = device_->CreateRootSignature(0, serializedRootSignature->GetBufferPointer(),
+            serializedRootSignature->GetBufferSize(),
+            IID_PPV_ARGS(&m_dummyGlobalRootSignature));
+
+        serializedRootSignature->Release();
+        if (FAILED(hr))
+        {
+            throw std::logic_error("Could not create the global root signature");
+        }
+
+        // Create the local root signature, reusing the same descriptor but altering the creation flag
+        rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+        hr = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &serializedRootSignature, &error);
+        if (FAILED(hr))
+        {
+            throw std::logic_error("Could not serialize the local root signature");
+        }
+        hr = device_->CreateRootSignature(0, serializedRootSignature->GetBufferPointer(),
+            serializedRootSignature->GetBufferSize(),
+            IID_PPV_ARGS(&m_dummyLocalRootSignature));
+
+        serializedRootSignature->Release();
+        if (FAILED(hr))
+        {
+            throw std::logic_error("Could not create the local root signature");
+        }
+    }
+
+
+    ID3D12RootSignaturePtr CreateRayGenSignature()
+    {
+        RootSignatureGenerator rsc;
+        rsc.AddHeapRangesParameter(
+            { { 0 /*u0*/, 1 /*1 descriptor */, 0 /*use the implicit register space 0*/,
+                D3D12_DESCRIPTOR_RANGE_TYPE_UAV /* UAV representing the output buffer*/,
+                0 /*heap slot where the UAV is defined*/ },
+              { 0 /*t0*/, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_SRV /*Top-level acceleration structure*/, 1 } });
+
+        return rsc.Generate(device_, true);
+    }
+    ID3D12RootSignaturePtr CreateHitSignature()
+    {
+        RootSignatureGenerator rsc;
+        rsc.AddRootParameter(D3D12_ROOT_PARAMETER_TYPE_SRV);
+        return rsc.Generate(device_, true);
+    }
+    ID3D12RootSignaturePtr CreateMissSignature()
+    {
+        RootSignatureGenerator rsc;
+        return rsc.Generate(device_, true);
+    }
+    ID3D12RootSignaturePtr m_rayGenSignature;
+    ID3D12RootSignaturePtr m_hitSignature;
+    ID3D12RootSignaturePtr m_missSignature;
+
+
+    // TODO: internal lambda
+    // Compile a HLSL file by DXC into a DXIL library
+    IDxcBlobPtr CompileShaderLibrary(const string& fileName, const string& source, const string& entry_point)
+    {
+        // TODO: static init
+        static IDxcCompiler* pCompiler = nullptr;
+        static IDxcLibrary* pLibrary = nullptr;
+        static IDxcIncludeHandler* dxcIncludeHandler;
+
+        HRESULT hr;
+
+        // Initialize the DXC compiler and compiler helper
+        if (!pCompiler)
+        {
+            ThrowIfFailed(DxcCreateInstance(CLSID_DxcCompiler, __uuidof(IDxcCompiler), (void**)&pCompiler));
+            ThrowIfFailed(DxcCreateInstance(CLSID_DxcLibrary, __uuidof(IDxcLibrary), (void**)&pLibrary));
+            ThrowIfFailed(pLibrary->CreateIncludeHandler(&dxcIncludeHandler));
+        }
+
+
+
+        // Create blob from the string
+        IDxcBlobEncoding* pTextBlob;
+        ThrowIfFailed(
+            pLibrary->CreateBlobWithEncodingFromPinned((LPBYTE)source.c_str(), (uint32_t)source.size(), 0, &pTextBlob));
+
+        // Compile
+        IDxcOperationResult* pResult;
+        ThrowIfFailed(
+            pCompiler->Compile(pTextBlob, (LPCWSTR)fileName.c_str(), (LPCWSTR)entry_point.c_str(), L"lib_6_3", nullptr, 0, nullptr, 0, dxcIncludeHandler, &pResult));
+
+        // error check
+        HRESULT resultCode;
+        ThrowIfFailed(pResult->GetStatus(&resultCode));
+        if (FAILED(resultCode))
+        {
+            IDxcBlobEncoding* pError;
+            hr = pResult->GetErrorBuffer(&pError);
+            if (FAILED(hr))
+            {
+                throw std::logic_error("Failed to get shader compiler error");
+            }
+
+            // Convert error blob to a string
+            std::vector<char> infoLog(pError->GetBufferSize() + 1);
+            memcpy(infoLog.data(), pError->GetBufferPointer(), pError->GetBufferSize());
+            infoLog[pError->GetBufferSize()] = 0;
+
+            std::string errorMsg = "Shader Compiler Error:\n";
+            errorMsg.append(infoLog.data());
+
+            MessageBoxA(nullptr, errorMsg.c_str(), "Error!", MB_OK);
+            throw std::logic_error("Failed compile shader");
+        }
+
+        IDxcBlob* pBlob;
+        ThrowIfFailed(pResult->GetResult(&pBlob));
+        return pBlob;
+    }
+
+
+    std::vector<shader_lib> m_libraries = {};
+    std::vector<hit_group> m_hitGroups = {};
+    std::vector<RootSignatureAssociation> m_rootSignatureAssociations = {};
+    std::vector<std::wstring> BuildShaderExportList()
+    {
+        std::vector<std::wstring> exportedSymbols{};
+
+        // Get all names from libraries
+        // Get names associated to hit groups
+        // Return list of libraries+hit group names - shaders in hit groups
+
+        std::unordered_set<std::wstring> exports;
+
+        // Add all the symbols exported by the libraries
+        for (const shader_lib& lib : m_libraries)
+        {
+            for (const auto& exportName : lib.m_exportedSymbols)
+            {
+#ifdef _DEBUG
+                // Sanity check in debug mode: check that no name is exported more than once
+                if (exports.find(exportName) != exports.end())
+                {
+                    throw std::logic_error("Multiple definition of a symbol in the imported DXIL libraries");
+                }
+#endif
+                exports.insert(exportName);
+            }
+        }
+
+#ifdef _DEBUG
+        // Sanity check in debug mode: verify that the hit groups do not reference an unknown shader name
+        std::unordered_set<std::wstring> all_exports = exports;
+
+        for (const auto& hitGroup : m_hitGroups)
+        {
+            if (!hitGroup.m_anyHitSymbol.empty() && exports.find(hitGroup.m_anyHitSymbol) == exports.end())
+            {
+                throw std::logic_error("Any hit symbol not found in the imported DXIL libraries");
+            }
+
+            if (!hitGroup.m_closestHitSymbol.empty() && exports.find(hitGroup.m_closestHitSymbol) == exports.end())
+            {
+                throw std::logic_error("Closest hit symbol not found in the imported DXIL libraries");
+            }
+
+            if (!hitGroup.m_intersectionSymbol.empty() && exports.find(hitGroup.m_intersectionSymbol) == exports.end())
+            {
+                throw std::logic_error("Intersection symbol not found in the imported DXIL libraries");
+            }
+
+            all_exports.insert(hitGroup.m_hitGroupName);
+        }
+
+        // Sanity check in debug mode: verify that the root signature associations do not reference an
+        // unknown shader or hit group name
+        for (const auto& assoc : m_rootSignatureAssociations)
+        {
+            for (const auto& symb : assoc.m_symbols)
+            {
+                if (!symb.empty() && all_exports.find(symb) == all_exports.end())
+                {
+                    throw std::logic_error("Root association symbol not found in the "
+                        "imported DXIL libraries and hit group names");
+                }
+            }
+        }
+#endif
+
+        // Go through all hit groups and remove the symbols corresponding to intersection, any hit and
+        // closest hit shaders from the symbol set
+        for (const auto& hitGroup : m_hitGroups)
+        {
+            if (!hitGroup.m_anyHitSymbol.empty())
+            {
+                exports.erase(hitGroup.m_anyHitSymbol);
+            }
+            if (!hitGroup.m_closestHitSymbol.empty())
+            {
+                exports.erase(hitGroup.m_closestHitSymbol);
+            }
+            if (!hitGroup.m_intersectionSymbol.empty())
+            {
+                exports.erase(hitGroup.m_intersectionSymbol);
+            }
+            exports.insert(hitGroup.m_hitGroupName);
+        }
+
+        // Finally build a vector containing ray generation and miss shaders, plus the hit group names
+        for (const auto& name : exports)
+        {
+            exportedSymbols.push_back(name);
+        }
+
+        return exportedSymbols;
+    }
+
+
+    ID3D12StateObjectPtr m_rtStateObject;
+    // Ray tracing pipeline state properties, retaining the shader identifiers
+    // to use in the Shader Binding Table
+    ID3D12StateObjectPropertiesPtr m_rtStateObjectProps;
+    // TODO
+    ID3D12StateObjectPtr create_raytracing_state(/*respack& ray_res, const shader& ray_shd, const pipeline& ray_pipe, const frame& ray_frm*/)
+    {
+        CreateDummyRootSignatures();
+        // CreateRayRootSignature()
+
+        m_rayGenSignature = CreateRayGenSignature();
+        m_missSignature = CreateMissSignature();
+        m_hitSignature = CreateHitSignature();
+
+        m_hitGroups.emplace_back(hit_group(L"HitGroup", L"ray_git"));
+
+        m_rootSignatureAssociations.emplace_back(RootSignatureAssociation(m_rayGenSignature, { L"ray_gen" }));
+        m_rootSignatureAssociations.emplace_back(RootSignatureAssociation(m_missSignature, { L"ray_miss" }));
+        m_rootSignatureAssociations.emplace_back(RootSignatureAssociation(m_hitSignature, { L"HitGroup" }));
+
+
+
+        //create_shader_input_layout(ray_res);
+
+
+
+        UINT m_maxPayLoadSizeInBytes = 4 * sizeof(float); // RGB + distance
+        /// Attribute size, initialized to 2 for the barycentric coordinates used by the built-in triangle
+        /// intersection shader
+        UINT m_maxAttributeSizeInBytes = 2 * sizeof(float); // barycentric coordinates
+        /// Maximum recursion depth, initialized to 1 to at least allow tracing primary rays
+        UINT m_maxRecursionDepth = 1;
+
+
+
+        // The pipeline is made of a set of sub-objects, representing the DXIL libraries, hit group
+        // declarations, root signature associations, plus some configuration objects
+        UINT64 subobjectCount = 
+            m_libraries.size() +                     // DXIL libraries
+            m_hitGroups.size() +                     // Hit group declarations
+            1 +                                      // Shader configuration
+            1 +                                      // Shader payload
+            2 * m_rootSignatureAssociations.size() + // Root signature declaration + association
+            2 +                                      // Empty global and local root signatures
+            1;                                       // Final pipeline subobject
+
+        // Initialize a vector with the target object count. It is necessary to make the allocation before
+        // adding subobjects as some subobjects reference other subobjects by pointer. Using push_back may
+        // reallocate the array and invalidate those pointers.
+        std::vector<D3D12_STATE_SUBOBJECT> subobjects(subobjectCount);
+
+
+
+        UINT currentIndex = 0;
+
+        // 1. Add all the DXIL libraries
+        {
+            for (const shader_lib& lib : m_libraries)
+            {
+                D3D12_STATE_SUBOBJECT libSubobject = {};
+                libSubobject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+                libSubobject.pDesc = &lib.m_libDesc;
+
+                subobjects[currentIndex++] = libSubobject;
+            }
+        }
+
+        // 2. Add all the hit group declarations
+        {
+            for (const hit_group& group : m_hitGroups)
+            {
+                D3D12_STATE_SUBOBJECT hitGroup = {};
+                hitGroup.Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
+                hitGroup.pDesc = &group.m_desc;
+
+                subobjects[currentIndex++] = hitGroup;
+            }
+        }
+
+        // 3. Add a subobject for the shader payload configuration
+        {
+            D3D12_RAYTRACING_SHADER_CONFIG shaderDesc = {};
+            shaderDesc.MaxPayloadSizeInBytes = m_maxPayLoadSizeInBytes;
+            shaderDesc.MaxAttributeSizeInBytes = m_maxAttributeSizeInBytes;
+
+            D3D12_STATE_SUBOBJECT shaderConfigObject = {};
+            shaderConfigObject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+            shaderConfigObject.pDesc = &shaderDesc;
+
+            subobjects[currentIndex++] = shaderConfigObject; 
+        }
+
+        // 4. Build a list of all the symbols for ray generation, miss and hit groups
+        // Those shaders have to be associated with the payload definition
+        {
+            std::vector<std::wstring> exportedSymbols = BuildShaderExportList();
+
+            // Build an array of the string pointers
+            std::vector<LPCWSTR> exportedSymbolPointers = {};
+            exportedSymbolPointers.reserve(exportedSymbols.size());
+            for (const auto& name : exportedSymbols)
+            {
+                exportedSymbolPointers.push_back(name.c_str());
+            }
+            const WCHAR** shaderExports = exportedSymbolPointers.data();
+
+            // Add a subobject for the association between shaders and the payload
+            D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION shaderPayloadAssociation = {};
+            shaderPayloadAssociation.NumExports = static_cast<UINT>(exportedSymbols.size());
+            shaderPayloadAssociation.pExports = shaderExports;
+            // Associate the set of shaders with the payload defined in the previous subobject
+            shaderPayloadAssociation.pSubobjectToAssociate = &subobjects[(currentIndex - 1)];
+
+            // Create and store the payload association object
+            D3D12_STATE_SUBOBJECT shaderPayloadAssociationObject = {};
+            shaderPayloadAssociationObject.Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+            shaderPayloadAssociationObject.pDesc = &shaderPayloadAssociation;
+            subobjects[currentIndex++] = shaderPayloadAssociationObject; 
+        }
+
+        // 5. The root signature association requires two objects for each: one to declare the root
+        // signature, and another to associate that root signature to a set of symbols
+        for (RootSignatureAssociation& assoc : m_rootSignatureAssociations)
+        {
+            // Add a subobject to declare the root signature
+            D3D12_STATE_SUBOBJECT rootSigObject = {};
+            rootSigObject.Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+            rootSigObject.pDesc = &assoc.m_rootSignature;
+            subobjects[currentIndex++] = rootSigObject;
+
+
+            // Add a subobject for the association between the exported shader symbols and the root signature
+            assoc.m_association.pExports = assoc.m_symbolPointers.data();
+            assoc.m_association.NumExports = static_cast<UINT>(assoc.m_symbolPointers.size());
+            assoc.m_association.pSubobjectToAssociate = &subobjects[(currentIndex - 1)];
+
+            D3D12_STATE_SUBOBJECT rootSigAssociationObject = {};
+            rootSigAssociationObject.Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+            rootSigAssociationObject.pDesc = &assoc.m_association;
+
+            subobjects[currentIndex++] = rootSigAssociationObject;
+        }
+
+        // 6. The pipeline construction always requires an empty global root signature
+        //    The pipeline construction always requires an empty local root signature
+        {
+            D3D12_STATE_SUBOBJECT globalRootSig;
+            globalRootSig.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+            ID3D12RootSignature* dgSig = m_dummyGlobalRootSignature;
+            globalRootSig.pDesc = &dgSig;
+            subobjects[currentIndex++] = globalRootSig; 
+
+            D3D12_STATE_SUBOBJECT dummyLocalRootSig;
+            dummyLocalRootSig.Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+            ID3D12RootSignature* dlSig = m_dummyLocalRootSignature;
+            dummyLocalRootSig.pDesc = &dlSig;
+            subobjects[currentIndex++] = dummyLocalRootSig; 
+        }
+
+        // 7. Add a subobject for the ray tracing pipeline configuration
+        {
+            D3D12_RAYTRACING_PIPELINE_CONFIG pipelineConfig = {};
+            pipelineConfig.MaxTraceRecursionDepth = m_maxRecursionDepth;
+
+            D3D12_STATE_SUBOBJECT pipelineConfigObject = {};
+            pipelineConfigObject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
+            pipelineConfigObject.pDesc = &pipelineConfig;
+
+            subobjects[currentIndex++] = pipelineConfigObject; 
+        }
+
+
+
+        // Describe the ray tracing pipeline state object
+        D3D12_STATE_OBJECT_DESC pipelineDesc = {};
+        pipelineDesc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+        pipelineDesc.NumSubobjects = currentIndex; // static_cast<UINT>(subobjects.size());
+        pipelineDesc.pSubobjects = subobjects.data();
+
+        ID3D12StateObjectPtr rtStateObject = nullptr;
+        HRESULT hr = device_->CreateStateObject(&pipelineDesc, IID_PPV_ARGS(&rtStateObject));
+        if (FAILED(hr))
+        {
+            throw std::logic_error("Could not create the raytracing state object");
+        }
+
+        // TODO
+        ID3D12StateObjectPropertiesPtr m_rtStateObjectProps;
+        // Cast the state object into a properties object, allowing to later access
+        // the shader pointers by name
+        ThrowIfFailed(rtStateObject->QueryInterface(IID_PPV_ARGS(&m_rtStateObjectProps)));
+
+        return rtStateObject;
+    }
+
+
+
+
+
+
+    ID3D12ResourcePtr m_outputResource;
+    ID3D12DescriptorHeapPtr m_srvUavHeap;
+
+    void create_raytracing_frame()
+    {
+        D3D12_RESOURCE_DESC resDesc = {};
+        resDesc.DepthOrArraySize = 1;
+        resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+        // The backbuffer is actually DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, but sRGB
+        // formats cannot be used with UAVs. For accuracy we should convert to sRGB
+        // ourselves in the shader
+        resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+        resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        resDesc.Width = render_desc_.width;
+        resDesc.Height = render_desc_.height;
+        resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+        resDesc.MipLevels = 1;
+        resDesc.SampleDesc.Count = 1;
+        ThrowIfFailed(device_->CreateCommittedResource(&kDefaultHeapProps, D3D12_HEAP_FLAG_NONE, &resDesc,
+            D3D12_RESOURCE_STATE_COPY_SOURCE, nullptr,
+            IID_PPV_ARGS(&m_outputResource)));
+    }
+
+    ID3D12DescriptorHeapPtr CreateDescriptorHeap(ID3D12Device* device, uint32_t count, D3D12_DESCRIPTOR_HEAP_TYPE type,
+        bool shaderVisible)
+    {
+        D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+        desc.NumDescriptors = count;
+        desc.Type = type;
+        desc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+        ID3D12DescriptorHeap* pHeap;
+        ThrowIfFailed(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pHeap)));
+        return pHeap;
+    }
+
+    void create_raytracing_respack(accel top_accel)
+    {
+        // Create a SRV/UAV/CBV descriptor heap. We need 2 entries - 1 UAV for the
+        // raytracing output and 1 SRV for the TLAS
+        m_srvUavHeap = CreateDescriptorHeap(device_, 2, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
+
+        // Get a handle to the heap memory on the CPU side, to be able to write the
+        // descriptors directly
+        D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = m_srvUavHeap->GetCPUDescriptorHandleForHeapStart();
+
+        // Create the UAV. Based on the root signature we created it is the first
+        // entry. The Create*View methods write the view information directly into
+        // srvHandle
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+        device_->CreateUnorderedAccessView(m_outputResource, nullptr, &uavDesc, srvHandle);
+
+        // Add the Top Level AS SRV right after the raytracing output buffer
+        srvHandle.ptr += device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+        srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.RaytracingAccelerationStructure.Location = top_accel.pResult->GetGPUVirtualAddress();
+        // Write the acceleration structure view in the heap
+        device_->CreateShaderResourceView(nullptr, &srvDesc, srvHandle);
+    }
+
+
+    ID3D12ResourcePtr CreateBuffer(ID3D12Device* m_device, uint64_t size, D3D12_RESOURCE_FLAGS flags,
+        D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps)
+    {
+        D3D12_RESOURCE_DESC bufDesc = {};
+        bufDesc.Alignment = 0;
+        bufDesc.DepthOrArraySize = 1;
+        bufDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        bufDesc.Flags = flags;
+        bufDesc.Format = DXGI_FORMAT_UNKNOWN;
+        bufDesc.Height = 1;
+        bufDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+        bufDesc.MipLevels = 1;
+        bufDesc.SampleDesc.Count = 1;
+        bufDesc.SampleDesc.Quality = 0;
+        bufDesc.Width = size;
+
+        ID3D12Resource* pBuffer;
+        ThrowIfFailed(m_device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufDesc, initState, nullptr,
+            IID_PPV_ARGS(&pBuffer)));
+        return pBuffer;
+    }
+
+    buffer m_vertexBuffer;
+    ShaderBindingTable m_sbtHelper;
+    ID3D12ResourcePtr m_sbtStorage;
+    // shader binding table
+    void create_raytracing_sbt()
+    {
+        // The SBT helper class collects calls to Add*Program.  If called several
+        // times, the helper must be emptied before re-adding shaders.
+        m_sbtHelper.Reset();
+
+        // The pointer to the beginning of the heap is the only parameter required by
+        // shaders without root parameters
+        D3D12_GPU_DESCRIPTOR_HANDLE srvUavHeapHandle = m_srvUavHeap->GetGPUDescriptorHandleForHeapStart();
+
+        // The helper treats both root parameter pointers and heap pointers as void*,
+        // while DX12 uses the
+        // D3D12_GPU_DESCRIPTOR_HANDLE to define heap pointers. The pointer in this
+        // struct is a UINT64, which then has to be reinterpreted as a pointer.
+        auto heapPointer = reinterpret_cast<UINT64*>(srvUavHeapHandle.ptr);
+
+        // The ray generation only uses heap data
+        m_sbtHelper.AddRayGenerationProgram(L"RayGen", { heapPointer });
+
+        // The miss and hit shaders do not access any external resources: instead they
+        // communicate their results through the ray payload
+        m_sbtHelper.AddMissProgram(L"Miss", {});
+
+        // Adding the triangle hit shader
+        m_sbtHelper.AddHitGroup(L"HitGroup", { (void*)(m_vertexBuffer.resource->GetGPUVirtualAddress()) });
+
+        // Compute the size of the SBT given the number of shaders and their
+        // parameters
+        uint32_t sbtSize = m_sbtHelper.ComputeSBTSize();
+
+        // Create the SBT on the upload heap. This is required as the helper will use
+        // mapping to write the SBT contents. After the SBT compilation it could be
+        // copied to the default heap for performance.
+        m_sbtStorage = CreateBuffer(device_, sbtSize, D3D12_RESOURCE_FLAG_NONE,
+            D3D12_RESOURCE_STATE_GENERIC_READ, kUploadHeapProps);
+        if (!m_sbtStorage)
+        {
+            throw std::logic_error("Could not allocate the shader binding table");
+        }
+        // Compile the SBT from the shader and parameters info
+        m_sbtHelper.Generate(m_sbtStorage, m_rtStateObjectProps);
+    }
+
+
+    bool bInited = false;
+    accel accel_;
+    virtual void tracing_ray() override
+    {
+        if (bInited == false)
+        {
+            bInited = true;
+
+            // create accel desc
+            {
+                auto& res_desc = pool_.desc(cmd_.res_id);
+
+                m_vertexBuffer = pool_[res_desc.vertex];
+
+                accel_desc desc;
+                bottom_accel_desc bottom;
+                bottom.shapes = { { res_desc.vertex, res_desc.index}, };
+                desc.bottoms = { bottom, };
+                desc.instances = { {0, render_matrix{} }, };
+
+                accel_ = create_accel(desc);
+            }
+
+            // create raytracing state
+            create_raytracing_state();
+            create_raytracing_frame();
+            create_raytracing_respack(accel_);
+            create_raytracing_sbt();
+        }
+
+        // Record commands.
+
+            // #DXR
+            // Bind the descriptor heap giving access to the top-level acceleration
+            // structure, as well as the raytracing output
+        std::vector<ID3D12DescriptorHeap*> heaps = { m_srvUavHeap };
+        ctx_.mCommandList->SetDescriptorHeaps(static_cast<UINT>(heaps.size()), heaps.data());
+
+
+        transition_resource(m_outputResource, texture_usage_::transfer_src_, texture_usage_::storage_texture);
+        // Setup the raytracing task
+        {
+            D3D12_DISPATCH_RAYS_DESC desc = {};
+            // The layout of the SBT is as follows: ray generation shader, miss
+            // shaders, hit groups. As described in the CreateShaderBindingTable method,
+            // all SBT entries of a given type have the same size to allow a fixed
+            // stride.
+
+            // The ray generation shaders are always at the beginning of the SBT.
+            uint32_t rayGenerationSectionSizeInBytes = m_sbtHelper.GetRayGenSectionSize();
+            desc.RayGenerationShaderRecord.StartAddress = m_sbtStorage->GetGPUVirtualAddress();
+            desc.RayGenerationShaderRecord.SizeInBytes = rayGenerationSectionSizeInBytes;
+
+            // The miss shaders are in the second SBT section, right after the ray
+            // generation shader. We have one miss shader for the camera rays and one
+            // for the shadow rays, so this section has a size of 2*m_sbtEntrySize. We
+            // also indicate the stride between the two miss shaders, which is the size
+            // of a SBT entry
+            uint32_t missSectionSizeInBytes = m_sbtHelper.GetMissSectionSize();
+            desc.MissShaderTable.StartAddress = m_sbtStorage->GetGPUVirtualAddress() + rayGenerationSectionSizeInBytes;
+            desc.MissShaderTable.SizeInBytes = missSectionSizeInBytes;
+            desc.MissShaderTable.StrideInBytes = m_sbtHelper.GetMissEntrySize();
+
+            // The hit groups section start after the miss shaders. In this sample we
+            // have one 1 hit group for the triangle
+            uint32_t hitGroupsSectionSize = m_sbtHelper.GetHitGroupSectionSize();
+            desc.HitGroupTable.StartAddress =
+                m_sbtStorage->GetGPUVirtualAddress() + rayGenerationSectionSizeInBytes + missSectionSizeInBytes;
+            desc.HitGroupTable.SizeInBytes = hitGroupsSectionSize;
+            desc.HitGroupTable.StrideInBytes = m_sbtHelper.GetHitGroupEntrySize();
+
+            // Dimensions of the image to render, identical to a kernel launch dimension
+            desc.Width = render_desc_.width;
+            desc.Height = render_desc_.height;
+            desc.Depth = 1;
+
+            // Bind the raytracing pipeline
+            ctx_.mCommandList->SetPipelineState1(m_rtStateObject);
+            // Dispatch the rays and write to the raytracing output
+            ctx_.mCommandList->DispatchRays(&desc); 
+        }
+
+
+
+        // The raytracing output needs to be copied to the actual render target used
+        // for display. For this, we need to transition the raytracing output from a
+        // UAV to a copy source, and the render target buffer to a copy destination.
+        // We can then do the actual copy, before transitioning the render target
+        // buffer into a render target, that will be then used to display the image
+        transition_resource(m_outputResource, texture_usage_::storage_texture, texture_usage_::transfer_src_);
+
+        transition_render_target(texture_usage_::color_attachment, texture_usage_::transfer_dst_);
+        auto& tex = pool_[cmd_.frm_desc.render_targets[0].tex_id];
+        ctx_.mCommandList->CopyResource(tex.resource, m_outputResource);
+        transition_render_target(texture_usage_::transfer_dst_, texture_usage_::color_attachment);
+    }
+
+#pragma endregion raytracing
 
 #pragma region render command
 public:
@@ -1964,6 +3444,12 @@ public:
             (UINT)0);
     }
 
+
+    void compute()
+    {
+
+    }
+
 protected:
     std::unordered_map<string, ID3D12PipelineStatePtr> cache_pso_map{};
     void set_backend_state()
@@ -2069,6 +3555,18 @@ protected:
     }
 
 
+    void transition_resource(ID3D12ResourcePtr resource, texture_usage_ old_usage, texture_usage_ new_usage)
+    {
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = resource;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        barrier.Transition.StateBefore = static_cast<D3D12_RESOURCE_STATES>(texture_usage_map.at(old_usage).d3d12);
+        barrier.Transition.StateAfter = static_cast<D3D12_RESOURCE_STATES>(texture_usage_map.at(new_usage).d3d12);
+
+        ctx_.mCommandList->ResourceBarrier(1, &barrier);
+    }
 
     void transition_buffer(const buffer& buf, buffer_type old_type, buffer_type new_type)
     {
@@ -2096,6 +3594,26 @@ protected:
         ctx_.mCommandList->ResourceBarrier(1, &barrier);
     }
 
+    void transition_render_target(frame_id id, texture_usage_ old_usage, texture_usage_ new_usage)
+    {
+        if (cmd_.frm_desc.render_targets.size() == 1)
+        {
+            bool render =
+                old_usage == texture_usage_::present &&
+                new_usage == texture_usage_::color_attachment;
+
+            bool present =
+                old_usage == texture_usage_::color_attachment &&
+                new_usage == texture_usage_::present;
+
+            if (render || present)
+            {
+                auto tex_id = cmd_.frm_desc.render_targets[0].tex_id;
+                transition_texture(pool_[tex_id], old_usage, new_usage);
+            }
+        }
+    }
+
     void transition_render_target(texture_usage_ old_usage, texture_usage_ new_usage)
     {
         bool use_msaa = false;
@@ -2109,6 +3627,7 @@ protected:
             {
                 if (cmd_.frm_desc.render_targets.size() == 1)
                 {
+                    /*
                     bool render = 
                         old_usage == texture_usage_::present &&
                         new_usage == texture_usage_::color_attachment;
@@ -2122,6 +3641,9 @@ protected:
                         auto tex_id = cmd_.frm_desc.render_targets[0].tex_id;
                         transition_texture(pool_[tex_id], old_usage, new_usage);
                     }
+                    */
+                    auto tex_id = cmd_.frm_desc.render_targets[0].tex_id;
+                    transition_texture(pool_[tex_id], old_usage, new_usage);
                 }
             }
         }
