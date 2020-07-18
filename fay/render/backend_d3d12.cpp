@@ -2309,13 +2309,13 @@ private:
         buildDesc.ScratchAccelerationStructureData = { accel.pScratch->GetGPUVirtualAddress() };
         buildDesc.SourceAccelerationStructureData = 0;
         buildDesc.Inputs.Flags = flags;
-        list_->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+        ctx_.mCommandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 
         D3D12_RESOURCE_BARRIER uavBarrier;
         uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
         uavBarrier.UAV.pResource = accel.pResult;
         uavBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        list_->ResourceBarrier(1, &uavBarrier);
+        ctx_.mCommandList->ResourceBarrier(1, &uavBarrier);
 
 
 
@@ -2440,7 +2440,7 @@ private:
         buildDesc.Inputs.Flags = flags;
 
         // Build the top-level AS
-        list_->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+        ctx_.mCommandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 
         // Wait for the builder to complete by setting a barrier on the resulting
         // buffer. This can be important in case the rendering is triggered
@@ -2449,7 +2449,7 @@ private:
         uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
         uavBarrier.UAV.pResource = resultBuffer;
         uavBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        list_->ResourceBarrier(1, &uavBarrier);
+        ctx_.mCommandList->ResourceBarrier(1, &uavBarrier);
 
 
 
@@ -2710,17 +2710,17 @@ private:
         {
             if (!hitGroup.m_anyHitSymbol.empty() && exports.find(hitGroup.m_anyHitSymbol) == exports.end())
             {
-                throw std::logic_error("Any hit symbol not found in the imported DXIL libraries");
+                //throw std::logic_error("Any hit symbol not found in the imported DXIL libraries");
             }
 
             if (!hitGroup.m_closestHitSymbol.empty() && exports.find(hitGroup.m_closestHitSymbol) == exports.end())
             {
-                throw std::logic_error("Closest hit symbol not found in the imported DXIL libraries");
+                //throw std::logic_error("Closest hit symbol not found in the imported DXIL libraries");
             }
 
             if (!hitGroup.m_intersectionSymbol.empty() && exports.find(hitGroup.m_intersectionSymbol) == exports.end())
             {
-                throw std::logic_error("Intersection symbol not found in the imported DXIL libraries");
+                //throw std::logic_error("Intersection symbol not found in the imported DXIL libraries");
             }
 
             all_exports.insert(hitGroup.m_hitGroupName);
@@ -3390,6 +3390,7 @@ public:
         // by currenty cmds_
         // actually we pack resource descriptor up, not resource themselves
 
+        cmd_.res_id = id;
         cmd_.res = pool_[id];
     }
 

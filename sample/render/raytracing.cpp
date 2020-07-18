@@ -1,7 +1,5 @@
 #include "sample_render_app.h"
 
-;
-
 
 class raytracing_triangle_ : public passes
 {

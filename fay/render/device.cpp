@@ -335,7 +335,7 @@ void render_device::execute_command(const command& cmd)
 
         case command_type::tracing_ray:
         {
-
+            tracing_ray();
         }
 
         default:

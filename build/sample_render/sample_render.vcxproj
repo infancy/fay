@@ -24,13 +24,13 @@
     <ClCompile Include="..\..\sample\render\alpha_blending.cpp" />
     <ClCompile Include="..\..\sample\render\defered_render.cpp" />
     <ClCompile Include="..\..\sample\render\pbr.cpp" />
+    <ClCompile Include="..\..\sample\render\raytracing.cpp" />
     <ClCompile Include="..\..\sample\render\reflection.cpp" />
     <ClCompile Include="..\..\sample\render\main.cpp" />
     <ClCompile Include="..\..\sample\render\shadow.cpp" />
     <ClCompile Include="..\..\sample\render\__sample.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\sample\render\raytracing.cpp" />
     <ClInclude Include="..\..\sample\render\sample_render_app.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
