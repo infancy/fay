@@ -158,3 +158,7 @@ public:
 
 
 SAMPLE_RENDER_APP_IMPL(raytracing_triangle_)
+
+
+
+
