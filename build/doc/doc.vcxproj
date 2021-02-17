@@ -125,6 +125,7 @@
   <ItemGroup>
     <None Include="..\..\doc\architecture.md" />
     <None Include="..\..\doc\container.md" />
+    <None Include="..\..\doc\todo.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

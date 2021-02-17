@@ -279,9 +279,6 @@
     <ClInclude Include="..\..\fay\math\quat.h">
       <Filter>math</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\container\container.h">
-      <Filter>container</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\fay\container\array.h">
       <Filter>container</Filter>
     </ClInclude>
@@ -344,6 +341,12 @@
     </ClInclude>
     <ClInclude Include="..\..\fay\gfx\effect.h">
       <Filter>gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\base\concept.h">
+      <Filter>base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fay\container\mixin_container.h">
+      <Filter>container</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

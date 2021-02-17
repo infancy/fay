@@ -1,3 +1,9 @@
+/* readme
+
+
+
+*/
+
 #pragma once
 
 #include "fay/math/vec.h"
@@ -22,6 +28,7 @@ struct mat
 
     using row_type               = vec<C, T>; // sub_array_type
 	using col_type               = vec<R, T>;
+    using vec_type               = vec<N, T>;
 	using this_type              = mat<R, C, T>;
 	using value_type             = typename vec<N, T>::value_type;
     using size_type              = typename vec<N, T>::size_type;

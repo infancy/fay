@@ -3,5 +3,6 @@
   <ItemGroup>
     <None Include="..\..\doc\container.md" />
     <None Include="..\..\doc\architecture.md" />
+    <None Include="..\..\doc\todo.md" />
   </ItemGroup>
 </Project>

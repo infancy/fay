@@ -479,11 +479,22 @@ enum class pass_type
 #define FAY_RENDER_TYPE_ID( type )                                          \
 struct type##_id                                                            \
 {                                                                           \
-    uint value;                                                             \
-    explicit type##_id(uint i = 0) : value{ i } {}                          \
+    uint value{};                                                           \
+    type##_id() : value{ 0 } {}                                             \
+    explicit type##_id(uint i) : value{ i } {}                              \
     explicit operator bool() const { return value != 0u; }                  \
     bool operator==(type##_id right) const { return value == right.value; } \
     bool operator!=(type##_id right) const { return !operator==(right); }   \
+};
+
+struct render_id                                                            
+{                                                                           
+    uint value{};                                                           
+    explicit render_id(uint i = 0) : value{ i } {}
+
+    explicit operator bool() const { return value != 0u; }                  
+    bool operator==(render_id right) const { return value == right.value; } 
+    bool operator!=(render_id right) const { return !operator==(right); }
 };
 
 FAY_RENDER_TYPE_ID(buffer)

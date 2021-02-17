@@ -1,3 +1,18 @@
+/* readme
+
+# intro
+
+# usage
+
+# class
+
+# reference
+    * https://github.com/mitsuba-renderer/enoki/blob/master/include/enoki/array_base.h
+    * https://zhuanlan.zhihu.com/p/96089089
+*/
+
+
+
 #pragma once
 
 #include <fay/core/fay.h>
@@ -5,25 +20,21 @@
 namespace fay
 {
 
-// https://github.com/mitsuba-renderer/enoki/blob/master/include/enoki/array_base.h
-
-// https://zhuanlan.zhihu.com/p/96089089
-
 // TODO: constexpr flat_map
 
-/*
 template<typename T>
-concept Container = requires(T&& t) 
+concept iterable_c = requires(T&& t)
 {
-    // ...
+    t.begin();
+    t.end();
 };
 
-template<typename T>
-concept Container = std::Range
-*/
+//template<typename T>
+//concept Container = std::range;
 
-template<typename Derived> // template<Container C>
-struct container
+//! mixin by inherit it
+template<iterable_c Derived> // template<Container C>
+struct mixin_container
 {
 public:
     auto rbegin()        noexcept { return reverse<decltype(derived()->end())>  (derived()->end());   }
@@ -52,14 +63,14 @@ private:
 
 
 template<typename Derived> // template<Associative Seq>
-struct associative : container<associative<Derived>>
+struct mixin_associative : mixin_container<mixin_associative<Derived>>
 {
 
 };
 
 
 
-#define FAY_SEQUENCE_tYPE_ALIAS                                 \
+#define FAY_SEQUENCE_TYPE_ALIAS                                 \
 using size_type              = fay::size;                       \
 using difference_type        = ptrdiff_t;                       \
 using value_type             = T;                               \
@@ -72,18 +83,26 @@ using const_iterator         = const value_type*;               \
 using reverse_iterator       = std::reverse_iterator<iterator>; \
 using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+template<typename T>
+concept sequence_c = requires(T&& t, fay::size index)
+{
+    t.data();
+    t.size();
+    t.operator[](index);
+};
+
 // array, vector, deque, list...
 // template<typename Derived>
-// struct sequence : container<sequence<Derived>>
-template<typename T, typename Derived> // template<Sequence Seq>
-struct sequence : container<sequence<T, Derived>>
+// struct mixin_sequence : container_mixin<mixin_sequence<Derived>>
+template<typename T, sequence_c Derived> // template<Sequence Seq>
+struct mixin_sequence : mixin_container<mixin_sequence<T, Derived>>
 {
 public:
-    FAY_SEQUENCE_tYPE_ALIAS
+    FAY_SEQUENCE_TYPE_ALIAS
 
 /*
 public:
-    constexpr explicit sequence(const_pointer first, const_pointer last)
+    constexpr explicit mixin_sequence(const_pointer first, const_pointer last)
     {
         auto diff = std::distance(first, last);
         DCHECK(diff > 0) << "range isn't valid, is it used 'tensor t{}' ???";
@@ -106,7 +125,7 @@ public:
 private:
     //using Derived = Derived_;
 
-    void check_at(size_type i) { if (i >= derived()->size()) throw std::out_of_range("fay::sequence::check_at"); }
+    void check_at(size_type i) { if (i >= derived()->size()) throw std::out_of_range("fay::mixin_sequence::check_at"); }
 
           Derived* derived()       noexcept { return (Derived*)this; }
     const Derived* derived() const noexcept { return (Derived*)this; }

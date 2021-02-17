@@ -1,7 +1,8 @@
 #pragma once
 
 // #include <fay/core/fay.h>
-#include "fay/container/container.h"
+#include "fay/base/concept.h"
+#include "fay/container/mixin_container.h"
 
 namespace fay
 {
@@ -11,7 +12,7 @@ namespace fay
 #pragma region internal
 
 // TODO: move to heap???
-template <typename T, size_t R_, size_t C_>
+template <arithmetic_c T, size_t R_, size_t C_>
 struct base_tensor_
 {
     enum { R = R_, C = C_, N = R * C };
@@ -89,8 +90,8 @@ struct base_tensor_<T, 1, 4>
 
 // TODO: rename to vec, remove T m_[R][C]
 // template <scaler T, size_t R_, size_t C_>
-template <typename T, size_t R_, size_t C_>
-struct tensor : base_tensor_<T, R_, C_>, sequence<T, tensor<T, R_, C_>>
+template <arithmetic_c T, size_t R_, size_t C_>
+struct tensor : base_tensor_<T, R_, C_>, mixin_sequence<T, tensor<T, R_, C_>>
 {
     // TODO: fay::tensor<T> a;
     static_assert(R_ > 0 && C_ > 0);
@@ -103,12 +104,12 @@ public:
     using base_type::m_;
     using base_type::a_;
 
-    FAY_SEQUENCE_tYPE_ALIAS
+    FAY_SEQUENCE_TYPE_ALIAS
 
 public:
     // TODO: make fay::tensor to be a aggregate
 
-    // TODO: move ctors to sequence
+    // TODO: move ctors to mixin_sequence
 
     // WARNING!!! tensor(n) != tensor{ n }
     // TODO£ºremove£¿£¿
@@ -139,7 +140,7 @@ public:
     // set
     constexpr void fill(const_reference v) { std::fill_n(a_, N, v); }
 
-    // TODO: move to sequence
+    // TODO: move to mixin_sequence
     // get
     reference       operator[](size_type i)       noexcept { return a_[i]; }
     const_reference operator[](size_type i) const noexcept { return a_[i]; }

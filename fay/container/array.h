@@ -7,7 +7,7 @@
 #pragma region reference
 
 // https://github.com/foonathan/array
-// https://github.com/abseil/abseil-cpp/blob/master/absl/container/fixed_array.h
+// https://github.com/abseil/abseil-cpp/blob/master/absl/container_mixin/fixed_array.h
 
 #pragma endregion reference
 
@@ -18,14 +18,14 @@ namespace fay
 #pragma region static_array/stack_array
 
 template <typename T, size_t N>
-class array : public sequence<T, array<T, N>>
+class array : public mixin_sequence<T, array<T, N>>
 {
 #pragma region value
     static_assert(N > 0);
 
 public:
     using this_type = array<T, N>;
-    FAY_SEQUENCE_tYPE_ALIAS
+    FAY_SEQUENCE_TYPE_ALIAS
 
 public:
     // ctor
@@ -118,17 +118,17 @@ class static_array
 // stack_dynamic_array
 
 // fay::heap_array<T> is a variable-length arrays(VLA)
-// TODO: fay::heap_array<T> is a fay::container(concept)
-// WARNING: when use fay::container, always use 'fay::' to avoid confusion with standard container
+// TODO: fay::heap_array<T> is a fay::container_mixin(concept)
+// WARNING: when use fay::container_mixin, always use 'fay::' to avoid confusion with standard container_mixin
 // TODO: heap_value
 
 // TODD: merge to static_array
 template<typename T>
-/*TODO: constexpr */class heap_array : public sequence<T, heap_array<T>>
+/*TODO: constexpr */class heap_array : public mixin_sequence<T, heap_array<T>>
 {
 public:
     using this_type = heap_array<T>;
-    FAY_SEQUENCE_tYPE_ALIAS
+    FAY_SEQUENCE_TYPE_ALIAS
 
 public:
     explicit heap_array(fay::size size, value_type value = value_type{}) :

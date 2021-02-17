@@ -52,9 +52,10 @@ int main(int argc, char** argv)
     // vector<{XX_desc, XX}> ...;
     fay::app_desc desc;
     {
-        //desc.render.backend = fay::render_backend_type::opengl;
+        desc.render.backend = fay::render_backend_type::opengl;
         //desc.render.backend = fay::render_backend_type::d3d11;
     }
-    auto app_ = CREATE_SAMPLE_RENDER_APP(raytracing_triangle_, desc);
+    //auto app_ = CREATE_SAMPLE_RENDER_APP(raytracing_triangle_, desc);
+    auto app_ = CREATE_SAMPLE_RENDER_APP(IBL, desc);
     return app_->run();
 }

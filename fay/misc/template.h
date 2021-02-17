@@ -1,15 +1,22 @@
 #if defined(_MSC_VER)
 #define NOMINMAX
 #endif
-#pragma once
 
 
 
-// #include <fay/core/fay.h>
 
 #pragma region reference
 
 #pragma endregion reference
+
+/* readme
+
+*/
+
+
+#pragma once
+
+// #include <fay/core/fay.h>
 
 
 
@@ -25,13 +32,10 @@ namespace fay
 
 
 
+#ifndef FAY_T_T_H
+#define FAY_T_T_H
 
-
-
-//#ifndef FAY_T_T_H
-//#define FAY_T_T_H
-
-//#endif // FAY_T_T_H
+#endif // FAY_T_T_H
 
 
 

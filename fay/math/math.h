@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <limits>
 
 #include "fay/core/fay.h"
@@ -17,8 +18,6 @@ namespace fay
 
 // -------------------------------------------------------------------------------------------------
 // constant value
-
-
 
 constexpr float MinFloat = std::numeric_limits<float>::min();
 constexpr float MaxFloat = std::numeric_limits<float>::max();
@@ -41,8 +40,10 @@ constexpr float Sqrt2   = 1.41421356237309504880;
 
 
 
+// struct degrees { float value }; 
 constexpr float radians(float deg) { return (deg / 180.f) * Pi; }
 
+// struct radians { float value };
 constexpr float degrees(float rad) { return (rad / Pi) * 180.f; }
 
 
@@ -95,8 +96,8 @@ template <typename T>
 struct equal_epsilon
 {
     // todo: static constexpr
-	static const inline T absolute_epsilon = std::numeric_limits<T>::epsilon();
-	static const inline T relative_epsilon = std::numeric_limits<T>::epsilon();
+	static constexpr T absolute_epsilon = std::numeric_limits<T>::epsilon();
+	static constexpr T relative_epsilon = std::numeric_limits<T>::epsilon();
 };
 
 template <typename T>
