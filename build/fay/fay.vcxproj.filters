@@ -345,7 +345,7 @@
     <ClInclude Include="..\..\fay\base\concept.h">
       <Filter>base</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fay\container\mixin_container.h">
+    <ClInclude Include="..\..\fay\container\container.h">
       <Filter>container</Filter>
     </ClInclude>
   </ItemGroup>

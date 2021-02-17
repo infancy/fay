@@ -48,7 +48,7 @@
     <ClInclude Include="..\..\fay\app\window.h" />
     <ClInclude Include="..\..\fay\base\concept.h" />
     <ClInclude Include="..\..\fay\container\array.h" />
-    <ClInclude Include="..\..\fay\container\mixin_container.h" />
+    <ClInclude Include="..\..\fay\container\container.h" />
     <ClInclude Include="..\..\fay\container\deque.h" />
     <ClInclude Include="..\..\fay\container\flat.h" />
     <ClInclude Include="..\..\fay\container\_sequence.h" />
